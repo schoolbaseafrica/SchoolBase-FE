@@ -1,0 +1,36 @@
+name: Deployment Pipeline Production
+on:
+  workflow_run:
+    workflows: ["CI Pipeline Production"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Deploy on server
+        run: |
+          sshpass -p '${{ secrets.PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} '
+            # 1. Go to the frontend directory
+            cd open-school/prod/open-school-portal-FE
+            
+            # 2. Extract the artifact
+            tar -xzf /tmp/open-school-portal-fe-artifact.tar.gz
+            
+            # 3. Remove the artifact file
+            rm -f /tmp/open-school-portal-fe-artifact.tar.gz
+
+            # 4. Update packages/Dependencies
+            pnpm i
+            
+            # 5. Restart PM2 process using ecosystem config
+            pm2 reload ecosystem.config.cjs || pm2 restart osp-fe-prod --update-env
+            pm2 save
+          '
