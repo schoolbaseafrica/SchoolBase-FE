@@ -1,0 +1,119 @@
+name: CD Pipeline (Frontend)
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches:
+      - dev
+jobs:
+  deploy-dev:
+    name: Deploy to Dev Server
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'dev'
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
+      - name: Upload build to server
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          source: "build/*"
+          target: "/var/www/ops-frontend/tmp-upload"
+      - name: Run deployment on server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          script: |
+            RELEASE_DIR="/var/www/ops-frontend/releases/$(date +%Y%m%d%H%M%S)"
+            mkdir -p $RELEASE_DIR
+            echo "Moving uploaded build to release folder..."
+            mv /var/www/ops-frontend/tmp-upload/* $RELEASE_DIR/
+            echo "Updating current symlink..."
+            ln -sfn $RELEASE_DIR /var/www/ops-frontend/current
+            echo "Restarting PM2..."
+            pm2 reload ops-frontend || pm2 start "npx next start -p 3000" --name ops-frontend
+      - name: Deployment complete
+        run: echo "Frontend deployed to DEV successfully."
+
+  deploy-prod:
+     name: Deploy to Production Server
+     runs-on: ubuntu-latest
+     if: >
+     github.event.workflow_run.conclusion == 'success' &&
+     github.event.workflow_run.head_branch == 'main'
+
+     name: production
+     url: https://https://borjigin.emerj.net/
+     steps:
+       - name: Download build artifacts
+         uses: actions/download-artifact@v4
+         with:
+           name: build-output
+           path: build
+           run-id: ${{ github.event.workflow_run.id }}
+           github-token: ${{ secrets.GITHUB_TOKEN }}
+       
+       - name: Upload build to server
+         uses: appleboy/scp-action@v0.1.5
+         with:
+           host: ${{ secrets.PROD_SERVER_HOST }}
+           username: ${{ secrets.PROD_SERVER_USER }}
+           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+           source: "build/*"
+           target: "/var/www/ops-frontend/tmp-upload"
+       
+       - name: Create backup of current production
+         uses: appleboy/ssh-action@v1.0.0
+         with:
+           host: ${{ secrets.PROD_SERVER_HOST }}
+           username: ${{ secrets.PROD_SERVER_USER }}
+           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+           script: |
+             if [ -L /var/www/ops-frontend/current ]; then
+              CURRENT_RELEASE=$(readlink /var/www/ops-frontend/current)
+               echo "Current production release: $CURRENT_RELEASE"
+               echo "BACKUP_RELEASE=$CURRENT_RELEASE" >> backup.txt
+             fi
+       
+       - name: Run deployment on server
+         uses: appleboy/ssh-action@v1.0.0
+         with:
+           host: ${{ secrets.PROD_SERVER_HOST }}
+           username: ${{ secrets.PROD_SERVER_USER }}
+           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+           script: |
+             RELEASE_DIR="/var/www/ops-frontend/releases/$(date +%Y%m%d%H%M%S)"
+             mkdir -p $RELEASE_DIR
+             
+             echo "Moving uploaded build to release folder..."
+             mv /var/www/ops-frontend/tmp-upload/build/* $RELEASE_DIR/
+                          
+             echo "Updating current symlink..."
+             ln -sfn $RELEASE_DIR /var/www/ops-frontend/current
+             
+             echo "Restarting PM2 with zero-downtime reload..."
+             pm2 reload ops-frontend-prod --update-env || pm2 start "npx next start -p 3000" --name ops-frontend-prod
+             
+             echo "Waiting for application to start..."
+             sleep 5
+            
+             echo "Verifying deployment..."
+             curl localhost:3002
+             
+             echo "Keeping last 10 releases, cleaning old ones..."
+             cd /var/www/ops-frontend/releases
+             ls -t | tail -n +11 | xargs -r rm -rf
+       
+       - name: Notify deployment success
+         run: echo "Frontend deployed to PRODUCTION successfully."
+
+

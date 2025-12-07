@@ -1,0 +1,62 @@
+name: CI Pipeline Staging
+on:
+  pull_request:
+    branches:
+      - staging
+    paths-ignore:
+      - "README.md"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - staging
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create environment file from GitHub secrets
+        run: |
+          echo "${{ secrets.ENV_AUTH_STAGING }}" > .env
+
+      - name: Lint code
+        run: pnpm run lint
+
+      - name: Check code formatting
+        run: pnpm run check-format
+
+      - name: Check TypeScript types
+        run: pnpm run check-types
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Archive Build Artifacts
+        run: |
+          tar -czf open-school-portal-fe.tar.gz .next public package.json next.config.ts tsconfig.json pnpm-lock.yaml .env
+
+      - name: Copy Artifacts to Server
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" scp -o StrictHostKeyChecking=no open-school-portal-fe.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/tmp/staging/open-school-portal-fe-artifact.tar.gz
+          rm -f open-school-portal-fe.tar.gz
