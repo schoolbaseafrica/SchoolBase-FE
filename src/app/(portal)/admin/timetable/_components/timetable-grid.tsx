@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { Pencil } from "lucide-react"
-import { useClassTimetable } from "../_hooks/use-timetable"
+import { Schedule } from "@/lib/timetable"
 import { useTimetableStore } from "@/store/timetable-store"
+import { Pencil } from "lucide-react"
+import { useState } from "react"
 import { useShallow } from "zustand/react/shallow"
-import { ItemLoader } from "../../_components/sub-loader"
+import { useClassTimetable } from "../_hooks/use-timetable"
 import EditScheduleModal from "./edit-schedule-modal"
 import MobileTimetableView from "./mobile-timetable-view"
-import { Schedule } from "@/lib/timetable"
+import TimetableLoading from "./timetable-loading"
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
 const TIME_SLOTS = [
@@ -55,7 +55,7 @@ export default function TimetableGrid({ classId, readonly = false }: TimetableGr
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   if (isLoading) {
-    return <ItemLoader item="Timetable" />
+    return <TimetableLoading />
   }
 
   // const schedules = data?.schedules || []  <-- Replaced by store selection
@@ -76,17 +76,17 @@ export default function TimetableGrid({ classId, readonly = false }: TimetableGr
     <>
       {/* Desktop View */}
       <div className="hidden w-full min-[834px]:block min-[834px]:max-w-[calc(100vw-18rem)]">
-        <div className="overflow-x-auto rounded-[8px] border border-[#2D2D2D4D] bg-white">
+        <div className="overflow-x-auto rounded-xl border border-[#2D2D2D4D] bg-white">
           <table className="w-full min-w-[500px] border-collapse">
             <thead>
               <tr>
-                <th className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-[10px] py-4 text-left text-xs font-medium text-[#535353]">
+                <th className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-2.5 py-4 text-left text-xs font-medium text-[#535353]">
                   Time
                 </th>
                 {DAYS.map((day) => (
                   <th
                     key={day}
-                    className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-[10px] py-4 text-center text-xs font-medium text-[#535353] last:border-r-0"
+                    className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-2.5 py-4 text-center text-xs font-medium text-[#535353] last:border-r-0"
                   >
                     {day}
                   </th>
@@ -96,7 +96,7 @@ export default function TimetableGrid({ classId, readonly = false }: TimetableGr
             <tbody>
               {TIME_SLOTS.map((time) => (
                 <tr key={time} className="border-b border-[#2D2D2D4D] last:border-0">
-                  <td className="border-r px-[10px] py-4 text-sm font-medium whitespace-nowrap text-[#535353]">
+                  <td className="border-r px-2.5 py-4 text-sm font-medium whitespace-nowrap text-[#535353]">
                     {formatTime(time)}
                   </td>
                   {DAYS.map((day) => {
