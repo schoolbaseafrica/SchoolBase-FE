@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { AlertCircleIcon } from "lucide-react"
@@ -81,7 +81,6 @@ export default function EditScheduleModal({
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,7 +94,7 @@ export default function EditScheduleModal({
     },
   })
 
-  const periodType = watch("period_type")
+  const periodType = useWatch({ control, name: "period_type" })
 
   useEffect(() => {
     if (schedule) {

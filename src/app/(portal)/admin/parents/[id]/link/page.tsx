@@ -44,9 +44,19 @@ export default function LinkParentPage() {
   const linkParentToStudentsMutation = useLinkParentToStudents(id)
 
   const { data: parent, isLoading: isLoadingParent } = useGetParent(id as string)
-  const { data: students, isLoading: isLoadingStudents } = useGetStudents({
-    search: searchQuery,
-  })
+  const { data: allStudents, isLoading: isLoadingStudents } = useGetStudents()
+
+  // Filter students client-side based on search query
+  const students = useMemo(() => {
+    if (!allStudents) return []
+    if (!searchQuery.trim()) return allStudents
+    const query = searchQuery.toLowerCase()
+    return allStudents.filter((student) =>
+      `${student.first_name} ${student.last_name} ${student.registration_number || student.reg_number || ""}`
+        .toLowerCase()
+        .includes(query)
+    )
+  }, [allStudents, searchQuery])
 
   const handleStudentSelect = (student: User, selected: boolean) => {
     if (selected) {

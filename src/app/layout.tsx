@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 import "./globals.css"
-import { GeneralQueryProvider } from "@/providers/general-query-provider"
+import { QueryProvider } from "@/providers/query-provider"
 import { Toaster } from "sonner"
 
 const outfit = Outfit({
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "School Base",
     description:
       "The modern way schools run in Nigeria. Manage attendance, results, timetables, fees, and NFC all in one place. Connect students, teachers, parents, and administrators.",
-    url: "https://borjigin.emerj.net/",
+    url: "https://schoolbase.africa/",
     siteName: "School Base",
     locale: "en_US",
     type: "website",
@@ -78,13 +78,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <GeneralQueryProvider>
+    <QueryProvider>
       <html lang="en">
         <body className={`${outfit.variable} font-outfit antialiased`}>
           {children}
           <Toaster position="bottom-right" richColors />
         </body>
       </html>
-    </GeneralQueryProvider>
+    </QueryProvider>
   )
 }

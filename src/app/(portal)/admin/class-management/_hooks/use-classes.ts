@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ClassesAPI, CreateClassData, UpdateClassData } from "@/lib/classes"
 import { toast } from "sonner"
-import { AxiosError } from "axios"
+// import { AxiosError } from "axios"
+import { extractErrorMessage } from "@/lib/error-handler"
+import { useClassesStore } from "@/store/classes-store"
+import { useEffect } from "react"
 
 // QUERY KEYS
 export const CLASS_KEYS = {
@@ -11,13 +14,34 @@ export const CLASS_KEYS = {
 }
 
 // GET ALL (GROUPED)
-export const useGetClassesInfo = (params?: { page?: number; limit?: number }) =>
-  useQuery({
+export const useGetClassesInfo = (params?: { page?: number; limit?: number }) => {
+  const setClassItems = useClassesStore((state) => state.setClassItems)
+  const setLoading = useClassesStore((state) => state.setLoading)
+  // const setError = useClassesStore((state) => state.setError)
+
+  const query = useQuery({
     queryKey: CLASS_KEYS.all,
-    queryFn: () => ClassesAPI.getAll(params),
-    select: (data) => data.data,
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await ClassesAPI.getAll(params)
+        return res.data
+      } finally {
+        setLoading(false)
+      }
+    },
+    // select: (data) => data.data, // Already returned data in queryFn
     refetchOnWindowFocus: false,
   })
+
+  useEffect(() => {
+    if (query.data?.items) {
+      setClassItems(query.data.items)
+    }
+  }, [query.data, setClassItems])
+
+  return query
+}
 
 export const useGetClass = (id: string) =>
   useQuery({
@@ -34,13 +58,11 @@ export const useCreateClass = () => {
   return useMutation({
     mutationFn: (data: CreateClassData) => ClassesAPI.create(data),
     onSuccess: () => {
-      //   toast.success(res.message)
+      toast.success("Class created successfully")
       qc.invalidateQueries({ queryKey: CLASS_KEYS.all })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to create class")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -53,14 +75,12 @@ export const useUpdateClass = (classID: string) => {
     mutationFn: ({ id, ...data }: { id: string } & UpdateClassData) =>
       ClassesAPI.update(id, data),
     onSuccess: () => {
-      //   toast.success(res.message)
+      toast.success("Class updated successfully")
       qc.invalidateQueries({ queryKey: CLASS_KEYS.all })
       qc.invalidateQueries({ queryKey: CLASS_KEYS.detail(classID) })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to update class")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -76,9 +96,7 @@ export const useDeleteClass = () => {
       qc.invalidateQueries({ queryKey: CLASS_KEYS.all })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to delete class")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -107,9 +125,7 @@ export const useAssignTeachersToClassSubject = () => {
       qc.invalidateQueries({ queryKey: [SUBJECTS_FOR_CLASS_KEY] })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to assign teachers")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -125,9 +141,7 @@ export const useUnassignTeachersToClassSubject = () => {
       qc.invalidateQueries({ queryKey: [SUBJECTS_FOR_CLASS_KEY] })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to unassign teacher")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -153,9 +167,7 @@ export const useAddStudentsToClass = (classID: string) => {
       qc.invalidateQueries({ queryKey: ["class_students", classID] })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to add students to class")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -171,9 +183,7 @@ export const useRemoveStudentFromClass = (classID: string) => {
       qc.invalidateQueries({ queryKey: ["class_students", classID] })
     },
     onError: (err) => {
-      if (err instanceof AxiosError) {
-        toast.error(err?.message ?? "Failed to remove student from class")
-      }
+      toast.error(extractErrorMessage(err))
     },
   })
 }

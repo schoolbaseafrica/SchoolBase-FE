@@ -52,7 +52,7 @@ export function UsersView({
   const navigate = () => router.push(`/admin/${userType}/new`)
 
   return (
-    <div className="mx-auto max-w-[1112px] p-4 md:p-6">
+    <div className="mx-auto p-4 sm:p-6">
       <UsersToolbar
         userType={userType}
         searchQuery={searchQuery}

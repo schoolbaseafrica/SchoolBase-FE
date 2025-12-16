@@ -11,25 +11,6 @@ interface SubmissionCardProps {
   submission: GradeSubmission
 }
 
-// Helper type for nested objects
-interface TeacherInfo {
-  name?: string
-  title?: string
-}
-
-interface ClassInfo {
-  name?: string
-  arm?: string
-}
-
-interface SubjectInfo {
-  name?: string
-}
-
-interface TermInfo {
-  name?: string
-}
-
 export function SubmissionCard({ submission }: SubmissionCardProps) {
   const router = useRouter()
 

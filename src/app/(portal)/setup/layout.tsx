@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
-import { GeneralQueryProvider } from "@/providers/general-query-provider"
+import { QueryProvider } from "@/providers/query-provider"
 
 export const metadata: Metadata = {
-  title: "Super Admin Setup | School Base",
+  title: "Super Admin Setup",
   description:
     "Complete the initial School Base setup to configure your school workspace.",
 }
@@ -13,8 +13,8 @@ export default function SuperAdminSetuLayout({
   children: React.ReactNode
 }) {
   return (
-    <GeneralQueryProvider>
+    <QueryProvider>
       <div className="h-screen w-screen overflow-x-hidden bg-white">{children}</div>
-    </GeneralQueryProvider>
+    </QueryProvider>
   )
 }

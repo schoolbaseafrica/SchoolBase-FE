@@ -1,23 +1,17 @@
 "use client"
 
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from "recharts"
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card"
+import { Card, CardFooter, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LucideIcon, Loader2 } from "lucide-react"
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { TypedChartConfig } from "@/types/chart"
+import { Loader2, LucideIcon } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 interface ReuseableBarChartProps<XKey extends string, BarKey extends string> {
   title: string
@@ -49,38 +43,36 @@ export function ReuseableBarChart<XKey extends string, BarKey extends string>({
   const isEmpty = !isLoading && data.length === 0
 
   return (
-    <Card className="p-2">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Icon className="text-primary" />
-            <span>{title}</span>
-          </div>
+    <Card className="p-4">
+      <CardTitle className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className="text-primary" />
+          <span>{title}</span>
+        </div>
 
-          {dropdown && (
-            <Select onValueChange={onDropdownChange} defaultValue={dropdown[0]?.value}>
-              <SelectTrigger className="border-accent text-accent w-[135px]">
-                <SelectValue placeholder={dropdown[0]?.label} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdown.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </CardTitle>
-      </CardHeader>
+        {dropdown && (
+          <Select onValueChange={onDropdownChange} defaultValue={dropdown[0]?.value}>
+            <SelectTrigger className="border-accent text-accent w-[135px]">
+              <SelectValue placeholder={dropdown[0]?.label} />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdown.map((d) => (
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </CardTitle>
 
-      <CardContent>
+      <div className="h-full min-h-[200px]">
         {isLoading ? (
-          <div className="flex h-[200px] items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
         ) : isEmpty ? (
-          <div className="flex h-[200px] w-full items-center justify-center rounded-md border bg-white p-6 text-gray-500 shadow-sm">
+          <div className="flex h-full w-full items-center justify-center rounded-md border bg-white p-6 text-gray-500 shadow-sm">
             {emptyText}
           </div>
         ) : (
@@ -104,7 +96,7 @@ export function ReuseableBarChart<XKey extends string, BarKey extends string>({
             </BarChart>
           </ChartContainer>
         )}
-      </CardContent>
+      </div>
 
       {footer && !isEmpty && (
         <CardFooter className="flex items-center gap-6 text-sm">

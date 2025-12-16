@@ -220,7 +220,7 @@ export function SubmissionActions({
   return (
     <>
       <div className="flex flex-col gap-4 border-t pt-6 sm:flex-row sm:justify-end">
-        {/* <Button
+        <Button
           onClick={handleSaveDraft}
           disabled={saveDraftMutation.isPending || updateSubmissionMutation.isPending}
           variant="outline"
@@ -228,7 +228,7 @@ export function SubmissionActions({
           {saveDraftMutation.isPending || updateSubmissionMutation.isPending
             ? "Saving..."
             : "Save as Draft"}
-        </Button> */}
+        </Button>
 
         <Button
           onClick={handleSubmitForApproval}

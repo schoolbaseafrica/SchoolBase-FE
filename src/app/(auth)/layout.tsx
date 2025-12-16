@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { GeneralQueryProvider } from "@/providers/general-query-provider"
+import { QueryProvider } from "@/providers/query-provider"
 import Image from "next/image"
 
 export const viewport = {
@@ -7,7 +7,7 @@ export const viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "Authentication | School Base",
+  title: "Authentication",
   description:
     "Sign in or create your School Base account to manage your school experience.",
 }
@@ -18,7 +18,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }>) {
   return (
-    <GeneralQueryProvider>
+    <QueryProvider>
       <main className="h-screen w-full overflow-hidden lg:grid lg:grid-cols-2">
         <div className="relative hidden h-full w-full lg:top-0 lg:flex">
           <Image
@@ -33,6 +33,6 @@ export default function AuthLayout({
           <div className="w-full lg:max-w-[556px]">{children}</div>
         </div>
       </main>
-    </GeneralQueryProvider>
+    </QueryProvider>
   )
 }

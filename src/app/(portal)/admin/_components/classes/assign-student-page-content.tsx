@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import NotFound from "@/app/not-found"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -10,18 +9,19 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, CheckCircle, Loader2Icon, DotIcon } from "lucide-react"
-import { ItemsError } from "../loading-error"
-import { useGetStudentsWithMeta } from "../../students/_hooks/use-students"
+import { Input } from "@/components/ui/input"
+import { CheckCircle, DotIcon, Loader2Icon, Search } from "lucide-react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useState } from "react"
 import {
+  useAddStudentsToClass,
   useGetClass,
   useGetClassStudents,
-  useAddStudentsToClass,
 } from "../../class-management/_hooks/use-classes"
-import { useParams } from "next/navigation"
-import NotFound from "@/app/not-found"
-import { StudentsLoadingSkeleton } from "./students-loading-skeleton"
-import Link from "next/link"
+import { useGetStudentsWithMeta } from "../../students/_hooks/use-students"
+import { ItemsError } from "../loading-error"
+import { ItemLoader } from "../sub-loader"
 
 const CLASS_PAGE = (classID: string) => `/admin/class-management/class/${classID}`
 
@@ -80,7 +80,7 @@ export default function AssignStudentsPageContent() {
   return (
     <>
       {isLoading ? (
-        <StudentsLoadingSkeleton />
+        <ItemLoader item="students" />
       ) : isError ? (
         <ItemsError
           item="Students"

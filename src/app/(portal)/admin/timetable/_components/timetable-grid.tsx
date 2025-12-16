@@ -3,7 +3,9 @@
 import { useState } from "react"
 import { Pencil } from "lucide-react"
 import { useClassTimetable } from "../_hooks/use-timetable"
-import TimetableLoading from "./timetable-loading"
+import { useTimetableStore } from "@/store/timetable-store"
+import { useShallow } from "zustand/react/shallow"
+import { ItemLoader } from "../../_components/sub-loader"
 import EditScheduleModal from "./edit-schedule-modal"
 import MobileTimetableView from "./mobile-timetable-view"
 import { Schedule } from "@/lib/timetable"
@@ -33,15 +35,30 @@ interface TimetableGridProps {
 }
 
 export default function TimetableGrid({ classId, readonly = false }: TimetableGridProps) {
-  const { data, isLoading } = useClassTimetable(classId)
+  // 1. Fetch
+  useClassTimetable(classId)
+
+  // 2. Select from store
+  const { schedules, isLoading } = useTimetableStore(
+    useShallow((state) => ({
+      schedules: state.schedules,
+      isLoading: state.isLoading,
+    }))
+  )
+
+  // Note: Local store might have data from previous class if not identifying by classId
+  // The store stores 'currentClassId'.
+  // However, useClassTimetable sets the store for this classId.
+  // We should verify currentClassId in store matches classId, or just trust the fetch cycle.
+
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   if (isLoading) {
-    return <TimetableLoading />
+    return <ItemLoader item="Timetable" />
   }
 
-  const schedules = data?.data?.schedules || []
+  // const schedules = data?.schedules || []  <-- Replaced by store selection
 
   const getScheduleForSlot = (day: string, time: string) => {
     return schedules.find(

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CircleAlert } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import DateField from "./date-field"
 import { SuccessModal } from "@/components/dashboard/success-modal"
+import { ItemLoader } from "../../../_components/sub-loader"
 
 import { sessionFormSchema, SessionFormData } from "../_schemas/session-form-schema"
 import { parseDate } from "../_utils/date"
@@ -36,7 +37,7 @@ const CreateSessionForm = () => {
 
   const {
     register,
-    watch,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
@@ -67,31 +68,33 @@ const CreateSessionForm = () => {
 
   // Fetch session data on mount if editing
   useEffect(() => {
-    if (sessionId) {
-      setIsLoadingSession(true)
-      AcademicSessionAPI.getOne(sessionId)
-        .then((data) => {
-          setSession(data)
-          // Update form with fetched data
-          reset({
-            description: data.description ?? "",
-            terms: {
-              first_term: getTermDates(data, "first"),
-              second_term: getTermDates(data, "second"),
-              third_term: getTermDates(data, "third"),
-            },
-          })
+    if (!sessionId) return
+
+    AcademicSessionAPI.getOne(sessionId)
+      .then((data) => {
+        setSession(data)
+        // Update form with fetched data
+        reset({
+          description: data.description ?? "",
+          terms: {
+            first_term: getTermDates(data, "first"),
+            second_term: getTermDates(data, "second"),
+            third_term: getTermDates(data, "third"),
+          },
         })
-        .catch(() => {
-          toast.error("Failed to load session data")
-        })
-        .finally(() => {
-          setIsLoadingSession(false)
-        })
-    }
+      })
+      .catch(() => {
+        toast.error("Failed to load session data")
+      })
+      .finally(() => {
+        setIsLoadingSession(false)
+      })
   }, [sessionId, reset])
 
-  const [start, end] = watch(["terms.first_term.startDate", "terms.third_term.endDate"])
+  const [start, end] = useWatch({
+    control,
+    name: ["terms.first_term.startDate", "terms.third_term.endDate"],
+  })
   const academicSession =
     start && end
       ? `${parseDate(start).getFullYear()} / ${parseDate(end).getFullYear()}`
@@ -172,11 +175,8 @@ const CreateSessionForm = () => {
     return (
       <div className="animate-onrender min-h-[calc(100vh-70px)] p-4 pb-10 lg:p-10">
         <DashboardTitle heading="Edit Session" description="Manage academic session" />
-        <div className="mt-8 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-            <p className="mt-4 text-gray-600">Loading session data...</p>
-          </div>
+        <div className="mt-8">
+          <ItemLoader item="Session data" />
         </div>
       </div>
     )

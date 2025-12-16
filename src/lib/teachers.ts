@@ -58,33 +58,7 @@ export const TeachersAPI = {
         data,
       },
       true
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        const errorMessage = error?.message?.toLowerCase() || ""
-
-        // Handle teacher-specific conflicts with specific messages
-        if (errorMessage.includes("email") && errorMessage.includes("already exists")) {
-          throw new Error(
-            "A teacher with this email address already exists. Please use a different email."
-          )
-        }
-
-        if (
-          (errorMessage.includes("employment id") ||
-            errorMessage.includes("employment_id")) &&
-          errorMessage.includes("already exists")
-        ) {
-          throw new Error(
-            "A teacher with this employment ID already exists. Please use a different employment ID."
-          )
-        }
-
-        if (error?.message?.includes("409") || errorMessage.includes("already exists")) {
-          throw new Error("A teacher with these details already exists.")
-        }
-        throw error
-      }),
+    ).then((response) => response.data),
 
   update: (id: string, data: UpdateTeacherData): Promise<User> =>
     apiFetch<ResponsePack<User>>(

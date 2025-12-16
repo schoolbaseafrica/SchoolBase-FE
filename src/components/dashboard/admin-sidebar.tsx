@@ -62,7 +62,7 @@ const mainItems = [
     icon: Calendar,
     subItems: [
       { title: "Timetable View", url: "/admin/timetable" },
-      { title: "Timetable Setup", url: "/admin/timetable" },
+      // { title: "Timetable Setup", url: "/admin/timetable" },
     ],
   },
   { title: "Results", url: "/admin/results", icon: Calendar },
@@ -121,9 +121,25 @@ export function AdminSidebar() {
             <SidebarMenu className="space-y-1 px-3">
               {mainItems.map((item) => {
                 const hasSubItems = "subItems" in item && item.subItems
-                const isActive = item.exactMatch
-                  ? pathname === item.url
-                  : pathname === item.url || pathname.startsWith(item.url + "/")
+
+                let isActive: boolean
+                if (item.title === "Class Management") {
+                  isActive =
+                    pathname === item.url ||
+                    (pathname.startsWith("/admin/class-management/class") &&
+                      !pathname.startsWith("/admin/class-management/classrooms"))
+                } else if (item.title === "School Structure") {
+                  isActive =
+                    pathname === item.url ||
+                    pathname.startsWith("/admin/class-management/session") ||
+                    pathname.startsWith("/admin/class-management/subjects") ||
+                    pathname.startsWith("/admin/class-management/classrooms")
+                } else {
+                  isActive = item.exactMatch
+                    ? pathname === item.url
+                    : pathname === item.url || pathname.startsWith(item.url + "/")
+                }
+
                 const isOpen = openItems.includes(item.title)
                 const hasActiveChild =
                   hasSubItems &&
