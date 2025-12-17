@@ -6,8 +6,8 @@ import { useSchoolStore } from "@/store/use-school-store"
 
 const imageLayout = [
   { className: "row-span-2", size: 460 },
-  { className: "", size: 260 },
-  { className: "", size: 260 },
+  { className: "", size: 460 },
+  { className: "", size: 460 },
 ]
 
 export function HeroSection() {
@@ -17,7 +17,7 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="container grid gap-10 pt-10 pb-16 lg:grid-cols-2 lg:items-center lg:gap-14"
+      className="container grid gap-10 py-10 lg:grid-cols-2 lg:items-center lg:gap-14"
     >
       <div className="max-w-md space-y-6">
         <div className="space-y-4">
