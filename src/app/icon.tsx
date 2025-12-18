@@ -9,10 +9,11 @@ export const size = {
 export const contentType = "image/png"
 
 export default function Icon() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   const logoSrc =
     defaultSchoolProfile.logo.favicon ||
     defaultSchoolProfile.logo.full ||
-    "/assets/logo.png"
+    `${baseUrl}/assets/logo.png`
 
   return new ImageResponse(
     (
@@ -28,7 +29,6 @@ export default function Icon() {
           padding: "8px",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoSrc}
           alt={`${defaultSchoolProfile.shortName} logo`}
