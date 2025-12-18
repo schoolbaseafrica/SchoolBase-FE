@@ -30,7 +30,12 @@ jobs:
       - name: Run lint
         run: pnpm lint
         
-      - name: Security audit and auto-fix
+      - name: Auto-fix vulnerabilities
+        run: |
+          echo "🔧 Running npm audit fix..."
+          pnpm audit --fix || true
+          
+      - name: Security audit check
         run: |
           echo "Running security audit..."
           pnpm audit --audit-level high || true
@@ -41,36 +46,19 @@ jobs:
           if echo "$AUDIT_OUTPUT" | grep -q '"severity":"high"\|"severity":"critical"'; then
             echo "❌ High or critical vulnerabilities found:"
             echo "$AUDIT_OUTPUT" | jq -r '.advisories[] | select(.severity == "high" or .severity == "critical") | "Package: \(.module_name) | Severity: \(.severity) | Title: \(.title)"'
-            
-            echo "🔧 Attempting to fix vulnerabilities..."
-            pnpm audit --fix
-            
-            # Check if fixes were applied
-            FIXED_AUDIT=$(pnpm audit --json 2>/dev/null || echo '{}')
-            if echo "$FIXED_AUDIT" | grep -q '"severity":"high"\|"severity":"critical"'; then
-              echo "❌ Some vulnerabilities could not be auto-fixed. Manual intervention required."
-              exit 1
-            else
-              echo "✅ All vulnerabilities have been automatically fixed!"
-            fi
+            echo "⚠️ Please fix these vulnerabilities manually before merging!"
+            exit 1
           else
             echo "✅ No high or critical vulnerabilities found"
           fi
           
-      - name: Commit vulnerability fixes
-        if: success()
+      - name: Check for package changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          
-          if ! git diff --quiet pnpm-lock.yaml; then
-            git add pnpm-lock.yaml package.json
-            git commit -m "fix: auto-fix security vulnerabilities [skip ci]"
-            git push origin HEAD:${{ github.head_ref }}
-            echo "🔒 Security fixes committed and pushed"
+          if ! git diff --quiet pnpm-lock.yaml package.json; then
+            echo "🔒 Vulnerabilities were auto-fixed. Please review and commit the changes."
+            git diff --name-only
           else
-            echo "📝 No package changes to commit"
+            echo "📝 No package changes detected"
           fi
         
       - name: Build application
