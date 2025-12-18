@@ -27,7 +27,7 @@ jobs:
       - name: Run lint
         run: pnpm lint
         
-      - name: Security audit
+      - name: Security audit and auto-fix
         run: |
           echo "Running security audit..."
           pnpm audit --audit-level high || true
@@ -38,10 +38,35 @@ jobs:
           if echo "$AUDIT_OUTPUT" | grep -q '"severity":"high"\|"severity":"critical"'; then
             echo "❌ High or critical vulnerabilities found:"
             echo "$AUDIT_OUTPUT" | jq -r '.advisories[] | select(.severity == "high" or .severity == "critical") | "Package: \(.module_name) | Severity: \(.severity) | Title: \(.title)"'
-            echo "Please fix these vulnerabilities before merging!"
-            exit 1
+            
+            echo "🔧 Attempting to fix vulnerabilities..."
+            pnpm audit --fix
+            
+            # Check if fixes were applied
+            FIXED_AUDIT=$(pnpm audit --json 2>/dev/null || echo '{}')
+            if echo "$FIXED_AUDIT" | grep -q '"severity":"high"\|"severity":"critical"'; then
+              echo "❌ Some vulnerabilities could not be auto-fixed. Manual intervention required."
+              exit 1
+            else
+              echo "✅ All vulnerabilities have been automatically fixed!"
+            fi
           else
             echo "✅ No high or critical vulnerabilities found"
+          fi
+          
+      - name: Commit vulnerability fixes
+        if: success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if ! git diff --quiet pnpm-lock.yaml; then
+            git add pnpm-lock.yaml package.json
+            git commit -m "fix: Auto-fix security vulnerabilities [skip ci]"
+            git push
+            echo "🔒 Security fixes committed and pushed"
+          else
+            echo "📝 No package changes to commit"
           fi
         
       - name: Build application
