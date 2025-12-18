@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { AlertCircleIcon } from "lucide-react"
@@ -84,7 +84,6 @@ export default function CreateScheduleModal({
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -99,7 +98,7 @@ export default function CreateScheduleModal({
     },
   })
 
-  const periodType = watch("period_type")
+  const periodType = useWatch({ control, name: "period_type" })
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!selectedClassId) {

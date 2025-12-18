@@ -5,10 +5,28 @@ import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import { ItemLoader } from "../sub-loader"
 import { ItemsError } from "../loading-error"
 import ExistingClasses from "./existing-classes"
+import { useClassesStore, selectClassItems } from "@/store/classes-store"
+import { useShallow } from "zustand/react/shallow"
+// import { useMemo } from "react"
 
 const ClassesPageContent = () => {
-  const { data: classesInfo, isLoading, isError, error, refetch } = useGetClassesInfo()
-  const classes = classesInfo && classesInfo.items
+  // 1. Fetch
+  const { isError, error, refetch, isLoading: isQueryLoading } = useGetClassesInfo()
+
+  // 2. Store selection
+  const { classItems, isLoading: isStoreLoading } = useClassesStore(
+    useShallow((state) => ({
+      classItems: selectClassItems(state),
+      isLoading: state.isLoading,
+    }))
+  )
+
+  // No complex filtering logic here yet, passing direct items
+  const classes = classItems
+
+  // Combine loading states
+  // We show loader if query is loading and we have no data yet
+  const isLoading = (isQueryLoading || isStoreLoading) && classes.length === 0
 
   return (
     <>

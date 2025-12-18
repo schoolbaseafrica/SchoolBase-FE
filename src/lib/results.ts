@@ -258,14 +258,14 @@ const transformBackendSubmission = (backendSubmission: {
   updated_at: string
 }): GradeSubmission => {
   // Parse student name to get first and last names
-  const parseStudentName = (
-    fullName: string
-  ): { firstName: string; lastName: string } => {
-    const nameParts = fullName.trim().split(/\s+/)
-    const firstName = nameParts[0] || ""
-    const lastName = nameParts.slice(1).join(" ") || ""
-    return { firstName, lastName }
-  }
+  // const parseStudentName = (
+  //   fullName: string
+  // ): { firstName: string; lastName: string } => {
+  //   const nameParts = fullName.trim().split(/\s+/)
+  //   const firstName = nameParts[0] || ""
+  //   const lastName = nameParts.slice(1).join(" ") || ""
+  //   return { firstName, lastName }
+  // }
 
   // Convert status to lowercase
   const status = backendSubmission.status.toLowerCase() as
@@ -300,7 +300,7 @@ const transformBackendSubmission = (backendSubmission: {
     },
     academic_session_id: "",
     grades: backendSubmission.grades.map((grade) => {
-      const { firstName, lastName } = parseStudentName(grade.student.name)
+      // const { firstName, lastName } = parseStudentName(grade.student.name)
       return {
         id: grade.id,
         student_id: grade.student.id,
@@ -354,7 +354,6 @@ const transformBackendResult = (backendResult: ResultResponsePayload): StudentRe
   }
 }
 
-// Standalone functions for student/parent results
 // Add this function to get student ID from auth context
 export const getCurrentStudentId = async (): Promise<{
   student_id: string
@@ -390,7 +389,7 @@ export const getCurrentStudentId = async (): Promise<{
       return {
         student_id: userData.student_id,
         full_name: `${userData.first_name} ${userData.last_name}`,
-        registration_number: userData.email, // Use email as fallback for registration number
+        registration_number: userData.email,
       }
     })
     .catch((error) => {
@@ -410,7 +409,8 @@ export const getParentLinkedStudents = (): Promise<StudentBasicInfo[]> => {
       } else if (Array.isArray(response)) {
         return response
       }
-      return [] // Always return an array, never undefined
+      // Always return an array, never undefined
+      return []
     })
     .catch((error) => {
       console.error("Error fetching parent linked students:", error)
@@ -522,10 +522,14 @@ export const ResultsAPI = {
       })
   },
 
-  // Get subjects for a class
-  getSubjects: (): Promise<Subject[]> => {
+  // the getSubjects function to properly handle class and teacher filtering:
+  getSubjects: (classId?: string, teacherId?: string): Promise<Subject[]> => {
+    const params = new URLSearchParams()
+    if (teacherId) params.append("teacher_id", teacherId)
+    if (classId) params.append("class_id", classId)
+
     return apiFetch<ResponsePack<ClassSubjectsResponsePayload>>(
-      "/class-subjects",
+      `/class-subjects?${params.toString()}`,
       {},
       true
     )
@@ -533,18 +537,7 @@ export const ResultsAPI = {
         const backendData = extractData(response)
         const items = backendData.payload ?? []
 
-        const subjectIds = items.map((item) => item.subject.id)
-        const duplicateIds = subjectIds.filter(
-          (id, index) => subjectIds.indexOf(id) !== index
-        )
-
-        if (duplicateIds.length > 0) {
-          console.warn(`Found duplicate subject ids:`, duplicateIds)
-          console.warn(
-            `Total subjects: ${items.length}, Unique: ${new Set(subjectIds).size}`
-          )
-        }
-
+        // Use a Map to ensure unique subjects by ID
         const subjectMap = new Map<string, Subject>()
 
         items.forEach((item) => {
@@ -563,8 +556,7 @@ export const ResultsAPI = {
         return []
       })
   },
-
-  // Get active term - fully typed
+  // Get active term
   getTerms: (): Promise<Term[]> => {
     return apiFetch<ResponsePack<ActiveTermResponse>>("/academic-term/active", {}, true)
       .then((response) => {

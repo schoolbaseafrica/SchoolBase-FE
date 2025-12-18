@@ -10,6 +10,8 @@ import AcademicSessionTable from "./academic-session-table"
 import AcademicSessionsMobile from "./academic-session-mobile"
 import { useAcademicSessions } from "../_hooks/use-session"
 import EmptyState from "../../../_components/empty-state"
+import { ItemLoader } from "../../../_components/sub-loader"
+import { ItemsError } from "../../../_components/loading-error"
 
 import {
   DropdownMenu,
@@ -20,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const SessionsPage = () => {
-  const { data, isLoading, isError, error } = useAcademicSessions()
+  const { data, isLoading, isError, error, refetch } = useAcademicSessions()
 
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "inactive" | "archived">("all")
@@ -51,10 +53,16 @@ const SessionsPage = () => {
   }, [sessions, searchQuery, filter])
 
   const renderContent = () => {
-    if (isLoading) return <div>Loading sessions...</div>
+    if (isLoading) return <ItemLoader item="Sessions" />
     if (isError)
       return (
-        <div>{error instanceof Error ? error.message : "Failed to load sessions."}</div>
+        <ItemsError
+          item="Sessions"
+          reload={() => refetch()}
+          errorMessage={
+            error instanceof Error ? error.message : "Failed to load sessions."
+          }
+        />
       )
     if (!filteredSessions.length)
       return (

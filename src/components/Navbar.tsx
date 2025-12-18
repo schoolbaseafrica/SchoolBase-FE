@@ -45,7 +45,7 @@ const Navbar = () => {
     <nav className="fixed top-0 right-0 left-0 z-50 border-b border-gray-100 bg-white py-4 lg:py-6">
       <div className="relative container flex items-center justify-between">
         <Link href="/">
-          <Logo size={40} />
+          <Logo size={32} />
         </Link>
 
         {/* Desktop Navigation - Centered */}

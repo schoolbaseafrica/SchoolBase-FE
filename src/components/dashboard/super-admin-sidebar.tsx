@@ -97,7 +97,7 @@ export function SuperAdminSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex h-7 items-center justify-between px-2 py-4">
+        <div className="flex h-16 items-center justify-between px-4">
           <div className={isCollapsed ? "hidden" : ""}>
             <Logo />
           </div>
@@ -129,22 +129,23 @@ export function SuperAdminSidebar() {
                           <CollapsibleTrigger asChild>
                             <SidebarMenuButton
                               asChild
-                              isActive={isActive}
-                              className={`flex-1 ${
-                                isActive
-                                  ? "bg-[#DA3743]/10 text-[#DA3743]"
-                                  : hasActiveChild
-                                    ? ""
-                                    : "text-gray-700 hover:bg-[#DA3743]/10 hover:text-[#DA3743]"
+                              className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 ${
+                                isActive || hasActiveChild
+                                  ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                                  : "text-gray-700 hover:bg-gray-100"
                               }`}
                             >
                               <Link
                                 href={item.url || "#"}
-                                className="flex items-center gap-2"
+                                className="flex w-full items-center justify-between"
                                 onClick={handleLinkClick}
                               >
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
+                                <div className="flex items-center gap-3">
+                                  <item.icon className="h-5 w-5" />
+                                  <span className="text-sm font-medium">
+                                    {item.title}
+                                  </span>
+                                </div>
                                 {isOpen ? (
                                   <ChevronDown className="h-4 w-4" />
                                 ) : (
@@ -162,11 +163,10 @@ export function SuperAdminSidebar() {
                                 <SidebarMenuSubItem key={subItem.title}>
                                   <SidebarMenuSubButton
                                     asChild
-                                    isActive={isSubActive}
-                                    className={`my-1.5 ${
+                                    className={`rounded-md px-3 py-2 ${
                                       isSubActive
-                                        ? "bg-[#DA3743]/10 text-[#DA3743]"
-                                        : "text-gray-600 hover:bg-[#DA3743]/10 hover:text-[#DA3743]"
+                                        ? "text-[#DA3743]"
+                                        : "text-gray-600 hover:bg-gray-100"
                                     }`}
                                   >
                                     <Link href={subItem.url} onClick={handleLinkClick}>
@@ -187,20 +187,19 @@ export function SuperAdminSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive}
-                      className={
+                      className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743]/10 text-[#DA3743]"
-                          : "text-primary hover:bg-[#DA3743]/10 hover:text-[#DA3743]"
-                      }
+                          ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
                     >
                       <Link
                         href={item.url || "#"}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-3"
                         onClick={handleLinkClick}
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

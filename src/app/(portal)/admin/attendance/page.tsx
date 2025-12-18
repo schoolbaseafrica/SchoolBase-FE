@@ -4,7 +4,8 @@ import React, { useState, useMemo } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import AttendanceTable from "./_components/attendance-table"
 import AttendanceGrid from "./_components/attendance-grid"
-import { Search, Loader2 } from "lucide-react"
+import { Search } from "lucide-react"
+import { ItemLoader } from "../_components/sub-loader"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -15,10 +16,13 @@ import {
 } from "@/components/ui/select"
 import { useDailyAttendance } from "./_hooks/use-attendance-admin"
 import { useGetClassesInfo } from "../class-management/_hooks/use-classes"
+import { useAttendanceStore } from "@/store/attendance-store"
+import { useShallow } from "zustand/react/shallow"
 
 const Attendance = () => {
   const today = new Date().toISOString().split("T")[0]
 
+  // Local UI state for filters (search is fast enough locally)
   const [search, setSearch] = useState("")
   const [selectedClassId, setSelectedClassId] = useState("")
 
@@ -49,25 +53,49 @@ const Attendance = () => {
     setSelectedClassId(initialClassId)
   }
 
-  // Fetch attendance
-  const { data: attendanceData, isLoading: attendanceLoading } = useDailyAttendance(
-    initialClassId,
-    today
+  // 1. Fetch attendance (Syncs to store)
+  const { isLoading: queryLoading } = useDailyAttendance(initialClassId, today)
+
+  // 2. Select from store
+  const { students, summary } = useAttendanceStore(
+    useShallow((state) => ({
+      students: state.students,
+      summary: state.summary,
+    }))
   )
 
   // Filter search
   const filteredStudents = useMemo(() => {
-    if (!attendanceData?.students) return []
-    return attendanceData.students.filter((s) =>
+    if (!students) return []
+    return students.filter((s) =>
       `${s.first_name} ${s.middle_name || ""} ${s.last_name}`
         .toLowerCase()
         .includes(search.toLowerCase())
     )
-  }, [attendanceData, search])
+  }, [students, search])
 
-  const isLoading = classesLoading || attendanceLoading
+  const isLoading = classesLoading || (queryLoading && !students.length)
   const hasNoClasses = !classesLoading && classes.length === 0
-  const hasNoStudents = !attendanceLoading && filteredStudents.length === 0
+  const hasNoStudents = !isLoading && filteredStudents.length === 0
+
+  // Construct data object for child components that expect { summary, students }
+  const attendanceData = useMemo(
+    () => ({
+      students: students,
+      summary: summary || {
+        total_students: 0,
+        present_count: 0,
+        absent_count: 0,
+        late_count: 0,
+        excused_count: 0,
+        half_day_count: 0,
+        not_marked_count: 0,
+      },
+      class_id: initialClassId,
+      date: today,
+    }),
+    [students, summary, initialClassId, today]
+  )
 
   return (
     <div className="px-5 pt-10">
@@ -77,11 +105,11 @@ const Attendance = () => {
       />
 
       {/* Search + Class dropdown */}
-      <div className="mt-5 flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mt-5 flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
-          <Search className="text-text-secondary absolute top-1/2 left-2 size-4 -translate-y-1/2" />
+          <Search className="text-text-secondary absolute top-1/2 left-4 size-4 -translate-y-1/2" />
           <Input
-            className="w-full pl-7"
+            className="w-full pl-10"
             placeholder="Search student"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -89,7 +117,7 @@ const Attendance = () => {
           />
         </div>
 
-        <div className="w-full md:w-60">
+        <div className="w-full sm:max-w-32">
           <Select
             value={initialClassId}
             onValueChange={setSelectedClassId}
@@ -110,16 +138,11 @@ const Attendance = () => {
       </div>
 
       {/* Loading */}
-      {isLoading && (
-        <div className="mt-10 flex flex-col items-center justify-center py-20">
-          <Loader2 className="text-primary h-12 w-12 animate-spin" />
-          <p className="mt-4 text-gray-500">Loading attendance data...</p>
-        </div>
-      )}
+      {isLoading && <ItemLoader item="Attendance" />}
 
       {/* No Classes */}
       {hasNoClasses && (
-        <div className="mt-10 flex flex-col items-center justify-center rounded-xl border border-dashed py-20">
+        <div className="mt-10 flex flex-col items-center justify-center rounded-xl border py-20">
           <p className="text-lg font-semibold text-gray-700">No Classes Available</p>
           <p className="mt-2 text-gray-500">Please create a class to view attendance</p>
         </div>

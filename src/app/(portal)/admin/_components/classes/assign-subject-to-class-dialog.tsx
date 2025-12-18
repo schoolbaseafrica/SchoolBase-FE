@@ -1,8 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -11,19 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, CheckCircle, Loader2Icon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ItemsError } from "../loading-error"
+import { Input } from "@/components/ui/input"
+import { useQueryClient } from "@tanstack/react-query"
+import { CheckCircle, Loader2Icon, Search } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+import {
+  SUBJECTS_FOR_CLASS_KEY,
+  useGetSubjectsForClass,
+} from "../../class-management/_hooks/use-classes"
 import {
   SubjectsAPI,
   useGetSubjects,
 } from "../../class-management/subjects/_hooks/use-subjects"
-import {
-  useGetSubjectsForClass,
-  SUBJECTS_FOR_CLASS_KEY,
-} from "../../class-management/_hooks/use-classes"
-import { toast } from "sonner"
-import { useQueryClient } from "@tanstack/react-query"
+import { ItemsError } from "../loading-error"
+import { ItemLoader } from "../sub-loader"
 
 interface Subject {
   id: string
@@ -56,7 +56,7 @@ export default function AssignSubjectsDialog({
     isError: isErrorSubjects,
     error: errorSubjects,
     refetch: refetchSubjects,
-  } = useGetSubjects({ page: currentPage })
+  } = useGetSubjects()
 
   // Fetch subjects already assigned to this class
   const {
@@ -105,7 +105,7 @@ export default function AssignSubjectsDialog({
           </DialogHeader>
 
           {isLoading ? (
-            <SubjectsLoadingSkeleton />
+            <ItemLoader item="Subjects" />
           ) : isError ? (
             <ItemsError
               item="Subjects"
@@ -312,41 +312,4 @@ export default function AssignSubjectsDialog({
     setShowSuccessDialog(false)
     setOpen(false)
   }
-}
-
-function SubjectsLoadingSkeleton() {
-  return (
-    <div className="space-y-4 py-4">
-      {/* Search Skeleton */}
-      <Skeleton className="h-11 w-full" />
-
-      {/* Count Skeleton */}
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-5 w-24" />
-      </div>
-
-      {/* Subjects List Skeleton */}
-      <div className="space-y-2">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3"
-          >
-            <Skeleton className="mt-0.5 h-5 w-5" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-48" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Buttons Skeleton */}
-      <div className="flex gap-2 pt-2">
-        <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 flex-1" />
-      </div>
-    </div>
-  )
 }

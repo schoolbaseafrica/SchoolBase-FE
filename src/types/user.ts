@@ -24,6 +24,10 @@ export interface User {
   avatar?: string
   photo_url?: string
   password?: string
+  currentClassId?: string | null
+  teacherId?: string | null
+  parentId?: string | null
+  studentId?: string | null
 }
 
 export interface SnakeUser {
@@ -50,4 +54,7 @@ export interface SnakeUser {
   photo_url?: string
   password?: string
   current_class_id?: string | null
+  teacher_id?: string | null
+  parent_id?: string | null
+  student_id?: string | null
 }

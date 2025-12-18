@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
-import Image from "next/image"
 
 export const SchoolInfoSettings = () => {
   const [isSaving, setIsSaving] = useState(false)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
     schoolName: "",
@@ -24,13 +27,37 @@ export const SchoolInfoSettings = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size should be less than 5MB")
+        return
+      }
+      setLogoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
 
-    // Simulate API call
+    // Simulate API call with logo upload
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Here you would upload logoFile to your backend
+      if (logoFile) {
+        console.log("Logo file to upload:", logoFile.name)
+      }
       toast.success("School information updated successfully")
     } catch {
       toast.error("Failed to update school information")
@@ -47,26 +74,33 @@ export const SchoolInfoSettings = () => {
       </div>
 
       <Card>
-        <CardContent className="space-y-6 px-6">
-          <div className="space-y-4">
+        <CardContent className="space-y-6 px-0 lg:px-6">
+          <div className="space-y-4 px-4 lg:px-0">
             <div>
               <h3 className="text-base font-semibold">School Logo</h3>
               <p className="text-muted-foreground text-sm">Update your School logo</p>
             </div>
             <div className="flex items-center gap-6">
-              <div className="relative flex h-24 w-24 items-center justify-center">
-                {/* Placeholder for logo */}
-                <Image
-                  src="/assets/logo.svg"
+              <Avatar className="h-24 w-24">
+                <AvatarImage
+                  src={logoPreview || ""}
                   alt="School Logo"
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-contain"
+                  className="object-cover"
                 />
-              </div>
+                <AvatarFallback className="bg-muted">LOGO</AvatarFallback>
+              </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
+                onClick={handlePhotoClick}
                 className="gap-2 border text-sm text-[#535353] hover:border-2 hover:bg-white"
               >
                 Change photo
@@ -74,7 +108,7 @@ export const SchoolInfoSettings = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 px-4 lg:px-0">
             <div className="space-y-2">
               <Label htmlFor="schoolName">
                 School Name <span className="text-red-500">*</span>

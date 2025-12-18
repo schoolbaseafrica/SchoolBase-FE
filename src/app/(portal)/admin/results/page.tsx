@@ -31,7 +31,7 @@ export default function AdminResultsPage() {
   }, [submissions, refetchStats])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Result Management</h1>

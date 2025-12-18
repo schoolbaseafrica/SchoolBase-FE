@@ -28,6 +28,12 @@ export const StudentProvider = ({ children }: { children: React.ReactNode }) => 
   // Modal visibility
   const [showModal, setShowModal] = useState(!!shouldShow)
 
+  useEffect(() => {
+    // Sync modal visibility with server state (no assigned students) while still allowing user dismissal.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowModal(!!shouldShow)
+  }, [shouldShow])
+
   function handleSelectStudent(studentID: string) {
     setSelectedID(studentID)
   }

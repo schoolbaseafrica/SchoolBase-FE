@@ -13,7 +13,7 @@ interface LogoProps {
 }
 
 const Logo: React.FC<LogoProps> = ({
-  size = 32,
+  size = 28,
   iconColor,
   textColor,
   className = "",

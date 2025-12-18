@@ -1,54 +1,63 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
-import { FeesAPI } from "@/lib/fees-management"
+import { extractErrorMessage } from "@/lib/error-handler"
 import type {
   CreateFeeComponentData,
   UpdateFeeComponentData,
-  FeeComponent,
 } from "@/lib/fees-management"
+import { FeesAPI } from "@/lib/fees-management"
+import { useFeesStore } from "@/store/fees-store"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect } from "react"
+import { toast } from "sonner"
 
-// This matches your ACTUAL API response structure
-interface FeeListData {
-  fees: FeeComponent[] | null
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
-
-interface FeeListResponse {
-  status_code: number
-  message: string
-  data: FeeListData
-}
-
-// Backend GET /fees/:id response
-interface FeeItemResponse {
-  status_code: number
-  message: string
-  data: FeeComponent
-}
+const FEES_KEY = ["fees"]
 
 // ----------------------
 // GET ALL FEES
 // ----------------------
-export const useGetFees = (params?: { page?: number; limit?: number }) => {
-  return useQuery<FeeListResponse>({
-    queryKey: ["fees", params],
-    queryFn: () => FeesAPI.getAll(params),
+export const useGetFees = () => {
+  const setFees = useFeesStore((state) => state.setFees)
+  const setLoading = useFeesStore((state) => state.setLoading)
+  // const setError = useFeesStore((state) => state.setError)
+
+  const query = useQuery({
+    queryKey: FEES_KEY,
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await FeesAPI.getAll({ limit: 1000 })
+        return res.data
+      } finally {
+        setLoading(false)
+      }
+    },
+    staleTime: 1000 * 60 * 5,
   })
+
+  useEffect(() => {
+    if (query.data?.fees) {
+      setFees(query.data.fees)
+    }
+  }, [query.data, setFees])
+
+  return query
 }
 
 // ----------------------
 // GET ONE FEE
 // ----------------------
 export const useGetFee = (id: string) => {
-  return useQuery<FeeItemResponse>({
-    queryKey: ["fee", id],
+  const feeFromStore = useFeesStore((state) => (id ? state.getFeeById(id) : undefined))
+
+  return useQuery({
+    queryKey: [...FEES_KEY, id],
     queryFn: () => FeesAPI.getOne(id),
     enabled: !!id,
+    initialData: feeFromStore
+      ? { status_code: 200, message: "from store", data: feeFromStore }
+      : undefined,
+    select: (data) => data.data,
   })
 }
 
@@ -57,17 +66,19 @@ export const useGetFee = (id: string) => {
 // ----------------------
 export const useCreateFee = () => {
   const queryClient = useQueryClient()
+  const addFee = useFeesStore((state) => state.addFee)
 
-  return useMutation<FeeItemResponse, Error, CreateFeeComponentData>({
-    mutationFn: (data) => FeesAPI.create(data),
+  return useMutation({
+    mutationFn: (data: CreateFeeComponentData) => FeesAPI.create(data),
 
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.data) addFee(res.data)
       toast.success("Fee component created successfully")
-      queryClient.invalidateQueries({ queryKey: ["fees"] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
-      toast.error(err.message || "Failed to create fee component")
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -77,18 +88,19 @@ export const useCreateFee = () => {
 // ----------------------
 export const useUpdateFee = (id: string) => {
   const queryClient = useQueryClient()
+  const updateFee = useFeesStore((state) => state.updateFee)
 
-  return useMutation<FeeItemResponse, Error, UpdateFeeComponentData>({
-    mutationFn: (data) => FeesAPI.update(id, data),
+  return useMutation({
+    mutationFn: (data: UpdateFeeComponentData) => FeesAPI.update(id, data),
 
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.data) updateFee(id, res.data)
       toast.success("Fee component updated successfully")
-      queryClient.invalidateQueries({ queryKey: ["fee", id] })
-      queryClient.invalidateQueries({ queryKey: ["fees"] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
-      toast.error(err.message || "Failed to update fee component")
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -98,19 +110,19 @@ export const useUpdateFee = (id: string) => {
 // ----------------------
 export const useDeactivateFee = (id: string) => {
   const queryClient = useQueryClient()
+  const updateFee = useFeesStore((state) => state.updateFee)
 
-  return useMutation<FeeItemResponse, Error, string>({
-    // reason is the variable
-    mutationFn: (reason) => FeesAPI.deactivate(id, reason),
+  return useMutation({
+    mutationFn: (reason: string) => FeesAPI.deactivate(id, reason),
 
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.data) updateFee(id, res.data)
       toast.success("Fee component deactivated successfully")
-      queryClient.invalidateQueries({ queryKey: ["fee", id] })
-      queryClient.invalidateQueries({ queryKey: ["fees"] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
-      toast.error(err.message || "Failed to deactivate fee component")
+      toast.error(extractErrorMessage(err))
     },
   })
 }
@@ -120,39 +132,19 @@ export const useDeactivateFee = (id: string) => {
 // ----------------------
 export const useAactivateFee = (id: string) => {
   const queryClient = useQueryClient()
+  const updateFee = useFeesStore((state) => state.updateFee)
 
-  return useMutation<FeeItemResponse, Error, string>({
-    // reason is the variable
-    mutationFn: (reason) => FeesAPI.activate(id, reason),
+  return useMutation({
+    mutationFn: (reason: string) => FeesAPI.activate(id, reason),
 
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.data) updateFee(id, res.data)
       toast.success("Fee component activated successfully")
-      queryClient.invalidateQueries({ queryKey: ["fee", id] })
-      queryClient.invalidateQueries({ queryKey: ["fees"] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
-      toast.error(err.message || "Failed to activate fee component")
+      toast.error(extractErrorMessage(err))
     },
   })
 }
-
-// ----------------------
-// DELETE FEE
-// ----------------------
-// export const useDeleteFee = () => {
-//   const queryClient = useQueryClient()
-
-//   return useMutation<void, Error, string>({
-//     mutationFn: (id) => FeesAPI.delete(id),
-
-//     onSuccess: () => {
-//       toast.success("Fee component deleted successfully")
-//       queryClient.invalidateQueries({ queryKey: ["fees"] })
-//     },
-
-//     onError: (err) => {
-//       toast.error(err.message || "Failed to delete fee component")
-//     },
-//   })
-// }

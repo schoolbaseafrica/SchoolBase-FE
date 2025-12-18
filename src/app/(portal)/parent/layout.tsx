@@ -2,19 +2,19 @@ import type { Metadata } from "next"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ParentSidebar } from "@/components/dashboard/parent-sidebar"
 import DashboardHeader from "@/components/dashboard/dashboard-header"
-import { GeneralQueryProvider } from "@/providers/general-query-provider"
+import { QueryProvider } from "@/providers/query-provider"
 import { UserProvider } from "@/providers/user-provider"
 import { StudentProvider } from "./_components/student-provider"
 
 export const metadata: Metadata = {
-  title: "Parent Dashboard | School Base",
+  title: "Parent Dashboard",
   description:
     "Track student progress, attendance, payments, and communication in School Base.",
 }
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <GeneralQueryProvider>
+    <QueryProvider>
       <UserProvider>
         <SidebarProvider>
           <ParentSidebar />
@@ -26,6 +26,6 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
           </StudentProvider>
         </SidebarProvider>
       </UserProvider>
-    </GeneralQueryProvider>
+    </QueryProvider>
   )
 }

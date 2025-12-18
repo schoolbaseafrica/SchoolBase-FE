@@ -1,4 +1,3 @@
-// File: src/components/results/shared-results-view.tsx
 "use client"
 
 import { Term, StudentResult } from "@/types/result"

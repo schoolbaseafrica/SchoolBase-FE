@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 // import { toast } from "sonner"
 
@@ -86,10 +86,11 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
     reset,
   } = form
+  const termId = useWatch({ control, name: "term_id" })
   const createComponent = useCreateFeeComponent()
 
   // Sync selectedClassIds with RHF
@@ -206,10 +207,7 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
           ) : termsError ? (
             <p className="text-sm text-red-500">Error loading terms</p>
           ) : terms && terms.length > 0 ? (
-            <Select
-              value={watch("term_id")}
-              onValueChange={(value) => setValue("term_id", value)}
-            >
+            <Select value={termId} onValueChange={(value) => setValue("term_id", value)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select term" />
               </SelectTrigger>

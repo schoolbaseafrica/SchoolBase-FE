@@ -2,41 +2,74 @@
 
 import { UsersView } from "@/components/users/users-view"
 import { useGetTeachers } from "./_hooks/use-teachers"
-import { useState } from "react"
+import {
+  useTeachersStore,
+  selectFilteredTeachers,
+  selectPaginatedTeachers,
+} from "@/store/teachers-store"
+import { useShallow } from "zustand/react/shallow"
+import { useMemo } from "react"
 
 export default function TeachersPage() {
-  const [currentPage, setCurrentPage] = useState<number>()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("active")
+  // 1. Fetch data (background sync)
+  const { isLoading: isQueryLoading, isError, error } = useGetTeachers()
 
+  // 2. Get state from store (optimized selectors)
+  const { teachers, teacherIds, filters } = useTeachersStore(
+    useShallow((state) => ({
+      teachers: state.teachers,
+      teacherIds: state.teacherIds,
+      filters: state.filters,
+    }))
+  )
+  const setFilters = useTeachersStore((state) => state.setFilters)
+
+  // 3. Compute derived state (memoized)
+  const filteredAll = useMemo(
+    () => selectFilteredTeachers(teachers, teacherIds, filters),
+    [teachers, teacherIds, filters]
+  )
+
+  const paginatedTeachers = useMemo(
+    () => selectPaginatedTeachers(filteredAll, filters.page, filters.limit),
+    [filteredAll, filters.page, filters.limit]
+  )
+
+  const totalPages = Math.ceil(filteredAll.length / filters.limit)
+
+  // Handlers
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
+    setFilters({ page })
   }
 
-  const {
-    data: teachers,
-    isLoading,
-    isError,
-    error,
-    // refetch: refetchTeachers,
-  } = useGetTeachers({
-    page: currentPage,
-    search: searchQuery,
-    is_active: statusFilter ? statusFilter === "active" : undefined,
-  })
+  const handleSearchChange = (search: string) => {
+    setFilters({ search, page: 1 }) // Reset to page 1 on search
+  }
+
+  const handleStatusFilterChange = (status: string) => {
+    setFilters({
+      isActive: status === "active" ? true : status === "inactive" ? false : undefined,
+      page: 1,
+    })
+  }
+
+  // Map store filter to UI string
+  const currentStatusFilter =
+    filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
   return (
     <UsersView
-      isLoading={isLoading}
+      isLoading={isQueryLoading && teacherIds.length === 0} // Only show loading if no data found yet
       isError={isError}
       error={error?.message}
-      users={teachers || []}
+      users={paginatedTeachers}
       userType="teachers"
-      searchQuery={searchQuery}
-      statusFilter={statusFilter}
-      currentPage={currentPage || 1}
-      onSearchChange={setSearchQuery}
-      onStatusFilterChange={setStatusFilter}
+      searchQuery={filters.search}
+      statusFilter={currentStatusFilter}
+      currentPage={filters.page}
+      totalPages={totalPages}
+      onSearchChange={handleSearchChange}
+      onStatusFilterChange={handleStatusFilterChange}
       onPageChange={handlePageChange}
     />
   )

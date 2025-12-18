@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
-import { ClassesAPI } from "@/lib/classes"
+// import { useQuery } from "@tanstack/react-query"
+// import { ClassesAPI } from "@/lib/classes"
+import { useGetClassesInfo } from "../class-management/_hooks/use-classes"
 import TimetableGrid from "./_components/timetable-grid"
 import CreateScheduleModal from "./_components/create-schedule-modal"
 
@@ -21,13 +22,11 @@ export default function TimetablePage() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  const { data: classesData, isLoading: isLoadingClasses } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => ClassesAPI.getAll(),
-  })
+  // Use the hook that syncs with store
+  const { data: classesData, isLoading: isLoadingClasses } = useGetClassesInfo()
 
   // Group classes by name
-  const classGroups = classesData?.data?.items || []
+  const classGroups = classesData?.items || []
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">

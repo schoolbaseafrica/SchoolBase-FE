@@ -1,5 +1,3 @@
-// app/admin/teachers/[id]/page.tsx
-
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
@@ -14,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useGetTeacher, useUpdateTeacher } from "../_hooks/use-teachers"
 import { teacherFormConfig } from "../new/components/new-teacher-form"
+import { ItemLoader } from "../../_components/sub-loader"
 
 export default function EditTeacherPage() {
   const { id } = useParams()
@@ -53,12 +52,7 @@ export default function EditTeacherPage() {
   if (isLoading) {
     return (
       <div className="mb-10 w-full space-y-8 bg-white p-4 md:p-10">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading teacher details...</p>
-          </div>
-        </div>
+        <ItemLoader item="teacher details" />
       </div>
     )
   }

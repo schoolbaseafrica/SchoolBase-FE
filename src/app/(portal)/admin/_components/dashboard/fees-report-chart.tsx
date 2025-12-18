@@ -1,8 +1,8 @@
 "use client"
 
-import { Pie, PieChart, Label } from "recharts"
+import { Label, Pie, PieChart } from "recharts"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Banknote } from "lucide-react"
@@ -23,14 +23,12 @@ const FeesReportChart = () => {
 
   return (
     <Card className="p-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <span className="text-accent">
-            <Banknote />
-          </span>
-          Fees Report
-        </CardTitle>
-      </CardHeader>
+      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <span className="text-accent">
+          <Banknote />
+        </span>
+        Fees Report
+      </CardTitle>
 
       <CardContent className="flex flex-col items-center">
         <ChartContainer config={chartConfig} className="aspect-square w-[260px]">

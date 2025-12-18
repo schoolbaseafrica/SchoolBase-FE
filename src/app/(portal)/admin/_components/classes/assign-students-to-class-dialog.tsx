@@ -12,8 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Search, Loader2Icon, CheckCircleIcon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { ItemLoader } from "../sub-loader"
 import { ItemsError } from "../loading-error"
+import { SnakeUser } from "@/types/user"
 import { useGetStudentsWithMeta } from "../../students/_hooks/use-students"
 import { useAddStudentsToClass } from "../../class-management/_hooks/use-classes"
 
@@ -50,7 +51,8 @@ export default function AssignStudentsDialog({
 
   const students = studentsData?.data || []
   const totalPages = studentsData?.meta?.total_pages || 1
-  const availableStudents = students && students.filter((s) => !classmates.includes(s.id))
+  const availableStudents =
+    students && students.filter((s: SnakeUser) => !classmates.includes(s.id))
 
   const isLoading = isLoadingStudents
   const isError = isErrorStudents
@@ -70,7 +72,7 @@ export default function AssignStudentsDialog({
           </DialogHeader>
 
           {isLoading ? (
-            <StudentsLoadingSkeleton />
+            <ItemLoader item="Students" />
           ) : isError ? (
             <ItemsError
               item="Students"
@@ -103,7 +105,7 @@ export default function AssignStudentsDialog({
               {/* Students List */}
               <div className="max-h-[400px] space-y-2 overflow-y-auto">
                 {availableStudents.length > 0 ? (
-                  availableStudents.map((student) => {
+                  availableStudents.map((student: SnakeUser) => {
                     const isSelected = selectedStudents.has(student.id)
 
                     return (
@@ -250,41 +252,4 @@ export default function AssignStudentsDialog({
     setShowSuccessDialog(false)
     setOpen(false)
   }
-}
-
-function StudentsLoadingSkeleton() {
-  return (
-    <div className="space-y-4 py-4">
-      {/* Search Skeleton */}
-      <Skeleton className="h-11 w-full" />
-
-      {/* Count Skeleton */}
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-5 w-24" />
-      </div>
-
-      {/* Students List Skeleton */}
-      <div className="space-y-2">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3"
-          >
-            <Skeleton className="mt-0.5 h-5 w-5" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-48" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Buttons Skeleton */}
-      <div className="flex gap-2 pt-2">
-        <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 flex-1" />
-      </div>
-    </div>
-  )
 }

@@ -2,7 +2,7 @@
 
 import { GradeSubmission } from "@/types/result"
 import { SubmissionCard } from "./submission-card"
-import { Loader2 } from "lucide-react"
+import { ItemLoader } from "../../_components/sub-loader"
 
 interface SubmissionsGridProps {
   submissions: GradeSubmission[]
@@ -11,11 +11,7 @@ interface SubmissionsGridProps {
 
 export function SubmissionsGrid({ submissions, isLoading }: SubmissionsGridProps) {
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      </div>
-    )
+    return <ItemLoader item="Submissions" />
   }
 
   if (submissions.length === 0) {

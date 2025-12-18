@@ -1,10 +1,8 @@
 "use client"
 
-import React from "react"
 import Link from "next/link"
 import { Mail, Phone, Home, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 import Logo from "./logo"
-import { usePathname } from "next/navigation"
 import { useSchoolStore } from "@/store/use-school-store"
 
 const socialIconMap = {
@@ -15,7 +13,6 @@ const socialIconMap = {
 }
 
 const Footer = () => {
-  const pathname = usePathname()
   const school = useSchoolStore((state) => state.school)
   const navLinks = school.navLinks
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { AlertCircle, RefreshCw } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
 interface ErrorDisplayProps {
@@ -11,12 +10,7 @@ interface ErrorDisplayProps {
   variant?: "destructive" | "default"
 }
 
-export function ErrorDisplay({
-  title = "Error",
-  message,
-  onRetry,
-  variant = "destructive",
-}: ErrorDisplayProps) {
+export function ErrorDisplay({ title = "Error", message, onRetry }: ErrorDisplayProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col items-center justify-center text-center">

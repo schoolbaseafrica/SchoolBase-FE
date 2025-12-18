@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Edit3, Trash2, LinkIcon } from "lucide-react"
+import { LinkIcon, Eye } from "lucide-react"
 import { SnakeUser as User, UserType } from "@/types/user"
 import { useRouter } from "next/navigation"
 import { useDeleteTeacher } from "@/app/(portal)/admin/teachers/_hooks/use-teachers"
@@ -19,6 +19,8 @@ import { useDeleteStudent } from "@/app/(portal)/admin/students/_hooks/use-stude
 import { useDeleteParent } from "@/app/(portal)/admin/parents/_hooks/use-parents"
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog"
 import { getInitials } from "@/lib/utils"
+import { UserDetailsSheet } from "./user-details-sheet"
+import { Button } from "@/components/ui/button"
 
 interface UsersTableProps {
   users: User[]
@@ -37,13 +39,17 @@ export function UsersTable({
   const deleteStudentMutation = useDeleteStudent()
   const deleteParentMutation = useDeleteParent()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [
+    userToDelete,
+    // setUserToDelete
+  ] = useState<User | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   const getFullName = (user: User) =>
     user.full_name || `${user.first_name} ${user.last_name}`
 
   const getID = (user: User) => {
-    // Check both possible field names
     return user.employment_id || user.registration_number || user.reg_number || "N/A"
   }
 
@@ -58,24 +64,33 @@ export function UsersTable({
   const isParent = userType === "parents"
   const router = useRouter()
 
-  const handleDeleteClick = (user: User) => {
-    setUserToDelete(user)
-    setDeleteDialogOpen(true)
+  const handleViewClick = (user: User) => {
+    setSelectedUser(user)
+    setSheetOpen(true)
   }
 
-  const handleEditClick = (user: User) => {
-    if (isTeacher) {
-      router.push(`/admin/teachers/${user.id}`)
-    } else if (isStudent) {
-      router.push(`/admin/students/${user.id}`)
-    } else if (isParent) {
-      router.push(`/admin/parents/${user.id}`)
+  // const handleDeleteClick = (user: User, e?: React.MouseEvent) => {
+  //   if (e) e.stopPropagation()
+  //   setUserToDelete(user)
+  //   setDeleteDialogOpen(true)
+  // }
+
+  // const handleEditClick = (user: User, e?: React.MouseEvent) => {
+  //   if (e) e.stopPropagation()
+  //   if (isTeacher) {
+  //     router.push(`/admin/teachers/${user.id}`)
+  //   } else if (isStudent) {
+  //     router.push(`/admin/students/${user.id}`)
+  //   } else if (isParent) {
+  //     router.push(`/admin/parents/${user.id}`)
+  //   }
+  // }
+
+  const handleLinkStudent = (user: User, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    if (isParent) {
+      router.push(`/admin/parents/${user.id}/link`)
     }
-  }
-
-  const handleLinkStudent = (user: User) => {
-    // Implement link student functionality
-    router.push(`/admin/parents/${user.id}/link`)
   }
 
   const handleDeleteConfirm = async () => {
@@ -99,7 +114,6 @@ export function UsersTable({
             <TableHead>
               {isTeacher ? "Teacher" : isStudent ? "Student" : "Parent"}
             </TableHead>
-            {/* {isParent && <TableHead>Relationship</TableHead>} */}
             {isParent && <TableHead>Email</TableHead>}
             {isParent && <TableHead>Address</TableHead>}
             {!isParent && (
@@ -108,16 +122,19 @@ export function UsersTable({
               </TableHead>
             )}
             {isTeacher && <TableHead>Email</TableHead>}
-            {/* {isStudent && <TableHead>Class</TableHead>} */}
             {isStudent && <TableHead>Address</TableHead>}
             <TableHead>Status</TableHead>
             <TableHead>Phone Number</TableHead>
-            <TableHead className="w-20">Actions</TableHead>
+            <TableHead className="w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user, index) => (
-            <TableRow key={user.id}>
+            <TableRow
+              key={user.id}
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => handleViewClick(user)}
+            >
               <TableCell className="font-medium">{startSN + index}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
@@ -132,7 +149,6 @@ export function UsersTable({
               </TableCell>
               {isParent && (
                 <>
-                  {/* <TableCell>{user.role}</TableCell> */}
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.home_address}</TableCell>
                 </>
@@ -141,7 +157,6 @@ export function UsersTable({
               {isTeacher && <TableCell>{user.email}</TableCell>}
               {isStudent && (
                 <>
-                  {/* <TableCell>{user.class}</TableCell> */}
                   <TableCell>{user.home_address}</TableCell>
                 </>
               )}
@@ -151,28 +166,53 @@ export function UsersTable({
                 </Badge>
               </TableCell>
               <TableCell>{user.phone}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2 text-[#da3743]">
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
+                    onClick={() => handleViewClick(user)}
+                    title="View details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   {isParent && (
-                    <LinkIcon
-                      className="h-4 w-4 cursor-pointer"
-                      onClick={() => handleLinkStudent(user)}
-                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
+                      onClick={(e) => handleLinkStudent(user, e)}
+                      title="Link student"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </Button>
                   )}
-                  <Trash2
-                    className="h-4 w-4 cursor-pointer"
-                    onClick={() => handleDeleteClick(user)}
-                  />
-                  <Edit3
-                    className="h-4 w-4 cursor-pointer"
-                    onClick={() => handleEditClick(user)}
-                  />
+                  {/* <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
+                    onClick={(e) => handleEditClick(user, e)}
+                    title="Edit"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={(e) => handleDeleteClick(user, e)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button> */}
                 </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
       {userToDelete && (
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
@@ -191,6 +231,13 @@ export function UsersTable({
           itemName={getFullName(userToDelete)}
         />
       )}
+
+      <UserDetailsSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        user={selectedUser}
+        userType={userType}
+      />
     </div>
   )
 }
