@@ -113,12 +113,10 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
             <h1 className="mb-2 text-center text-[28px] font-bold text-[var(--text-primary)]">
               Welcome!
             </h1>
-            <p className="mb-1 text-center text-sm text-[var(--text-secondary)]">
-              You&apos;ve been invited as a{" "}
-              <span className="font-bold">{getUserLabel()}</span>.
-            </p>
             <p className="mb-8 text-center text-sm text-[var(--text-secondary)]">
-              Finish setup to enter your school portal.
+              You&apos;ve been invited as a{" "}
+              <span className="font-bold">{getUserLabel()}</span>. Finish setup to enter
+              your school portal.
             </p>
 
             <form onSubmit={handleSubmitStep1} autoComplete="on">

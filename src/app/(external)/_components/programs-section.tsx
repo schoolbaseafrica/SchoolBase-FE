@@ -8,9 +8,10 @@ import {
   Users,
   GraduationCap,
 } from "lucide-react"
+import type { ComponentType } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
 
-const iconMap = {
+const iconMap: Record<string, ComponentType<{ className?: string }>> = {
   book: BookOpen,
   flask: FlaskConical,
   palette: Palette,
@@ -35,7 +36,7 @@ export function ProgramsSection() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => {
-            const Icon = iconMap[program.icon]
+            const Icon = iconMap[program.icon] ?? Sparkles
             return (
               <article
                 key={program.title}

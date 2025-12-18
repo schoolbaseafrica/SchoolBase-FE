@@ -144,7 +144,7 @@ const Overview = () => {
       </section>
 
       {/* Today's activities */}
-      <section className="my-6 rounded-2xl border p-4 shadow-sm lg:p-6">
+      <section className="my-6 rounded-2xl border bg-white p-4 shadow-sm lg:p-6">
         <div className="mb-4 flex flex-col justify-between md:flex-row md:items-center">
           <div className="flex items-center gap-2 py-2.5">
             <ActivityIcon className="text-accent size-5" />

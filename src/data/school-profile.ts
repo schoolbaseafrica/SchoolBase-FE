@@ -19,7 +19,7 @@ export type BrandPalette = {
 export type SchoolProgram = {
   title: string
   description: string
-  icon: "book" | "flask" | "palette" | "sparkles" | "users" | "music"
+  icon: string
 }
 
 export type Testimonial = {
@@ -214,7 +214,7 @@ export const defaultSchoolProfile: SchoolProfile = {
     ctaHref: "#contact",
   },
   contact: {
-    office: "Open School Portal HQ",
+    office: "Study Bridge Main Office, Lagos Abuja, Express road.",
     email: "support@studybridgeschool.com",
     phone: "+234 (000) 000 0000",
     address: "Lagos Abuja, Express road.",
