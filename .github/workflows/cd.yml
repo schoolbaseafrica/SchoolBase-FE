@@ -1,6 +1,8 @@
 name: CD - Deploy
 
 on:
+  push:
+    branches: [main, staging]
   workflow_run:
     workflows: ["CI - Build and Lint"]
     types: [completed]
@@ -8,16 +10,40 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     
     steps:
       - name: Download build artifacts
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/download-artifact@v4
         with:
           name: build-${{ github.event.workflow_run.head_sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
+          
+      - name: Build for direct push
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js for direct push
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Setup pnpm for direct push
+        if: ${{ github.event_name == 'push' }}
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Install and build for direct push
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm build
+          tar -czf build-${{ github.sha }}.tar.gz .next/ node_modules/ package.json pnpm-lock.yaml
           
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -26,10 +52,11 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+            if [ "$BRANCH" = "main" ]; then
               cd /home/ubuntu/open-school/prod/open-school-portal-FE
               git pull origin main
-            elif [ "${{ github.event.workflow_run.head_branch }}" = "staging" ]; then
+            elif [ "$BRANCH" = "staging" ]; then
               cd /home/ubuntu/open-school/staging/open-school-portal-FE
               git pull origin staging
             fi
@@ -40,7 +67,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "build-${{ github.event.workflow_run.head_sha }}.tar.gz"
+          source: "build-${{ github.event.workflow_run.head_sha || github.sha }}.tar.gz"
           target: "/tmp/"
           
       - name: Extract and restart
@@ -50,14 +77,16 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+            SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+            if [ "$BRANCH" = "main" ]; then
               cd /home/ubuntu/open-school/prod/open-school-portal-FE
-              tar -xzf /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
+              tar -xzf /tmp/build-$SHA.tar.gz
               pm2 restart fe-prod-schoolbase || pm2 start "pnpm next start -p 3002" --name fe-prod-schoolbase
-            elif [ "${{ github.event.workflow_run.head_branch }}" = "staging" ]; then
+            elif [ "$BRANCH" = "staging" ]; then
               cd /home/ubuntu/open-school/staging/open-school-portal-FE
-              tar -xzf /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
+              tar -xzf /tmp/build-$SHA.tar.gz
               pm2 restart fe-staging-schoolbase || pm2 start "pnpm next start -p 3003" --name fe-staging-schoolbase
             fi
             # Cleanup
-            rm -f /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
+            rm -f /tmp/build-$SHA.tar.gz
