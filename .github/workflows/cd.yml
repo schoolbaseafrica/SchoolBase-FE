@@ -3,14 +3,13 @@ name: CD - Deploy
 on:
   push:
     branches: [main, staging]
-  workflow_run:
-    workflows: ["CI - Build and Lint"]
-    types: [completed]
-    branches: [main, staging]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     
     steps:
@@ -40,7 +39,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+            BRANCH="${{ github.ref_name }}"
             if [ "$BRANCH" = "main" ]; then
               cd /home/ubuntu/open-school/prod/open-school-portal-FE
               git pull origin main
@@ -49,7 +48,7 @@ jobs:
               git pull origin staging
             fi
             
-      - name: Upload and extract build
+      - name: Upload build
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -65,7 +64,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+            BRANCH="${{ github.ref_name }}"
             SHA="${{ github.sha }}"
             if [ "$BRANCH" = "main" ]; then
               cd /home/ubuntu/open-school/prod/open-school-portal-FE
