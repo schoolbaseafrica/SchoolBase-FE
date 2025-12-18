@@ -63,7 +63,7 @@ jobs:
           if ! git diff --quiet pnpm-lock.yaml; then
             git add pnpm-lock.yaml package.json
             git commit -m "fix: auto-fix security vulnerabilities [skip ci]"
-            git push
+            git push origin HEAD:${{ github.head_ref }}
             echo "🔒 Security fixes committed and pushed"
           else
             echo "📝 No package changes to commit"
