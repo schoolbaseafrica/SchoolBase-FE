@@ -9,18 +9,18 @@ export const size = {
 export const contentType = "image/png"
 
 export default function Icon() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+
   // Convert relative paths to absolute URLs
   const toAbsoluteUrl = (path: string) => {
-    if (path.startsWith('http')) return path
-    return `${baseUrl}${path.startsWith('/') ? path : '/' + path}`
+    if (path.startsWith("http")) return path
+    return `${baseUrl}${path.startsWith("/") ? path : "/" + path}`
   }
-  
+
   const logoSrc = toAbsoluteUrl(
     defaultSchoolProfile.logo.favicon ||
-    defaultSchoolProfile.logo.full ||
-    '/assets/logo.png'
+      defaultSchoolProfile.logo.full ||
+      "/assets/logo.png"
   )
 
   return new ImageResponse(

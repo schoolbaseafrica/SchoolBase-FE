@@ -39,7 +39,7 @@ export function SchoolInfoForm({
         Add your school&apos;s branding and contact information
       </p>
 
-      <ProgressIndicator key="progress" currentStep={2} />
+      <ProgressIndicator key="progress" currentStep={1} />
 
       <div className="animate-onrender mb-8 space-y-6">
         <div>
@@ -144,7 +144,7 @@ export function SchoolInfoForm({
           Back
         </Button>
         <Button type="submit" className="px-4 py-3">
-          Submit & Continue
+          Next
         </Button>
       </div>
     </form>
