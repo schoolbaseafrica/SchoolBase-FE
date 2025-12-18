@@ -1,12 +1,3 @@
-export interface DatabaseConfig {
-  name: string
-  host: string
-  username: string
-  password: string
-  port: number
-  type: string
-}
-
 export interface SchoolInfo {
   logo: File | null
   logoPreview?: string | null
@@ -25,7 +16,6 @@ export interface AdminAccount {
 }
 
 export interface FormData {
-  database: DatabaseConfig
   school: SchoolInfo
   admin: AdminAccount
   extra?: Record<string, string>

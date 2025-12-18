@@ -101,7 +101,7 @@ export function AdminAccountForm({
         Set up your super administrator account
       </p>
 
-      <ProgressIndicator key="progress" currentStep={3} />
+      <ProgressIndicator key="progress" currentStep={2} />
 
       <div className="animate-onrender mb-6 space-y-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

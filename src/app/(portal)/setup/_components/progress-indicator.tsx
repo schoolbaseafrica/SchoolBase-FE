@@ -14,9 +14,8 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
   }
 
   const steps = [
-    { number: 1, label: "Database", completed: currentStep > 1 },
-    { number: 2, label: "School info", completed: currentStep > 2 },
-    { number: 3, label: "Admin", completed: currentStep > 3 },
+    { number: 1, label: "School info", completed: currentStep > 1 },
+    { number: 2, label: "Admin", completed: currentStep > 2 },
   ]
 
   return (
@@ -24,7 +23,7 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
       {steps.map((step, index) => (
         <React.Fragment key={step.number}>
           <div
-            className={`flex flex-shrink-0 items-center gap-1 md:gap-2 ${step.completed ? "cursor-pointer" : ""}`}
+            className={`flex shrink-0 items-center gap-1 md:gap-2 ${step.completed ? "cursor-pointer" : ""}`}
             onClick={() => handleStepClick(step.number)}
           >
             <div
