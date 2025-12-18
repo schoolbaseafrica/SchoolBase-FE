@@ -353,14 +353,14 @@ const SuperAdminLoginForm = () => {
           </DialogHeader>
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             <Link href="/forgot-password" className="w-full">
-              <Button className="w-full bg-[#DA3743] text-white hover:bg-[#C32F3A]">
+              <Button className="w-full bg-[var(--accent)] text-[var(--accent-foreground)] hover:brightness-95">
                 Forgot Password
               </Button>
             </Link>
             <Button
               onClick={() => setShowLockedModal(false)}
               variant="outline"
-              className="w-full border border-[#DA3743] bg-white text-[#DA3743] hover:bg-red-50"
+              className="w-full border border-[var(--accent)] bg-white text-[var(--accent)] hover:bg-[var(--tint)]"
             >
               Sign in
             </Button>

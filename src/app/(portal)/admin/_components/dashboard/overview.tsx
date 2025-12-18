@@ -38,7 +38,7 @@ const Overview = () => {
   // Sync activities to store
   const { isLoading: activitiesLoading } = useTodayActivities()
 
-  // Read activities from store - Corrected property name `todayActivities`
+  // Read activities from store
   const { todayActivities } = useDashboardStore(
     useShallow((state) => ({ todayActivities: state.todayActivities }))
   )

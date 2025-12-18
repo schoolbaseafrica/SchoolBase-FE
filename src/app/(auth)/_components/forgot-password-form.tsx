@@ -144,7 +144,10 @@ export default function ForgotPasswordForm() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Remembered your password?{" "}
-          <Link href="/login" className="font-medium text-[#DA3743] hover:text-[#C32F3A]">
+          <Link
+            href="/login"
+            className="font-medium text-[var(--accent)] hover:opacity-80"
+          >
             Sign in
           </Link>
         </p>

@@ -1,28 +1,58 @@
+"use client"
+
+import Image from "next/image"
 import { LogoSvg } from "../../public/svgs/logo-svg"
+import { useSchoolStore } from "@/store/use-school-store"
 
 interface LogoProps {
   size?: number
   iconColor?: string
   textColor?: string
   className?: string
+  showName?: boolean
 }
 
 const Logo: React.FC<LogoProps> = ({
   size = 28,
-  iconColor = "#DA3743",
-  textColor = "#DA3743",
+  iconColor,
+  textColor,
   className = "",
+  showName = true,
 }) => {
+  const logo = useSchoolStore((state) => state.school.logo)
+  const shortName = useSchoolStore((state) => state.school.shortName)
+  const brand = useSchoolStore((state) => state.school.brand)
+
+  const resolvedIconColor = iconColor ?? brand.primary
+  const resolvedTextColor = textColor ?? brand.primary
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <LogoSvg width={size} height={size} color={iconColor} className="shrink-0" />
+      {logo.full ? (
+        <Image
+          src={logo.full}
+          alt={`${shortName} logo`}
+          width={size + 8}
+          height={size + 8}
+          className={`rounded-md object-contain size-${size + 8}`}
+        />
+      ) : (
+        <LogoSvg
+          width={size}
+          height={size}
+          color={resolvedIconColor}
+          className="shrink-0"
+        />
+      )}
 
-      <span
-        className="font-bold tracking-wider uppercase"
-        style={{ color: textColor, fontSize: size * 0.5 }}
-      >
-        schoolbase
-      </span>
+      {showName && (
+        <span
+          className="font-bold tracking-wider uppercase"
+          style={{ color: resolvedTextColor, fontSize: size * 0.5 }}
+        >
+          {shortName}
+        </span>
+      )}
     </div>
   )
 }

@@ -139,7 +139,6 @@ const PasswordReset = () => {
     }
   }
 
-  /* ----------------------------- UI ----------------------------- */
   return (
     <section className="flex min-h-screen w-full justify-center overflow-x-hidden bg-white">
       <div className="flex min-h-screen w-full flex-col items-center justify-center px-4 sm:px-8 lg:px-12 xl:px-20">
@@ -163,14 +162,14 @@ const PasswordReset = () => {
               transition={{ duration: 0.4 }}
               className="w-full max-w-[464px]"
             >
-              <h1 className="mb-8 text-center text-[28px] font-bold text-[#2D2D2D]">
+              <h1 className="mb-8 text-center text-[28px] font-bold text-[var(--text-primary)]">
                 Reset Password
               </h1>
 
               <form onSubmit={handleSubmit}>
                 {/* NEW PASSWORD */}
                 <div className="mb-6">
-                  <label className="mb-2 block text-sm font-medium text-[#2D2D2D]">
+                  <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
                     Enter New Password
                   </label>
 
@@ -184,8 +183,8 @@ const PasswordReset = () => {
                       onBlur={handleBlur}
                       className={`pr-12 ${
                         touched.newPassword && errors.newPassword
-                          ? "border-[#DA3743]"
-                          : "border-[#E0E0E0] focus:border-[#2D2D2D]"
+                          ? "border-[var(--accent)]"
+                          : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
                       }`}
                     />
 
@@ -208,8 +207,8 @@ const PasswordReset = () => {
                   </div>
 
                   {touched.newPassword && errors.newPassword && (
-                    <p className="mt-2 flex items-start gap-2 text-xs text-[#DA3743]">
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#DA3743] text-[10px] font-bold">
+                    <p className="mt-2 flex items-start gap-2 text-xs text-[var(--accent)]">
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[var(--accent)] text-[10px] font-bold">
                         !
                       </span>
                       {errors.newPassword}
@@ -219,7 +218,7 @@ const PasswordReset = () => {
 
                 {/* CONFIRM PASSWORD */}
                 <div className="mb-6">
-                  <label className="mb-2 block text-sm font-medium text-[#2D2D2D]">
+                  <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
                     Confirm New Password
                   </label>
 
@@ -233,8 +232,8 @@ const PasswordReset = () => {
                       onBlur={handleBlur}
                       className={`pr-12 ${
                         touched.confirmPassword && errors.confirmPassword
-                          ? "border-[#DA3743]"
-                          : "border-[#E0E0E0] focus:border-[#2D2D2D]"
+                          ? "border-[var(--accent)]"
+                          : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
                       }`}
                     />
 
@@ -257,8 +256,8 @@ const PasswordReset = () => {
                   </div>
 
                   {touched.confirmPassword && errors.confirmPassword && (
-                    <p className="mt-2 flex items-start gap-2 text-xs text-[#DA3743]">
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#DA3743] text-[10px] font-bold">
+                    <p className="mt-2 flex items-start gap-2 text-xs text-[var(--accent)]">
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[var(--accent)] text-[10px] font-bold">
                         !
                       </span>
                       {errors.confirmPassword}

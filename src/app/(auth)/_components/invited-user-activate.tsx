@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { MoveRight } from "lucide-react"
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/schemas/auth"
 import { activateAccount } from "@/lib/api/auth"
+import SchoolLogo from "./school-logo"
 
 export type InvitedUserType = "teacher" | "parent" | "admin"
 type ResetField = keyof ResetPasswordFormValues
@@ -110,14 +111,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center overflow-y-auto px-4 sm:px-8 lg:px-12 xl:px-20">
-      <Link href="/">
-        <div className="mb-8 flex flex-col items-center justify-center gap-1.5">
-          <Image src="/assets/logo.svg" alt="School Base Logo" width={50} height={50} />
-          <span className="text-accent text-sm font-bold tracking-wider uppercase">
-            school base
-          </span>
-        </div>
-      </Link>
+      <SchoolLogo />
 
       <AnimatePresence mode="wait">
         {step === 1 && (
@@ -129,14 +123,14 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
             transition={{ duration: 0.4 }}
             className="w-full max-w-[464px]"
           >
-            <h1 className="mb-2 text-center text-[28px] font-bold text-[#2D2D2D]">
+            <h1 className="mb-2 text-center text-[28px] font-bold text-[var(--text-primary)]">
               Welcome!
             </h1>
-            <p className="mb-1 text-center text-sm text-[#6B6B6B]">
+            <p className="mb-1 text-center text-sm text-[var(--text-secondary)]">
               You&apos;ve been invited as a{" "}
               <span className="font-bold">{getUserLabel()}</span>.
             </p>
-            <p className="mb-8 text-center text-sm text-[#6B6B6B]">
+            <p className="mb-8 text-center text-sm text-[var(--text-secondary)]">
               Finish setup to enter your school portal.
             </p>
 
@@ -145,7 +139,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
               <div className="mb-6">
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-[#2D2D2D]"
+                  className="mb-2 block text-sm font-medium text-[var(--text-primary)]"
                 >
                   Email Address
                 </label>
@@ -166,7 +160,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                 <div key={field} className="mb-6">
                   <label
                     htmlFor={field}
-                    className="mb-2 block text-sm font-medium text-[#2D2D2D]"
+                    className="mb-2 block text-sm font-medium text-[var(--text-primary)]"
                   >
                     {field === "newPassword"
                       ? "Enter New Password"
@@ -192,7 +186,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                       onBlur={handleBlur}
                       className={`pr-12 ${
                         touched[field] && errors[field]
-                          ? "border-[#DA3743]"
+                          ? "border-[var(--accent)]"
                           : "border-[#E0E0E0]"
                       }`}
                     />
@@ -222,7 +216,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                     </button>
                   </div>
                   {touched[field] && errors[field] && (
-                    <p className="mt-1 text-sm text-[#DA3743]">{errors[field]}</p>
+                    <p className="mt-1 text-sm text-[var(--accent)]">{errors[field]}</p>
                   )}
                 </div>
               ))}
@@ -253,11 +247,11 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
               />
             </div>
 
-            <h1 className="order-2 mb-4 text-2xl font-bold text-[#2D2D2D] md:order-1">
+            <h1 className="order-2 mb-4 text-2xl font-bold text-[var(--text-primary)] md:order-1">
               Your Account Has Been Created Successfully!
             </h1>
 
-            <p className="order-3 mb-8 text-sm text-[#6B6B6B] md:order-2">
+            <p className="order-3 mb-8 text-sm text-[var(--text-secondary)] md:order-2">
               Account has been activated successfully.
             </p>
 

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MoveRight } from "lucide-react"
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/schemas/auth"
+import SchoolLogo from "./school-logo"
 
 type UserType = "teacher" | "parent" | "admin"
 type ResetField = keyof ResetPasswordFormValues
@@ -97,14 +98,7 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center overflow-y-auto px-4 sm:px-8 lg:px-12 xl:px-20">
-      <Link href="/">
-        <div className="-gap-1.5 mb-8 flex flex-col items-center justify-center">
-          <Image src="/assets/logo.svg" alt="School Base Logo" width={50} height={50} />
-          <span className="text-accent text-sm font-bold tracking-wider uppercase">
-            school base
-          </span>
-        </div>
-      </Link>
+      <SchoolLogo />
 
       <AnimatePresence mode="wait">
         {step === 1 && (
@@ -116,14 +110,14 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
             transition={{ duration: 0.4 }}
             className="w-full max-w-[464px]"
           >
-            <h1 className="mb-2 text-center text-[28px] font-bold text-[#2D2D2D]">
+            <h1 className="mb-2 text-center text-[28px] font-bold text-[var(--text-primary)]">
               Welcome!
             </h1>
-            <p className="mb-1 text-center text-sm text-[#6B6B6B]">
+            <p className="mb-1 text-center text-sm text-[var(--text-secondary)]">
               You&apos;ve been invited as a{" "}
               <span className="font-bold">{getUserLabel()}</span>.
             </p>
-            <p className="mb-8 text-center text-sm text-[#6B6B6B]">
+            <p className="mb-8 text-center text-sm text-[var(--text-secondary)]">
               Finish setup to enter your school portal.
             </p>
 
@@ -132,7 +126,7 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
               <div className="mb-6">
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-[#2D2D2D]"
+                  className="mb-2 block text-sm font-medium text-[var(--text-primary)]"
                 >
                   Email Address
                 </label>
@@ -148,13 +142,13 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
                   placeholder="jamesjackendfornd@gmail.com"
                   className={`border ${
                     emailTouched && !isValidEmail
-                      ? "border-[#DA3743]"
-                      : "border-[#E0E0E0] focus:border-[#2D2D2D]"
+                      ? "border-[var(--accent)]"
+                      : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
                   }`}
                 />
 
                 {emailTouched && !isValidEmail && (
-                  <p className="mt-1 text-sm text-[#DA3743]">
+                  <p className="mt-1 text-sm text-[var(--accent)]">
                     Please enter a valid email address.
                   </p>
                 )}
@@ -165,7 +159,7 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
                 <div key={field} className="mb-6">
                   <label
                     htmlFor={field}
-                    className="mb-2 block text-sm font-medium text-[#2D2D2D]"
+                    className="mb-2 block text-sm font-medium text-[var(--text-primary)]"
                   >
                     {field === "newPassword"
                       ? "Enter New Password"
@@ -191,7 +185,7 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
                       onBlur={handleBlur}
                       className={`pr-12 ${
                         touched[field] && errors[field]
-                          ? "border-[#DA3743]"
+                          ? "border-[var(--accent)]"
                           : "border-[#E0E0E0]"
                       }`}
                     />
@@ -221,7 +215,7 @@ const InvitedUserSignIn: React.FC<InvitedUserSignInProps> = ({ userType }) => {
                     </button>
                   </div>
                   {touched[field] && errors[field] && (
-                    <p className="mt-1 text-sm text-[#DA3743]">{errors[field]}</p>
+                    <p className="mt-1 text-sm text-[var(--accent)]">{errors[field]}</p>
                   )}
                 </div>
               ))}
