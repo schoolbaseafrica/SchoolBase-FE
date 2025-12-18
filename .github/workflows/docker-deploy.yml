@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     steps:
       - name: Deploy frontend services
@@ -15,6 +16,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 30m
           script: |
             cd /home/ubuntu/open-school/openschool-docker/fe
             git pull origin main

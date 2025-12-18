@@ -63,14 +63,3 @@ jobs:
         
       - name: Build application
         run: pnpm build
-        
-      - name: Create build archive
-        run: |
-          tar -czf build-${{ github.sha }}.tar.gz .next/ node_modules/ package.json pnpm-lock.yaml
-        
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ github.sha }}
-          path: build-${{ github.sha }}.tar.gz
-          retention-days: 1
