@@ -19,9 +19,17 @@ jobs:
             cd /home/ubuntu/open-school/openschool-docker/fe
             git pull origin main
             cd ..
-            # Zero-downtime deployment: build new images first
-            docker-compose build frontend-stpaul frontend-demo
-            # Rolling update: update one service at a time
-            docker-compose up -d --no-deps frontend-stpaul
-            sleep 10
-            docker-compose up -d --no-deps frontend-demo
+            
+            # Check if Docker services are running
+            if ! docker-compose ps | grep -q "frontend-stpaul.*Up\|frontend-demo.*Up"; then
+              echo "Starting Docker services for the first time..."
+              docker-compose up --build -d frontend-stpaul frontend-demo
+            else
+              echo "Updating existing Docker services..."
+              # Zero-downtime deployment: build new images first
+              docker-compose build frontend-stpaul frontend-demo
+              # Rolling update: update one service at a time
+              docker-compose up -d --no-deps frontend-stpaul
+              sleep 10
+              docker-compose up -d --no-deps frontend-demo
+            fi
