@@ -1,0 +1,63 @@
+name: CD - Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Lint"]
+    types: [completed]
+    branches: [main, staging]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ github.event.workflow_run.head_sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+              cd /home/ubuntu/open-school/prod/open-school-portal-FE
+              git pull origin main
+            elif [ "${{ github.event.workflow_run.head_branch }}" = "staging" ]; then
+              cd /home/ubuntu/open-school/staging/open-school-portal-FE
+              git pull origin staging
+            fi
+            
+      - name: Upload and extract build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "build-${{ github.event.workflow_run.head_sha }}.tar.gz"
+          target: "/tmp/"
+          
+      - name: Extract and restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+              cd /home/ubuntu/open-school/prod/open-school-portal-FE
+              tar -xzf /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
+              pm2 restart fe-prod-schoolbase || pm2 start "pnpm next start -p 3002" --name fe-prod-schoolbase
+            elif [ "${{ github.event.workflow_run.head_branch }}" = "staging" ]; then
+              cd /home/ubuntu/open-school/staging/open-school-portal-FE
+              tar -xzf /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
+              pm2 restart fe-staging-schoolbase || pm2 start "pnpm next start -p 3003" --name fe-staging-schoolbase
+            fi
+            # Cleanup
+            rm -f /tmp/build-${{ github.event.workflow_run.head_sha }}.tar.gz
