@@ -1,0 +1,76 @@
+name: CI - Build and Lint
+
+on:
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+        
+      - name: Run lint
+        run: pnpm lint
+        
+      - name: Auto-fix vulnerabilities
+        run: |
+          echo "🔧 Running npm audit fix..."
+          pnpm audit --fix || true
+          
+      - name: Security audit check
+        run: |
+          echo "Running security audit..."
+          pnpm audit --audit-level high || true
+          
+          # Check for vulnerabilities and print details
+          AUDIT_OUTPUT=$(pnpm audit --json 2>/dev/null || echo '{}')
+          
+          if echo "$AUDIT_OUTPUT" | grep -q '"severity":"high"\|"severity":"critical"'; then
+            echo "❌ High or critical vulnerabilities found:"
+            echo "$AUDIT_OUTPUT" | jq -r '.advisories[] | select(.severity == "high" or .severity == "critical") | "Package: \(.module_name) | Severity: \(.severity) | Title: \(.title)"'
+            echo "⚠️ Please fix these vulnerabilities manually before merging!"
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
+          
+      - name: Check for package changes
+        run: |
+          if ! git diff --quiet pnpm-lock.yaml package.json; then
+            echo "🔒 Vulnerabilities were auto-fixed. Please review and commit the changes."
+            git diff --name-only
+          else
+            echo "📝 No package changes detected"
+          fi
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Create build archive
+        run: |
+          tar -czf build-${{ github.sha }}.tar.gz .next/ node_modules/ package.json pnpm-lock.yaml
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: build-${{ github.sha }}.tar.gz
+          retention-days: 1

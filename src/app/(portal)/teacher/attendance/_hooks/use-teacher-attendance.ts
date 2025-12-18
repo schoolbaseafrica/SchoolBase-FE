@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { TeacherAttendanceAPI, ManualCheckInPayload } from "@/lib/teacher-attendance"
+import { AttendanceAPI, SubmitAttendancePayload } from "@/lib/attendance"
 import { toast } from "sonner"
 import { AxiosError } from "axios"
 
@@ -102,27 +103,11 @@ export const useMarkStudentAttendance = (classId: string) => {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: async (payload: {
-      date: string
-      attendance_records: Array<{
-        student_id: string
-        status: "PRESENT" | "ABSENT"
-        notes?: string
-      }>
-    }) => {
-      // Import AttendanceAPI from @/lib/attendance and use:
-      // return AttendanceAPI.markDailyAttendance({
-      //   class_id: classId,
-      //   date: payload.date,
-      //   attendance_records: payload.attendance_records,
-      // })
-
-      // Temporary placeholder to avoid unused variable warning
-      // console.log("Marking attendance:", payload)
-      throw new Error(
-        "AttendanceAPI.markDailyAttendance not yet connected. Please uncomment the code above and import AttendanceAPI."
-      )
-    },
+    mutationFn: async (payload: Omit<SubmitAttendancePayload, "class_id">) =>
+      AttendanceAPI.markDailyAttendance({
+        ...payload,
+        class_id: classId,
+      }),
     onSuccess: () => {
       toast.success("Attendance marked successfully")
       // Invalidate relevant queries to refetch updated data

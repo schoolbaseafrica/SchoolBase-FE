@@ -23,7 +23,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ stats, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="mt-[33px] grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-[33px] grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="p-4">
             <div className="mb-3 flex items-center gap-2">

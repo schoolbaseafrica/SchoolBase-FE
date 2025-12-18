@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useTodayActivities } from "../../_hooks/today-activity"
+import { ItemLoader } from "../sub-loader"
 
 const TodayActivities = ({
   highlightedIndex,
@@ -23,7 +24,11 @@ const TodayActivities = ({
   const { data, isLoading } = useTodayActivities()
   // console.log("activity", data)
   if (isLoading) {
-    return <p className="hidden py-10 text-center lg:block">Loading activities...</p>
+    return (
+      <div className="hidden lg:block">
+        <ItemLoader item="activities" />
+      </div>
+    )
   }
 
   const activities = data?.todays_activities ?? []

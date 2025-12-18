@@ -2,13 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ResultsAPI } from "@/lib/results"
-import type {
-  Grade,
-  CreateSubmissionRequest,
-  GradeSubmission,
-  GetGradesParams,
-} from "@/types/result"
+import type { Grade, CreateSubmissionRequest, GradeSubmission } from "@/types/result"
 import { toast } from "sonner"
+import { useAuthUser } from "@/hooks/use-auth-user"
 
 const RESULTS_KEY = ["results"]
 
@@ -17,23 +13,58 @@ export function useGetClasses() {
     queryKey: [...RESULTS_KEY, "classes"],
     queryFn: () => ResultsAPI.getClasses(),
     staleTime: 1000 * 60 * 5,
+    retry: 2,
   })
 }
 
-export function useGetSubjects(classId?: string) {
+export function useGetSubjects(classId?: string, teacherId?: string) {
+  const queryFn = async () => {
+    if (!classId) return []
+
+    try {
+      return ResultsAPI.getSubjects(classId, teacherId)
+    } catch (error) {
+      console.error("Error fetching subjects:", error)
+      throw error
+    }
+  }
+
   return useQuery({
-    queryKey: [...RESULTS_KEY, "subjects", classId],
-    queryFn: () => ResultsAPI.getSubjects(),
+    queryKey: [...RESULTS_KEY, "subjects", classId, teacherId],
+    queryFn,
     enabled: !!classId,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 }
 
-export function useGetTerms(sessionId?: string) {
+// Add a new hook to get teacher's assigned subjects
+export function useGetTeacherSubjects(classId?: string) {
+  const { data: teacher } = useAuthUser()
+
   return useQuery({
-    queryKey: [...RESULTS_KEY, "terms", sessionId],
+    queryKey: [...RESULTS_KEY, "teacher-subjects", classId, teacher?.teacher_id],
+    queryFn: async () => {
+      if (!classId || !teacher?.teacher_id) return []
+
+      try {
+        return ResultsAPI.getSubjects(classId, teacher.teacher_id)
+      } catch (error) {
+        console.error("Error fetching teacher subjects:", error)
+        throw error
+      }
+    },
+    enabled: !!classId && !!teacher?.teacher_id,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
+export function useGetTerms() {
+  return useQuery({
+    queryKey: [...RESULTS_KEY, "terms"],
     queryFn: () => ResultsAPI.getTerms(),
     staleTime: 1000 * 60 * 5,
+    retry: 2,
   })
 }
 
@@ -46,6 +77,7 @@ export function useGetStudents(classId?: string, subjectId?: string) {
     },
     enabled: !!classId,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   })
 }
 
@@ -54,22 +86,10 @@ export function useGetGradingScale() {
     queryKey: [...RESULTS_KEY, "grading-scale"],
     queryFn: () => ResultsAPI.getGradingScale(),
     staleTime: 1000 * 60 * 60,
+    retry: 1,
   })
 }
 
-export function useGetTeacherSubmissions(params?: GetGradesParams) {
-  return useQuery({
-    queryKey: [...RESULTS_KEY, "submissions", params],
-    queryFn: () => ResultsAPI.getTeacherSubmissions(params),
-    staleTime: 1000 * 60 * 5,
-    // Add retry logic
-    retry: 2,
-    // Add refetch on window focus to catch updates
-    refetchOnWindowFocus: true,
-  })
-}
-
-// Add a dedicated hook for getting specific submission
 export function useGetSubmissionByFilters(
   classId?: string,
   subjectId?: string,
@@ -85,7 +105,6 @@ export function useGetSubmissionByFilters(
         subject_id: subjectId,
         term_id: termId,
       }).then((submissions) => {
-        // Return the first matching submission, if any
         return submissions.find(
           (sub) =>
             sub.class_id === classId &&
@@ -96,8 +115,8 @@ export function useGetSubmissionByFilters(
     },
     enabled: !!classId && !!subjectId && !!termId,
     staleTime: 1000 * 60 * 5,
-    // Don't retry too much to avoid unnecessary requests
     retry: 1,
+    refetchOnMount: "always",
   })
 }
 
@@ -106,8 +125,7 @@ export function useSaveDraft() {
 
   return useMutation({
     mutationFn: (data: CreateSubmissionRequest) => ResultsAPI.createSubmission(data),
-    onSuccess: (data, variables) => {
-      // Invalidate relevant queries
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...RESULTS_KEY, "submissions"] })
       queryClient.invalidateQueries({
         queryKey: [...RESULTS_KEY, "submission-by-filters"],

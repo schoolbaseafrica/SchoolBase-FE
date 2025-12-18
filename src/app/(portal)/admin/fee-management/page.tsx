@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import CreateComponentButton from "./_components/create-component-button"
 import FeeComponentTable from "./_components/fee-component-table"
@@ -18,35 +18,45 @@ import {
 } from "@/components/ui/select"
 
 import { useGetFees } from "./_hooks/use-fees"
+import { useFeesStore, selectFilteredFees } from "@/store/fees-store"
+import { useShallow } from "zustand/react/shallow"
+import { ItemLoader } from "../_components/sub-loader"
 
 const FeeManagement = () => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  // 1. Fetch data
+  const { isError, isLoading: isQueryLoading } = useGetFees()
 
-  const { data: feeData, isLoading, isError } = useGetFees({ page: 1, limit: 20 })
-  // console.log("FEES FROM BACKEND:", feeData)
-  // Extract fees array - handle null case AND nested data structure
-  // const fees = feeData?.data?.fees || []
+  // 2. State & Actions
+  const { fees, feeIds, filters } = useFeesStore(
+    useShallow((state) => ({
+      fees: state.fees,
+      feeIds: state.feeIds,
+      filters: state.filters,
+    }))
+  )
+  const setFilters = useFeesStore((state) => state.setFilters)
 
-  const fees = useMemo(() => {
-    return feeData?.data?.fees || []
-  }, [feeData])
+  // 3. Derived State
+  const filteredFees = useMemo(
+    () => selectFilteredFees(fees, feeIds, filters),
+    [fees, feeIds, filters]
+  )
 
-  // Filter fees based on search and status using useMemo for performance
-  const filteredFees = useMemo(() => {
-    return fees.filter((fee) => {
-      const matchesSearch =
-        fee.component_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        fee.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const hasData = feeIds.length > 0
 
-      const matchesStatus =
-        statusFilter === "all" || fee.status.toLowerCase() === statusFilter.toLowerCase()
+  // Note: Standard API query loading is usually sufficient, but store has isLoading too
+  const isLoading = isQueryLoading && !hasData
 
-      return matchesSearch && matchesStatus
-    })
-  }, [fees, searchQuery, statusFilter])
+  // Handlers
+  const handleSearchChange = (val: string) => {
+    setFilters({ search: val })
+  }
 
-  const hasData = fees.length > 0
+  const handleStatusChange = (val: string) => {
+    setFilters({ status: val === "all" ? undefined : val })
+  }
+
+  const currentStatus = filters.status || "all"
 
   return (
     <div className="w-full space-y-7 px-4 py-10 lg:px-8">
@@ -60,9 +70,7 @@ const FeeManagement = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <p className="text-center text-gray-500">Loading fees...</p>
-        </div>
+        <ItemLoader item="Fees" />
       ) : isError ? (
         <div className="flex items-center justify-center py-20">
           <p className="text-center text-red-500">Failed to load fees.</p>
@@ -79,28 +87,28 @@ const FeeManagement = () => {
               <Input
                 placeholder="Search by name or description"
                 className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={filters.search || ""}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
 
             {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={currentStatus} onValueChange={handleStatusChange}>
               <SelectTrigger className="h-full w-full">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Show filtered count */}
-          {searchQuery || statusFilter !== "all" ? (
+          {filters.search || filters.status ? (
             <div className="text-sm text-gray-500">
-              Showing {filteredFees.length} of {fees.length} fees
+              Showing {filteredFees.length} of {feeIds.length} fees
             </div>
           ) : null}
 

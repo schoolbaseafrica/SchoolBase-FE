@@ -80,61 +80,54 @@ export default function ClassroomsPage() {
     router.push("/admin/class-management/classrooms/new")
   }
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-6xl p-4 md:p-6">
+  return (
+    <div className="mx-auto max-w-6xl p-4 md:p-4">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight">Create Classroom</h1>
+        <p className="text-muted-foreground">
+          View, add and assign classroom to streamline academic operations
+        </p>
+      </div>
+
+      {isLoading ? (
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
             <p className="text-gray-600">Loading classrooms...</p>
           </div>
         </div>
-      </div>
-    )
-  }
-
-  if (classrooms.length === 0 && !searchQuery) {
-    return (
-      <div className="mx-auto max-w-6xl p-4 md:p-4">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">Create Classroom</h1>
-          <p className="text-muted-foreground">
-            View, add and assign classroom to streamline academic operations
-          </p>
-        </div>
+      ) : classrooms.length === 0 && !searchQuery ? (
         <EmptyClassrooms />
-      </div>
-    )
-  }
-
-  return (
-    <div className="mx-auto max-w-6xl p-4 md:p-4">
-      <ClassroomsToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filterType={filterType}
-        onFilterTypeChange={setFilterType}
-        onAddClassroom={handleAddClassroom}
-      />
-
-      {filteredClassrooms.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-muted-foreground">
-            No classrooms found matching your search.
-          </p>
-        </div>
       ) : (
-        <div className="space-y-4">
-          {filteredClassrooms.map((classroom) => (
-            <ClassroomCard
-              key={classroom.id}
-              classroom={classroom}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleAvailability={handleToggleAvailability}
-            />
-          ))}
-        </div>
+        <>
+          <ClassroomsToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterType={filterType}
+            onFilterTypeChange={setFilterType}
+            onAddClassroom={handleAddClassroom}
+          />
+
+          {filteredClassrooms.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">
+                No classrooms found matching your search.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredClassrooms.map((classroom) => (
+                <ClassroomCard
+                  key={classroom.id}
+                  classroom={classroom}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onToggleAvailability={handleToggleAvailability}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <SuccessModal

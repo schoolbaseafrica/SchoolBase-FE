@@ -2,40 +2,69 @@
 
 import { UsersView } from "@/components/users/users-view"
 import { useGetStudents } from "./_hooks/use-students"
-import { useState } from "react"
+import {
+  useStudentsStore,
+  selectFilteredStudents,
+  selectPaginatedStudents,
+} from "@/store/students-store"
+import { useShallow } from "zustand/react/shallow"
+import { useMemo } from "react"
 
 export default function StudentsPage() {
-  const [currentPage, setCurrentPage] = useState<number>()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("active")
+  const { isLoading: isQueryLoading, isError, error } = useGetStudents()
+
+  const { students, studentIds, filters } = useStudentsStore(
+    useShallow((state) => ({
+      students: state.students,
+      studentIds: state.studentIds,
+      filters: state.filters,
+    }))
+  )
+  const setFilters = useStudentsStore((state) => state.setFilters)
+
+  const filteredAll = useMemo(
+    () => selectFilteredStudents(students, studentIds, filters),
+    [students, studentIds, filters]
+  )
+
+  const paginatedStudents = useMemo(
+    () => selectPaginatedStudents(filteredAll, filters.page, filters.limit),
+    [filteredAll, filters.page, filters.limit]
+  )
+
+  const totalPages = Math.ceil(filteredAll.length / filters.limit)
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
+    setFilters({ page })
   }
 
-  const {
-    data: students,
-    isLoading,
-    isError,
-    error,
-  } = useGetStudents({
-    page: currentPage,
-    search: searchQuery,
-    // is_active: statusFilter ? statusFilter === "active" : undefined,
-  })
+  const handleSearchChange = (search: string) => {
+    setFilters({ search, page: 1 })
+  }
+
+  const handleStatusFilterChange = (status: string) => {
+    setFilters({
+      isActive: status === "active" ? true : status === "inactive" ? false : undefined,
+      page: 1,
+    })
+  }
+
+  const currentStatusFilter =
+    filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
   return (
     <UsersView
-      isLoading={isLoading}
+      isLoading={isQueryLoading && studentIds.length === 0}
       isError={isError}
       error={error?.message}
-      users={students || []}
+      users={paginatedStudents}
       userType="students"
-      searchQuery={searchQuery}
-      statusFilter={statusFilter}
-      currentPage={currentPage || 1}
-      onSearchChange={setSearchQuery}
-      onStatusFilterChange={setStatusFilter}
+      searchQuery={filters.search}
+      statusFilter={currentStatusFilter}
+      currentPage={filters.page}
+      totalPages={totalPages}
+      onSearchChange={handleSearchChange}
+      onStatusFilterChange={handleStatusFilterChange}
       onPageChange={handlePageChange}
     />
   )

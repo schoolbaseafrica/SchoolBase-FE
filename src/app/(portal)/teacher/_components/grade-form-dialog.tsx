@@ -34,7 +34,6 @@ export function GradeFormDialog({
   subjectId,
   termId,
   academicSessionId,
-  existingSubmissionId,
 }: GradeFormDialogProps) {
   const [formData, setFormData] = useState({
     ca_score: grade?.ca_score?.toString() || "",
@@ -149,29 +148,6 @@ export function GradeFormDialog({
       // Error is already handled by the mutation
       console.error("Failed to save grade:", error)
     }
-  }
-
-  const handleSubmit = () => {
-    if (!validateScores()) {
-      return
-    }
-
-    const caScore = formData.ca_score ? parseInt(formData.ca_score) : null
-    const examScore = formData.exam_score ? parseInt(formData.exam_score) : null
-    const totalScore = caScore !== null && examScore !== null ? caScore + examScore : null
-
-    const gradeData: GradeEntry & { id?: string } = {
-      id: grade?.id, // Preserve the ID if it exists
-      student_id: student.id,
-      ca_score: caScore,
-      exam_score: examScore,
-      total_score: totalScore,
-      grade: totalScore !== null ? calculateGrade(totalScore) : null,
-      comment: formData.comment || null,
-    }
-
-    onSave(gradeData)
-    onOpenChange(false)
   }
 
   const handleInputChange = (field: "ca_score" | "exam_score", value: string) => {

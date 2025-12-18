@@ -4,7 +4,7 @@ import { ItemLoader } from "../../../_components/sub-loader"
 import { ItemsError } from "../../../_components/loading-error"
 import EmptyState from "../../../_components/empty-state"
 import { useGetSubjects } from "../_hooks/use-subjects"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import SubjectManagement from "./subjects-list"
 import { NewSubjectDialog, EditSubjectDialog } from "./new-subject-dialog"
 import AddedSubjectSuccess from "./add-subject-success"
@@ -12,23 +12,59 @@ import { useRouter } from "next/navigation"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import { PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useSubjectsStore } from "@/store/subjects-store"
+import { useShallow } from "zustand/react/shallow"
 
 export default function SubjectsPageContent() {
   const [currentPage, setCurrentPage] = useState(1)
-  const {
-    data: subjectsData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetSubjects({
-    page: currentPage,
-  })
+
+  // 1. Fetch
+  const { isError, error, refetch, isLoading: isQueryLoading } = useGetSubjects()
+
+  // 2. Store Selection
+  const { subjectsMap, subjectIds } = useSubjectsStore(
+    useShallow((state) => ({
+      subjectsMap: state.subjects,
+      subjectIds: state.subjectIds,
+    }))
+  )
+
+  // 3. Derived State (All subjects)
+  const allSubjects = useMemo(
+    () => subjectIds.map((id) => subjectsMap[id]).filter(Boolean),
+    [subjectsMap, subjectIds]
+  )
+
+  // Client-side pagination logic
+  const itemsPerPage = 10
+  const totalItems = allSubjects.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+
+  const currentSubjects = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return allSubjects.slice(start, start + itemsPerPage)
+  }, [allSubjects, currentPage])
+
+  // Combine loading
+  const isLoading = isQueryLoading && totalItems === 0
+
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editSubjectID, setEditSubjectID] = useState<string | null>(null)
   const [showSuccessDialog, setShowSuccessDialog] = useState<boolean | string>(false)
-  const { data: subjects, pagination } = subjectsData || {}
+
   const router = useRouter()
+
+  function handleAddSubject() {
+    setShowCreateDialog(true)
+  }
+
+  function handleEditSubject(subjectID: string) {
+    setEditSubjectID(subjectID)
+  }
+
+  function handleAssignSubject(subjectID: string) {
+    router.push(`/admin/class-management/subjects/${subjectID}/assign`)
+  }
 
   return (
     <div className="p-5">
@@ -55,7 +91,7 @@ export default function SubjectsPageContent() {
             reload={refetch}
             errorMessage={error?.message || "An unexpected error occurred."}
           />
-        ) : !subjects || subjects.length === 0 ? (
+        ) : !allSubjects || allSubjects.length === 0 ? (
           <EmptyState
             title="No Subjects Created yet"
             description="Add Subjects."
@@ -65,12 +101,12 @@ export default function SubjectsPageContent() {
           />
         ) : (
           <SubjectManagement
-            subjects={subjects}
+            subjects={currentSubjects}
             onEditSubject={handleEditSubject}
             onAssignSubject={handleAssignSubject}
-            currentPage={currentPage || 1}
-            totalPages={pagination?.total_pages || 1}
-            totalItems={pagination?.total || 0}
+            currentPage={currentPage}
+            totalPages={totalPages || 1}
+            totalItems={totalItems}
             onPageChange={(page: number) => setCurrentPage(page)}
           />
         )}
@@ -98,16 +134,4 @@ export default function SubjectsPageContent() {
       </>
     </div>
   )
-
-  function handleAddSubject() {
-    setShowCreateDialog(true)
-  }
-
-  function handleEditSubject(subjectID: string) {
-    setEditSubjectID(subjectID)
-  }
-
-  function handleAssignSubject(subjectID: string) {
-    router.push(`/admin/class-management/subjects/${subjectID}/assign`)
-  }
 }

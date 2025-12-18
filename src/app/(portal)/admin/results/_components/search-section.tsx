@@ -37,7 +37,7 @@ export function SearchSection({
   return (
     <div className="flex flex-row gap-4 sm:flex-row">
       <div className="relative flex-1">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2" />
+        <Search className="text-muted-foreground absolute top-1/2 left-4 size-4 -translate-y-1/2" />
         <Input
           placeholder="Search submissions..."
           value={searchQuery}
@@ -48,10 +48,7 @@ export function SearchSection({
 
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className={`justify-between ${open ? "bg-gray-100" : ""}`}
-          >
+          <Button variant="outline" className="h-12 justify-between">
             <ListFilter className="hidden h-4 w-4 sm:block" />
             {open ? (
               <ChevronDown className="h-2 w-4 sm:hidden" />

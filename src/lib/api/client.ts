@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios"
-import { getUserFriendlyMessage } from "../errors"
+import { extractErrorMessage } from "../error-handler"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -41,92 +41,6 @@ const navigateTo = (path: string) => {
   }
 }
 
-const getErrorMessage = (error: unknown): string => {
-  const defaultMessage = "An unexpected error occurred. Please try again later."
-
-  if (error instanceof AxiosError) {
-    const responseData = error.response?.data
-
-    // Try to extract the actual error message from backend response
-    if (typeof responseData === "object" && responseData !== null) {
-      // Check for nested message structure
-      const message = responseData.message || responseData.error || responseData.detail
-
-      if (message) {
-        if (typeof message === "string") {
-          if (
-            message.toLowerCase().includes("email already exists") ||
-            message.toLowerCase().includes("email already exist")
-          ) {
-            return "Email address already exists. Please use a different email."
-          }
-          if (
-            message.toLowerCase().includes("registration number") &&
-            message.toLowerCase().includes("already exists")
-          ) {
-            return "Registration number already exists."
-          }
-          if (message.toLowerCase().includes("invalid credentials")) {
-            return "Invalid Email address and/or Password."
-          }
-          // check if it is a proxy
-          if (message.toLowerCase().includes("proxy error")) {
-            return "Network error! please check your connection and try again"
-          }
-
-          return message
-        }
-
-        // Handle array of validation errors
-        if (Array.isArray(message)) {
-          return message[0] || defaultMessage
-        }
-      }
-
-      // Check for validation errors in nested structure
-      if (
-        responseData.errors &&
-        Array.isArray(responseData.errors) &&
-        responseData.errors.length > 0
-      ) {
-        const firstError = responseData.errors[0]
-        if (typeof firstError === "string") return firstError
-        if (typeof firstError?.msg === "string") return firstError.msg
-        return defaultMessage
-      }
-    }
-
-    // if (error.response?.status === 409) {
-    //   return "An account with these details already exists."
-    // }
-
-    if (error.response?.status === 400) {
-      return "Invalid input data. Please check your entries."
-    }
-
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        const pathname = window.location.pathname
-        if (
-          !pathname.includes("/login") &&
-          pathname.startsWith("/") &&
-          !pathname.startsWith("//")
-        ) {
-          navigateTo(`/login?next=${encodeURIComponent(pathname)}`)
-        }
-      }
-      return "Your session has expired. Please log in again."
-    }
-
-    // Fix the type error by providing default values
-    const statusText = error.response?.statusText || "Unknown Error"
-    const status = error.response?.status || 500
-    return getUserFriendlyMessage(statusText, status)
-  }
-
-  return defaultMessage
-}
-
 export async function apiFetch<TResponse>(
   path: string,
   config: AxiosRequestConfig = {},
@@ -165,9 +79,9 @@ export async function apiFetch<TResponse>(
       if (err.response?.status === 401) {
         navigateTo("/login")
       }
-      const errorMessage = getErrorMessage(err)
+      const errorMessage = extractErrorMessage(err)
       throw new Error(errorMessage)
     }
-    throw new Error("An unexpected error occured. Please try again later")
+    throw new Error(extractErrorMessage(err))
   }
 }

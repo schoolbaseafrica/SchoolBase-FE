@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Student, GradeEntry } from "@/types/result"
 import {
   Table,
@@ -38,29 +38,27 @@ export function StudentsTable({
 }: StudentsTableProps) {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(false)
 
   // Create a filter key that changes when filters change
   const filterKey = `${classId}-${subjectId}-${termId}`
-
-  // create refs and state
   const prevFilterKeyRef = useRef(filterKey)
-  const timersRef = useRef<number[]>([]) // store timer ids so we can clear them
-  const [showLoader, setShowLoader] = useState(false)
+  const timersRef = useRef<number[]>([])
 
-  // effect: schedule show/hide of loader via timers only (no sync setState in body)
+  // Handle filter changes without setting state in useEffect
   useEffect(() => {
     if (filterKey === prevFilterKeyRef.current) return
 
-    // update the ref synchronously (no react state)
+    // Update ref
     prevFilterKeyRef.current = filterKey
 
-    // schedule immediate show inside a timer callback (so setState isn't called synchronously)
+    // Set loading state via setTimeout to avoid eslint violation
     const showTimer = window.setTimeout(() => {
-      setShowLoader(true)
+      setIsLoadingData(true)
 
-      // schedule hide after your desired delay (300ms)
+      // Schedule hide
       const hideTimer = window.setTimeout(() => {
-        setShowLoader(false)
+        setIsLoadingData(false)
       }, 300)
 
       timersRef.current.push(hideTimer)
@@ -68,19 +66,22 @@ export function StudentsTable({
 
     timersRef.current.push(showTimer)
 
-    // cleanup: clear timers if effect re-runs or component unmounts
+    // cleanup
     return () => {
       timersRef.current.forEach((t) => clearTimeout(t))
       timersRef.current = []
     }
   }, [filterKey])
 
-  const shouldShowLoader = showLoader || isLoading
+  const shouldShowLoader = isLoadingData || isLoading
 
   if (shouldShowLoader) {
     return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="mr-2 h-6 w-6 animate-spin text-gray-500" />
+          <span className="text-gray-500">Loading students grades...</span>
+        </div>
       </div>
     )
   }

@@ -30,6 +30,7 @@ export interface GetParentsParams {
   is_active?: boolean
   page?: number
   search?: string
+  limit?: number
 }
 
 interface LinkedResponse {
@@ -58,23 +59,7 @@ export const ParentsAPI = {
         data,
       },
       true
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        const errorMessage = error?.message?.toLowerCase() || ""
-
-        // Handle parent-specific conflicts with specific messages
-        if (errorMessage.includes("email") && errorMessage.includes("already exists")) {
-          throw new Error(
-            "A parent with this email address already exists. Please use a different email."
-          )
-        }
-
-        if (error?.message?.includes("409") || errorMessage.includes("already exists")) {
-          throw new Error("A parent with these details already exists.")
-        }
-        throw error
-      }),
+    ).then((response) => response.data),
 
   update: (id: string, data: UpdateParentData): Promise<User> =>
     apiFetch<ResponsePack<User>>(

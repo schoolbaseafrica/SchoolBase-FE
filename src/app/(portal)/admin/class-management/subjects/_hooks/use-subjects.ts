@@ -1,5 +1,8 @@
 import { apiFetch } from "@/lib/api/client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useSubjectsStore } from "@/store/subjects-store"
+import { useEffect } from "react"
+import { Subject as StoreSubject } from "@/lib/subjects"
 
 type ResponsePack<T> = {
   data: T
@@ -118,38 +121,56 @@ export const SubjectsAPI = {
     ),
 }
 
-export const useGetSubjects = (filters?: GetSubjectsParams) => {
-  return useQuery({
-    queryKey: ["subjects", filters],
-    queryFn: () => SubjectsAPI.getAll(filters).then((res) => res.data),
+export const useGetSubjects = () => {
+  const setSubjects = useSubjectsStore((state) => state.setSubjects)
+  const setLoading = useSubjectsStore((state) => state.setLoading)
+  // const setError = useSubjectsStore((state) => state.setError)
+
+  // Fetch ALL subjects for client-side filtering/pagination
+  // Ignoring the passed 'filters' params for the queryFn to ensure we get everything
+  const query = useQuery({
+    queryKey: ["subjects", "all"],
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await SubjectsAPI.getAll({ limit: 1000 })
+        return res.data
+      } finally {
+        setLoading(false)
+      }
+    },
     refetchOnWindowFocus: false,
     retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   })
+
+  useEffect(() => {
+    if (query.data?.data) {
+      setSubjects(query.data.data as unknown as StoreSubject[])
+    }
+  }, [query.data, setSubjects])
+
+  return query
 }
 
 export const useCreateSubject = () => {
-  //  use a mutation hook here to create a subject
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (data: { name: string }) => SubjectsAPI.create(data),
     onSuccess: () => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["subjects"] })
     },
   })
 }
 
 export const useUpdateSubject = (subjectID: string) => {
-  //  use a mutation hook here to update a subject
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (subjectData: SubjectCore) =>
       SubjectsAPI.update(subjectID, { name: subjectData.name }),
     onSuccess: () => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["subjects"] })
       queryClient.invalidateQueries({ queryKey: ["subject", subjectID] })
     },
@@ -162,7 +183,6 @@ export const useDeleteSubject = () => {
   return useMutation({
     mutationFn: (subjectID: string) => SubjectsAPI.deleteOne(subjectID),
     onSuccess: () => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["subjects"] })
     },
   })
@@ -175,7 +195,7 @@ export const useGetSubject = (subjectId: string) => {
     enabled: !!subjectId,
     refetchOnWindowFocus: false,
     retry: 1,
-    staleTime: 20 * 60 * 1000, // 20 mins
+    staleTime: 20 * 60 * 1000,
   })
 }
 

@@ -1,5 +1,3 @@
-// FILE: src/app/(portal)/teacher/attendance/mark/[classId]/page.tsx
-
 "use client"
 
 import React, { useState } from "react"
@@ -12,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, Save } from "lucide-react"
 import { useGetClassStudents } from "@/app/(portal)/admin/class-management/_hooks/use-classes"
 import { toast } from "sonner"
+import { ItemLoader } from "@/app/(portal)/admin/_components/sub-loader"
 
 interface StudentAttendance {
   student_id: string
@@ -29,7 +28,7 @@ const MarkAttendancePage = () => {
 
   const { data: students, isLoading } = useGetClassStudents(classId)
 
-  const toggleAttendance = (studentId: string, studentName: string) => {
+  const toggleAttendance = (studentId: string) => {
     setAttendance((prev) => {
       const newMap = new Map(prev)
       const current = newMap.get(studentId)
@@ -73,10 +72,10 @@ const MarkAttendancePage = () => {
       //   date: new Date().toISOString().split("T")[0],
       //   attendance_records: Array.from(attendance.values()),
       // })
-
       toast.success("Attendance marked successfully")
       router.push("/teacher/attendance")
     } catch (error) {
+      console.error("Failed to mark attendance", error)
       toast.error("Failed to mark attendance")
     } finally {
       setIsSubmitting(false)
@@ -84,11 +83,7 @@ const MarkAttendancePage = () => {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="text-primary h-12 w-12 animate-spin" />
-      </div>
-    )
+    return <ItemLoader item="attendance" />
   }
 
   return (
@@ -131,18 +126,14 @@ const MarkAttendancePage = () => {
                         <label className="flex items-center gap-2">
                           <Checkbox
                             checked={isPresent}
-                            onCheckedChange={() =>
-                              toggleAttendance(student.student_id, student.name)
-                            }
+                            onCheckedChange={() => toggleAttendance(student.student_id)}
                           />
                           <span className="text-sm">Present</span>
                         </label>
                         <label className="flex items-center gap-2">
                           <Checkbox
                             checked={isAbsent}
-                            onCheckedChange={() =>
-                              toggleAttendance(student.student_id, student.name)
-                            }
+                            onCheckedChange={() => toggleAttendance(student.student_id)}
                           />
                           <span className="text-sm">Absent</span>
                         </label>

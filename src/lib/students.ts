@@ -103,33 +103,7 @@ export const StudentsAPI = {
         data,
       },
       true
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        const errorMessage = error?.message?.toLowerCase() || ""
-
-        // Handle student-specific conflicts with specific messages
-        if (errorMessage.includes("email") && errorMessage.includes("already exists")) {
-          throw new Error(
-            "A student with this email address already exists. Please use a different email."
-          )
-        }
-
-        if (
-          (errorMessage.includes("registration number") ||
-            errorMessage.includes("registration_number")) &&
-          errorMessage.includes("already exists")
-        ) {
-          throw new Error(
-            "A student with this registration number already exists. Please use a different registration number."
-          )
-        }
-
-        if (error?.message?.includes("409") || errorMessage.includes("already exists")) {
-          throw new Error("A student with these details already exists.")
-        }
-        throw error
-      }),
+    ).then((response) => response.data),
 
   update: (id: string, data: UpdateStudentData): Promise<User> =>
     apiFetch<ResponsePack<User>>(

@@ -7,7 +7,7 @@ import {
   UserPlusIcon,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { SubjectsLoadingSkeleton } from "./subjects-loading-skeleton"
+import { ItemLoader } from "../sub-loader"
 import { ItemsError } from "../loading-error"
 import EmptyState from "../empty-state"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
@@ -92,7 +92,7 @@ export default function ViewClassSubjects() {
 
         {isLoading ? (
           <div className="space-y-3">
-            <SubjectsLoadingSkeleton />
+            <ItemLoader item="Class subjects" />
           </div>
         ) : isError ? (
           <ItemsError

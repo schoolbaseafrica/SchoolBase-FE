@@ -56,8 +56,10 @@ export function TeacherSidebar() {
     <Sidebar>
       {/* HEADER */}
       <SidebarHeader>
-        <div className="flex h-7 items-center justify-between px-2 py-4">
-          {!isCollapsed && <Logo />}
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className={isCollapsed ? "hidden" : ""}>
+            <Logo />
+          </div>
           <SidebarTrigger />
         </div>
       </SidebarHeader>
@@ -78,20 +80,19 @@ export function TeacherSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive}
-                      className={
+                      className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743]/10 text-[#DA3743]"
-                          : "text-gray-700 hover:bg-[#DA3743]/10 hover:text-[#DA3743]"
-                      }
+                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
                     >
                       <Link
                         href={item.url}
                         onClick={handleLinkClick}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-3"
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

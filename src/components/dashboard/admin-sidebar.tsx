@@ -62,7 +62,7 @@ const mainItems = [
     icon: Calendar,
     subItems: [
       { title: "Timetable View", url: "/admin/timetable" },
-      { title: "Timetable Setup", url: "/admin/timetable" },
+      // { title: "Timetable Setup", url: "/admin/timetable" },
     ],
   },
   { title: "Results", url: "/admin/results", icon: Calendar },
@@ -121,9 +121,25 @@ export function AdminSidebar() {
             <SidebarMenu className="space-y-1 px-3">
               {mainItems.map((item) => {
                 const hasSubItems = "subItems" in item && item.subItems
-                const isActive = item.exactMatch
-                  ? pathname === item.url
-                  : pathname === item.url || pathname.startsWith(item.url + "/")
+
+                let isActive: boolean
+                if (item.title === "Class Management") {
+                  isActive =
+                    pathname === item.url ||
+                    (pathname.startsWith("/admin/class-management/class") &&
+                      !pathname.startsWith("/admin/class-management/classrooms"))
+                } else if (item.title === "School Structure") {
+                  isActive =
+                    pathname === item.url ||
+                    pathname.startsWith("/admin/class-management/session") ||
+                    pathname.startsWith("/admin/class-management/subjects") ||
+                    pathname.startsWith("/admin/class-management/classrooms")
+                } else {
+                  isActive = item.exactMatch
+                    ? pathname === item.url
+                    : pathname === item.url || pathname.startsWith(item.url + "/")
+                }
+
                 const isOpen = openItems.includes(item.title)
                 const hasActiveChild =
                   hasSubItems &&
@@ -142,7 +158,7 @@ export function AdminSidebar() {
                             asChild
                             className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 ${
                               isActive || hasActiveChild
-                                ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                                ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                                 : "text-gray-700 hover:bg-gray-100"
                             }`}
                           >
@@ -169,7 +185,7 @@ export function AdminSidebar() {
                                     asChild
                                     className={`rounded-md px-3 py-2 ${
                                       isSubActive
-                                        ? "text-[#DA3743]"
+                                        ? "text-[var(--primary)]"
                                         : "text-gray-600 hover:bg-gray-100"
                                     }`}
                                   >
@@ -193,7 +209,7 @@ export function AdminSidebar() {
                       asChild
                       className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -225,7 +241,7 @@ export function AdminSidebar() {
                     asChild
                     className={`rounded-md px-3 py-2.5 ${
                       isActive
-                        ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                        ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >

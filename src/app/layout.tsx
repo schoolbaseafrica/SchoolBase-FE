@@ -2,7 +2,7 @@ import React from "react"
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 import "./globals.css"
-import { GeneralQueryProvider } from "@/providers/general-query-provider"
+import { QueryProvider } from "@/providers/query-provider"
 import { Toaster } from "sonner"
 import { defaultSchoolProfile } from "@/data/school-profile"
 import { BrandThemeUpdater } from "@/components/brand-theme-updater"
@@ -94,7 +94,7 @@ export default function RootLayout({
   }
 
   return (
-    <GeneralQueryProvider>
+    <QueryProvider>
       <html lang="en">
         <body className={`${outfit.variable} font-outfit antialiased`} style={brandVars}>
           <BrandThemeUpdater />
@@ -102,6 +102,6 @@ export default function RootLayout({
           <Toaster position="bottom-right" richColors />
         </body>
       </html>
-    </GeneralQueryProvider>
+    </QueryProvider>
   )
 }

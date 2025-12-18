@@ -55,7 +55,7 @@ export function StudentSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex h-7 items-center justify-between px-2 py-4">
+        <div className="flex h-16 items-center justify-between px-4">
           <div className={isCollapsed ? "hidden" : ""}>
             <Logo />
           </div>
@@ -76,20 +76,19 @@ export function StudentSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive}
-                      className={
+                      className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743]/10 text-[#DA3743]"
-                          : "text-primary hover:bg-[#DA3743]/10 hover:text-[#DA3743]"
-                      }
+                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
                     >
                       <Link
                         href={item.url || "#"}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-3"
                         onClick={handleLinkClick}
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -111,7 +110,7 @@ export function StudentSidebar() {
                     asChild
                     className={`rounded-md px-3 py-2.5 ${
                       isActive
-                        ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                        ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >

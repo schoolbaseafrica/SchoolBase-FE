@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { X, CloudUpload, AlertCircleIcon } from "lucide-react"
@@ -49,7 +49,6 @@ const AddPaymentForm = () => {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     reset,
     formState: { errors },
@@ -64,7 +63,7 @@ const AddPaymentForm = () => {
     },
   })
 
-  const watchFeeComponent = watch("feeComponent")
+  const watchFeeComponent = useWatch({ control, name: "feeComponent" })
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
@@ -337,7 +336,7 @@ const AddPaymentForm = () => {
         </div>
 
         {/* File Upload */}
-        {/* <div className="space-y-4">
+        <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">
             Upload Receipt <span className="text-gray-500">(Optional)</span>
           </h3>
@@ -393,7 +392,7 @@ const AddPaymentForm = () => {
               </div>
             )}
           </div>
-        </div> */}
+        </div>
 
         <div className="flex justify-end gap-4">
           <Button

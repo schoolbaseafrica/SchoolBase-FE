@@ -9,13 +9,9 @@ import {
 } from "@/lib/parents"
 import type { SnakeUser as User } from "@/types/user"
 import { toast } from "sonner"
-
-type ResponsePack<T> = {
-  data: T
-  message: string
-}
-
-type ParentsResponse = ResponsePack<ResponsePack<User[]>>
+import { extractErrorMessage } from "@/lib/error-handler"
+import { useParentsStore } from "@/store/parents-store"
+import { useEffect } from "react"
 
 // The main list query key
 const PARENTS_KEY = ["parents"]
@@ -23,51 +19,72 @@ const PARENTS_KEY = ["parents"]
 // ----------------------------
 // 🔍 GET ALL PARENTS
 // ----------------------------
+export function useGetParents() {
+  const setParents = useParentsStore((state) => state.setParents)
+  const setLoading = useParentsStore((state) => state.setLoading)
 
-export function useGetParents(filters?: GetParentsParams) {
-  return useQuery({
-    queryKey: [...PARENTS_KEY, filters],
-    queryFn: () => ParentsAPI.getAll(filters),
-    select: (data) => {
-      // Handle the actual response structure
-      if (Array.isArray(data.data)) {
-        return data.data as User[]
+  const query = useQuery({
+    queryKey: PARENTS_KEY,
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await ParentsAPI.getAll({ limit: 1000 } as GetParentsParams)
+        const parents = res.data.data
+        return parents
+      } finally {
+        setLoading(false)
       }
-      // Fallback for nested structure
-      return (data.data?.data || []) as User[]
     },
-    staleTime: 1000 * 60 * 20,
-    enabled: true,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   })
+
+  useEffect(() => {
+    if (query.data && Array.isArray(query.data)) {
+      setParents(query.data as User[])
+    }
+  }, [query.data, setParents])
+
+  return query
 }
+
 // ----------------------------
 // 🔍 GET PARENT BY ID
 // ----------------------------
-
 export function useGetParent(id?: string) {
+  const parentFromStore = useParentsStore((state) =>
+    id ? state.getParentById(id) : undefined
+  )
+
   return useQuery({
     queryKey: [...PARENTS_KEY, id],
     queryFn: () => ParentsAPI.getOne(id || ""),
     enabled: !!id,
+    initialData: parentFromStore
+      ? { data: parentFromStore, message: "From store" }
+      : undefined,
     select: (data) => data.data as User,
-    staleTime: 1000 * 60 * 20,
+    staleTime: 1000 * 60 * 5,
   })
 }
 
 // ----------------------------
 // ➕ CREATE PARENT
 // ----------------------------
-
 export function useCreateParent() {
   const queryClient = useQueryClient()
+  const addParent = useParentsStore((state) => state.addParent)
+
   return useMutation({
     mutationFn: (data: CreateParentData) => ParentsAPI.create(data),
-    onSuccess: () => {
+    onSuccess: (newParent) => {
+      addParent(newParent)
       queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
       toast.success("Parent created successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to create parent")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
@@ -75,57 +92,43 @@ export function useCreateParent() {
 // ----------------------------
 // ✏ UPDATE PARENT
 // ----------------------------
-
 export function useUpdateParent(id: string) {
   const queryClient = useQueryClient()
+  const updateParent = useParentsStore((state) => state.updateParent)
+
   return useMutation({
     mutationFn: (data: UpdateParentData) => ParentsAPI.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedParent) => {
+      updateParent(id, updatedParent)
       queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
       queryClient.invalidateQueries({ queryKey: [...PARENTS_KEY, id] })
       toast.success("Parent updated successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to update parent")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
 
 // ----------------------------
-// ❌ DELETE PARENT (Optimistic Update)
+// ❌ DELETE PARENT
 // ----------------------------
-
 export function useDeleteParent() {
   const queryClient = useQueryClient()
+  const removeParent = useParentsStore((state) => state.removeParent)
+
   return useMutation({
     mutationFn: (id: string) => ParentsAPI.delete(id),
-    // Optimistic update for snappy UI
-    onMutate: async (id: string) => {
+    onMutate: async (id) => {
+      // Optimistic update
+      removeParent(id)
       await queryClient.cancelQueries({ queryKey: PARENTS_KEY })
-      // Get the raw query data (before select transformation)
-      const previousRaw = queryClient.getQueryData(PARENTS_KEY)
-      // Update the cache with filtered data, maintaining the response structure
-      queryClient.setQueryData(PARENTS_KEY, (old: ParentsResponse | undefined) => {
-        if (!old) return old
-        // Handle the response structure: { data: { data: User[] } }
-        if (old.data?.data && Array.isArray(old.data.data)) {
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              data: old.data.data.filter((t) => t.id !== id),
-            },
-          }
-        }
-        return old
-      })
-      return { previous: previousRaw }
     },
-    onError: (error, _id, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(PARENTS_KEY, ctx.previous)
-      }
-      toast.error(error instanceof Error ? error.message : "Failed to delete parent")
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
@@ -144,6 +147,10 @@ export const useLinkParentToStudents = (parentId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["parent", parentId, "students"],
       })
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }

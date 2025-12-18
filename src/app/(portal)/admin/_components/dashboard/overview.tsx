@@ -1,49 +1,65 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import StatCard, { StatItem } from "@/components/dashboard/stat-card"
+import { useMemo, useState } from "react"
 import TodayActivities from "./today-activities-table"
-import TodayActivityGrid from "./today-activity-grid"
 
-import StudentGrowthChart from "./student-growth-chart"
-import FeesReportChart from "./fees-report-chart"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Activity, Search, Users, GraduationCap, Book } from "lucide-react"
+import {
+  Activity as ActivityIcon,
+  Book,
+  GraduationCap,
+  Search,
+  Users,
+} from "lucide-react"
 import NotePad from "../../../../../../public/svgs/note-pad"
-import { useTeachersCount } from "../../teachers/_hooks/use-teachers"
-import { useStudentsCount } from "../../students/_hooks/use-students"
-import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import { useTodayActivities } from "../../_hooks/today-activity"
+import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
+import { useStudentsCount } from "../../students/_hooks/use-students"
+import { useTeachersCount } from "../../teachers/_hooks/use-teachers"
+import FeesReportChart from "./fees-report-chart"
+import StudentGrowthChart from "./student-growth-chart"
+import { useDashboardStore } from "@/store/dashboard-store"
+import { useShallow } from "zustand/react/shallow"
+// Import the Activity type
+import type { Activity as DashboardActivity } from "@/lib/dashboard"
 
 const Overview = () => {
-  const { data: teacherTotal, isLoading } = useTeachersCount()
+  const { data: teacherTotal, isLoading: teacherLoading } = useTeachersCount()
   const { data: studentTotal, isLoading: studentIsLoading } = useStudentsCount()
+  // Fetch just count for classes
   const { data: classesData, isLoading: classLoading } = useGetClassesInfo({
     limit: 1,
     page: 1,
   })
 
-  const { data: todayActivitiesData } = useTodayActivities()
+  // Sync activities to store
+  const { isLoading: activitiesLoading } = useTodayActivities()
+
+  // Read activities from store
+  const { todayActivities } = useDashboardStore(
+    useShallow((state) => ({ todayActivities: state.todayActivities }))
+  )
 
   const [searchTerm, setSearchTerm] = useState("")
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null)
   const [showAll, setShowAll] = useState(false)
 
-  const classTotal = classesData?.pagination.total ?? 0
+  const classTotal = classesData?.pagination?.total ?? 0
 
   // Memoize activities array
   const activities = useMemo(() => {
-    return todayActivitiesData?.todays_activities ?? []
-  }, [todayActivitiesData])
+    return todayActivities?.todays_activities ?? []
+  }, [todayActivities])
 
   // Filter activities by search term
   const filteredActivities = useMemo(() => {
     if (!searchTerm) return activities
     const term = searchTerm.toLowerCase()
 
-    return activities.filter((act) => {
+    return activities.filter((act: DashboardActivity) => {
       const teacher = act?.teacher?.full_name?.toLowerCase() ?? ""
       const subject = act?.subject?.name?.toLowerCase() ?? ""
       const className = act?.class?.name?.toLowerCase() ?? ""
@@ -78,40 +94,43 @@ const Overview = () => {
       : "0"
   const formattedClass = classLoading ? "..." : formatNumber(classTotal)
 
+  const isLoading =
+    teacherLoading || studentIsLoading || classLoading || activitiesLoading
+
   const dashboardStats: StatItem[] = useMemo(
     () => [
       {
         name: "Total Students",
-        quantity: studentIsLoading ? 0 : formattedStudents,
+        quantity: studentIsLoading ? "..." : formattedStudents,
         percentage: 10,
         icon: GraduationCap,
       },
       {
         name: "Total Teachers",
-        quantity: isLoading ? 0 : formattedTeachers,
+        quantity: teacherLoading ? "..." : formattedTeachers,
         percentage: 10,
         icon: Users,
       },
       { name: "Today's Attendance", quantity: 0, percentage: 10, icon: NotePad },
       {
         name: "Total Classes",
-        quantity: classLoading ? 0 : formattedClass,
+        quantity: classLoading ? "..." : formattedClass,
         percentage: 10,
         icon: Book,
       },
     ],
     [
-      isLoading,
-      formattedTeachers,
-      formattedStudents,
+      teacherLoading,
       studentIsLoading,
       classLoading,
+      formattedTeachers,
+      formattedStudents,
       formattedClass,
     ]
   )
 
   return (
-    <div className="bg-[#FAFAFA] px-2 pt-4 lg:px-4">
+    <div className="bg-[#FAFAFA] px-4 pt-4 sm:px-6 sm:pt-6">
       <DashboardTitle
         heading="Dashboard"
         description="Welcome back! Here is an overview of your school"
@@ -119,22 +138,22 @@ const Overview = () => {
 
       <StatCard stats={dashboardStats} isLoading={isLoading} />
 
-      <section className="mt-10 grid grid-cols-1 gap-[72px] lg:grid-cols-2">
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <StudentGrowthChart />
         <FeesReportChart />
       </section>
 
       {/* Today's activities */}
-      <section className="mt-6 mb-10 rounded-2xl border px-2 py-4 shadow-xl lg:px-6">
+      <section className="my-6 rounded-2xl border bg-white p-4 shadow-sm lg:p-6">
         <div className="mb-4 flex flex-col justify-between md:flex-row md:items-center">
-          <div className="flex items-center gap-2 px-4 py-2.5">
-            <Activity className="text-accent size-5" />
+          <div className="flex items-center gap-2 py-2.5">
+            <ActivityIcon className="text-accent size-5" />
             <h2 className="text-primary text-2xl font-bold">Today&apos;s Activities</h2>
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-2 lg:mt-0">
             {/* Search */}
-            <aside className="relative w-full max-w-[250px]">
+            <aside className="relative w-full lg:max-w-[250px]">
               <div className="relative bg-[#D9D9D933]">
                 <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
                 <Input
@@ -149,7 +168,7 @@ const Overview = () => {
               {searchTerm.length > 0 && (
                 <div className="absolute z-20 mt-1 max-h-[220px] min-h-[120px] w-full overflow-y-auto rounded-lg border bg-white shadow">
                   {filteredActivities.length > 0 ? (
-                    filteredActivities.map((act, i) => (
+                    filteredActivities.map((act: DashboardActivity, i: number) => (
                       <button
                         key={act.schedule_id}
                         type="button"
@@ -177,11 +196,6 @@ const Overview = () => {
         </div>
 
         <TodayActivities
-          search={searchTerm}
-          highlightedIndex={highlightedIndex}
-          showAll={showAll}
-        />
-        <TodayActivityGrid
           search={searchTerm}
           highlightedIndex={highlightedIndex}
           showAll={showAll}

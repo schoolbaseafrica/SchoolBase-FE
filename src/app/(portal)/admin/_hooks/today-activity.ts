@@ -2,11 +2,32 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { DashboardAPI } from "@/lib/dashboard"
+import { useDashboardStore } from "@/store/dashboard-store"
+import { useEffect } from "react"
 
 export const useTodayActivities = () => {
-  return useQuery({
+  const setActivities = useDashboardStore((state) => state.setTodayActivities)
+  const setLoading = useDashboardStore((state) => state.setLoading)
+  // const setError = useDashboardStore((state) => state.setError)
+
+  const query = useQuery({
     queryKey: ["today-activities"],
-    queryFn: () => DashboardAPI.getTodayActivities(),
-    select: (res) => res.data, // return only the actual data (not status, message)
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await DashboardAPI.getTodayActivities()
+        return res.data
+      } finally {
+        setLoading(false)
+      }
+    },
   })
+
+  useEffect(() => {
+    if (query.data) {
+      setActivities(query.data)
+    }
+  }, [query.data, setActivities])
+
+  return query
 }

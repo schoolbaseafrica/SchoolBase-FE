@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { UnassignStudentConfirmationDialog } from "./unassign-student-confirmation-dialog"
-import { StudentsLoadingSkeleton } from "./students-loading-skeleton"
+
+import { ItemLoader } from "../sub-loader"
 import { StudentsForClass } from "@/lib/classes"
 
 export default function ViewClassStudents() {
@@ -66,7 +67,7 @@ export default function ViewClassStudents() {
             </Link>
           </Button>
 
-          <div className="flex flex-grow flex-col items-start justify-between space-y-3 md:flex-row">
+          <div className="flex grow flex-col items-start justify-between space-y-3 md:flex-row">
             <DashboardTitle
               heading="Class Students"
               description="View the students assigned to this class"
@@ -90,7 +91,7 @@ export default function ViewClassStudents() {
 
         {isLoading ? (
           <div className="space-y-3">
-            <StudentsLoadingSkeleton />
+            <ItemLoader item="Class students" />
           </div>
         ) : isError ? (
           <ItemsError

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useGetParent, useUpdateParent } from "../_hooks/use-parents"
 import { parentFormConfig } from "../new/components/new-parent-form"
+import { ItemLoader } from "../../_components/sub-loader"
 
 export default function EditParentPage() {
   const { id } = useParams()
@@ -48,12 +49,7 @@ export default function EditParentPage() {
   if (isLoading) {
     return (
       <div className="mb-10 w-full space-y-8 bg-white p-4 md:p-10">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading parent details...</p>
-          </div>
-        </div>
+        <ItemLoader item="parent details" />
       </div>
     )
   }

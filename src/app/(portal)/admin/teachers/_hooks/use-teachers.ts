@@ -5,44 +5,71 @@ import {
   TeachersAPI,
   CreateTeacherData,
   UpdateTeacherData,
-  GetTeachersParams,
+  // GetTeachersParams,
 } from "@/lib/teachers"
 import type { SnakeUser as User } from "@/types/user"
 import { toast } from "sonner"
+import { extractErrorMessage } from "@/lib/error-handler"
+import { useTeachersStore } from "@/store/teachers-store"
+import { useEffect } from "react"
 
-type ResponsePack<T> = {
-  data: T
-  message: string
-}
-
-type TeachersResponse = ResponsePack<ResponsePack<User[]>>
-
-// The main list query key
+// The main list query key - simplified
 const TEACHERS_KEY = ["teachers"]
 
 // ----------------------------
 // 🔍 GET ALL TEACHERS
 // ----------------------------
-export function useGetTeachers(filters?: GetTeachersParams) {
-  return useQuery({
-    queryKey: [...TEACHERS_KEY, filters],
-    queryFn: () => TeachersAPI.getAll(filters),
-    select: (data) => data.data?.data as User[],
-    staleTime: 1000 * 60 * 20,
-    enabled: !!filters,
+export function useGetTeachers() {
+  const setTeachers = useTeachersStore((state) => state.setTeachers)
+  const setLoading = useTeachersStore((state) => state.setLoading)
+  // const setError = useTeachersStore((state) => state.setError)
+
+  const query = useQuery({
+    queryKey: TEACHERS_KEY, // Stable key, ignore filters
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await TeachersAPI.getAll({ limit: 1000 }) // Fetch enough data
+        return res
+      } finally {
+        setLoading(false)
+      }
+    },
+    select: (data) => data.data.data, // Select just the array
+    staleTime: 1000 * 60 * 5, // 5 minutes stale time
+    gcTime: 1000 * 60 * 30, // 30 minutes cache time
+    retry: 1,
+    refetchOnWindowFocus: false,
   })
+
+  // Sync with store
+  useEffect(() => {
+    if (query.data && Array.isArray(query.data)) {
+      setTeachers(query.data)
+    }
+  }, [query.data, setTeachers])
+
+  return query
 }
 
 // ----------------------------
 // 🔍 GET TEACHER BY ID
 // ----------------------------
 export function useGetTeacher(id?: string) {
+  // Try to get from store first
+  const teacherFromStore = useTeachersStore((state) =>
+    id ? state.getTeacherById(id) : undefined
+  )
+
   return useQuery({
     queryKey: [...TEACHERS_KEY, id],
     queryFn: () => TeachersAPI.getOne(id || ""),
     enabled: !!id,
+    initialData: teacherFromStore
+      ? { data: teacherFromStore, message: "From store" }
+      : undefined,
     select: (data) => data.data as User,
-    staleTime: 1000 * 60 * 20,
+    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -51,15 +78,21 @@ export function useGetTeacher(id?: string) {
 // ----------------------------
 export function useCreateTeacher() {
   const queryClient = useQueryClient()
+  const addTeacher = useTeachersStore((state) => state.addTeacher)
 
   return useMutation({
     mutationFn: (data: CreateTeacherData) => TeachersAPI.create(data),
-    onSuccess: () => {
+    onSuccess: (newTeacher) => {
+      // Update store instantly
+      addTeacher(newTeacher)
+
+      // Invalidate query to ensure consistency
       queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
       toast.success("Teacher created successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to create teacher")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
@@ -69,63 +102,49 @@ export function useCreateTeacher() {
 // ----------------------------
 export function useUpdateTeacher(id: string) {
   const queryClient = useQueryClient()
+  const updateTeacher = useTeachersStore((state) => state.updateTeacher)
 
   return useMutation({
     mutationFn: (data: UpdateTeacherData) => TeachersAPI.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedTeacher) => {
+      // Update store instantly
+      updateTeacher(id, updatedTeacher)
+
       queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
       queryClient.invalidateQueries({ queryKey: [...TEACHERS_KEY, id] })
       toast.success("Teacher updated successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to update teacher")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
 
 // ----------------------------
-// ❌ DELETE TEACHER (Optimistic Update)
+// ❌ DELETE TEACHER
 // ----------------------------
 export function useDeleteTeacher() {
   const queryClient = useQueryClient()
+  const removeTeacher = useTeachersStore((state) => state.removeTeacher)
 
   return useMutation({
     mutationFn: (id: string) => TeachersAPI.delete(id),
 
-    // Optimistic update for snappy UI
-    onMutate: async (id: string) => {
+    // Optimistic update
+    onMutate: async (id) => {
+      // Remove from store instantly
+      removeTeacher(id)
+
+      // Cancel queries
       await queryClient.cancelQueries({ queryKey: TEACHERS_KEY })
-
-      // Get the raw query data (before select transformation)
-      // The query uses select, so getQueryData returns the raw response structure
-      const previousRaw = queryClient.getQueryData(TEACHERS_KEY)
-
-      // Update the cache with filtered data, maintaining the response structure
-      queryClient.setQueryData(TEACHERS_KEY, (old: TeachersResponse | undefined) => {
-        if (!old) return old
-
-        // Handle the response structure: { data: { data: User[] } }
-        if (old.data?.data && Array.isArray(old.data.data)) {
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              data: old.data.data.filter((t) => t.id !== id),
-            },
-          }
-        }
-
-        return old
-      })
-
-      return { previous: previousRaw }
     },
 
-    onError: (error, _id, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(TEACHERS_KEY, ctx.previous)
-      }
-      toast.error(error instanceof Error ? error.message : "Failed to delete teacher")
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
+
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
 
     onSuccess: () => {
@@ -155,6 +174,5 @@ export async function findTeacherBySearch(name: string) {
     page: 1,
     is_active: true,
   })
-  const teacher = teachers.data?.data?.[0] || null
-  return teacher
+  return teachers.data.data?.[0] || null
 }

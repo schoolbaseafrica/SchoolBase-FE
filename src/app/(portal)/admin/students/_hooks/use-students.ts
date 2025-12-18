@@ -9,13 +9,9 @@ import {
 } from "@/lib/students"
 import type { SnakeUser as User } from "@/types/user"
 import { toast } from "sonner"
-
-type ResponsePack<T> = {
-  data: T
-  message: string
-}
-
-type StudentsResponse = ResponsePack<ResponsePack<User[]>>
+import { extractErrorMessage } from "@/lib/error-handler"
+import { useStudentsStore } from "@/store/students-store"
+import { useEffect } from "react"
 
 // The main list query key
 const STUDENTS_KEY = ["students"]
@@ -23,56 +19,83 @@ const STUDENTS_KEY = ["students"]
 // ----------------------------
 // 🔍 GET ALL STUDENTS
 // ----------------------------
+export function useGetStudents() {
+  const setStudents = useStudentsStore((state) => state.setStudents)
+  const setLoading = useStudentsStore((state) => state.setLoading)
 
-export function useGetStudents(filters?: GetStudentsParams) {
-  return useQuery({
-    queryKey: [...STUDENTS_KEY, filters],
-    queryFn: () => StudentsAPI.getAll(filters),
-    select: (data) => {
-      return data.data as User[]
+  const query = useQuery({
+    queryKey: STUDENTS_KEY, // Ignoring params for store sync
+    queryFn: async () => {
+      setLoading(true)
+      try {
+        const res = await StudentsAPI.getAll({ limit: 1000 })
+        const students = res.data
+        return students
+      } finally {
+        setLoading(false)
+      }
     },
-    staleTime: 1000 * 60 * 20,
-    enabled: true,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   })
+
+  useEffect(() => {
+    if (query.data && Array.isArray(query.data)) {
+      setStudents(query.data as User[])
+    }
+  }, [query.data, setStudents])
+
+  return query
 }
 
-export function useGetStudentsWithMeta(filters?: GetStudentsParams) {
+// ----------------------------
+// 🔍 GET STUDENTS WITH META (PAGINATION)
+// ----------------------------
+export function useGetStudentsWithMeta(params?: GetStudentsParams) {
   return useQuery({
-    queryKey: [...STUDENTS_KEY, filters],
-    queryFn: () => StudentsAPI.getAll(filters),
-    staleTime: 1000 * 60 * 20,
-    enabled: true,
+    queryKey: [...STUDENTS_KEY, params],
+    queryFn: () => StudentsAPI.getAll(params),
+    staleTime: 1000 * 60 * 5,
   })
 }
 
 // ----------------------------
 // 🔍 GET STUDENT BY ID
 // ----------------------------
-
 export function useGetStudent(id?: string) {
+  const studentFromStore = useStudentsStore((state) =>
+    id ? state.getStudentById(id) : undefined
+  )
+
   return useQuery({
     queryKey: [...STUDENTS_KEY, id],
     queryFn: () => StudentsAPI.getOne(id || ""),
     enabled: !!id,
+    initialData: studentFromStore
+      ? { data: studentFromStore, message: "From store" }
+      : undefined,
     select: (data) => data.data as User,
-    staleTime: 1000 * 60 * 20,
+    staleTime: 1000 * 60 * 5,
   })
 }
 
 // ----------------------------
 // ➕ CREATE STUDENT
 // ----------------------------
-
 export function useCreateStudent() {
   const queryClient = useQueryClient()
+  const addStudent = useStudentsStore((state) => state.addStudent)
+
   return useMutation({
     mutationFn: (data: CreateStudentData) => StudentsAPI.create(data),
-    onSuccess: () => {
+    onSuccess: (newStudent) => {
+      addStudent(newStudent)
       queryClient.invalidateQueries({ queryKey: STUDENTS_KEY })
       toast.success("Student created successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to create student")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
@@ -80,57 +103,42 @@ export function useCreateStudent() {
 // ----------------------------
 // ✏ UPDATE STUDENT
 // ----------------------------
-
 export function useUpdateStudent(id: string) {
   const queryClient = useQueryClient()
+  const updateStudent = useStudentsStore((state) => state.updateStudent)
+
   return useMutation({
     mutationFn: (data: UpdateStudentData) => StudentsAPI.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedStudent) => {
+      updateStudent(id, updatedStudent)
       queryClient.invalidateQueries({ queryKey: STUDENTS_KEY })
       queryClient.invalidateQueries({ queryKey: [...STUDENTS_KEY, id] })
       toast.success("Student updated successfully")
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to update student")
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
   })
 }
 
 // ----------------------------
-// ❌ DELETE STUDENT (Optimistic Update)
+// ❌ DELETE STUDENT
 // ----------------------------
-
 export function useDeleteStudent() {
   const queryClient = useQueryClient()
+  const removeStudent = useStudentsStore((state) => state.removeStudent)
+
   return useMutation({
     mutationFn: (id: string) => StudentsAPI.delete(id),
-    // Optimistic update for snappy UI
-    onMutate: async (id: string) => {
+    onMutate: async (id) => {
+      removeStudent(id)
       await queryClient.cancelQueries({ queryKey: STUDENTS_KEY })
-      // Get the raw query data (before select transformation)
-      const previousRaw = queryClient.getQueryData(STUDENTS_KEY)
-      // Update the cache with filtered data, maintaining the response structure
-      queryClient.setQueryData(STUDENTS_KEY, (old: StudentsResponse | undefined) => {
-        if (!old) return old
-        // Handle the response structure: { data: { data: User[] } }
-        if (old.data?.data && Array.isArray(old.data.data)) {
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              data: old.data.data.filter((t) => t.id !== id),
-            },
-          }
-        }
-        return old
-      })
-      return { previous: previousRaw }
     },
-    onError: (error, _id, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(STUDENTS_KEY, ctx.previous)
-      }
-      toast.error(error instanceof Error ? error.message : "Failed to delete student")
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: STUDENTS_KEY })
+      const message = extractErrorMessage(error)
+      toast.error(message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: STUDENTS_KEY })
@@ -142,13 +150,12 @@ export function useDeleteStudent() {
 // ----------------------------
 // COUNT ACTIVE STUDENTS
 // --------------------------
-
 export function useStudentsCount() {
   return useQuery({
     queryKey: ["students_count"],
     queryFn: async () => {
       const res = await StudentsAPI.getTotal({ limit: 1, page: 1 })
-      return res.meta?.total ?? 0 // Changed from res.data?.total to res.meta?.total
+      return res.meta?.total ?? 0
     },
   })
 }
@@ -156,7 +163,6 @@ export function useStudentsCount() {
 // ----------------------------
 // STUDENT GROWTH REPORT
 // --------------------------
-
 export function useStudentGrowthReport(academic_year?: string) {
   return useQuery({
     queryKey: ["student_growth_report", academic_year],

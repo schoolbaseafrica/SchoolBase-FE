@@ -1,5 +1,3 @@
-// @/lib/results/error-handler.ts
-
 export interface ResultsApiError {
   status_code: number
   message: string
@@ -75,8 +73,6 @@ export const getResultsErrorMessage = (error: unknown): string => {
 
     return error.message
   }
-
-  // Generic fallback
   return "An unexpected error occurred. Please try again."
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -55,20 +55,32 @@ export default function AssignTeacherDialog({
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Fetch teachers based on search query
+  // Fetch all teachers and filter client-side
   const {
     data: teachersData,
     isLoading: isLoadingTeachers,
     isError: isErrorTeachers,
-  } = useGetTeachers({
-    is_active: true,
-    search: debouncedSearch,
-    limit: 3,
-  })
+  } = useGetTeachers()
 
   const assignMutation = useAssignTeachersToClassSubject()
 
-  const topThreeTeachers = teachersData?.slice(0, 3)
+  // Filter teachers client-side based on search query and active status
+  const filteredTeachers = useMemo(() => {
+    if (!teachersData) return []
+    return teachersData
+      .filter((teacher) => {
+        const matchesSearch = debouncedSearch
+          ? `${teacher.first_name} ${teacher.last_name} ${teacher.employment_id}`
+              .toLowerCase()
+              .includes(debouncedSearch.toLowerCase())
+          : true
+        const matchesActive = teacher.is_active === true
+        return matchesSearch && matchesActive
+      })
+      .slice(0, 3)
+  }, [teachersData, debouncedSearch])
+
+  const topThreeTeachers = filteredTeachers
 
   // Close dropdown when clicking outside
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { Upload, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,10 @@ const FeesRecord = () => {
     ...filters,
   })
 
-  const payments = paymentsData?.data?.payments || []
+  const payments = useMemo(
+    () => paymentsData?.data?.payments || [],
+    [paymentsData?.data?.payments]
+  )
   const totalPages = paymentsData?.data
     ? Math.ceil(paymentsData.data.total / paymentsData.data.limit)
     : 1
@@ -31,6 +34,49 @@ const FeesRecord = () => {
     setFilters(newFilters)
     setPage(1) // Reset to page 1 on filter change
   }, [])
+
+  const handleExport = useCallback(() => {
+    if (!payments.length) return
+
+    const headers = [
+      "Student",
+      "Fee",
+      "Amount Due",
+      "Amount Paid",
+      "Method",
+      "Date",
+      "Status",
+    ]
+
+    const rows = payments.map((payment) => [
+      `${payment.student.first_name} ${payment.student.last_name}`,
+      payment.fee_component.component_name,
+      payment.fee_component.amount,
+      payment.amount_paid,
+      payment.payment_method,
+      payment.payment_date,
+      payment.status,
+    ])
+
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => {
+            const safeValue = String(value ?? "")
+            return `"${safeValue.replace(/"/g, '""')}"`
+          })
+          .join(",")
+      )
+      .join("\n")
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "fees-record.csv"
+    link.click()
+    URL.revokeObjectURL(url)
+  }, [payments])
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
@@ -42,13 +88,15 @@ const FeesRecord = () => {
             description="Overview of student fee collections for the current academic year"
           />
           <div className="flex w-full gap-3 md:w-auto">
-            {/* <Button
+            <Button
               variant="outline"
               className="flex-1 border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 md:flex-none"
+              onClick={handleExport}
+              disabled={!payments.length}
             >
               <Upload className="mr-2 h-4 w-4" />
               Export Records
-            </Button> */}
+            </Button>
             <Link href="/admin/fees-record/add-payment">
               <Button className="flex-1 bg-[#DA3743] hover:bg-[#DA3743]/90 md:flex-none">
                 <Plus className="mr-2 h-4 w-4" />
