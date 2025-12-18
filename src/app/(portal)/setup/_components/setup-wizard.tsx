@@ -149,7 +149,7 @@ export default function SchoolSetupWizard() {
   }
 
   if (!isLoaded) {
-    return <Loading text="Loading Setup Wizard..." />
+    return <Loading />
   }
 
   return (

@@ -158,7 +158,7 @@ export function AdminSidebar() {
                             asChild
                             className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 ${
                               isActive || hasActiveChild
-                                ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                                ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                                 : "text-gray-700 hover:bg-gray-100"
                             }`}
                           >
@@ -185,7 +185,7 @@ export function AdminSidebar() {
                                     asChild
                                     className={`rounded-md px-3 py-2 ${
                                       isSubActive
-                                        ? "text-[#DA3743]"
+                                        ? "text-[var(--primary)]"
                                         : "text-gray-600 hover:bg-gray-100"
                                     }`}
                                   >
@@ -209,7 +209,7 @@ export function AdminSidebar() {
                       asChild
                       className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -241,7 +241,7 @@ export function AdminSidebar() {
                     asChild
                     className={`rounded-md px-3 py-2.5 ${
                       isActive
-                        ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                        ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >

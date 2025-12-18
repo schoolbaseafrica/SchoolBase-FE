@@ -82,7 +82,7 @@ export function TeacherSidebar() {
                       asChild
                       className={`rounded-md px-3 py-2.5 ${
                         isActive
-                          ? "bg-[#DA3743] text-white hover:bg-[#DA3743] hover:text-white"
+                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >

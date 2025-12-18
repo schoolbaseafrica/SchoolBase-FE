@@ -19,21 +19,24 @@ export function GallerySection() {
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {gallery.map((item, index) => (
-            <figure
-              key={`${item.src}-${index}`}
-              className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-[var(--tint)] shadow-sm"
-            >
-              <Image
-                src={item.src}
-                alt={item.alt}
-                width={340}
-                height={240}
-                className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-              />
-              <figcaption className="sr-only">{item.alt}</figcaption>
-            </figure>
-          ))}
+          {gallery.map((item, index) => {
+            const key = `${item.src}-${index}`
+            return (
+              <figure
+                key={key}
+                className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm"
+              >
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  width={340}
+                  height={240}
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                />
+                <figcaption className="sr-only">{item.alt}</figcaption>
+              </figure>
+            )
+          })}
         </div>
       </div>
     </section>

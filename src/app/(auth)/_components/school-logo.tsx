@@ -1,16 +1,35 @@
-import React from "react"
+"use client"
+
+import Image from "next/image"
 import Link from "next/link"
-import Logo from "@/components/logo"
+import { useSchoolStore } from "@/store/use-school-store"
+import { LogoSvg } from "../../../../public/svgs/logo-svg"
 
 const SchoolLogo = () => {
+  const logo = useSchoolStore((state) => state.school.logo)
+  const shortName = useSchoolStore((state) => state.school.shortName)
+  const brand = useSchoolStore((state) => state.school.brand)
+
   return (
-    <div>
-      <Link href="/">
-        <div className="-gap-1.5 mb-8 flex flex-col items-center justify-center">
-          <Logo size={40} />
-        </div>
-      </Link>
-    </div>
+    <Link href="/" className="mb-4 flex flex-col items-center text-center">
+      {logo.full ? (
+        <Image
+          src={logo.full}
+          alt={`${shortName} logo`}
+          width={80}
+          height={80}
+          className="h-20 w-20 object-contain"
+        />
+      ) : (
+        <LogoSvg width={64} height={64} color={brand.primary} />
+      )}
+      <span
+        className="text-sm font-bold tracking-wider uppercase"
+        style={{ color: brand.primary }}
+      >
+        {shortName}
+      </span>
+    </Link>
   )
 }
 

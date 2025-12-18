@@ -27,7 +27,7 @@ const Logo: React.FC<LogoProps> = ({
   const resolvedTextColor = textColor ?? brand.primary
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-1 ${className}`}>
       {logo.full ? (
         <Image
           src={logo.full}

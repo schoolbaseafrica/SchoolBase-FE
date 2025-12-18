@@ -42,7 +42,7 @@ export function HeroSection() {
         {hero.images.slice(0, 3).map((image, index) => (
           <div
             key={image.src}
-            className={`relative overflow-hidden rounded-2xl bg-[var(--tint)] shadow-md ${imageLayout[index]?.className || ""}`}
+            className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}
           >
             <Image
               src={image.src}

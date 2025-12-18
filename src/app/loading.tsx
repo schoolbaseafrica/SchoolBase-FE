@@ -1,84 +1,93 @@
 "use client"
 
-import React from "react"
+import Image from "next/image"
+import { useSchoolStore } from "@/store/use-school-store"
 
 interface LoadingProps {
   size?: number
   color?: string
-  text?: string
   showText?: boolean
 }
 
-// remove React.FC
-export default function Loading({
-  size = 100,
-  color = "#DA3743",
-  text = "Loading...",
-  showText = true,
-}: LoadingProps) {
+export default function Loading({ size = 100, color, showText = true }: LoadingProps) {
+  const school = useSchoolStore((state) => state.school)
+  const brandColor = color ?? school.brand.primary
+
+  const logoMarkup = school.logo.full ? (
+    <Image
+      src={school.logo.full}
+      alt={`${school.shortName} logo`}
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      className="object-contain"
+      priority
+    />
+  ) : (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 140 140"
+    >
+      <rect
+        x="24"
+        y="24"
+        width="36"
+        height="36"
+        rx="6"
+        ry="6"
+        fill={brandColor}
+        opacity="0.9"
+      />
+      <rect
+        x="80"
+        y="24"
+        width="36"
+        height="36"
+        rx="6"
+        ry="6"
+        fill={brandColor}
+        opacity="0.9"
+      />
+      <circle cx="70" cy="70" r="8" fill={brandColor} opacity="1" />
+      <rect
+        x="24"
+        y="80"
+        width="36"
+        height="36"
+        rx="6"
+        ry="6"
+        fill={brandColor}
+        opacity="0.9"
+      />
+      <rect
+        x="80"
+        y="80"
+        width="36"
+        height="36"
+        rx="6"
+        ry="6"
+        fill={brandColor}
+        opacity="0.9"
+      />
+    </svg>
+  )
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4">
+      {logoMarkup}
       <h1 className="text-accent text-2xl font-bold tracking-widest uppercase">
-        Schoolbase
+        {school.shortName}
       </h1>
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width={size}
-          height={size}
-          viewBox="0 0 140 140"
-          className="animate-spin"
-          style={{ animationDuration: "2s" }}
+      {showText && (
+        <p
+          className="text-primary animate-pulse font-medium"
+          style={{ color: school.brand.text }}
         >
-          {/* Top-left rounded square */}
-          <rect
-            x="24"
-            y="24"
-            width="36"
-            height="36"
-            rx="6"
-            ry="6"
-            fill={color}
-            opacity="0.9"
-          />
-          {/* Top-right rounded square */}
-          <rect
-            x="80"
-            y="24"
-            width="36"
-            height="36"
-            rx="6"
-            ry="6"
-            fill={color}
-            opacity="0.9"
-          />
-          {/* Center circle */}
-          <circle cx="70" cy="70" r="8" fill={color} opacity="1" />
-          {/* Bottom-left rounded square */}
-          <rect
-            x="24"
-            y="80"
-            width="36"
-            height="36"
-            rx="6"
-            ry="6"
-            fill={color}
-            opacity="0.9"
-          />
-          {/* Bottom-right rounded square */}
-          <rect
-            x="80"
-            y="80"
-            width="36"
-            height="36"
-            rx="6"
-            ry="6"
-            fill={color}
-            opacity="0.9"
-          />
-        </svg>
-      </div>
-      {showText && <p className="text-primary animate-pulse font-medium">{text}</p>}
+          Loading...
+        </p>
+      )}
     </div>
   )
 }
