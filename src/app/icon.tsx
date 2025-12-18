@@ -10,10 +10,18 @@ export const contentType = "image/png"
 
 export default function Icon() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  const logoSrc =
+  
+  // Convert relative paths to absolute URLs
+  const toAbsoluteUrl = (path: string) => {
+    if (path.startsWith('http')) return path
+    return `${baseUrl}${path.startsWith('/') ? path : '/' + path}`
+  }
+  
+  const logoSrc = toAbsoluteUrl(
     defaultSchoolProfile.logo.favicon ||
     defaultSchoolProfile.logo.full ||
-    `${baseUrl}/assets/logo.png`
+    '/assets/logo.png'
+  )
 
   return new ImageResponse(
     (
