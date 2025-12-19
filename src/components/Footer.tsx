@@ -14,7 +14,11 @@ const socialIconMap = {
 
 const Footer = () => {
   const school = useSchoolStore((state) => state.school)
-  const navLinks = school.navLinks
+  const navLinks = school.navLinks.filter((link) => link.href && link.label)
+  const overflowLinks =
+    navLinks.length > 4
+      ? navLinks.slice(4)
+      : navLinks.slice(0, Math.min(3, navLinks.length))
 
   return (
     <footer className="bg-black text-white">
@@ -50,7 +54,7 @@ const Footer = () => {
               <section className="space-y-4">
                 <h3 className="text-lg font-bold lg:text-xl">Quick links</h3>
                 <ul className="space-y-3">
-                  {navLinks.slice(0, 3).map((link) => (
+                  {overflowLinks.map((link) => (
                     <li key={`${link.href}-${link.label}`}>
                       <Link
                         href={link.href}

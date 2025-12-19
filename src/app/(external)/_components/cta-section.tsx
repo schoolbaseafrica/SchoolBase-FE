@@ -7,7 +7,7 @@ export function CtaSection() {
   const cta = useSchoolStore((state) => state.school.cta)
 
   return (
-    <section className="mx-auto max-w-6xl py-14">
+    <section id="cta" className="mx-auto max-w-6xl py-14">
       <div className="container">
         <div className="bg-accent rounded-3xl px-8 py-12 text-white shadow-lg sm:px-12 lg:px-16">
           <div className="flex flex-col items-center gap-6 text-center">

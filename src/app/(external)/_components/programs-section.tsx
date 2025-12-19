@@ -23,14 +23,18 @@ const iconMap: Record<string, ComponentType<{ className?: string }>> = {
 export function ProgramsSection() {
   const programs = useSchoolStore((state) => state.school.programs)
   const schoolName = useSchoolStore((state) => state.school.shortName)
+  const copy = useSchoolStore((state) => state.school.sectionsContent)?.programs
 
   return (
     <section id="programs" className="bg-gray-50 py-16">
       <div className="container space-y-8">
         <div className="space-y-3 text-center">
-          <h2 className="text-3xl font-semibold sm:text-4xl">Our Academic Program</h2>
+          <h2 className="text-3xl font-semibold sm:text-4xl">
+            {copy?.title ?? "Our Academic Program"}
+          </h2>
           <p className="text-lg text-[var(--text-secondary)]">
-            A complete learning path for {schoolName.toLowerCase()} students.
+            {copy?.subtitle ??
+              `A complete learning path for ${schoolName.toLowerCase()} students.`}
           </p>
         </div>
 

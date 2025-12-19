@@ -7,14 +7,17 @@ import { useSchoolStore } from "@/store/use-school-store"
 export function TestimonialsSection() {
   const testimonials = useSchoolStore((state) => state.school.testimonials)
   const schoolName = useSchoolStore((state) => state.school.shortName)
+  const copy = useSchoolStore((state) => state.school.sectionsContent)?.testimonials
 
   return (
     <section id="testimonials" className="bg-white py-16">
       <div className="container space-y-10">
         <div className="space-y-3 text-center">
-          <h2 className="text-3xl font-semibold sm:text-4xl">Testimonials</h2>
+          <h2 className="text-3xl font-semibold sm:text-4xl">
+            {copy?.title ?? "Testimonials"}
+          </h2>
           <p className="text-lg text-[var(--text-secondary)]">
-            What families love about {schoolName}.
+            {copy?.subtitle ?? `What families love about ${schoolName}.`}
           </p>
         </div>
 

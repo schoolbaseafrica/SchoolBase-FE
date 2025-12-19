@@ -1,6 +1,6 @@
 "use client"
 
-import ContactForm from "@/app/_components/contact-form"
+import ContactForm from "@/app/(external)/_components/contact-form"
 import { useSchoolStore } from "@/store/use-school-store"
 
 export function ContactSection() {

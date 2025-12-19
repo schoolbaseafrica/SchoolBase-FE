@@ -11,7 +11,10 @@ import { useSchoolStore } from "@/store/use-school-store"
 const Navbar = () => {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const navItems = useSchoolStore((state) => state.school.navLinks)
+  const navItems = useSchoolStore((state) => state.school.navLinks).filter(
+    (item) => item.href && item.label && item.href.trim() !== ""
+  )
+  const primaryNav = navItems.slice(0, 4)
   const ctaHref = "/login"
   const ctaLabel = "Login"
   const [activeHash, setActiveHash] = useState<string>(
@@ -50,7 +53,7 @@ const Navbar = () => {
 
         {/* Desktop Navigation - Centered */}
         <section className="absolute left-1/2 hidden -translate-x-1/2 gap-6 text-lg font-medium lg:flex lg:gap-10">
-          {navItems.map((item) => {
+          {primaryNav.map((item) => {
             const isSectionLink = item.href.startsWith("#")
             const isActive =
               (isSectionLink && activeHash === item.href) ||
@@ -109,7 +112,7 @@ const Navbar = () => {
                   </button>
                 </div>
                 <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
-                  {navItems.map((item) => {
+                  {primaryNav.map((item) => {
                     const isSectionLink = item.href.startsWith("#")
                     const isActive =
                       (isSectionLink && activeHash === item.href) ||

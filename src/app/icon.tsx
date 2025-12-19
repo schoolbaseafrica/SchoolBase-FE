@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og"
 import { defaultSchoolProfile } from "@/data/school-profile"
+import Image from "next/image"
 
 export const size = {
   width: 64,
@@ -37,7 +38,7 @@ export default function Icon() {
           padding: "8px",
         }}
       >
-        <img
+        <Image
           src={logoSrc}
           alt={`${defaultSchoolProfile.shortName} logo`}
           width={48}
