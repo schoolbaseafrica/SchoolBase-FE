@@ -73,6 +73,13 @@ async function readLandingFromIndexedDb<T>(): Promise<T | undefined> {
   }
 }
 
+const heroTextFallback = {
+  heading: "Welcome to our school",
+  body: "Modern learning, transparent updates, and a supportive community.",
+  ctaLabel: "Get in touch",
+  ctaHref: "#contact",
+}
+
 export function LandingGate({ children }: LandingGateProps) {
   const [allowed, setAllowed] = useState<boolean | null>(null)
   const [hydrated, setHydrated] = useState(false)
@@ -126,7 +133,9 @@ export function LandingGate({ children }: LandingGateProps) {
 
         const safeNav = (landing.navLinks ?? []).filter((link) => {
           if (!link.href || !link.label) return false
-          const hrefLower = link.href.toLowerCase()
+          const href = link.href.trim()
+          if (!href) return false
+          const hrefLower = href.toLowerCase()
           if (hrefLower === "#home" || hrefLower === "#cta") return false
           return true
         })
@@ -135,8 +144,19 @@ export function LandingGate({ children }: LandingGateProps) {
           ...mergedSchool,
           navLinks: safeNav.length ? safeNav : mergedSchool.navLinks,
           hero: landing.hero
-            ? { ...mergedSchool.hero, ...landing.hero, images: heroImages }
-            : { ...mergedSchool.hero, images: heroImages },
+            ? {
+                ...heroTextFallback,
+                ...mergedSchool.hero,
+                ...landing.hero,
+                images: heroImages,
+                ctaHref: landing.hero.ctaHref || heroTextFallback.ctaHref,
+                ctaLabel: landing.hero.ctaLabel || heroTextFallback.ctaLabel,
+              }
+            : {
+                ...heroTextFallback,
+                ...mergedSchool.hero,
+                images: heroImages,
+              },
           programs: landing.programs ?? mergedSchool.programs,
           testimonials:
             (landing.testimonials?.length ?? 0) > 0
@@ -145,12 +165,17 @@ export function LandingGate({ children }: LandingGateProps) {
           gallery: galleryImages,
           cta: landing.cta
             ? {
-                heading: landing.cta.heading ?? mergedSchool.cta.heading,
-                body: landing.cta.body ?? mergedSchool.cta.body,
-                ctaLabel: landing.cta.ctaLabel ?? mergedSchool.cta.ctaLabel,
-                ctaHref: landing.cta.ctaHref ?? mergedSchool.cta.ctaHref,
+                heading: landing.cta.heading ?? heroTextFallback.heading,
+                body: landing.cta.body ?? heroTextFallback.body,
+                ctaLabel: landing.cta.ctaLabel ?? heroTextFallback.ctaLabel,
+                ctaHref: landing.cta.ctaHref || heroTextFallback.ctaHref,
               }
-            : mergedSchool.cta,
+            : {
+                heading: heroTextFallback.heading,
+                body: heroTextFallback.body,
+                ctaLabel: heroTextFallback.ctaLabel,
+                ctaHref: heroTextFallback.ctaHref,
+              },
           sectionsEnabled: enabledSections,
           sectionsContent: landing.sectionsContent ?? mergedSchool.sectionsContent,
           features: landing.features ?? mergedSchool.features,

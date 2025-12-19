@@ -5,6 +5,8 @@ import { useSchoolStore } from "@/store/use-school-store"
 
 export function ContactSection() {
   const contact = useSchoolStore((state) => state.school.contact)
+  const hasEmail = Boolean(contact.email)
+  const hasPhone = Boolean(contact.phone)
 
   return (
     <section id="contact" className="bg-gray-50 py-16">
@@ -19,18 +21,25 @@ export function ContactSection() {
               <p className="font-semibold text-[var(--text-primary)]">Office Address</p>
               <p>{contact.office}</p>
             </div>
-            <div>
-              <p className="font-semibold text-[var(--text-primary)]">Email</p>
-              <a className="text-accent hover:underline" href={`mailto:${contact.email}`}>
-                {contact.email}
-              </a>
-            </div>
-            <div>
-              <p className="font-semibold text-[var(--text-primary)]">Phone</p>
-              <a className="text-accent hover:underline" href={`tel:${contact.phone}`}>
-                {contact.phone}
-              </a>
-            </div>
+            {hasEmail && (
+              <div>
+                <p className="font-semibold text-[var(--text-primary)]">Email</p>
+                <a
+                  className="text-accent hover:underline"
+                  href={`mailto:${contact.email}`}
+                >
+                  {contact.email}
+                </a>
+              </div>
+            )}
+            {hasPhone && (
+              <div>
+                <p className="font-semibold text-[var(--text-primary)]">Phone</p>
+                <a className="text-accent hover:underline" href={`tel:${contact.phone}`}>
+                  {contact.phone}
+                </a>
+              </div>
+            )}
           </div>
         </div>
 

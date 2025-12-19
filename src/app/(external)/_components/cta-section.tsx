@@ -5,6 +5,7 @@ import { useSchoolStore } from "@/store/use-school-store"
 
 export function CtaSection() {
   const cta = useSchoolStore((state) => state.school.cta)
+  const href = cta.ctaHref?.trim() || null
 
   return (
     <section id="cta" className="mx-auto max-w-6xl py-14">
@@ -19,7 +20,7 @@ export function CtaSection() {
               variant="outline"
               className="border-white text-white hover:bg-white/10"
             >
-              <a href={cta.ctaHref}>{cta.ctaLabel}</a>
+              {href ? <a href={href}>{cta.ctaLabel}</a> : <span>{cta.ctaLabel}</span>}
             </Button>
           </div>
         </div>

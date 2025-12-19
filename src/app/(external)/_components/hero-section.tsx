@@ -23,6 +23,7 @@ export function HeroSection() {
   const hero = useSchoolStore((state) => state.school.hero)
   const name = useSchoolStore((state) => state.school.shortName)
   const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({})
+  const ctaHref = hero.ctaHref?.trim() || null
 
   return (
     <section
@@ -36,8 +37,8 @@ export function HeroSection() {
           </h1>
           <p className="text-lg text-[var(--text-secondary)]">{hero.body}</p>
         </div>
-        <Button asChild>
-          <a href={hero.ctaHref}>{hero.ctaLabel}</a>
+        <Button asChild disabled={!ctaHref}>
+          {ctaHref ? <a href={ctaHref}>{hero.ctaLabel}</a> : <span>{hero.ctaLabel}</span>}
         </Button>
       </div>
 

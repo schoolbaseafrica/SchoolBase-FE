@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og"
 import { defaultSchoolProfile } from "@/data/school-profile"
-import Image from "next/image"
 
 export const size = {
   width: 64,
@@ -38,9 +37,10 @@ export default function Icon() {
           padding: "8px",
         }}
       >
-        <Image
+        {/* Using plain img here because next/image isn't supported in app icon routes */}
+        <img
           src={logoSrc}
-          alt={`${defaultSchoolProfile.shortName} logo`}
+          alt={`${defaultSchoolProfile.shortName || "School"} logo`}
           width={48}
           height={48}
           style={{ objectFit: "contain" }}
