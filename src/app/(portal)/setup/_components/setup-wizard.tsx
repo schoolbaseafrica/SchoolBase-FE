@@ -1,18 +1,23 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { WelcomeScreen } from "./welcome-screen"
 import Image from "next/image"
-import { InstallationStep } from "../_types/setup"
+import { InstallationStep, type LandingSectionKey } from "../_types/setup"
 // import { DatabaseConfigForm } from "./database-configuration"
 import { SchoolInfoForm } from "./school-info"
 import { AdminAccountForm } from "./create-super-admin"
+import { LandingSetupForm } from "./landing-setup"
 import { useSetupWizardPersistence } from "../_hooks/use-restore-form"
 import InstallationProgress from "./installation-progress"
 import InstallationComplete from "./installation-complete"
-import Loading from "@/app/loading"
-import { SetupWizardAPI } from "@/lib/api/setup/super-admin-setup-apis"
+import {
+  SetupWizardAPI,
+  type SchoolInstallResponse,
+} from "@/lib/api/setup/super-admin-setup-apis"
 import { toast } from "sonner"
+import { defaultSchoolProfile } from "@/data/school-profile"
+import { generatePaletteFromPrimary } from "../_utils/generate-palette"
 
 export default function SchoolSetupWizard() {
   const [isInstalling, setIsInstalling] = useState<boolean>(false)
@@ -21,6 +26,7 @@ export default function SchoolSetupWizard() {
     { label: "Validating Account Information", completed: false },
     { label: "Installing Core Modules", completed: false },
     { label: "Configuring Your School Profile", completed: false },
+    { label: "Applying Landing Page Setup", completed: false },
     { label: "Finalizing Setup", completed: false },
   ])
   const [isComplete, setIsComplete] = useState<boolean>(false)
@@ -28,7 +34,14 @@ export default function SchoolSetupWizard() {
 
   const { formData, updateForm, currentStep, setCurrentStep, isLoaded, clearStorage } =
     useSetupWizardPersistence({
-      school: { logo: null, name: "", brandColor: "#DA3743", phone: "", address: "" },
+      school: {
+        logo: null,
+        name: "",
+        brandColor: "#DA3743",
+        phone: "",
+        address: "",
+        schoolId: "",
+      },
       admin: {
         firstName: "",
         lastName: "",
@@ -36,10 +49,39 @@ export default function SchoolSetupWizard() {
         password: "",
         confirmPassword: "",
       },
+      landing: {
+        navLinks: defaultSchoolProfile.navLinks,
+        hero: defaultSchoolProfile.hero,
+        programs: defaultSchoolProfile.programs,
+        sections: [],
+        sectionsContent: {} as Partial<
+          Record<LandingSectionKey, { title?: string; subtitle?: string }>
+        >,
+        gallery: defaultSchoolProfile.gallery,
+        contact: {
+          office: defaultSchoolProfile.contact.office,
+          email: defaultSchoolProfile.contact.email,
+        },
+        footer: {
+          description: "",
+          socials: defaultSchoolProfile.socials,
+        },
+        cta: defaultSchoolProfile.cta,
+        palette: {
+          primary: defaultSchoolProfile.brand.primary,
+          primaryHover: defaultSchoolProfile.brand.primaryHover,
+          tint: defaultSchoolProfile.brand.tint,
+          onPrimary: defaultSchoolProfile.brand.onPrimary,
+          text: defaultSchoolProfile.brand.text,
+          mutedText: defaultSchoolProfile.brand.mutedText,
+          surface: defaultSchoolProfile.brand.surface,
+        },
+        isComplete: false,
+      },
     })
 
   async function handleNext(): Promise<void> {
-    if (currentStep < 2) {
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1)
     } else {
       await handleInstallation()
@@ -59,7 +101,7 @@ export default function SchoolSetupWizard() {
     setInstallProgress((1 / steps.length) * 100)
 
     try {
-      await stepApiCall(
+      const installResponse = (await stepApiCall<SchoolInstallResponse>(
         SetupWizardAPI.installSchool({
           name: formData.school.name,
           address: formData.school.address,
@@ -71,7 +113,11 @@ export default function SchoolSetupWizard() {
           // accent_color: "#000000",
         }),
         1
-      )
+      )) as SchoolInstallResponse | undefined
+
+      if (installResponse?.data?.id) {
+        updateForm("school", "schoolId", installResponse.data.id)
+      }
 
       await stepApiCall(
         SetupWizardAPI.createSuperAdmin({
@@ -83,6 +129,15 @@ export default function SchoolSetupWizard() {
           confirm_password: formData.admin.confirmPassword,
         }),
         2
+      )
+
+      await stepApiCall(
+        SetupWizardAPI.saveLandingConfigMock({
+          school_id:
+            installResponse?.data?.id ?? formData.school.schoolId ?? "demo-school",
+          landing: formData.landing,
+        }),
+        3
       )
     } catch (error) {
       const message =
@@ -103,19 +158,39 @@ export default function SchoolSetupWizard() {
     clearStorage()
   }
 
-  async function stepApiCall(
-    apiCall: Promise<unknown>,
+  // Keep landing palette in sync with selected brand color (avoid loops)
+  useEffect(() => {
+    const palette = generatePaletteFromPrimary(formData.school.brandColor)
+    const current = formData.landing?.palette
+    const matchesCurrent =
+      current &&
+      current.primary === palette.primary &&
+      current.primaryHover === palette.primaryHover &&
+      current.tint === palette.tint &&
+      current.onPrimary === palette.onPrimary &&
+      current.text === palette.text &&
+      current.mutedText === palette.mutedText &&
+      current.surface === palette.surface
+
+    if (!matchesCurrent) {
+      updateForm("landing", "palette", palette)
+    }
+  }, [formData.school.brandColor, formData.landing?.palette, updateForm])
+
+  async function stepApiCall<T = unknown>(
+    apiCall: Promise<T>,
     stepIndex: number
-  ): Promise<void> {
+  ): Promise<T | undefined> {
     const dbKey = `extra-${stepIndex}`
 
     try {
-      await apiCall
+      const result = await apiCall
       const steps = [...installationSteps]
       steps[stepIndex].completed = true
       setInstallationSteps([...steps])
       setInstallProgress(((1 + stepIndex) / steps.length) * 100)
       updateForm("extra", dbKey, "done") // incase of 409 error
+      return result
     } catch (error) {
       if (error instanceof Error) {
         const accountExists = error?.message?.includes("already exists")
@@ -135,7 +210,17 @@ export default function SchoolSetupWizard() {
   }
 
   if (!isLoaded) {
-    return <Loading />
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <Image src="/assets/logo.svg" alt="SchoolBase Logo" width={64} height={64} />
+          <h1 className="text-accent text-2xl font-bold tracking-widest uppercase">
+            schoolbase
+          </h1>
+          <p className="text-sm font-semibold text-gray-600">Loading…</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -166,6 +251,14 @@ export default function SchoolSetupWizard() {
             />
           )}
           {currentStep === 2 && !isInstalling && (
+            <LandingSetupForm
+              formData={formData}
+              updateFormData={updateForm}
+              onSubmit={handleNext}
+              onCancel={handleBack}
+            />
+          )}
+          {currentStep === 3 && !isInstalling && (
             <AdminAccountForm
               formData={formData}
               updateFormData={updateForm}

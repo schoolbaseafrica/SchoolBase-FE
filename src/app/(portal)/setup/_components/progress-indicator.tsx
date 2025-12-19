@@ -15,7 +15,8 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
 
   const steps = [
     { number: 1, label: "School info", completed: currentStep > 1 },
-    { number: 2, label: "Admin", completed: currentStep > 2 },
+    { number: 2, label: "Landing", completed: currentStep > 2 },
+    { number: 3, label: "Admin", completed: currentStep > 3 },
   ]
 
   return (

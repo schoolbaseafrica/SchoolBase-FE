@@ -1,7 +1,9 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSchoolStore } from "@/store/use-school-store"
 
 const imageLayout = [
@@ -20,6 +22,8 @@ const imageLayout = [
 export function HeroSection() {
   const hero = useSchoolStore((state) => state.school.hero)
   const name = useSchoolStore((state) => state.school.shortName)
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({})
+  const ctaHref = hero.ctaHref?.trim() || null
 
   return (
     <section
@@ -33,8 +37,8 @@ export function HeroSection() {
           </h1>
           <p className="text-lg text-[var(--text-secondary)]">{hero.body}</p>
         </div>
-        <Button asChild>
-          <a href={hero.ctaHref}>{hero.ctaLabel}</a>
+        <Button asChild disabled={!ctaHref}>
+          {ctaHref ? <a href={ctaHref}>{hero.ctaLabel}</a> : <span>{hero.ctaLabel}</span>}
         </Button>
       </div>
 
@@ -44,6 +48,9 @@ export function HeroSection() {
             key={image.src}
             className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}
           >
+            {!loadedImages[index] && (
+              <Skeleton className="absolute inset-0 h-full w-full rounded-2xl bg-white/60" />
+            )}
             <Image
               src={image.src}
               alt={image.alt}
@@ -51,6 +58,12 @@ export function HeroSection() {
               sizes="(max-width: 768px) 50vw, 40vw"
               priority={imageLayout[index]?.priority}
               className="object-cover transition-transform duration-500 hover:scale-105"
+              onLoadingComplete={() =>
+                setLoadedImages((prev) => ({
+                  ...prev,
+                  [index]: true,
+                }))
+              }
             />
           </div>
         ))}

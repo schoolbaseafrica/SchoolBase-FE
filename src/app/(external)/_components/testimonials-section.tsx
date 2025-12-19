@@ -7,14 +7,19 @@ import { useSchoolStore } from "@/store/use-school-store"
 export function TestimonialsSection() {
   const testimonials = useSchoolStore((state) => state.school.testimonials)
   const schoolName = useSchoolStore((state) => state.school.shortName)
+  const copy = useSchoolStore((state) => state.school.sectionsContent)?.testimonials
+  const avatarFallback =
+    "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/bicycle.jpg"
 
   return (
     <section id="testimonials" className="bg-white py-16">
       <div className="container space-y-10">
         <div className="space-y-3 text-center">
-          <h2 className="text-3xl font-semibold sm:text-4xl">Testimonials</h2>
+          <h2 className="text-3xl font-semibold sm:text-4xl">
+            {copy?.title ?? "Testimonials"}
+          </h2>
           <p className="text-lg text-[var(--text-secondary)]">
-            What families love about {schoolName}.
+            {copy?.subtitle ?? `What families love about ${schoolName}.`}
           </p>
         </div>
 
@@ -30,7 +35,7 @@ export function TestimonialsSection() {
               </p>
               <div className="flex items-center gap-3">
                 <Image
-                  src={testimonial.avatar}
+                  src={testimonial.avatar || avatarFallback}
                   alt={testimonial.name}
                   width={48}
                   height={48}

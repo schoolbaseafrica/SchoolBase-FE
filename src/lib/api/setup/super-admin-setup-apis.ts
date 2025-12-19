@@ -43,6 +43,7 @@ export interface SchoolInstallResponse {
   message: string
   status_code: number
   data: {
+    id?: string
     user_id: string
     name: string
     email: string
@@ -129,4 +130,71 @@ export const SetupWizardAPI = {
       },
       true
     ),
+
+  // Mock landing config save (replace when real endpoint is ready)
+  saveLandingConfigMock: (payload: {
+    school_id: string
+    landing: import("@/app/(portal)/setup/_types/setup").LandingPageConfig
+  }) =>
+    new Promise<{ message: string; status_code: number; data: { school_id: string } }>(
+      (resolve) => {
+        // Persist in localStorage for demo purposes
+        if (typeof window !== "undefined") {
+          const sanitizeImages = (images?: { src: string; alt: string }[]) =>
+            (images ?? []).map((img) =>
+              img.src?.startsWith("data:") ? { ...img, src: "" } : img
+            )
+          const sanitizedLanding = {
+            ...payload.landing,
+            hero: payload?.landing?.hero
+              ? {
+                  ...payload.landing.hero,
+                  images: sanitizeImages(payload.landing.hero.images),
+                }
+              : payload?.landing?.hero,
+            gallery: sanitizeImages(payload?.landing?.gallery),
+            testimonials: (payload?.landing?.testimonials ?? []).map((t) => ({
+              ...t,
+              avatar: t?.avatar?.startsWith?.("data:") ? "" : t?.avatar,
+            })),
+          }
+          try {
+            localStorage.setItem(
+              "landing-config",
+              JSON.stringify({ ...payload, landing: sanitizedLanding })
+            )
+          } catch (error) {
+            console.warn("Skipping landing-config storage (size/quota)", error)
+          }
+        }
+        setTimeout(
+          () =>
+            resolve({
+              message: "Landing config saved (mock)",
+              status_code: 200,
+              data: { school_id: payload.school_id },
+            }),
+          400
+        )
+      }
+    ),
+
+  getLandingConfigMock: (schoolId: string) =>
+    new Promise<{ data?: unknown }>((resolve) => {
+      if (typeof window !== "undefined") {
+        const raw = localStorage.getItem("landing-config")
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed.school_id === schoolId) {
+              resolve({ data: parsed.landing })
+              return
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+      resolve({ data: undefined })
+    }),
 }

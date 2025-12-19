@@ -14,7 +14,13 @@ const socialIconMap = {
 
 const Footer = () => {
   const school = useSchoolStore((state) => state.school)
-  const navLinks = school.navLinks
+  const navLinks = school.navLinks.filter(
+    (link) => link.href && link.label && link.href.trim() !== ""
+  )
+  const overflowLinks =
+    navLinks.length > 4
+      ? navLinks.slice(4)
+      : navLinks.slice(0, Math.min(3, navLinks.length))
 
   return (
     <footer className="bg-black text-white">
@@ -50,7 +56,7 @@ const Footer = () => {
               <section className="space-y-4">
                 <h3 className="text-lg font-bold lg:text-xl">Quick links</h3>
                 <ul className="space-y-3">
-                  {navLinks.slice(0, 3).map((link) => (
+                  {overflowLinks.map((link) => (
                     <li key={`${link.href}-${link.label}`}>
                       <Link
                         href={link.href}
@@ -88,24 +94,28 @@ const Footer = () => {
               <section className="space-y-4">
                 <h3 className="text-lg font-bold lg:text-xl">Contact</h3>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <Mail size={20} className="mt-0.5 shrink-0 text-white/70" />
-                    <a
-                      href={`mailto:${school.contact.email}`}
-                      className="break-all text-white/70 transition hover:text-white hover:underline"
-                    >
-                      {school.contact.email}
-                    </a>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Phone size={20} className="shrink-0 text-white/70" />
-                    <a
-                      href={`tel:${school.contact.phone}`}
-                      className="text-white/70 transition hover:text-white"
-                    >
-                      {school.contact.phone}
-                    </a>
-                  </li>
+                  {school.contact.email ? (
+                    <li className="flex items-start gap-3">
+                      <Mail size={20} className="mt-0.5 shrink-0 text-white/70" />
+                      <a
+                        href={`mailto:${school.contact.email}`}
+                        className="break-all text-white/70 transition hover:text-white hover:underline"
+                      >
+                        {school.contact.email}
+                      </a>
+                    </li>
+                  ) : null}
+                  {school.contact.phone ? (
+                    <li className="flex items-center gap-3">
+                      <Phone size={20} className="shrink-0 text-white/70" />
+                      <a
+                        href={`tel:${school.contact.phone}`}
+                        className="text-white/70 transition hover:text-white"
+                      >
+                        {school.contact.phone}
+                      </a>
+                    </li>
+                  ) : null}
                   <li className="flex items-start gap-3">
                     <Home size={20} className="mt-1 shrink-0 text-white/70" />
                     <address className="text-white/70 not-italic">
