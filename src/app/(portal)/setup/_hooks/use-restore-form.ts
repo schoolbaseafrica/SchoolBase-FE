@@ -71,14 +71,10 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
 
   // Infer which step should be active based on filled fields
   function calculateStep(data: FormData): number {
-    const { database, school, admin } = data
-
-    const dbComplete =
-      database.host && database.name && database.username && database.password
-    if (!dbComplete) return 0
+    const { school, admin } = data
 
     const schoolComplete = school.name && school.phone && school.address
-    if (!schoolComplete) return 2
+    if (!schoolComplete) return 0
 
     const adminComplete =
       admin.firstName &&
@@ -86,9 +82,9 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
       admin.email &&
       admin.password &&
       admin.confirmPassword
-    if (!adminComplete) return 3
+    if (!adminComplete) return 1
 
-    return 3 // admin step; installation is next
+    return 2 // admin step; installation is next
   }
 
   // Load from IndexedDB on mount

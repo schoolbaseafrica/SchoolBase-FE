@@ -4,7 +4,7 @@ import { createContext, useContext, useState } from "react"
 import { WelcomeScreen } from "./welcome-screen"
 import Image from "next/image"
 import { InstallationStep } from "../_types/setup"
-import { DatabaseConfigForm } from "./database-configuration"
+// import { DatabaseConfigForm } from "./database-configuration"
 import { SchoolInfoForm } from "./school-info"
 import { AdminAccountForm } from "./create-super-admin"
 import { useSetupWizardPersistence } from "../_hooks/use-restore-form"
@@ -19,7 +19,6 @@ export default function SchoolSetupWizard() {
   const [installProgress, setInstallProgress] = useState<number>(0)
   const [installationSteps, setInstallationSteps] = useState<InstallationStep[]>([
     { label: "Validating Account Information", completed: false },
-    { label: "Creating Database Schema", completed: false },
     { label: "Installing Core Modules", completed: false },
     { label: "Configuring Your School Profile", completed: false },
     { label: "Finalizing Setup", completed: false },
@@ -29,7 +28,6 @@ export default function SchoolSetupWizard() {
 
   const { formData, updateForm, currentStep, setCurrentStep, isLoaded, clearStorage } =
     useSetupWizardPersistence({
-      database: { name: "", host: "", username: "", type: "", password: "", port: 8000 },
       school: { logo: null, name: "", brandColor: "#DA3743", phone: "", address: "" },
       admin: {
         firstName: "",
@@ -41,7 +39,7 @@ export default function SchoolSetupWizard() {
     })
 
   async function handleNext(): Promise<void> {
-    if (currentStep < 3) {
+    if (currentStep < 2) {
       setCurrentStep((prev) => prev + 1)
     } else {
       await handleInstallation()
@@ -62,18 +60,6 @@ export default function SchoolSetupWizard() {
 
     try {
       await stepApiCall(
-        SetupWizardAPI.createDatabase({
-          database_name: formData.database.name,
-          database_host: formData.database.host,
-          database_type: formData.database.type,
-          database_port: Number(formData.database.port),
-          database_username: formData.database.username,
-          database_password: formData.database.password,
-        }),
-        1
-      )
-
-      await stepApiCall(
         SetupWizardAPI.installSchool({
           name: formData.school.name,
           address: formData.school.address,
@@ -84,7 +70,7 @@ export default function SchoolSetupWizard() {
           // secondary_color: "#FFFFFF",
           // accent_color: "#000000",
         }),
-        2
+        1
       )
 
       await stepApiCall(
@@ -96,7 +82,7 @@ export default function SchoolSetupWizard() {
           password: formData.admin.password,
           confirm_password: formData.admin.confirmPassword,
         }),
-        3
+        2
       )
     } catch (error) {
       const message =
@@ -172,14 +158,6 @@ export default function SchoolSetupWizard() {
 
           {currentStep === 0 && <WelcomeScreen onStart={handleNext} />}
           {currentStep === 1 && (
-            <DatabaseConfigForm
-              formData={formData}
-              updateFormData={updateForm}
-              onSubmit={handleNext}
-              onCancel={handleBack}
-            />
-          )}
-          {currentStep === 2 && (
             <SchoolInfoForm
               formData={formData}
               updateFormData={updateForm}
@@ -187,7 +165,7 @@ export default function SchoolSetupWizard() {
               onCancel={handleBack}
             />
           )}
-          {currentStep === 3 && !isInstalling && (
+          {currentStep === 2 && !isInstalling && (
             <AdminAccountForm
               formData={formData}
               updateFormData={updateForm}

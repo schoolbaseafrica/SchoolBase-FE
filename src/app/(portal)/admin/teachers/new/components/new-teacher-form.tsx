@@ -8,13 +8,41 @@ import { CreateTeacherData } from "@/lib/teachers"
 import { useRouter } from "next/navigation"
 import { useCreateTeacher } from "../../_hooks/use-teachers"
 
-const generatePassword = () => {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let password = ""
-  for (let i = 0; i < 8; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)]
+// const generatePassword = () => {
+//   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+//   let password = ""
+//   for (let i = 0; i < 8; i++) {
+//     password += chars[Math.floor(Math.random() * chars.length)]
+//   }
+//   return password
+// }
+
+const generatePassword = (length = 8) => {
+  if (length < 8) {
+    throw new Error("Password must be at least 8 characters long")
   }
-  return password
+
+  const lowercase = "abcdefghijklmnopqrstuvwxyz"
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  const numbers = "0123456789"
+  const special = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+  const allChars = lowercase + uppercase + numbers + special
+
+  let password = [
+    lowercase[Math.floor(Math.random() * lowercase.length)],
+    uppercase[Math.floor(Math.random() * uppercase.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ]
+
+  for (let i = password.length; i < length; i++) {
+    password.push(allChars[Math.floor(Math.random() * allChars.length)])
+  }
+
+  password = password.sort(() => Math.random() - 0.5)
+
+  return password.join("")
 }
 
 export const teacherFormConfig: NewPersonFormConfig = {
