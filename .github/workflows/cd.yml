@@ -1,103 +1,52 @@
-name: CD - Deploy
+name: Deploy
 
 on:
   push:
-    branches: [main, staging]
+    branches: [staging, main]
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    if: github.event.head_commit.message != 'skip ci'
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: '22'
+          fetch-depth: 0
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - name: Pull from dev
+        run: |
+          git fetch origin dev
+          git merge origin/dev --no-edit
+      
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: latest
           
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-        
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-            
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
-            
+          node-version: 'lts/*'
+          
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
         
       - name: Build application
         run: pnpm build
         
-      - name: Create deployment package
-        run: |
-          tar -czf build-${{ github.sha }}.tar.gz .next/ node_modules/ package.json pnpm-lock.yaml
-          
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ github.sha }}
-          path: build-${{ github.sha }}.tar.gz
-          retention-days: 1
-          
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-          
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-${{ github.sha }}
+      - name: Create deployment archive
+        run: tar -czf build.tar.gz .next/ package.json pnpm-lock.yaml
           
       - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            BRANCH="${{ github.ref_name }}"
-            if [ "$BRANCH" = "main" ]; then
-              cd /home/ubuntu/open-school/prod/open-school-portal-FE
-              git pull origin main --quiet
-            elif [ "$BRANCH" = "staging" ]; then
-              cd /home/ubuntu/open-school/staging/open-school-portal-FE
-              git pull origin staging --quiet
-            fi
-            
-      - name: Upload and deploy
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "build-${{ github.sha }}.tar.gz"
+          source: "build.tar.gz"
           target: "/tmp/"
           
       - name: Extract and restart
@@ -106,20 +55,39 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 30s
           script: |
-            BRANCH="${{ github.ref_name }}"
-            SHA="${{ github.sha }}"
-            
-            if [ "$BRANCH" = "main" ]; then
-              cd /home/ubuntu/open-school/prod/open-school-portal-FE
-              tar -xzf /tmp/build-$SHA.tar.gz
-              pm2 restart fe-prod-schoolbase || pm2 start "pnpm next start -p 3002" --name fe-prod-schoolbase
-            elif [ "$BRANCH" = "staging" ]; then
-              cd /home/ubuntu/open-school/staging/open-school-portal-FE
-              tar -xzf /tmp/build-$SHA.tar.gz
-              pm2 restart fe-staging-schoolbase || pm2 start "pnpm next start -p 3003" --name fe-staging-schoolbase
+            # Set environment variables
+            if [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+              APP_NAME="fe-staging-schoolbase"
+              APP_DIR="/home/ubuntu/open-school/staging/open-school-portal-FE"
+              PORT="3003"
+            else
+              APP_NAME="fe-prod-schoolbase"
+              APP_DIR="/home/ubuntu/open-school/prod/open-school-portal-FE"
+              PORT="3002"
             fi
             
+            # Install pnpm if not exists
+            if ! command -v pnpm &> /dev/null; then
+              npm install -g pnpm
+            fi
+            
+            # Create app directory if not exists
+            mkdir -p $APP_DIR
+            cd $APP_DIR
+            
+            # Extract build
+            tar -xzf /tmp/build.tar.gz -C .
+            
+            # Install production dependencies
+            pnpm install --prod --no-frozen-lockfile
+            
+            # Reload or start PM2 process
+            pm2 reload $APP_NAME || pm2 start "pnpm next start -p $PORT" --name $APP_NAME
+            
+            # Check PM2 status
+            pm2 list
+            pm2 status $APP_NAME
+            
             # Cleanup
-            rm -f /tmp/build-$SHA.tar.gz
+            rm -f /tmp/build.tar.gz
