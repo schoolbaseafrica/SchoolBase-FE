@@ -126,7 +126,9 @@ export function LandingGate({ children }: LandingGateProps) {
 
         const safeNav = (landing.navLinks ?? []).filter((link) => {
           if (!link.href || !link.label) return false
-          const hrefLower = link.href.toLowerCase()
+          const href = link.href.trim()
+          if (!href) return false
+          const hrefLower = href.toLowerCase()
           if (hrefLower === "#home" || hrefLower === "#cta") return false
           return true
         })

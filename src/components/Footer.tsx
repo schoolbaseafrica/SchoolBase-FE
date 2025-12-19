@@ -14,7 +14,9 @@ const socialIconMap = {
 
 const Footer = () => {
   const school = useSchoolStore((state) => state.school)
-  const navLinks = school.navLinks.filter((link) => link.href && link.label)
+  const navLinks = school.navLinks.filter(
+    (link) => link.href && link.label && link.href.trim() !== ""
+  )
   const overflowLinks =
     navLinks.length > 4
       ? navLinks.slice(4)
