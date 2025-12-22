@@ -38,6 +38,7 @@ export default function Icon() {
         }}
       >
         {/* Using plain img here because next/image isn't supported in app icon routes */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoSrc}
           alt={`${defaultSchoolProfile.shortName || "School"} logo`}

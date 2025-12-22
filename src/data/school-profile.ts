@@ -98,9 +98,9 @@ export const defaultSchoolProfile: SchoolProfile = {
   tagline: "",
   description: "",
   logo: {
-    full: "",
-    mark: "",
-    favicon: "",
+    full: "/assets/logo.png",
+    mark: "/assets/logo.svg",
+    favicon: "/assets/logo.png",
   },
   // Fallback palette only; real values should come from the school details endpoint
   brand: {
