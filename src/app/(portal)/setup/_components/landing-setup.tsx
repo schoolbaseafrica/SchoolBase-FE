@@ -92,61 +92,6 @@ const fileListToImages = async (files: FileList) => {
   return Promise.all(readers)
 }
 
-const sanitizeImages = (images?: { src: string; alt: string }[]) =>
-  (images ?? []).map((img) => (img.src?.startsWith("data:") ? { ...img, src: "" } : img))
-
-const sanitizeLandingForStorage = (landing: FormData["landing"]) => ({
-  ...landing,
-  hero: {
-    ...landing.hero,
-    images: sanitizeImages(landing.hero.images),
-  },
-  gallery: sanitizeImages(landing.gallery),
-  testimonials: (landing.testimonials ?? []).map((t) => ({
-    ...t,
-    avatar: t.avatar?.startsWith("data:") ? "" : t.avatar,
-  })),
-})
-
-const ultraTrimLanding = (landing: FormData["landing"]) => ({
-  ...landing,
-  hero: { ...landing.hero, images: [] },
-  gallery: [],
-  testimonials: (landing.testimonials ?? []).map((t) => ({ ...t, avatar: "" })),
-})
-
-const LANDING_DB = "LandingConfigDB"
-const LANDING_STORE = "LandingStore"
-const LANDING_KEY = "landing-config"
-
-function openLandingDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LANDING_DB, 1)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(LANDING_STORE)) {
-        db.createObjectStore(LANDING_STORE)
-      }
-    }
-  })
-}
-
-async function saveLandingToIndexedDb(value: unknown) {
-  try {
-    const db = await openLandingDb()
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(LANDING_STORE, "readwrite")
-      tx.objectStore(LANDING_STORE).put(value, LANDING_KEY)
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-    })
-  } catch (error) {
-    console.warn("IndexedDB save failed", error)
-  }
-}
-
 export function LandingSetupForm({
   formData,
   updateFormData,
@@ -341,21 +286,6 @@ export function LandingSetupForm({
 
   const markComplete = () => {
     updateFormData("landing", "isComplete", true)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("landing-setup-complete", "true")
-      try {
-        const sanitized = sanitizeLandingForStorage(landing)
-        void saveLandingToIndexedDb(sanitized)
-      } catch (error) {
-        console.warn("Retrying landing-config storage with trimmed payload", error)
-        try {
-          const trimmed = ultraTrimLanding(landing)
-          void saveLandingToIndexedDb(trimmed)
-        } catch (innerError) {
-          console.warn("Skipping landing-config storage (size/quota)", innerError)
-        }
-      }
-    }
     onSubmit()
   }
 

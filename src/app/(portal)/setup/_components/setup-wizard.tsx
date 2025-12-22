@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 import { defaultSchoolProfile } from "@/data/school-profile"
 import { generatePaletteFromPrimary } from "../_utils/generate-palette"
+import { LandingPageAPI } from "@/lib/api/landing-page"
 
 export default function SchoolSetupWizard() {
   const [isInstalling, setIsInstalling] = useState<boolean>(false)
@@ -117,6 +118,9 @@ export default function SchoolSetupWizard() {
 
       if (installResponse?.data?.id) {
         updateForm("school", "schoolId", installResponse.data.id)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("school-id", installResponse.data.id)
+        }
       }
 
       await stepApiCall(
@@ -131,14 +135,12 @@ export default function SchoolSetupWizard() {
         2
       )
 
-      await stepApiCall(
-        SetupWizardAPI.saveLandingConfigMock({
-          school_id:
-            installResponse?.data?.id ?? formData.school.schoolId ?? "demo-school",
-          landing: formData.landing,
-        }),
-        3
-      )
+      const schoolId = installResponse?.data?.id ?? formData.school.schoolId
+      if (!schoolId) {
+        throw new Error("Missing school ID for landing page setup.")
+      }
+
+      await stepApiCall(LandingPageAPI.createLandingPage(schoolId, formData.landing), 3)
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred."
