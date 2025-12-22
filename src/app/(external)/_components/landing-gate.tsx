@@ -256,6 +256,7 @@ export function LandingGate({ children }: LandingGateProps) {
               alt="Not ready illustration"
               width={500}
               height={500}
+              loading="eager"
               className="h-auto w-full max-w-[420px]"
             />
           </div>
