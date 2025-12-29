@@ -22,7 +22,7 @@ const StudentDetailsSheet = ({
     sessionId: student?.session_id,
   })
 
-  const details = data?.data?.data
+  const details = data?.data
 
   if (!student) return null
 

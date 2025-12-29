@@ -445,7 +445,7 @@ export default function BulkAssignClassDialog({
                     ) : (
                       <div className="py-12 text-center">
                         <p className="text-text-secondary text-sm">
-                          {searchQuery
+                          {classSearchQuery
                             ? "No classes found matching your search"
                             : "No classes available"}
                         </p>

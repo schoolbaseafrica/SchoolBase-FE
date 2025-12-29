@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import AttendanceTable from "./_components/attendance-table"
 import AttendanceGrid from "./_components/attendance-grid"
@@ -45,7 +45,7 @@ const Attendance = () => {
     )
   }, [classesData])
 
-  // Compute the initial class without useEffect
+  // Compute the initial class
   const initialClassId = useMemo(() => {
     if (!selectedClassId && classes.length > 0) {
       return classes[0].id
@@ -53,10 +53,12 @@ const Attendance = () => {
     return selectedClassId
   }, [classes, selectedClassId])
 
-  // Ensure state always aligns with computed initial class
-  if (selectedClassId !== initialClassId) {
-    setSelectedClassId(initialClassId)
-  }
+  // Ensure state always aligns with computed initial class (using useEffect to avoid render loop)
+  useEffect(() => {
+    if (selectedClassId !== initialClassId) {
+      setSelectedClassId(initialClassId)
+    }
+  }, [initialClassId, selectedClassId])
 
   // 1. Fetch attendance (Syncs to store)
   const { isLoading: queryLoading } = useDailyAttendance(initialClassId, today)

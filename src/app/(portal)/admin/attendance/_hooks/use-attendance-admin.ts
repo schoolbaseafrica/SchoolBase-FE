@@ -26,8 +26,9 @@ export const useDailyAttendance = (classId: string, date?: string) => {
             return res as AttendanceResponse
           }
           // Otherwise, it might be wrapped (has data property)
-          if ("data" in res && res.data) {
-            return res.data as AttendanceResponse
+          const resWithData = res as { data?: AttendanceResponse }
+          if ("data" in resWithData && resWithData.data) {
+            return resWithData.data
           }
         }
         return res as AttendanceResponse
