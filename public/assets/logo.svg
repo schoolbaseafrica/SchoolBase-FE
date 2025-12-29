@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+  <!-- White background -->
+  <rect width="140" height="140" fill="#FFFFFF" rx="12" ry="12" />
+
+  <!-- Top-left rounded square -->
+  <rect x="24" y="24" width="36" height="36" rx="6" ry="6" fill="#DA3743" />
+
+  <!-- Top-right rounded square -->
+  <rect x="80" y="24" width="36" height="36" rx="6" ry="6" fill="#DA3743" />
+
+  <!-- Center circle -->
+  <circle cx="70" cy="70" r="8" fill="#DA3743" />
+
+  <!-- Bottom-left rounded square -->
+  <rect x="24" y="80" width="36" height="36" rx="6" ry="6" fill="#DA3743" />
+
+  <!-- Bottom-right rounded square -->
+  <rect x="80" y="80" width="36" height="36" rx="6" ry="6" fill="#DA3743" />
+</svg>
