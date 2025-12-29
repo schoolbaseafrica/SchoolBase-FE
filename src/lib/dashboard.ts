@@ -22,6 +22,12 @@ export interface ClassInfo {
   name: string
 }
 
+export interface Room {
+  id: string
+  name: string
+  capacity: number
+}
+
 export interface Activity {
   schedule_id: string
   teacher: Teacher | null
@@ -29,7 +35,7 @@ export interface Activity {
   class: ClassInfo
   start_time: string
   end_time: string
-  venue: string
+  venue: Room | null | string
   period_type: string
   progress_status: string
 }

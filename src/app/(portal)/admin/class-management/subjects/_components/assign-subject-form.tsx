@@ -27,7 +27,27 @@ export default function AssignSubjectForm({
   classes,
   onSuccess,
 }: AssignSubjectFormProps) {
-  // Ensure classes is always an array and subject exists
+  // Extract already assigned class IDs from the subject (safe defaults if subject is null)
+  const initAssignedClasses =
+    subject?.classes && Array.isArray(subject.classes) && subject.classes.length > 0
+      ? subject.classes
+          .map((cls: { id?: string }) => cls?.id)
+          .filter((id): id is string => !!id && typeof id === "string")
+      : []
+
+  // All hooks must be called before any conditional returns
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
+    new Set(initAssignedClasses)
+  )
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
+  // Use a safe default for subject.id to avoid errors
+  const assignMutation = useAssignSubjectToClasses(subject?.id || "")
+  const unAssignMutation = useUnAssignSubjectToClasses(subject?.id || "")
+
+  // Ensure classes is always an array and subject exists (after hooks)
   if (!subject || !subject.id) {
     console.error("[AssignSubjectForm] Subject is missing or invalid:", subject)
     return (
@@ -41,15 +61,6 @@ export default function AssignSubjectForm({
 
   const safeClasses = Array.isArray(classes) ? classes : []
 
-  // Extract already assigned class IDs from the subject
-  // Only include classes that are actually assigned (not empty or undefined)
-  const initAssignedClasses =
-    subject?.classes && Array.isArray(subject.classes) && subject.classes.length > 0
-      ? subject.classes
-          .map((cls: any) => cls?.id)
-          .filter((id: any): id is string => !!id && typeof id === "string")
-      : []
-
   // Debug logging (remove in production)
   if (process.env.NODE_ENV === "development") {
     console.log("[AssignSubjectForm] Subject:", subject)
@@ -57,16 +68,6 @@ export default function AssignSubjectForm({
     console.log("[AssignSubjectForm] InitAssignedClasses:", initAssignedClasses)
     console.log("[AssignSubjectForm] Available classes:", safeClasses)
   }
-
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
-    new Set(initAssignedClasses)
-  )
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
-
-  const assignMutation = useAssignSubjectToClasses(subject.id)
-  const unAssignMutation = useUnAssignSubjectToClasses(subject.id)
   const isPending = assignMutation.isPending || unAssignMutation.isPending
 
   const filteredClasses = safeClasses.filter((classItem) => {
@@ -214,7 +215,7 @@ export default function AssignSubjectForm({
       )
 
       // Build promises array conditionally - only include non-empty arrays
-      const promises: Promise<any>[] = []
+      const promises: Promise<unknown>[] = []
 
       if (newlyAssignedArms.length > 0) {
         promises.push(assignMutation.mutateAsync(newlyAssignedArms))
@@ -231,12 +232,14 @@ export default function AssignSubjectForm({
 
       // Call onSuccess if we made it here (even if no changes were needed)
       onSuccess()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to assign subject:", error)
       // Show user-friendly error message
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
+        (error && typeof error === "object" && "response" in error
+          ? (error.response as { data?: { message?: string } })?.data?.message
+          : undefined) ||
+        (error instanceof Error ? error.message : undefined) ||
         "Failed to assign subject to classes. Please try again."
       toast.error(errorMessage)
       throw error // Re-throw so the UI can handle it appropriately

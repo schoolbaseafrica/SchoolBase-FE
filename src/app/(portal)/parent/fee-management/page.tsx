@@ -9,6 +9,7 @@ import {
   useGetStudentProfile,
   useGetStudentFeeDetails,
 } from "../_hooks/use-parent-students"
+import type { StudentFeeDetailsResponse } from "@/lib/fees"
 import { EmptyState } from "@/components/results/empty-state"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
@@ -43,8 +44,9 @@ export default function ParentFeeManagementPage() {
   }
 
   const isLoading = isLoadingProfile || isLoadingFees
-  // The response is ResponsePack<StudentFeeDetailsResponse>, so we need to access .data.data
-  const details = feeDetails?.data?.data || feeDetails?.data || feeDetails
+  // The response is ResponsePack<StudentFeeDetailsResponse>, so we need to access .data
+  const feeDetailsResponse = feeDetails as { data?: StudentFeeDetailsResponse } | undefined
+  const details = feeDetailsResponse?.data || (feeDetails as StudentFeeDetailsResponse | undefined)
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

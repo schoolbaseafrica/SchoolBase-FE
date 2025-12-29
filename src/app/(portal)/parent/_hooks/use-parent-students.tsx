@@ -28,7 +28,7 @@ export function useGetParentStudents() {
 
 // Get student profile (includes class info)
 export function useGetStudentProfile(studentId?: string) {
-  const parentId = useAuthStore((state) => state.user?.parent_id)
+  const parentId = useAuthStore((state) => state.user?.id)
 
   return useQuery({
     queryKey: [...PARENT_STUDENTS_KEY, "profile", studentId],

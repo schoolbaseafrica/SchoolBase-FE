@@ -41,12 +41,23 @@ export function useGetTeachers() {
         // Handle nested response structure: ResponsePack<ResponsePack<User[]>>
         // Try multiple possible response structures
         let teachers: User[] = []
-        if (Array.isArray(res?.data)) {
-          teachers = res.data
-        } else if (Array.isArray(res?.data?.data)) {
-          teachers = res.data.data
-        } else if (res?.data?.data?.data && Array.isArray(res.data.data.data)) {
-          teachers = res.data.data.data
+        const resData = res?.data as unknown
+        if (Array.isArray(resData)) {
+          teachers = resData
+        } else if (resData && typeof resData === "object" && "data" in resData) {
+          const nestedData = (resData as { data: unknown }).data
+          if (Array.isArray(nestedData)) {
+            teachers = nestedData
+          } else if (
+            nestedData &&
+            typeof nestedData === "object" &&
+            "data" in nestedData
+          ) {
+            const doubleNested = (nestedData as { data: unknown }).data
+            if (Array.isArray(doubleNested)) {
+              teachers = doubleNested
+            }
+          }
         }
         console.log("useGetTeachers: Extracted teachers:", teachers.length, teachers)
         // Ensure we always return an array

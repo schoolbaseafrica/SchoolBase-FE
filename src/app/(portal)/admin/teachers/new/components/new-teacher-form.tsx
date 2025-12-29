@@ -210,14 +210,14 @@ export default function NewTeacherForm() {
       title: formData.title as string,
       first_name: formData.firstName as string,
       last_name: formData.lastName as string,
-      middle_name: optionalString(formData.middleName),
+      middle_name: optionalString(formData.middleName) ?? "",
       email: formData.email as string,
-      employment_id: optionalString(formData.employmentId),
+      employment_id: optionalString(formData.employmentId) ?? "",
       phone: formatPhoneNumber(formData.phoneNumber as string),
       date_of_birth: formData.dateOfBirth as string,
       gender: capitalizedGender,
-      home_address: optionalString(formData.homeAddress),
-      password: optionalString(formData.generatedPassword),
+      home_address: optionalString(formData.homeAddress) ?? "",
+      password: optionalString(formData.generatedPassword) ?? "",
     }
 
     try {

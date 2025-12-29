@@ -67,7 +67,11 @@ const TodayActivityGrid = ({
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-primary text-xs font-medium">Venue:</span>
-              <p className="text-sm font-medium">{activity?.venue?.name || "Unassigned"}</p>
+              <p className="text-sm font-medium">
+                {typeof activity?.venue === "string"
+                  ? activity.venue
+                  : activity?.venue?.name || "Unassigned"}
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-primary text-xs font-medium">Status:</span>

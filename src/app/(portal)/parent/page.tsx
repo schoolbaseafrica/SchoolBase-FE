@@ -57,11 +57,11 @@ export default function ParentDashboard() {
   // Get session from academic details or latest result
   const sessionName =
     studentProfile?.academic_details?.session ||
-    latestResult?.academic_session_name ||
+    (latestResult as { academic_session_name?: string })?.academic_session_name ||
     null
 
   // Get term from latest result
-  const termName = latestResult?.term_name || null
+  const termName = (latestResult as { term_name?: string })?.term_name || null
 
   const isLoading = isLoadingProfile || isLoadingAttendance || isLoadingResult
 

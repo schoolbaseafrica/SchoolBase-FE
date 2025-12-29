@@ -117,7 +117,9 @@ const TodayActivities = ({
                 {activity?.class?.name || "Unassigned"}
               </TableCell>
               <TableCell className="px-4 py-2.5 text-center">
-                {activity?.venue?.name || "Unassigned"}
+                {typeof activity?.venue === "string"
+                  ? activity.venue
+                  : activity?.venue?.name || "Unassigned"}
               </TableCell>
             </TableRow>
           ))}
