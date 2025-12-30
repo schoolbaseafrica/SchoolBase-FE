@@ -99,8 +99,11 @@ export default function TeachersPage() {
   })
 
   // Transform today's classes to display format
+  // Note: All classes in todaysClassesData are classes the teacher is scheduled to teach
+  // The backend now checks both class_teachers table AND schedules, so we show the button for all
   const todaysClasses: DisplayClass[] = useMemo(() => {
     if (!todaysClassesData?.todays_classes) return []
+
     return todaysClassesData.todays_classes.map((cls) => ({
       id: cls.schedule_id,
       classId: cls.class_id,

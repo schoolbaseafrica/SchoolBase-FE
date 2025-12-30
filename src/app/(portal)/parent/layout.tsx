@@ -5,6 +5,7 @@ import DashboardHeader from "@/components/dashboard/dashboard-header"
 import { QueryProvider } from "@/providers/query-provider"
 import { UserProvider } from "@/providers/user-provider"
 import { StudentProvider } from "./_components/student-provider"
+import { ParentRouteGuard } from "./_components/parent-route-guard"
 
 export const metadata: Metadata = {
   title: "Parent Dashboard",
@@ -16,15 +17,17 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
   return (
     <QueryProvider>
       <UserProvider>
-        <SidebarProvider>
-          <ParentSidebar />
-          <StudentProvider>
-            <main className="mt-[50px] h-full w-full">
-              <DashboardHeader />
-              {children}
-            </main>
-          </StudentProvider>
-        </SidebarProvider>
+        <ParentRouteGuard>
+          <SidebarProvider>
+            <ParentSidebar />
+            <StudentProvider>
+              <main className="mt-[50px] h-full w-full">
+                <DashboardHeader />
+                {children}
+              </main>
+            </StudentProvider>
+          </SidebarProvider>
+        </ParentRouteGuard>
       </UserProvider>
     </QueryProvider>
   )

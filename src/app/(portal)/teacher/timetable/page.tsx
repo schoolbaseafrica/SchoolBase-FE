@@ -8,13 +8,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, AlertCircle } from "lucide-react"
+import { ChevronDown, AlertCircle, BookOpen } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
 import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function TeacherTimetablePage() {
+  const router = useRouter()
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
 
   const {
@@ -47,6 +49,16 @@ export default function TeacherTimetablePage() {
             View schedules for your assigned classes
           </p>
         </div>
+        {/* Show "Open Classroom" button when a class is selected */}
+        {selectedClassId && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/teacher/classroom/${selectedClassId}`)}
+          >
+            <BookOpen className="mr-2 h-4 w-4" />
+            Open Classroom
+          </Button>
+        )}
       </div>
 
       {/* Loading State */}

@@ -279,7 +279,8 @@ export function ClassroomChat({ classId, isReadOnly = false }: ClassroomChatProp
                   {/* Sender name (for other users) */}
                   {!isOwn && (
                     <div className="mb-1 text-xs font-medium opacity-75">
-                      {message.sender_type === "teacher" ? "Teacher" : "Student"}
+                      {message.sender_name ||
+                        (message.sender_type === "teacher" ? "Teacher" : "Student")}
                     </div>
                   )}
 

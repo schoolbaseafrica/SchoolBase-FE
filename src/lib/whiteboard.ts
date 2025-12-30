@@ -38,6 +38,7 @@ export interface UpdateWhiteboardData {
   images_data?: Record<string, MediaPosition>
   videos_data?: Record<string, MediaPosition>
   text_boxes?: TextBoxData[]
+  allow_student_edit?: boolean
 }
 
 type ResponsePack<T> = {

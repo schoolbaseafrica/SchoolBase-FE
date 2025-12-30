@@ -96,7 +96,10 @@ export default function ParentResultsPage() {
           {/* Parent Results View */}
           {selectedStudent ? (
             <ParentResultsView
-              selectedStudent={selectedStudent}
+              selectedStudent={{
+                ...selectedStudent,
+                registration_number: selectedStudent.registration_number || "",
+              }}
               activeTerm={transformedTerm}
               results={results}
               isLoading={isLoading}

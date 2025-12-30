@@ -22,6 +22,14 @@ export function useWhiteboard(classId: string, options?: { enablePolling?: boole
     refetchInterval: enablePolling ? 3000 : false, // Poll every 3 seconds if enabled (for students), disabled for teachers
     refetchOnWindowFocus: false, // Don't refetch on window focus to avoid conflicts
     refetchOnMount: true, // Always refetch on mount to get latest data
+    retry: (failureCount, error: any) => {
+      // Don't retry on 403 (Forbidden) errors - user doesn't have access
+      if (error?.response?.status === 403) {
+        return false
+      }
+      // Retry other errors up to 1 time
+      return failureCount < 1
+    },
   })
 }
 

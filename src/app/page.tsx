@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering - this page checks installation status at runtime
+export const dynamic = "force-dynamic"
+
 /**
  * Root page - Checks installation status and redirects accordingly
  *

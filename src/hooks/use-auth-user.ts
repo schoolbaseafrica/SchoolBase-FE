@@ -49,3 +49,19 @@ export function useParentAuth() {
     hasParentId: !!parentId,
   }
 }
+
+export function useTeacherAuth() {
+  const { data: user, isLoading, error } = useAuthUser()
+
+  const isTeacher = user ? user.role.includes("TEACHER") : false
+  const teacherId = user?.teacher_id
+
+  return {
+    user,
+    isLoading,
+    error,
+    isTeacher,
+    teacherId,
+    hasTeacherId: !!teacherId,
+  }
+}

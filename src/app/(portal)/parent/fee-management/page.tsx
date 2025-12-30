@@ -19,11 +19,35 @@ export default function ParentFeeManagementPage() {
   const { data: studentProfile, isLoading: isLoadingProfile } = useGetStudentProfile(
     selectedStudent?.id
   )
+
+  // Try to get sessionId from student profile first (hook will fallback to active session if null)
   const sessionId = studentProfile?.academic_details?.id
-  const { data: feeDetails, isLoading: isLoadingFees } = useGetStudentFeeDetails(
-    selectedStudent?.id,
-    sessionId
-  )
+
+  // Debug logging
+  if (studentProfile && !sessionId) {
+    console.warn(
+      "[ParentFeeManagement] Student profile has no academic_details, will use active session fallback:",
+      {
+        studentId: selectedStudent?.id,
+        academicDetails: studentProfile?.academic_details,
+      }
+    )
+  }
+
+  const {
+    data: feeDetails,
+    isLoading: isLoadingFees,
+    error: feeDetailsError,
+  } = useGetStudentFeeDetails(selectedStudent?.id, sessionId)
+
+  // Log fee details errors
+  if (feeDetailsError) {
+    console.error("[ParentFeeManagement] Fee details error:", feeDetailsError)
+  }
+
+  // Determine if we have session information available
+  // The hook will fetch active session as fallback, so we'll wait for that before showing "No Session"
+  const waitingForSessionFallback = !sessionId && !feeDetailsError && isLoadingFees
 
   if (!selectedStudent) {
     return (
@@ -44,9 +68,76 @@ export default function ParentFeeManagementPage() {
   }
 
   const isLoading = isLoadingProfile || isLoadingFees
-  // The response is ResponsePack<StudentFeeDetailsResponse>, so we need to access .data
-  const feeDetailsResponse = feeDetails as { data?: StudentFeeDetailsResponse } | undefined
-  const details = feeDetailsResponse?.data || (feeDetails as StudentFeeDetailsResponse | undefined)
+
+  // Extract details from response - use the same pattern as student portal
+  // The hook returns ResponsePack<StudentFeeDetailsResponse>, so we need to access .data.data like student page does
+  // Handle potential double-wrapping: ResponsePack<ResponsePack<StudentFeeDetailsResponse>> or ResponsePack<StudentFeeDetailsResponse>
+  const details: StudentFeeDetailsResponse | undefined =
+    (feeDetails as any)?.data?.data || feeDetails?.data || feeDetails
+
+  // Comprehensive logging for debugging
+  console.log("[ParentFeeManagement] Full state:", {
+    selectedStudentId: selectedStudent?.id,
+    sessionId,
+    isLoadingProfile,
+    isLoadingFees,
+    hasFeeDetails: !!feeDetails,
+    feeDetailsType: typeof feeDetails,
+    feeDetailsKeys: feeDetails ? Object.keys(feeDetails) : [],
+    feeDetailsStructure: feeDetails
+      ? {
+          status_code: (feeDetails as any)?.status_code,
+          message: (feeDetails as any)?.message,
+          hasData: !!(feeDetails as any)?.data,
+          dataType: typeof (feeDetails as any)?.data,
+          dataKeys: (feeDetails as any)?.data
+            ? Object.keys((feeDetails as any).data)
+            : [],
+          dataHasData: !!(feeDetails as any)?.data?.data,
+          dataDataKeys: (feeDetails as any)?.data?.data
+            ? Object.keys((feeDetails as any).data.data)
+            : [],
+          // Log the actual data structure for inspection
+          dataValue: (feeDetails as any)?.data
+            ? JSON.parse(JSON.stringify((feeDetails as any).data))
+            : null,
+        }
+      : null,
+    hasDetails: !!details,
+    detailsType: typeof details,
+    detailsKeys: details ? Object.keys(details) : [],
+    detailsStructure: details
+      ? {
+          hasStudentInfo: !!details.student_info,
+          studentInfo: details.student_info
+            ? JSON.parse(JSON.stringify(details.student_info))
+            : null,
+          hasFeeBreakdown: !!details.fee_breakdown,
+          feeBreakdownLength: details.fee_breakdown?.length || 0,
+          feeBreakdown: details.fee_breakdown
+            ? JSON.parse(JSON.stringify(details.fee_breakdown))
+            : null,
+          hasPaymentHistory: !!details.payment_history,
+          paymentHistoryLength: details.payment_history?.length || 0,
+          paymentHistory: details.payment_history
+            ? JSON.parse(JSON.stringify(details.payment_history))
+            : null,
+        }
+      : null,
+    extractionMethod: feeDetails
+      ? {
+          triedDataData: !!(feeDetails as any)?.data?.data,
+          triedData: !!(feeDetails as any)?.data,
+          triedDirect: !!feeDetails,
+          finalSource: (feeDetails as any)?.data?.data
+            ? "data.data"
+            : (feeDetails as any)?.data
+              ? "data"
+              : "direct",
+        }
+      : null,
+    feeDetailsError,
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -82,7 +173,7 @@ export default function ParentFeeManagementPage() {
             </CardContent>
           </Card>
         </div>
-      ) : !sessionId ? (
+      ) : !waitingForSessionFallback && !sessionId && feeDetailsError ? (
         <EmptyState
           title="No Active Session"
           description="This student is not enrolled in an active academic session. Please contact the administrator."
@@ -104,27 +195,49 @@ export default function ParentFeeManagementPage() {
                   {selectedStudent.photo_url ? (
                     <img
                       src={selectedStudent.photo_url}
-                      alt={details.student_info.first_name}
+                      alt={
+                        details?.student_info?.first_name ||
+                        selectedStudent.first_name ||
+                        "Student"
+                      }
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <span className="text-2xl font-bold text-gray-500">
-                      {details.student_info.first_name[0]}
-                      {details.student_info.last_name[0]}
+                      {
+                        (details?.student_info?.first_name ||
+                          selectedStudent.first_name ||
+                          "")[0]
+                      }
+                      {
+                        (details?.student_info?.last_name ||
+                          selectedStudent.last_name ||
+                          "")[0]
+                      }
                     </span>
                   )}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">
-                    {details.student_info.first_name} {details.student_info.last_name}
+                    {details?.student_info?.first_name || selectedStudent.first_name}{" "}
+                    {details?.student_info?.last_name || selectedStudent.last_name}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    ID: {details.student_info.registration_number}
+                    ID:{" "}
+                    {details?.student_info?.registration_number ||
+                      selectedStudent.registration_number ||
+                      "N/A"}
                   </p>
                   <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-gray-600 sm:justify-start">
-                    <span>Session: {details.student_info.session}</span>
-                    <span>Class: {details.student_info.class}</span>
-                    <span>Term: {details.student_info.term}</span>
+                    {details?.student_info?.session && (
+                      <span>Session: {details.student_info.session}</span>
+                    )}
+                    {details?.student_info?.class && (
+                      <span>Class: {details.student_info.class}</span>
+                    )}
+                    {details?.student_info?.term && (
+                      <span>Term: {details.student_info.term}</span>
+                    )}
                   </div>
                 </div>
               </div>

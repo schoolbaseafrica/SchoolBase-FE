@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { useGetParentStudents } from "../_hooks/use-parent-students"
 import { Student } from "@/lib/parents/client"
 import { NoStudentLinkedModal } from "./no-assigned-student-modal"
+import { useParentAuth } from "@/hooks/use-auth-user"
 
 interface StudentContextParams {
   studentID?: string
@@ -16,7 +17,11 @@ interface StudentContextParams {
 const StudentContext = createContext<StudentContextParams | null>(null)
 
 export const StudentProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data: students, isLoading, error } = useGetParentStudents()
+  const { isParent, isLoading: isLoadingAuth } = useParentAuth()
+  const { data: students, isLoading: isLoadingStudents, error } = useGetParentStudents()
+
+  // Don't proceed if user is not a parent
+  const isLoading = isLoadingAuth || isLoadingStudents
 
   // Ensure students is always an array
   const studentsArray = Array.isArray(students) ? students : []
@@ -32,23 +37,28 @@ export const StudentProvider = ({ children }: { children: React.ReactNode }) => 
   const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
-    // Only show modal if loading is complete AND there are truly no students
-    // Don't show modal while still loading
-    if (isLoading) {
+    // Only show modal if user is a parent and loading is complete AND there are truly no students
+    // Don't show modal while still loading or if user is not a parent
+    if (!isParent || isLoading) {
       setShowModal(false)
       return
     }
 
     // After loading completes, check if we have students
+    const is403 =
+      error?.message?.includes("403") ||
+      error?.message?.includes("Forbidden") ||
+      error?.message?.includes("Access denied")
     const is404 = error?.message?.includes("not found") || error?.message?.includes("404")
     const hasNoStudents = studentsArray.length === 0
 
-    if (hasNoStudents || is404) {
+    // Don't show modal for permission errors (403) - those should be handled elsewhere
+    if ((hasNoStudents || is404) && !is403) {
       setShowModal(true)
     } else {
       setShowModal(false)
     }
-  }, [isLoading, studentsArray.length, error])
+  }, [isParent, isLoading, studentsArray.length, error])
 
   // Auto-select first student when students are loaded
   useEffect(() => {
@@ -66,7 +76,7 @@ export const StudentProvider = ({ children }: { children: React.ReactNode }) => 
     selectedStudent: studentsArray.find((s) => s.id === selectedID),
     students: studentsArray,
     setSelectedStudentID: handleSelectStudent,
-    isLoading,
+    isLoading: isLoading || !isParent, // Consider loading if auth is still loading or user is not a parent
   }
 
   return (

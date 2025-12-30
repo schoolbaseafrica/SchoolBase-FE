@@ -9,10 +9,9 @@ export const size = {
 export const contentType = "image/png"
 
 export default function Icon() {
-  const logoSrc =
-    defaultSchoolProfile.logo.favicon ||
-    defaultSchoolProfile.logo.full ||
-    "/assets/logo.png"
+  // For static generation, we need to use a simple colored icon
+  // ImageResponse doesn't support relative paths during build
+  const schoolName = defaultSchoolProfile.shortName || "School"
 
   return new ImageResponse(
     (
@@ -28,14 +27,22 @@ export default function Icon() {
           padding: "8px",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={logoSrc}
-          alt={`${defaultSchoolProfile.shortName} logo`}
-          width={48}
-          height={48}
-          style={{ objectFit: "contain" }}
-        />
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: "#000000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "48px",
+            height: "48px",
+            backgroundColor: "#f3f4f6",
+            borderRadius: "8px",
+          }}
+        >
+          {schoolName.charAt(0).toUpperCase()}
+        </div>
       </div>
     ),
     size

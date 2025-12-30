@@ -1,7 +1,7 @@
 "use client"
 import { ParentStudents } from "@/lib/parents/client"
 import { useQuery } from "@tanstack/react-query"
-import { useAuthStore } from "@/store/auth-store"
+import { useParentAuth } from "@/hooks/use-auth-user"
 import { getStudentResults, getActiveTerm } from "@/lib/results"
 import { TimetableAPI, TimetableResponse } from "@/lib/timetable"
 import { FeesAPI, StudentFeeDetailsResponse } from "@/lib/fees"
@@ -9,6 +9,8 @@ import { FeesAPI, StudentFeeDetailsResponse } from "@/lib/fees"
 export const PARENT_STUDENTS_KEY = ["parent-students"]
 
 export function useGetParentStudents() {
+  const { isParent, isLoading: isLoadingAuth } = useParentAuth()
+
   return useQuery({
     queryKey: PARENT_STUDENTS_KEY,
     queryFn: () => ParentStudents.getAll(),
@@ -20,6 +22,7 @@ export function useGetParentStudents() {
       }
       return Array.isArray(data) ? data : []
     },
+    enabled: isParent && !isLoadingAuth, // Only fetch if user is a parent
     staleTime: 1000 * 60 * 60,
     retry: 2,
     refetchOnWindowFocus: false,
@@ -28,7 +31,7 @@ export function useGetParentStudents() {
 
 // Get student profile (includes class info)
 export function useGetStudentProfile(studentId?: string) {
-  const parentId = useAuthStore((state) => state.user?.id)
+  const { parentId } = useParentAuth()
 
   return useQuery({
     queryKey: [...PARENT_STUDENTS_KEY, "profile", studentId],
@@ -108,27 +111,79 @@ export function useGetStudentFeeDetails(studentId?: string, sessionId?: string) 
     staleTime: 1000 * 60 * 5,
   })
 
+  // If sessionId is not provided, try to get active academic session as fallback
+  const activeSessionQuery = useQuery({
+    queryKey: ["active-academic-session"],
+    queryFn: async () => {
+      const { AcademicSessionAPI } = await import("@/lib/academic-session")
+      return AcademicSessionAPI.getActive()
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !sessionId && !!studentId && !!activeTermQuery.data?.id, // Only fetch if sessionId is missing
+  })
+
+  // Use provided sessionId or fallback to active session
+  const effectiveSessionId = sessionId || activeSessionQuery.data?.id
+
   return useQuery({
     queryKey: [
       ...PARENT_STUDENTS_KEY,
       "fee-details",
       studentId,
       activeTermQuery.data?.id,
-      sessionId,
+      effectiveSessionId,
     ],
     queryFn: async () => {
-      if (!studentId || !activeTermQuery.data?.id || !sessionId) {
+      if (!studentId || !activeTermQuery.data?.id || !effectiveSessionId) {
         throw new Error("Student ID, term ID, and session ID are required")
       }
+      console.log("[useGetStudentFeeDetails] Fetching fee details:", {
+        studentId,
+        termId: activeTermQuery.data.id,
+        sessionId: effectiveSessionId,
+        sessionSource: sessionId ? "student-profile" : "active-session",
+      })
       const response = await FeesAPI.getStudentFeeDetails(studentId, {
         term_id: activeTermQuery.data.id,
-        session_id: sessionId,
+        session_id: effectiveSessionId,
       })
+
+      console.log("[useGetStudentFeeDetails] Raw API response:", {
+        status_code: response?.status_code,
+        message: response?.message,
+        hasData: !!response?.data,
+        dataType: typeof response?.data,
+        dataKeys: response?.data ? Object.keys(response?.data) : [],
+        dataValue: response?.data ? JSON.parse(JSON.stringify(response.data)) : null, // Show actual data content
+        fullResponse: JSON.parse(JSON.stringify(response)), // Deep clone for logging
+      })
+
+      // Check if data is nested incorrectly
+      if (response?.data && typeof response.data === "object") {
+        const dataKeys = Object.keys(response.data)
+        const responseData = response.data as any // Type assertion for dynamic key access
+        console.log("[useGetStudentFeeDetails] Data structure analysis:", {
+          dataKeys,
+          firstKey: dataKeys[0],
+          firstKeyValue: dataKeys[0]
+            ? JSON.parse(JSON.stringify(responseData[dataKeys[0]]))
+            : null,
+          isArray: Array.isArray(response.data),
+          isNestedResponsePack:
+            (responseData as any).status_code !== undefined &&
+            (responseData as any).data !== undefined,
+        })
+      }
+
       // Response structure: ResponsePack<StudentFeeDetailsResponse>
       // Return the full response object so we can access .data.data.data like admin does
       return response
     },
-    enabled: !!studentId && !!activeTermQuery.data?.id && !!sessionId,
+    enabled:
+      !!studentId &&
+      !!activeTermQuery.data?.id &&
+      !!effectiveSessionId &&
+      !activeSessionQuery.isLoading,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })

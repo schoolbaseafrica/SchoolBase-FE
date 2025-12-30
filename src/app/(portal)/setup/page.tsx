@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation"
 import SchoolSetupWizard from "./_components/setup-wizard"
 
+// Force dynamic rendering - this page checks installation status at runtime
+export const dynamic = "force-dynamic"
+
 /**
  * Setup page - Checks if installation is already complete
  * If complete, redirects to landing page

@@ -71,6 +71,27 @@ export async function apiFetch<TResponse>(
       return undefined as TResponse
     }
 
+    // Log fee details API responses for debugging
+    if (url.includes("/fees/student/")) {
+      console.log("[apiFetch] Fee details API response:", {
+        url,
+        status: res.status,
+        hasData: !!res.data,
+        dataKeys: res.data ? Object.keys(res.data) : [],
+        dataStructure: res.data
+          ? {
+              status_code: (res.data as any)?.status_code,
+              message: (res.data as any)?.message,
+              hasNestedData: !!(res.data as any)?.data,
+              nestedDataKeys: (res.data as any)?.data
+                ? Object.keys((res.data as any).data)
+                : [],
+              fullResponse: JSON.parse(JSON.stringify(res.data)), // Deep clone
+            }
+          : null,
+      })
+    }
+
     return res.data as TResponse
   } catch (err) {
     // Network or backend errors
@@ -111,7 +132,7 @@ export async function apiFetch<TResponse>(
           const errorResponseInfo: Record<string, unknown> = {}
           if (hasStatus) errorResponseInfo.status = err.response.status
           if (hasStatusText) errorResponseInfo.statusText = err.response.statusText
-          if (hasUrl) errorResponseInfo.url = err.config.url
+          if (hasUrl && err.config) errorResponseInfo.url = err.config.url
           console.error("API Error Response:", errorResponseInfo)
         }
       }

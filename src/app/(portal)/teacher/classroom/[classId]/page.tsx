@@ -3,12 +3,13 @@
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Loader2, Users } from "lucide-react"
+import { ArrowLeft, Loader2, Users, AlertCircle } from "lucide-react"
 import { useWhiteboard, useUpdateWhiteboard } from "./_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "./_components/whiteboard-canvas"
 import { ClassroomChat } from "./_components/classroom-chat"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { EmptyState } from "@/components/results/empty-state"
 
 export default function TeacherClassroomPage() {
   const params = useParams()
@@ -276,22 +277,60 @@ export default function TeacherClassroomPage() {
     [updateMutation]
   )
 
+  // Check if error is a 403 Forbidden (access denied)
+  const isForbiddenError =
+    error &&
+    ((error as any)?.response?.status === 403 ||
+      (error instanceof Error &&
+        (error.message.includes("403") ||
+          error.message.includes("Forbidden") ||
+          error.message.includes("not assigned") ||
+          error.message.includes("do not have access"))))
+
   if (error) {
     return (
       <div className="flex h-full w-full flex-col">
         <div className="flex items-center justify-between border-b bg-white px-4 py-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/teacher")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Back to Dashboard
           </Button>
         </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
-            <p className="text-lg font-semibold text-red-600">Failed to load classroom</p>
-            <p className="mt-2 text-sm text-red-500">
-              {error instanceof Error ? error.message : "An error occurred"}
-            </p>
-          </div>
+        <div className="flex flex-1 items-center justify-center bg-gray-50 p-6">
+          {isForbiddenError ? (
+            <div className="w-full max-w-md">
+              <EmptyState
+                icon={AlertCircle}
+                title="Access Restricted"
+                description="You are not assigned as a teacher for this class. Please contact your administrator to be assigned to this class before accessing the virtual classroom."
+                action={
+                  <Button onClick={() => router.push("/teacher")} className="mt-4">
+                    Go to Dashboard
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
+            <div className="w-full max-w-md">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to Load Classroom"
+                description={
+                  error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred while loading the classroom. Please try again later."
+                }
+                action={
+                  <div className="mt-4 flex justify-center gap-2">
+                    <Button variant="outline" onClick={() => router.push("/teacher")}>
+                      Go to Dashboard
+                    </Button>
+                    <Button onClick={() => window.location.reload()}>Retry</Button>
+                  </div>
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
     )

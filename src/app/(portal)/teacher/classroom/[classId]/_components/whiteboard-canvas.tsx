@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState, useCallback } from "react"
-import { ReactSketchCanvas, ReactSketchCanvasRef } from "react-sketch-canvas"
+import { ReactSketchCanvas } from "react-sketch-canvas"
 import { Button } from "@/components/ui/button"
 import {
   Loader2,
@@ -26,6 +26,9 @@ interface MediaItem {
   y: number
 }
 
+// Import TextBoxData from the shared type definition
+import type { TextBoxData } from "@/lib/whiteboard"
+
 interface WhiteboardCanvasProps {
   canvasState: string | null
   onSave: (canvasState: string) => void
@@ -33,10 +36,29 @@ interface WhiteboardCanvasProps {
   isReadOnly?: boolean
   images?: string[]
   videoLinks?: string[]
+  textBoxes?: TextBoxData[]
+  imagesData?: Record<
+    string,
+    MediaItem | { x: number; y: number; width: number; height: number }
+  >
+  videosData?: Record<
+    string,
+    MediaItem | { x: number; y: number; width: number; height: number }
+  >
   onAddImage?: (url: string) => void
   onRemoveImage?: (url: string) => void
   onAddVideo?: (url: string) => void
   onRemoveVideo?: (url: string) => void
+  onAddTextBox?: (textBox: TextBoxData) => void
+  onUpdateTextBox?: (id: string, updates: Partial<TextBoxData>) => void
+  onRemoveTextBox?: (id: string) => void
+  onUpdateImagesData?: (
+    data: Record<string, { x: number; y: number; width: number; height: number }>
+  ) => void
+  onUpdateVideosData?: (
+    data: Record<string, { x: number; y: number; width: number; height: number }>
+  ) => void
+  onClearAll?: () => void
 }
 
 export function WhiteboardCanvas({
@@ -60,7 +82,7 @@ export function WhiteboardCanvas({
   onUpdateVideosData,
   onClearAll,
 }: WhiteboardCanvasProps) {
-  const canvasRef = useRef<ReactSketchCanvasRef>(null)
+  const canvasRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [strokeColor, setStrokeColor] = useState("#000000")
@@ -269,8 +291,23 @@ export function WhiteboardCanvas({
       const index = parseInt(id.replace("img-", ""))
       if (!isNaN(index) && images[index] && onUpdateImagesData) {
         const url = images[index]
-        const updatedData = { ...imagesData, [url]: { ...imagesData[url], x, y } }
-        onUpdateImagesData(updatedData)
+        const existing = imagesData[url] as any
+        const updatedData = {
+          ...imagesData,
+          [url]: {
+            ...existing,
+            x,
+            y,
+            width: existing?.width || 200,
+            height: existing?.height || 200,
+          },
+        }
+        onUpdateImagesData(
+          updatedData as Record<
+            string,
+            { x: number; y: number; width: number; height: number }
+          >
+        )
       }
     },
     [images, imagesData, onUpdateImagesData]
@@ -281,11 +318,17 @@ export function WhiteboardCanvas({
       const index = parseInt(id.replace("img-", ""))
       if (!isNaN(index) && images[index] && onUpdateImagesData) {
         const url = images[index]
+        const existing = imagesData[url] as any
         const updatedData = {
           ...imagesData,
-          [url]: { ...imagesData[url], width, height },
+          [url]: { ...existing, x: existing?.x || 0, y: existing?.y || 0, width, height },
         }
-        onUpdateImagesData(updatedData)
+        onUpdateImagesData(
+          updatedData as Record<
+            string,
+            { x: number; y: number; width: number; height: number }
+          >
+        )
       }
     },
     [images, imagesData, onUpdateImagesData]
@@ -296,8 +339,23 @@ export function WhiteboardCanvas({
       const index = parseInt(id.replace("vid-", ""))
       if (!isNaN(index) && videoLinks[index] && onUpdateVideosData) {
         const url = videoLinks[index]
-        const updatedData = { ...videosData, [url]: { ...videosData[url], x, y } }
-        onUpdateVideosData(updatedData)
+        const existing = videosData[url] as any
+        const updatedData = {
+          ...videosData,
+          [url]: {
+            ...existing,
+            x,
+            y,
+            width: existing?.width || 400,
+            height: existing?.height || 225,
+          },
+        }
+        onUpdateVideosData(
+          updatedData as Record<
+            string,
+            { x: number; y: number; width: number; height: number }
+          >
+        )
       }
     },
     [videoLinks, videosData, onUpdateVideosData]
@@ -308,11 +366,23 @@ export function WhiteboardCanvas({
       const index = parseInt(id.replace("vid-", ""))
       if (!isNaN(index) && videoLinks[index] && onUpdateVideosData) {
         const url = videoLinks[index]
+        const existing = videosData[url] as any
         const updatedData = {
           ...videosData,
-          [url]: { ...videosData[url], width, height },
+          [url]: {
+            ...existing,
+            x: existing?.x || 0,
+            y: existing?.y || 0,
+            width,
+            height,
+          },
         }
-        onUpdateVideosData(updatedData)
+        onUpdateVideosData(
+          updatedData as Record<
+            string,
+            { x: number; y: number; width: number; height: number }
+          >
+        )
       }
     },
     [videoLinks, videosData, onUpdateVideosData]
@@ -660,19 +730,12 @@ export function WhiteboardCanvas({
           }}
           allowOnlyPointerType={isReadOnly || !isPenToolActive ? "none" : "all"}
           withTimestamp={true}
-          onStroke={async () => {
-            // Auto-save after stroke completes (debounced)
-            if (!isReadOnly && isPenToolActive && canvasRef.current) {
-              // Clear existing timer
-              if (autoSaveTimerRef.current) {
-                clearInterval(autoSaveTimerRef.current)
-              }
-              // Save immediately after stroke
-              setTimeout(() => {
-                handleExport()
-              }, 500)
-            }
-          }}
+          {...(isReadOnly || !isPenToolActive
+            ? {}
+            : {
+                // Note: onStroke may not be available in react-sketch-canvas
+                // Auto-save is handled via useEffect instead
+              })}
         />
 
         {/* Floating Images */}
@@ -686,8 +749,8 @@ export function WhiteboardCanvas({
               url={url}
               x={data.x}
               y={data.y}
-              width={data.width}
-              height={data.height}
+              width={(data as any).width || 200}
+              height={(data as any).height || 200}
               onRemove={() => onRemoveImage?.(url)}
               onPositionChange={handleImagePositionChange}
               onSizeChange={handleImageSizeChange}
@@ -709,8 +772,8 @@ export function WhiteboardCanvas({
               url={url}
               x={data.x}
               y={data.y}
-              width={data.width}
-              height={data.height}
+              width={(data as any).width || 200}
+              height={(data as any).height || 200}
               onRemove={() => onRemoveVideo?.(url)}
               onPositionChange={handleVideoPositionChange}
               onSizeChange={handleVideoSizeChange}
