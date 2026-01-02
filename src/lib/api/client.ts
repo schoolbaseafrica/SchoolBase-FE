@@ -18,7 +18,11 @@ const resolveRequestUrl = (path: string, proxy?: boolean): string => {
   }
 
   if (proxy) {
-    return `/api/proxy-auth${path.startsWith("/") ? path : "/" + path}`
+    // Normalize path: remove leading slashes and /api/v1 if present
+    // (proxy-auth route will add /api/v1 back)
+    let normalizedPath = path.replace(/^\/+/, "")
+    normalizedPath = normalizedPath.replace(/^api\/v1\/?/, "")
+    return `/api/proxy-auth/${normalizedPath}`
   }
 
   if (!API_BASE_URL) {
