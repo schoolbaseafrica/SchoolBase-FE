@@ -31,7 +31,7 @@ export default function InstallationComplete() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-600">✓</span>
-            <span>Super admin access has been disabled for security</span>
+            <span>Super admin account created (can be deactivated manually when ready)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600">→</span>
@@ -45,7 +45,7 @@ export default function InstallationComplete() {
       </div>
 
       <Button asChild className="w-full md:max-w-xs">
-        <Link href="/auth/login">Log In to Portal</Link>
+        <Link href="/login">Log In to Portal</Link>
       </Button>
     </div>
   )

@@ -185,7 +185,7 @@ export default function SchoolSetupWizard() {
           address: formData.school.address,
           email: formData.admin.email,
           phone: formData.school.phone,
-          // logo: formData.school.logo,
+          logo: formData.school.logo, // Now properly sent as FormData file
           primary_color: formData.school.brandColor,
           // secondary_color: "#FFFFFF",
           // accent_color: "#000000",

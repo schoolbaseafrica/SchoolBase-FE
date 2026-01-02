@@ -33,7 +33,7 @@ export interface SchoolInstallRequest {
   address: string
   email: string
   phone: string
-  logo?: string | null
+  logo?: File | null // File object for FormData upload
   primary_color: string
   secondary_color?: string
   accent_color?: string
@@ -112,15 +112,43 @@ export const SetupWizardAPI = {
     ),
 
   // Install School
-  installSchool: (data: SchoolInstallRequest) =>
-    apiFetch<SchoolInstallResponse>(
+  installSchool: (data: SchoolInstallRequest) => {
+    // Create FormData for file upload
+    const formData = new FormData()
+    formData.append("name", data.name)
+    formData.append("address", data.address)
+    formData.append("email", data.email)
+    formData.append("phone", data.phone)
+    formData.append("primary_color", data.primary_color)
+    if (data.secondary_color) {
+      formData.append("secondary_color", data.secondary_color)
+    }
+    if (data.accent_color) {
+      formData.append("accent_color", data.accent_color)
+    }
+    if (data.logo && typeof data.logo !== "string" && data.logo instanceof File) {
+      formData.append("logo", data.logo)
+    }
+    if (data.admin_first_name) {
+      formData.append("admin_first_name", data.admin_first_name)
+    }
+    if (data.admin_last_name) {
+      formData.append("admin_last_name", data.admin_last_name)
+    }
+    if (data.admin_password) {
+      formData.append("admin_password", data.admin_password)
+    }
+
+    return apiFetch<SchoolInstallResponse>(
       "/school/installation",
       {
         method: "POST",
-        data,
+        data: formData,
+        // Don't set Content-Type - client.ts will handle FormData correctly
       },
       true
-    ),
+    )
+  },
 
   // Create Database
   createDatabase: (data: DatabaseCreateRequest) =>
