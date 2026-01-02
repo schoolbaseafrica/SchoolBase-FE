@@ -7,7 +7,7 @@ import type {
   LoginResponse,
 } from "@/types/auth"
 
-const LOGIN_PATH = "/api/auth/login"
+const LOGIN_PATH = "/api/auth/login" // Specific Next.js route that handles cookies
 const ME_PATH = "/auth/me"
 const LOGOUT_PATH = "/api/auth/logout"
 const REFRESH_PATH = "/api/auth/refresh"
@@ -25,7 +25,7 @@ export const login = (payload: LoginPayload): Promise<LoginResponse> => {
       method: "POST",
       data: payload,
     },
-    true // use proxy
+    false // Don't use proxy - use specific Next.js route at /api/auth/login
   )
 }
 
@@ -39,7 +39,7 @@ export const loginUsingEmail = (payload: {
       method: "POST",
       data: payload,
     },
-    true // use proxy
+    false // Don't use proxy - use specific Next.js route at /api/auth/login
   )
 }
 
