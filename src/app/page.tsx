@@ -21,7 +21,10 @@ export default async function RootPage() {
   // Check installation status by calling the school config API
   // This endpoint now returns school even if installation is incomplete
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3008"
+    // Use NEXT_PUBLIC_API_BASE_URL (without /api/v1) or fallback
+    let baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3008"
+    // Normalize: remove trailing slashes and /api/v1 if present
+    baseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
     const response = await fetch(`${baseUrl}/api/v1/school`, {
       method: "GET",
       cache: "no-store", // Always check fresh

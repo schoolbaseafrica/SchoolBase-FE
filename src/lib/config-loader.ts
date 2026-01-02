@@ -209,7 +209,11 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
     if (typeof window !== "undefined") {
       console.log("[Config] API Base URL from env:", envApiUrl)
     }
-    const baseUrl = apiUrl || envApiUrl || "http://localhost:3008"
+    let baseUrl = apiUrl || envApiUrl || "http://localhost:3008"
+    
+    // Normalize baseUrl: remove trailing slashes and /api/v1 if present
+    baseUrl = baseUrl.replace(/\/+$/, "") // Remove trailing slashes
+    baseUrl = baseUrl.replace(/\/api\/v1\/?$/, "") // Remove /api/v1 if present at the end
 
     // Use a timeout with AbortController for better browser compatibility
     const controller = new AbortController()
