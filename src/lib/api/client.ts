@@ -13,16 +13,27 @@ const normalizeBackendPath = (path: string): string => {
 }
 
 const resolveRequestUrl = (path: string, proxy?: boolean): string => {
-  if (isAbsoluteUrl(path) || isInternalApiPath(path)) {
+  // Absolute URLs are always returned as-is
+  if (isAbsoluteUrl(path)) {
     return path
   }
 
   if (proxy) {
+    // For proxy requests, normalize the path even if it starts with /api/
+    // (unless it's a true internal Next.js API route like /api/config)
     // Normalize path: remove leading slashes and /api/v1 if present
     // (proxy-auth route will add /api/v1 back)
     let normalizedPath = path.replace(/^\/+/, "")
+    // Remove /api/v1 prefix if present (proxy will add it back)
+    normalizedPath = normalizedPath.replace(/^api\/v1\/?/, "")
+    // Also handle if path already starts with /api/v1/
     normalizedPath = normalizedPath.replace(/^api\/v1\/?/, "")
     return `/api/proxy-auth/${normalizedPath}`
+  }
+
+  // For non-proxy requests, internal API paths are returned as-is
+  if (isInternalApiPath(path)) {
+    return path
   }
 
   if (!API_BASE_URL) {
