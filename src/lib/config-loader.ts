@@ -7,8 +7,10 @@ import type { SchoolProfile, BrandPalette } from "@/data/school-profile"
  */
 function getEnv(key: string): string | undefined {
   // Access using optional chaining like the direct check that works
-  // @ts-ignore - process.env is replaced by Next.js at build time
-  return typeof process !== "undefined" ? (process as any).env?.[key] : undefined
+  // process.env is replaced by Next.js at build time
+  return typeof process !== "undefined"
+    ? (process as { env?: Record<string, string | undefined> }).env?.[key]
+    : undefined
 }
 
 /**
@@ -23,15 +25,17 @@ export function loadConfigFromEnv(): RuntimeConfig | null {
   }
 
   // Access directly using the pattern that works (from directCheck)
-  // @ts-ignore
+  // process.env is replaced by Next.js at build time
   const schoolName =
     typeof process !== "undefined"
-      ? (process as any).env?.NEXT_PUBLIC_SCHOOL_NAME
+      ? (process as { env?: Record<string, string | undefined> }).env
+          ?.NEXT_PUBLIC_SCHOOL_NAME
       : undefined
-  // @ts-ignore
+  // process.env is replaced by Next.js at build time
   const primaryColor =
     typeof process !== "undefined"
-      ? (process as any).env?.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR
+      ? (process as { env?: Record<string, string | undefined> }).env
+          ?.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR
       : undefined
 
   // Debug: Log what we found
@@ -50,8 +54,11 @@ export function loadConfigFromEnv(): RuntimeConfig | null {
   }
 
   // Access all env vars directly using the working pattern (same as schoolName above)
-  // @ts-ignore - Next.js inlines NEXT_PUBLIC_* at build time
-  const env = typeof process !== "undefined" ? (process as any).env : undefined
+  // Next.js inlines NEXT_PUBLIC_* at build time
+  const env =
+    typeof process !== "undefined"
+      ? (process as { env?: Record<string, string | undefined> }).env
+      : undefined
 
   const config = {
     school: {
@@ -69,7 +76,11 @@ export function loadConfigFromEnv(): RuntimeConfig | null {
       description: env?.NEXT_PUBLIC_SCHOOL_DESCRIPTION,
       tagline: env?.NEXT_PUBLIC_SCHOOL_TAGLINE,
     },
-    apiUrl: env?.NEXT_PUBLIC_API_BASE_URL || env?.NEXT_PUBLIC_API_URL,
+    apiUrl:
+      env?.NEXT_PUBLIC_API_BASE_URL ||
+      (env?.NEXT_PUBLIC_API_URL
+        ? env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, "")
+        : undefined),
     environment:
       (env?.NODE_ENV as "development" | "staging" | "production") || "development",
   }
@@ -281,13 +292,13 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
 
       // Both failed - will use defaults
       return null
-    } catch (fetchError) {
+    } catch {
       clearTimeout(timeoutId)
       // Network errors are expected (backend not available, etc.)
       // Silently fail - will use defaults
       return null
     }
-  } catch (error) {
+  } catch {
     // Silently fail - backend not available is expected in some scenarios
     // Will use defaults instead
     return null
