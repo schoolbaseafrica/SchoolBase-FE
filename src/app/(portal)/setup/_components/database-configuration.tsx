@@ -46,8 +46,11 @@ export function DatabaseConfigForm({
       <h1 className="mb-3 text-center text-3xl font-semibold text-gray-900">
         Database Configuration
       </h1>
-      <p className="mb-8 text-center text-gray-600">
+      <p className="mb-4 text-center text-gray-600">
         Configure your database connection settings.
+      </p>
+      <p className="mb-8 text-center text-sm text-gray-500">
+        For Docker deployments, use host: <code className="bg-gray-100 px-1 rounded">postgres</code> and port: <code className="bg-gray-100 px-1 rounded">5432</code>
       </p>
 
       <ProgressIndicator currentStep={1} />
@@ -97,7 +100,7 @@ export function DatabaseConfigForm({
               required
               value={formData.database.host}
               onChange={(e) => handleChange("database", "host", e.target.value)}
-              placeholder="localhost"
+              placeholder="postgres"
             />
 
             <FormField
@@ -106,7 +109,7 @@ export function DatabaseConfigForm({
               required
               value={formData.database.port}
               onChange={(e) => handleChange("database", "port", Number(e.target.value))}
-              placeholder="8000"
+              placeholder="5432"
               pattern="\d*"
             />
           </div>

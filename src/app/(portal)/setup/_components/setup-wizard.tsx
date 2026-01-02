@@ -37,7 +37,7 @@ export default function SchoolSetupWizard() {
     clearStorage,
     setFormData,
   } = useSetupWizardPersistence({
-    database: { name: "", host: "", username: "", type: "", password: "", port: 8000 },
+    database: { name: "", host: "", username: "", type: "", password: "", port: 5432 },
     school: { logo: null, name: "", brandColor: "#DA3743", phone: "", address: "" },
     admin: {
       firstName: "",
