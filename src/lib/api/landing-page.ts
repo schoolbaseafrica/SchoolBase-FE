@@ -218,19 +218,31 @@ export const toLandingPagePayload = (
 
 export const LandingPageAPI = {
   createLandingPage: (schoolId: string, landing: LandingPageConfig) =>
-    apiFetch<LandingPageCreateResponse>("/landing-page", {
-      method: "POST",
-      data: toLandingPagePayload(schoolId, landing),
-    }),
+    apiFetch<LandingPageCreateResponse>(
+      "/landing-page",
+      {
+        method: "POST",
+        data: toLandingPagePayload(schoolId, landing),
+      },
+      true
+    ),
 
   getLandingPage: (schoolId: string) =>
-    apiFetch<LandingPageApiResponse>(`/landing-page/${schoolId}`, {
-      method: "GET",
-    }),
+    apiFetch<LandingPageApiResponse>(
+      `/landing-page/${schoolId}`,
+      {
+        method: "GET",
+      },
+      true
+    ),
 
   updateLandingPage: (schoolId: string, landing: LandingPageConfig) =>
-    apiFetch<LandingPageApiResponse>(`/landing-page/${schoolId}`, {
-      method: "PATCH",
-      data: toLandingPagePayload(schoolId, landing),
-    }),
+    apiFetch<LandingPageApiResponse>(
+      `/landing-page/${schoolId}`,
+      {
+        method: "PATCH",
+        data: toLandingPagePayload(schoolId, landing),
+      },
+      true
+    ),
 }
