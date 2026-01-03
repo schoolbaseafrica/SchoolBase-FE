@@ -43,6 +43,7 @@ export interface SchoolInstallResponse {
   message: string
   status_code: number
   data: {
+    id?: string
     user_id: string
     name: string
     email: string
@@ -129,4 +130,6 @@ export const SetupWizardAPI = {
       },
       true
     ),
+
+  // Landing page config now handled by real endpoint (see src/lib/api/landing-page.ts)
 }

@@ -37,9 +37,11 @@ export default function Icon() {
           padding: "8px",
         }}
       >
+        {/* Using plain img here because next/image isn't supported in app icon routes */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoSrc}
-          alt={`${defaultSchoolProfile.shortName} logo`}
+          alt={`${defaultSchoolProfile.shortName || "School"} logo`}
           width={48}
           height={48}
           style={{ objectFit: "contain" }}

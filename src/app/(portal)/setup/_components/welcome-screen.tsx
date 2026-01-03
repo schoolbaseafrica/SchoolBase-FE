@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { DatabaseIcon, ListChecksIcon, SchoolIcon, ShieldUserIcon } from "lucide-react"
+import { ListChecksIcon, SchoolIcon, ShieldUserIcon } from "lucide-react"
 
 interface StepItemProps {
   icon: React.ReactNode
@@ -26,25 +26,25 @@ export function WelcomeScreen({ onStart }: { onStart: () => void }) {
             index={1}
           />
           <StepItem
-            icon={<DatabaseIcon className="h-5 w-5" />}
-            label="Database Configuration"
+            icon={<SchoolIcon className="h-5 w-5" />}
+            label="School Details Setup"
             index={2}
+          />
+          <StepItem
+            icon={<SchoolIcon className="h-5 w-5" />}
+            label="Landing Page Setup"
+            index={3}
           />
           <StepItem
             icon={<ShieldUserIcon className="h-5 w-5" />}
             label="Super Admin Account Creation"
-            index={3}
-          />
-          <StepItem
-            icon={<SchoolIcon className="h-5 w-5" />}
-            label="School Details Setup"
             index={4}
           />
         </div>
       </div>
 
       <Button onClick={onStart} className="w-full">
-        Begin Installation
+        Begin Setup
       </Button>
     </div>
   )

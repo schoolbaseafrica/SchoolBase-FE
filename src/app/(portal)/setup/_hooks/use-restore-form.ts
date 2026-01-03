@@ -71,14 +71,10 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
 
   // Infer which step should be active based on filled fields
   function calculateStep(data: FormData): number {
-    const { database, school, admin } = data
-
-    const dbComplete =
-      database.host && database.name && database.username && database.password
-    if (!dbComplete) return 0
+    const { school, admin, landing } = data
 
     const schoolComplete = school.name && school.phone && school.address
-    if (!schoolComplete) return 2
+    if (!schoolComplete) return 0
 
     const adminComplete =
       admin.firstName &&
@@ -86,9 +82,12 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
       admin.email &&
       admin.password &&
       admin.confirmPassword
-    if (!adminComplete) return 3
+    if (!adminComplete) return 1
 
-    return 3 // admin step; installation is next
+    const landingComplete = landing?.isComplete
+    if (!landingComplete) return 2
+
+    return 3 // installation is next
   }
 
   // Load from IndexedDB on mount
@@ -96,12 +95,17 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
     async function load() {
       const stored = await idbGet<FormData>(KEY)
       if (stored) {
-        setFormData(stored)
-        setCurrentStep(calculateStep(stored))
+        const merged: FormData = {
+          ...stored,
+          landing: stored.landing ?? defaultFormData.landing,
+        }
+        setFormData(merged)
+        setCurrentStep(calculateStep(merged))
       }
       setIsLoaded(true)
     }
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Save updates to IndexedDB
@@ -122,7 +126,7 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
   function updateForm(
     section: keyof FormData,
     field: string,
-    value: string | File | number
+    value: string | File | number | unknown
   ) {
     setFormData((prev) => {
       const updated = {
