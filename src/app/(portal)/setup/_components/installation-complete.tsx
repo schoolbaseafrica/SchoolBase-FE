@@ -45,7 +45,7 @@ export default function InstallationComplete() {
       </div>
 
       <Button asChild className="w-full md:max-w-xs">
-        <Link href="/superadmin/login">Log In as Super Admin</Link>
+        <Link href="/super-admin/login">Log In as Super Admin</Link>
       </Button>
     </div>
   )
