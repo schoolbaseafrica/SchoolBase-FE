@@ -1,24 +1,7 @@
 "use client"
 
-import {
-  BookOpen,
-  FlaskConical,
-  Palette,
-  Sparkles,
-  Users,
-  GraduationCap,
-} from "lucide-react"
-import type { ComponentType } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
-
-const iconMap: Record<string, ComponentType<{ className?: string }>> = {
-  book: BookOpen,
-  flask: FlaskConical,
-  palette: Palette,
-  sparkles: Sparkles,
-  users: Users,
-  music: GraduationCap,
-}
+import { getLandingIcon } from "@/lib/landing-icons"
 
 export function ProgramsSection() {
   const programs = useSchoolStore((state) => state.school.programs)
@@ -40,7 +23,7 @@ export function ProgramsSection() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => {
-            const Icon = iconMap[program.icon] ?? Sparkles
+            const Icon = getLandingIcon(program.icon)
             return (
               <article
                 key={program.title}

@@ -6,11 +6,12 @@ import ProgressIndicator from "./progress-indicator"
 import { FormField } from "@/components/ui/form-field"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import { getPhotoUrl } from "@/lib/api/utils/upload-photo"
 
 const schoolSchema = z.object({
-  name: z.string().min(1, "School name is required"),
-  phone: z.string().min(1, "Phone number is required"),
-  address: z.string().min(1, "Address is required"),
+  name: z.string().min(2, "School name is required").max(120, "School name is too long"),
+  phone: z.string().regex(/^\d{11}$/, "Phone number must be 11 digits"),
+  address: z.string().min(5, "Address is required").max(200, "Address is too long"),
   brandColor: z.string(),
   logo: z.instanceof(File).nullable(),
 })
@@ -84,6 +85,7 @@ export function SchoolInfoForm({
           error={errors.name}
           value={formData.school.name}
           onChange={(e) => handleChange("school", "name", e.target.value)}
+          maxLength={120}
           placeholder="e.g. School Folio"
         />
 
@@ -125,8 +127,10 @@ export function SchoolInfoForm({
           error={errors.phone}
           value={formData.school.phone}
           onChange={(e) => handleChange("school", "phone", e.target.value)}
-          placeholder="+234 900 000 0000"
-          inputMode="tel"
+          placeholder="08012345678"
+          inputMode="numeric"
+          maxLength={11}
+          pattern="\\d{11}"
         />
 
         <FormField
@@ -135,6 +139,7 @@ export function SchoolInfoForm({
           error={errors.address}
           value={formData.school.address}
           onChange={(e) => handleChange("school", "address", e.target.value)}
+          maxLength={200}
           placeholder="Enter your school's address"
         />
       </div>
@@ -151,14 +156,19 @@ export function SchoolInfoForm({
   )
 
   function handleChange(section: keyof FormData, field: string, value: string | File) {
-    updateFormData(section, field, value)
+    if (section === "school" && field === "phone" && typeof value === "string") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 11)
+      updateFormData(section, field, digitsOnly)
+    } else {
+      updateFormData(section, field, value)
+    }
 
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>): void {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -166,6 +176,14 @@ export function SchoolInfoForm({
 
     updateFormData("school", "logo", file)
     updateFormData("school", "logoPreview", previewUrl)
+
+    try {
+      const uploadedUrl = await getPhotoUrl(file)
+      updateFormData("school", "logoUrl", uploadedUrl)
+      updateFormData("school", "logoPreview", uploadedUrl)
+    } catch (error) {
+      console.error("Failed to upload school logo:", error)
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {

@@ -1,7 +1,21 @@
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -10,16 +24,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { defaultSchoolProfile } from "@/data/school-profile"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { Pencil, Plus, Trash } from "lucide-react"
+import { Check, ChevronsUpDown, Pencil, Plus, Trash } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useMemo, useState, type JSX } from "react"
+import { useEffect, useId, useMemo, useState, type JSX } from "react"
 import { FormData, LandingSectionKey } from "../_types/setup"
 import ProgressIndicator from "./progress-indicator"
+import { getPhotoUrl } from "@/lib/api/utils/upload-photo"
+import { LANDING_ICON_OPTIONS } from "@/lib/landing-icons"
+import { cn } from "@/lib/utils"
 
 type LandingSetupFormProps = {
   formData: FormData
@@ -78,73 +96,89 @@ const sectionAnchors: Record<LandingSectionKey, string> = {
 const MIN_OPTIONAL_ENABLED = 4
 const MIN_LIST_ITEMS = 3
 const MAX_LIST_ITEMS = 6
+const TITLE_MAX = 80
+const BODY_MAX = 320
+const SECTION_COPY_MAX = 240
+const CTA_LABEL_MAX = 40
+const CTA_LINK_MAX = 160
+const EMAIL_MAX = 120
 
 const fileListToImages = async (files: FileList) => {
-  const readers = Array.from(files).map(
-    (file) =>
-      new Promise<{ src: string; alt: string }>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve({ src: reader.result as string, alt: file.name })
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(file)
-      })
-  )
-  return Promise.all(readers)
-}
-
-const sanitizeImages = (images?: { src: string; alt: string }[]) =>
-  (images ?? []).map((img) => (img.src?.startsWith("data:") ? { ...img, src: "" } : img))
-
-const sanitizeLandingForStorage = (landing: FormData["landing"]) => ({
-  ...landing,
-  hero: {
-    ...landing.hero,
-    images: sanitizeImages(landing.hero.images),
-  },
-  gallery: sanitizeImages(landing.gallery),
-  testimonials: (landing.testimonials ?? []).map((t) => ({
-    ...t,
-    avatar: t.avatar?.startsWith("data:") ? "" : t.avatar,
-  })),
-})
-
-const ultraTrimLanding = (landing: FormData["landing"]) => ({
-  ...landing,
-  hero: { ...landing.hero, images: [] },
-  gallery: [],
-  testimonials: (landing.testimonials ?? []).map((t) => ({ ...t, avatar: "" })),
-})
-
-const LANDING_DB = "LandingConfigDB"
-const LANDING_STORE = "LandingStore"
-const LANDING_KEY = "landing-config"
-
-function openLandingDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LANDING_DB, 1)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(LANDING_STORE)) {
-        db.createObjectStore(LANDING_STORE)
-      }
+  const uploads = Array.from(files).map(async (file) => {
+    try {
+      const url = await getPhotoUrl(file)
+      return { src: url, alt: file.name }
+    } catch (error) {
+      console.error("Failed to upload image:", error)
+      return { src: "", alt: file.name }
     }
   })
+  return Promise.all(uploads)
 }
 
-async function saveLandingToIndexedDb(value: unknown) {
-  try {
-    const db = await openLandingDb()
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(LANDING_STORE, "readwrite")
-      tx.objectStore(LANDING_STORE).put(value, LANDING_KEY)
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-    })
-  } catch (error) {
-    console.warn("IndexedDB save failed", error)
-  }
+type IconPickerProps = {
+  value?: string
+  onChange: (value: string) => void
+  placeholder?: string
+}
+
+const IconPicker = ({ value, onChange, placeholder }: IconPickerProps) => {
+  const [open, setOpen] = useState(false)
+  const listId = useId()
+  const selected = LANDING_ICON_OPTIONS.find((option) => option.value === value)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "group hover:text-primary w-full justify-between text-sm hover:bg-white"
+          )}
+        >
+          {selected ? (
+            <span className="flex items-center gap-2">
+              <selected.Icon className="h-4 w-4" />
+              {selected.label}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">{placeholder ?? "Select icon"}</span>
+          )}
+          <ChevronsUpDown className="group-hover:text-primary ml-2 h-4 w-4 shrink-0 opacity-60" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="z-300 w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search icons..." />
+          <CommandList id={listId}>
+            <CommandEmpty>No icon found.</CommandEmpty>
+            <CommandGroup>
+              {LANDING_ICON_OPTIONS.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={`${option.label} ${option.value}`}
+                  onSelect={() => {
+                    onChange(option.value)
+                    setOpen(false)
+                  }}
+                >
+                  <option.Icon className="mr-2 h-4 w-4" />
+                  {option.label}
+                  {option.value === value ? (
+                    <Check className="ml-auto h-4 w-4 opacity-80" />
+                  ) : null}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 export function LandingSetupForm({
@@ -170,6 +204,7 @@ export function LandingSetupForm({
 
   const isMobile = useIsMobile()
   const [activeSection, setActiveSection] = useState<LandingSectionKey | null>(null)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const sections = useMemo(() => {
     const existing = landing.sections ?? []
@@ -184,27 +219,86 @@ export function LandingSetupForm({
     })
   }, [landing.sections])
 
+  const isNonEmpty = (value?: string | null) => Boolean(value?.trim())
+  const hasEmailFormat = (value?: string | null) =>
+    Boolean(value?.trim() && /.+@.+\..+/.test(value.trim()))
+
+  const validateList = <T extends { title: string; description: string; icon?: string }>(
+    list?: T[]
+  ) =>
+    (list?.length ?? 0) >= MIN_LIST_ITEMS &&
+    (list?.length ?? 0) <= MAX_LIST_ITEMS &&
+    (list ?? []).every(
+      (item) =>
+        isNonEmpty(item.title) && isNonEmpty(item.description) && isNonEmpty(item.icon)
+    )
+
+  const validateFaqs = (list?: { question: string; answer: string }[]) =>
+    (list?.length ?? 0) > 0 &&
+    (list ?? []).every((item) => isNonEmpty(item.question) && isNonEmpty(item.answer))
+
+  const validateTestimonials = (
+    list?: { name: string; role: string; quote: string; avatar?: string }[]
+  ) =>
+    (list?.length ?? 0) > 0 &&
+    (list ?? []).every(
+      (item) => isNonEmpty(item.name) && isNonEmpty(item.role) && isNonEmpty(item.quote)
+    )
+
   const enabledOptionalSections = sections.filter(
     (s) => s.enabled && !coreSections.includes(s.key)
   )
-  const validateList = <T extends { title: string; description: string }>(list?: T[]) =>
-    (list?.length ?? 0) >= MIN_LIST_ITEMS && (list?.length ?? 0) <= MAX_LIST_ITEMS
   const programsValid = validateList(landing.programs)
   const featuresEnabled = sections.find((s) => s.key === "features")?.enabled
   const facilitiesEnabled = sections.find((s) => s.key === "facilities")?.enabled
+  const faqEnabled = sections.find((s) => s.key === "faq")?.enabled
+  const testimonialsEnabled = sections.find((s) => s.key === "testimonials")?.enabled
+  const aboutEnabled = sections.find((s) => s.key === "about")?.enabled
+  const whyUsEnabled = sections.find((s) => s.key === "whyUs")?.enabled
+
   const featuresValid = !featuresEnabled || validateList(landing.features)
   const facilitiesValid = !facilitiesEnabled || validateList(landing.facilities)
+  const faqValid = !faqEnabled || validateFaqs(landing.faqs)
+  const testimonialsValid =
+    !testimonialsEnabled || validateTestimonials(landing.testimonials)
+  const aboutValid =
+    !aboutEnabled ||
+    Boolean(
+      isNonEmpty(landing.sectionsContent?.about?.title) ||
+        isNonEmpty(landing.sectionsContent?.about?.subtitle)
+    )
+  const whyUsValid =
+    !whyUsEnabled ||
+    Boolean(
+      isNonEmpty(landing.sectionsContent?.whyUs?.title) ||
+        isNonEmpty(landing.sectionsContent?.whyUs?.subtitle)
+    )
 
   const canSave =
     enabledOptionalSections.length >= MIN_OPTIONAL_ENABLED &&
     programsValid &&
     featuresValid &&
     facilitiesValid &&
-    Boolean(
-      (landing.hero.heading || defaultSchoolProfile.hero.heading) &&
-        (landing.hero.body || defaultSchoolProfile.hero.body) &&
-        (landing.hero.ctaLabel || defaultSchoolProfile.hero.ctaLabel)
-    )
+    faqValid &&
+    testimonialsValid &&
+    aboutValid &&
+    whyUsValid &&
+    isNonEmpty(landing.hero.heading || defaultSchoolProfile.hero.heading) &&
+    isNonEmpty(landing.hero.body || defaultSchoolProfile.hero.body) &&
+    isNonEmpty(landing.hero.ctaLabel || defaultSchoolProfile.hero.ctaLabel) &&
+    isNonEmpty(landing.hero.ctaHref || defaultSchoolProfile.hero.ctaHref) &&
+    isNonEmpty(landing.cta?.heading || defaultSchoolProfile.cta.heading) &&
+    isNonEmpty(landing.cta?.body || defaultSchoolProfile.cta.body) &&
+    isNonEmpty(landing.cta?.ctaLabel || defaultSchoolProfile.cta.ctaLabel) &&
+    isNonEmpty(landing.cta?.ctaHref || defaultSchoolProfile.cta.ctaHref) &&
+    isNonEmpty(landing.contact.office) &&
+    hasEmailFormat(landing.contact.email)
+
+  useEffect(() => {
+    if (canSave && validationErrors.length) {
+      setValidationErrors([])
+    }
+  }, [canSave, validationErrors.length])
 
   const updateHero = (field: string, value: string) => {
     updateFormData("landing", "hero", { ...landing.hero, [field]: value })
@@ -286,14 +380,16 @@ export function LandingSetupForm({
 
   const handleTestimonialsAvatar = async (file: File | null, index: number) => {
     if (!file) return
-    const [avatar] = await fileListToImages({
-      0: file,
-      length: 1,
-      item: () => file,
-    } as unknown as FileList)
+    let uploadedUrl = ""
+    try {
+      uploadedUrl = await getPhotoUrl(file)
+    } catch (error) {
+      console.error("Failed to upload testimonial avatar:", error)
+      return
+    }
 
     const existing = landing.testimonials ?? []
-    const next = existing.map((t, i) => (i === index ? { ...t, avatar: avatar.src } : t))
+    const next = existing.map((t, i) => (i === index ? { ...t, avatar: uploadedUrl } : t))
     updateFormData("landing", "testimonials", next)
   }
 
@@ -339,23 +435,84 @@ export function LandingSetupForm({
     updateFormData("landing", key, next)
   }
 
-  const markComplete = () => {
-    updateFormData("landing", "isComplete", true)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("landing-setup-complete", "true")
-      try {
-        const sanitized = sanitizeLandingForStorage(landing)
-        void saveLandingToIndexedDb(sanitized)
-      } catch (error) {
-        console.warn("Retrying landing-config storage with trimmed payload", error)
-        try {
-          const trimmed = ultraTrimLanding(landing)
-          void saveLandingToIndexedDb(trimmed)
-        } catch (innerError) {
-          console.warn("Skipping landing-config storage (size/quota)", innerError)
-        }
-      }
+  const buildValidationErrors = () => {
+    const errors: string[] = []
+
+    if (enabledOptionalSections.length < MIN_OPTIONAL_ENABLED) {
+      errors.push(`Select at least ${MIN_OPTIONAL_ENABLED} optional sections.`)
     }
+
+    if (!programsValid) {
+      errors.push("Programs: add 3-6 items with title, description, and icon.")
+    }
+
+    if (featuresEnabled && !featuresValid) {
+      errors.push("Features: add 3-6 items with title, description, and icon.")
+    }
+
+    if (facilitiesEnabled && !facilitiesValid) {
+      errors.push("Facilities: add 3-6 items with title, description, and icon.")
+    }
+
+    if (faqEnabled && !faqValid) {
+      errors.push("FAQs: add at least 1 question and answer.")
+    }
+
+    if (testimonialsEnabled && !testimonialsValid) {
+      errors.push("Testimonials: add name, role, and quote for each item.")
+    }
+
+    if (aboutEnabled && !aboutValid) {
+      errors.push("About: add a title or subtitle.")
+    }
+
+    if (whyUsEnabled && !whyUsValid) {
+      errors.push("Why Us: add a title or subtitle.")
+    }
+
+    if (!isNonEmpty(landing.hero.heading || defaultSchoolProfile.hero.heading)) {
+      errors.push("Hero heading is required.")
+    }
+    if (!isNonEmpty(landing.hero.body || defaultSchoolProfile.hero.body)) {
+      errors.push("Hero subheading is required.")
+    }
+    if (!isNonEmpty(landing.hero.ctaLabel || defaultSchoolProfile.hero.ctaLabel)) {
+      errors.push("Hero CTA label is required.")
+    }
+    if (!isNonEmpty(landing.hero.ctaHref || defaultSchoolProfile.hero.ctaHref)) {
+      errors.push("Hero CTA link is required.")
+    }
+
+    if (!isNonEmpty(landing.cta?.heading || defaultSchoolProfile.cta.heading)) {
+      errors.push("CTA section title is required.")
+    }
+    if (!isNonEmpty(landing.cta?.body || defaultSchoolProfile.cta.body)) {
+      errors.push("CTA section copy is required.")
+    }
+    if (!isNonEmpty(landing.cta?.ctaLabel || defaultSchoolProfile.cta.ctaLabel)) {
+      errors.push("CTA button label is required.")
+    }
+    if (!isNonEmpty(landing.cta?.ctaHref || defaultSchoolProfile.cta.ctaHref)) {
+      errors.push("CTA button link is required.")
+    }
+
+    if (!isNonEmpty(landing.contact.office)) {
+      errors.push("Contact office address is required.")
+    }
+    if (!hasEmailFormat(landing.contact.email)) {
+      errors.push("Contact email must be valid.")
+    }
+
+    return errors
+  }
+
+  const markComplete = () => {
+    const errors = buildValidationErrors()
+    if (errors.length) {
+      setValidationErrors(errors)
+      return
+    }
+    updateFormData("landing", "isComplete", true)
     onSubmit()
   }
 
@@ -404,6 +561,7 @@ export function LandingSetupForm({
                   <Input
                     placeholder={`${label} title`}
                     value={item.title}
+                    maxLength={TITLE_MAX}
                     onChange={(e) => updateArrayItem(key, idx, "title", e.target.value)}
                   />
                 </div>
@@ -412,6 +570,7 @@ export function LandingSetupForm({
                   <Textarea
                     placeholder="Short supporting copy"
                     value={item.description}
+                    maxLength={BODY_MAX}
                     onChange={(e) =>
                       updateArrayItem(key, idx, "description", e.target.value)
                     }
@@ -419,10 +578,10 @@ export function LandingSetupForm({
                 </div>
                 <div className="space-y-2">
                   <Label>Icon</Label>
-                  <Input
-                    placeholder="Any icon name (e.g. book, flask)"
+                  <IconPicker
                     value={item.icon || ""}
-                    onChange={(e) => updateArrayItem(key, idx, "icon", e.target.value)}
+                    onChange={(value) => updateArrayItem(key, idx, "icon", value)}
+                    placeholder="Select an icon"
                   />
                 </div>
               </CardContent>
@@ -465,6 +624,7 @@ export function LandingSetupForm({
                   <Input
                     placeholder="What makes your school unique?"
                     value={item.question}
+                    maxLength={TITLE_MAX}
                     onChange={(e) =>
                       updateArrayItem("faqs", idx, "question", e.target.value)
                     }
@@ -475,6 +635,7 @@ export function LandingSetupForm({
                   <Textarea
                     placeholder="Your concise answer"
                     value={item.answer}
+                    maxLength={BODY_MAX}
                     onChange={(e) =>
                       updateArrayItem("faqs", idx, "answer", e.target.value)
                     }
@@ -521,6 +682,7 @@ export function LandingSetupForm({
                     <Input
                       placeholder="Full name"
                       value={item.name}
+                      maxLength={TITLE_MAX}
                       onChange={(e) =>
                         updateArrayItem("testimonials", idx, "name", e.target.value)
                       }
@@ -531,6 +693,7 @@ export function LandingSetupForm({
                     <Input
                       placeholder="Parent, Student, Teacher"
                       value={item.role}
+                      maxLength={TITLE_MAX}
                       onChange={(e) =>
                         updateArrayItem("testimonials", idx, "role", e.target.value)
                       }
@@ -542,6 +705,7 @@ export function LandingSetupForm({
                   <Textarea
                     placeholder="Share their experience..."
                     value={item.quote}
+                    maxLength={BODY_MAX}
                     onChange={(e) =>
                       updateArrayItem("testimonials", idx, "quote", e.target.value)
                     }
@@ -599,6 +763,7 @@ export function LandingSetupForm({
               <Input
                 placeholder="Get in touch"
                 value={landing.hero.ctaLabel || defaultSchoolProfile.hero.ctaLabel}
+                maxLength={CTA_LABEL_MAX}
                 onChange={(e) => updateHero("ctaLabel", e.target.value)}
               />
             </div>
@@ -607,6 +772,7 @@ export function LandingSetupForm({
               <Input
                 placeholder="#contact"
                 value={landing.hero.ctaHref || defaultSchoolProfile.hero.ctaHref}
+                maxLength={CTA_LINK_MAX}
                 onChange={(e) => updateHero("ctaHref", e.target.value)}
               />
             </div>
@@ -615,6 +781,7 @@ export function LandingSetupForm({
               <Input
                 placeholder="Join Our School Community"
                 value={landing.cta?.heading || defaultSchoolProfile.cta.heading}
+                maxLength={TITLE_MAX}
                 onChange={(e) => updateCTA("heading", e.target.value)}
               />
             </div>
@@ -623,6 +790,7 @@ export function LandingSetupForm({
               <Textarea
                 placeholder="Encourage families to reach out."
                 value={landing.cta?.body || defaultSchoolProfile.cta.body}
+                maxLength={BODY_MAX}
                 onChange={(e) => updateCTA("body", e.target.value)}
               />
             </div>
@@ -690,8 +858,9 @@ export function LandingSetupForm({
                     onClick={() => setActiveSection(key)}
                     disabled={disabled}
                     aria-label={`Edit ${sectionLabels[key]}`}
+                    className="group"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="group-hover:text-primary h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
@@ -704,10 +873,21 @@ export function LandingSetupForm({
         <Button variant="outline" className="px-4 py-3" onClick={onCancel}>
           Back
         </Button>
-        <Button className="px-4 py-3" onClick={markComplete} disabled={!canSave}>
+        <Button className="px-4 py-3" onClick={markComplete}>
           Next
         </Button>
       </div>
+
+      {validationErrors.length > 0 && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="font-semibold">Please fix the following before continuing:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {validationErrors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {activeSection &&
         (isMobile ? (
@@ -715,6 +895,9 @@ export function LandingSetupForm({
             <DrawerContent className="overflow-y-auto px-4">
               <DrawerHeader>
                 <DrawerTitle>{sectionLabels[activeSection]}</DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  Edit landing section details
+                </DrawerDescription>
               </DrawerHeader>
               <SectionContent
                 activeSection={activeSection}
@@ -807,12 +990,14 @@ function SectionContent({
         <Input
           placeholder="Welcome to Green Valley High"
           value={landing.hero.heading || defaultSchoolProfile.hero.heading}
+          maxLength={TITLE_MAX}
           onChange={(e) => updateHero("heading", e.target.value)}
         />
         <Label>Subheading</Label>
         <Textarea
           placeholder="Modern learning with real-time updates"
           value={landing.hero.body || defaultSchoolProfile.hero.body}
+          maxLength={BODY_MAX}
           onChange={(e) => updateHero("body", e.target.value)}
         />
         <Label>Hero images (3)</Label>
@@ -877,6 +1062,7 @@ function SectionContent({
           <Input
             placeholder="Main campus office"
             value={landing.contact.office}
+            maxLength={BODY_MAX}
             onChange={(e) => updateContact("office", e.target.value)}
           />
         </div>
@@ -885,6 +1071,8 @@ function SectionContent({
           <Input
             placeholder="hello@yourschool.edu"
             value={landing.contact.email}
+            maxLength={EMAIL_MAX}
+            type="email"
             onChange={(e) => updateContact("email", e.target.value)}
           />
         </div>
@@ -900,6 +1088,7 @@ function SectionContent({
         <Textarea
           placeholder="Short summary or tagline for the footer."
           value={landing.footer?.description ?? ""}
+          maxLength={BODY_MAX}
           onChange={(e) => updateFooter("description", e.target.value)}
         />
         <Label>Social links</Label>
@@ -907,26 +1096,31 @@ function SectionContent({
           <Input
             placeholder="Facebook URL"
             value={socials.facebook ?? ""}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateFooter("facebook", e.target.value)}
           />
           <Input
             placeholder="Instagram URL"
             value={socials.instagram ?? ""}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateFooter("instagram", e.target.value)}
           />
           <Input
             placeholder="LinkedIn URL"
             value={socials.linkedin ?? ""}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateFooter("linkedin", e.target.value)}
           />
           <Input
             placeholder="Twitter/X URL"
             value={socials.twitter ?? ""}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateFooter("twitter", e.target.value)}
           />
           <Input
             placeholder="Website URL"
             value={socials.website ?? ""}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateFooter("website", e.target.value)}
           />
         </div>
@@ -942,6 +1136,7 @@ function SectionContent({
           <Input
             placeholder="Talk to admissions"
             value={landing.cta?.ctaLabel || defaultSchoolProfile.cta.ctaLabel}
+            maxLength={CTA_LABEL_MAX}
             onChange={(e) => updateCTA("ctaLabel", e.target.value)}
           />
         </div>
@@ -950,6 +1145,7 @@ function SectionContent({
           <Input
             placeholder="#contact"
             value={landing.cta?.ctaHref || defaultSchoolProfile.cta.ctaHref}
+            maxLength={CTA_LINK_MAX}
             onChange={(e) => updateCTA("ctaHref", e.target.value)}
           />
         </div>
@@ -958,6 +1154,7 @@ function SectionContent({
           <Input
             placeholder="Join Our School Community"
             value={landing.cta?.heading || defaultSchoolProfile.cta.heading}
+            maxLength={TITLE_MAX}
             onChange={(e) => updateCTA("heading", e.target.value)}
           />
         </div>
@@ -966,6 +1163,7 @@ function SectionContent({
           <Textarea
             placeholder="Encourage families to reach out."
             value={landing.cta?.body || defaultSchoolProfile.cta.body}
+            maxLength={BODY_MAX}
             onChange={(e) => updateCTA("body", e.target.value)}
           />
         </div>
@@ -1002,12 +1200,14 @@ function SectionContent({
       <Input
         placeholder={`${sectionLabels[activeSection]} title`}
         value={landing.sectionsContent?.[activeSection]?.title || ""}
+        maxLength={TITLE_MAX}
         onChange={(e) => updateSectionContent(activeSection, "title", e.target.value)}
       />
       <Label>Subtitle</Label>
       <Textarea
         placeholder="Short supporting text"
         value={landing.sectionsContent?.[activeSection]?.subtitle || ""}
+        maxLength={SECTION_COPY_MAX}
         onChange={(e) => updateSectionContent(activeSection, "subtitle", e.target.value)}
       />
     </div>

@@ -1,6 +1,7 @@
 export interface SchoolInfo {
   logo: File | null
   logoPreview?: string | null
+  logoUrl?: string | null
   name: string
   brandColor: string
   phone: string

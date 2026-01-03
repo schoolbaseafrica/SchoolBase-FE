@@ -5,6 +5,8 @@ import { ReactNode, useEffect, useMemo, useState } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
 import { defaultSchoolProfile, type SchoolProfile } from "@/data/school-profile"
 import { type LandingPageConfig } from "@/app/(portal)/setup/_types/setup"
+import { LandingPageAPI, mapLandingPageResponse } from "@/lib/api/landing-page"
+import { SetupWizardAPI } from "@/lib/api/setup/super-admin-setup-apis"
 
 type LandingGateProps = {
   children: ReactNode
@@ -40,45 +42,78 @@ const galleryFallbackImages = [
   },
 ]
 
-const LANDING_DB = "LandingConfigDB"
-const LANDING_STORE = "LandingStore"
-const LANDING_KEY = "landing-config"
-
-function openLandingDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LANDING_DB, 1)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(LANDING_STORE)) {
-        db.createObjectStore(LANDING_STORE)
-      }
-    }
-  })
-}
-
-async function readLandingFromIndexedDb<T>(): Promise<T | undefined> {
-  try {
-    const db = await openLandingDb()
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(LANDING_STORE, "readonly")
-      const request = tx.objectStore(LANDING_STORE).get(LANDING_KEY)
-      request.onsuccess = () => resolve(request.result as T | undefined)
-      request.onerror = () => reject(request.error)
-    })
-  } catch (error) {
-    console.warn("IndexedDB read failed", error)
-    return undefined
-  }
-}
-
 const heroTextFallback = {
   heading: "Welcome to our school",
   body: "Modern learning, transparent updates, and a supportive community.",
   ctaLabel: "Get in touch",
   ctaHref: "#contact",
 }
+
+const coreSections = ["hero", "programs", "gallery", "cta", "contact", "footer"] as const
+const optionalSections = [
+  "testimonials",
+  "features",
+  "facilities",
+  "about",
+  "whyUs",
+  "faq",
+] as const
+
+const sectionLabels: Record<string, string> = {
+  hero: "Hero",
+  programs: "Programs",
+  about: "About",
+  features: "Features",
+  whyUs: "Why Choose Us",
+  gallery: "Gallery",
+  testimonials: "Testimonials",
+  contact: "Contact",
+  cta: "Call to Action",
+  faq: "FAQs",
+  facilities: "Facilities",
+  footer: "Footer",
+}
+
+const sectionAnchors: Record<string, string> = {
+  hero: "home",
+  programs: "programs",
+  about: "about",
+  features: "features",
+  whyUs: "why-us",
+  gallery: "gallery",
+  testimonials: "testimonials",
+  contact: "contact",
+  cta: "cta",
+  faq: "faq",
+  facilities: "facilities",
+  footer: "footer",
+}
+
+const deriveSections = (landing: LandingPageConfig) => {
+  const hasList = <T,>(list?: T[]) => (list?.length ?? 0) > 0
+  const hasCopy = (copy?: { title?: string; subtitle?: string }) =>
+    Boolean(copy?.title || copy?.subtitle)
+
+  const enabled = new Map<string, boolean>()
+  coreSections.forEach((key) => enabled.set(key, true))
+  enabled.set("features", hasList(landing.features))
+  enabled.set("facilities", hasList(landing.facilities))
+  enabled.set("testimonials", hasList(landing.testimonials))
+  enabled.set("faq", hasList(landing.faqs))
+  enabled.set("about", hasCopy(landing.sectionsContent?.about))
+  enabled.set("whyUs", hasCopy(landing.sectionsContent?.whyUs))
+
+  const allKeys = [...coreSections, ...optionalSections]
+  return allKeys.map((key) => ({ key, enabled: enabled.get(key) ?? false }))
+}
+
+const buildNavLinks = (sections: { key: string; enabled: boolean }[]) =>
+  sections
+    .filter((s) => s.enabled && s.key !== "hero" && s.key !== "cta")
+    .map((s) => ({
+      label: sectionLabels[s.key] ?? s.key,
+      href: `#${sectionAnchors[s.key] ?? s.key}`,
+    }))
 
 export function LandingGate({ children }: LandingGateProps) {
   const [allowed, setAllowed] = useState<boolean | null>(null)
@@ -91,34 +126,26 @@ export function LandingGate({ children }: LandingGateProps) {
   useEffect(() => {
     if (typeof window === "undefined") return
     const hydrate = async () => {
-      const completeFlag = localStorage.getItem("landing-setup-complete") === "true"
-      const stored =
-        (await readLandingFromIndexedDb<
-          { landing?: LandingPageConfig } | LandingPageConfig
-        >()) ??
-        (() => {
-          const raw = localStorage.getItem("landing-config")
-          if (!raw) return undefined
-          try {
-            return JSON.parse(raw)
-          } catch {
-            return undefined
-          }
-        })()
-
-      if (!stored) {
-        setAllowed(completeFlag)
-        setHydrated(true)
-        return
-      }
-
       try {
-        const landing: LandingPageConfig =
-          (stored as { landing?: LandingPageConfig }).landing ??
-          (stored as LandingPageConfig)
-        const enabledSections = (landing.sections ?? [])
-          .filter((s: { enabled: boolean }) => s.enabled)
-          .map((s: { key: string }) => s.key)
+        const status = await SetupWizardAPI.getSetupStatus()
+        if (!status.data.is_complete) {
+          setAllowed(false)
+          setHydrated(true)
+          return
+        }
+
+        const schoolId = status.data.school_id
+        if (!schoolId) {
+          setAllowed(false)
+          setHydrated(true)
+          return
+        }
+
+        const response = await LandingPageAPI.getLandingPage(schoolId)
+        const landing = mapLandingPageResponse(response)
+        const sections = deriveSections(landing)
+        const enabledSections = sections.filter((s) => s.enabled).map((s) => s.key)
+        const navLinks = buildNavLinks(sections)
 
         const heroImages = landing.hero?.images?.filter(
           (img: { src?: string }) => img?.src
@@ -131,7 +158,7 @@ export function LandingGate({ children }: LandingGateProps) {
           ? landing.gallery
           : galleryFallbackImages
 
-        const safeNav = (landing.navLinks ?? []).filter((link) => {
+        const safeNav = navLinks.filter((link) => {
           if (!link.href || !link.label) return false
           const href = link.href.trim()
           if (!href) return false
@@ -203,8 +230,12 @@ export function LandingGate({ children }: LandingGateProps) {
           root.style.setProperty("--sidebar", updated.brand.surface)
           root.style.setProperty("--accent", updated.brand.primary)
         }
-        setAllowed(completeFlag || landing.isComplete || enabledSections.length > 0)
-      } catch {
+        setAllowed(enabledSections.length > 0)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : ""
+        if (message) {
+          console.error("Landing page fetch failed:", message)
+        }
         setAllowed(false)
       } finally {
         setHydrated(true)
@@ -261,13 +292,13 @@ export function LandingGate({ children }: LandingGateProps) {
             />
           </div>
           <div className="order-2 mx-auto flex max-w-[526px] flex-col gap-2 lg:order-1">
-            <h2 className="text-primary text-center text-2xl font-bold lg:text-left lg:text-5xl">
+            <h2 className="text-primary text-center text-3xl font-bold lg:text-left lg:text-5xl">
               Oops....
             </h2>
             <p className="text-center text-2xl lg:text-left lg:text-[40px]">
               Landing page not ready
             </p>
-            <p className="text-text-secondary text-center text-base lg:text-left">
+            <p className="text-text-secondary text-center text-base sm:text-lg lg:text-left">
               Your school&apos;s landing experience is still being set up. Please visit
               the admin setup to finish configuration before this page goes live.
             </p>
