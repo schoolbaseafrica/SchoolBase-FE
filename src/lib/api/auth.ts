@@ -71,7 +71,7 @@ export const refresh = (): Promise<RefreshResponse> => {
     {
       method: "POST",
     },
-    true // use proxy
+    false // Don't use proxy - use specific Next.js route at /api/auth/refresh
   )
 }
 
@@ -151,6 +151,6 @@ export const sendLogoutRequest = (): Promise<AuthApiResponse<null>> => {
     {
       method: "POST",
     },
-    true // use proxy
+    false // Don't use proxy - use specific Next.js route at /api/auth/logout
   )
 }
