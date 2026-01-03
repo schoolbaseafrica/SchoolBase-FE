@@ -8,16 +8,18 @@ interface UploadFileResponse {
   mimetype: string
 }
 
-export function uploadToCloudinary(file: File) {
+const getUploadKey = () => process.env.NEXT_PUBLIC_UPLOAD_KEY
+
+export function uploadPicture(file: File) {
   const formData = new FormData()
-  formData.append(file.name, file, file.name)
+  formData.append("file", file, file.name)
 
   return apiFetch<UploadFileResponse>(
     "/upload/picture",
     {
       method: "POST",
       headers: {
-        "Content-Type": "multipart/formData",
+        ...(getUploadKey() ? { "x-upload-key": getUploadKey() as string } : {}),
       },
       data: formData,
     },
@@ -26,6 +28,6 @@ export function uploadToCloudinary(file: File) {
 }
 
 export async function getPhotoUrl(file: File) {
-  const fileData = await uploadToCloudinary(file)
+  const fileData = await uploadPicture(file)
   return fileData.url
 }

@@ -6,6 +6,7 @@ import { useSchoolStore } from "@/store/use-school-store"
 import { defaultSchoolProfile, type SchoolProfile } from "@/data/school-profile"
 import { type LandingPageConfig } from "@/app/(portal)/setup/_types/setup"
 import { LandingPageAPI, mapLandingPageResponse } from "@/lib/api/landing-page"
+import { SetupWizardAPI } from "@/lib/api/setup/super-admin-setup-apis"
 
 type LandingGateProps = {
   children: ReactNode
@@ -88,16 +89,6 @@ const sectionAnchors: Record<string, string> = {
   footer: "footer",
 }
 
-const getSchoolId = () => {
-  if (typeof window === "undefined") return null
-  const params = new URLSearchParams(window.location.search)
-  return (
-    params.get("schoolId") ??
-    localStorage.getItem("school-id") ??
-    localStorage.getItem("school_id")
-  )
-}
-
 const deriveSections = (landing: LandingPageConfig) => {
   const hasList = <T,>(list?: T[]) => (list?.length ?? 0) > 0
   const hasCopy = (copy?: { title?: string; subtitle?: string }) =>
@@ -136,7 +127,14 @@ export function LandingGate({ children }: LandingGateProps) {
     if (typeof window === "undefined") return
     const hydrate = async () => {
       try {
-        const schoolId = getSchoolId()
+        const status = await SetupWizardAPI.getSetupStatus()
+        if (!status.data.is_complete) {
+          setAllowed(false)
+          setHydrated(true)
+          return
+        }
+
+        const schoolId = status.data.school_id
         if (!schoolId) {
           setAllowed(false)
           setHydrated(true)
