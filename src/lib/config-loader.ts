@@ -234,15 +234,37 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
           : undefined
 
         // Transform backend response to frontend RuntimeConfig format
-        // For logo URL, if it's relative, it will be served by the backend/nginx
-        // The proxy route preserves the backend's response, so relative URLs should work
+        // For logo URL, convert relative paths to absolute URLs
+        // Logos are served by the backend, so we need the backend domain
         let logoUrl = backendData.logo_url
-        // If logo URL is relative and we have the API base URL, make it absolute
         if (logoUrl && !logoUrl.startsWith("http")) {
+          // Try to get API base URL from env first
           const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
           if (envApiUrl) {
             const baseUrl = envApiUrl.replace(/\/+$/, "")
             logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+          } else if (typeof window !== "undefined") {
+            // Fallback: construct backend URL from current origin
+            // If frontend is at dev.learningspaces.im, backend is at api.learningspaces.im
+            const currentOrigin = window.location.origin
+            const protocol = window.location.protocol
+            const hostname = window.location.hostname
+            
+            // Extract base domain (e.g., "learningspaces.im" from "dev.learningspaces.im")
+            const parts = hostname.split(".")
+            let backendHostname: string
+            
+            if (parts.length >= 2) {
+              // Replace first subdomain with 'api' (e.g., dev.learningspaces.im -> api.learningspaces.im)
+              parts[0] = "api"
+              backendHostname = parts.join(".")
+            } else {
+              // Single domain (localhost) - use as-is
+              backendHostname = hostname
+            }
+            
+            const backendOrigin = `${protocol}//${backendHostname}`
+            logoUrl = `${backendOrigin}${logoUrl.startsWith("/") ? "" : ""}${logoUrl}`
           }
         }
 
