@@ -82,6 +82,23 @@ export interface DatabaseCreateResponse {
   }
 }
 
+// ---------------------
+// SETUP STATUS
+// ---------------------
+
+export type SetupPhaseKey = "school_info" | "landing_page" | "superadmin"
+
+export interface SetupStatusResponse {
+  status_code: number
+  message: string
+  data: {
+    is_complete: boolean
+    current_step: SetupPhaseKey | null
+    school_id?: string | null
+    phases: Record<SetupPhaseKey, { completed: boolean }>
+  }
+}
+
 // -----------------------------------------
 //        SETUP WIZARD API REQUESTS
 // -----------------------------------------
@@ -127,6 +144,16 @@ export const SetupWizardAPI = {
       {
         method: "POST",
         data,
+      },
+      true
+    ),
+
+  // Setup status (used to resume flow or gate landing page)
+  getSetupStatus: () =>
+    apiFetch<SetupStatusResponse>(
+      "/school/setup-status",
+      {
+        method: "GET",
       },
       true
     ),

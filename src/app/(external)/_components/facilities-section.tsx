@@ -1,7 +1,7 @@
 "use client"
 
 import { useSchoolStore } from "@/store/use-school-store"
-import { Building2 } from "lucide-react"
+import { getLandingIcon } from "@/lib/landing-icons"
 
 export function FacilitiesSection() {
   const facilities = useSchoolStore((state) => state.school.facilities) || []
@@ -22,20 +22,23 @@ export function FacilitiesSection() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {facilities.slice(0, 6).map((item, idx) => (
-            <article
-              key={`${item.title}-${idx}`}
-              className="group rounded-2xl border border-transparent bg-white p-6 shadow-sm transition hover:shadow-md"
-            >
-              <div className="text-accent mb-4 inline-flex rounded-xl bg-[var(--tint)] p-3">
-                <Building2 className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-                {item.description}
-              </p>
-            </article>
-          ))}
+          {facilities.slice(0, 6).map((item, idx) => {
+            const Icon = getLandingIcon(item.icon)
+            return (
+              <article
+                key={`${item.title}-${idx}`}
+                className="group rounded-2xl border border-transparent bg-white p-6 shadow-sm transition hover:shadow-md"
+              >
+                <div className="text-accent mb-4 inline-flex rounded-xl bg-[var(--tint)] p-3">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  {item.description}
+                </p>
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>
