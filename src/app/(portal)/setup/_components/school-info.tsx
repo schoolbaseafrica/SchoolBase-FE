@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import { UploadIcon } from "lucide-react"
 import { z } from "zod"
 import { Errors, FormData } from "../_types/setup"
@@ -7,10 +7,23 @@ import { FormField } from "@/components/ui/form-field"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { getPhotoUrl } from "@/lib/api/utils/upload-photo"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const schoolSchema = z.object({
   name: z.string().min(2, "School name is required").max(120, "School name is too long"),
-  phone: z.string().regex(/^\d{11}$/, "Phone number must be 11 digits"),
+  phone: z.string().refine(
+    (value) => {
+      const cleaned = value.replace(/\s+/g, "")
+      return /^\+234\d{10}$/.test(cleaned)
+    },
+    { message: "Phone number must be +234 followed by 10 digits" }
+  ),
   address: z.string().min(5, "Address is required").max(200, "Address is too long"),
   brandColor: z.string(),
   logo: z.instanceof(File).nullable(),
@@ -30,6 +43,12 @@ export function SchoolInfoForm({
   onCancel,
 }: SchoolInfoFormProps) {
   const [errors, setErrors] = useState<Errors>({})
+  const countryCodes = useMemo(() => ["+234"], [])
+  const [countryCode, setCountryCode] = useState("+234")
+  const phoneNumberValue = useMemo(() => {
+    if (!formData.school.phone) return ""
+    return formData.school.phone.replace("+234", "")
+  }, [formData.school.phone])
 
   return (
     <form className="p-2 md:p-12" onSubmit={handleSubmit}>
@@ -120,18 +139,40 @@ export function SchoolInfoForm({
           </p>
         </div>
 
-        <FormField
-          label="Phone Number"
-          type="tel"
-          required
-          error={errors.phone}
-          value={formData.school.phone}
-          onChange={(e) => handleChange("school", "phone", e.target.value)}
-          placeholder="08012345678"
-          inputMode="numeric"
-          maxLength={11}
-          pattern="\\d{11}"
-        />
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-900">
+            Phone Number <span className="text-red-600">*</span>
+          </label>
+          <div className="flex gap-3">
+            <Select value={countryCode} onValueChange={handleCountryCodeChange}>
+              <SelectTrigger className="h-12 w-32">
+                <SelectValue placeholder="Code" />
+              </SelectTrigger>
+              <SelectContent>
+                {countryCodes.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input
+              type="tel"
+              required
+              inputMode="numeric"
+              maxLength={10}
+              className="focus:ring-accent w-full rounded-lg border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none"
+              placeholder="8012345678"
+              value={phoneNumberValue}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+            />
+          </div>
+          {errors.phone && (
+            <p className="mt-1 flex items-center gap-2 text-sm text-red-500">
+              {errors.phone}
+            </p>
+          )}
+        </div>
 
         <FormField
           label="Address"
@@ -156,12 +197,7 @@ export function SchoolInfoForm({
   )
 
   function handleChange(section: keyof FormData, field: string, value: string | File) {
-    if (section === "school" && field === "phone" && typeof value === "string") {
-      const digitsOnly = value.replace(/\D/g, "").slice(0, 11)
-      updateFormData(section, field, digitsOnly)
-    } else {
-      updateFormData(section, field, value)
-    }
+    updateFormData(section, field, value)
 
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
@@ -183,6 +219,23 @@ export function SchoolInfoForm({
       updateFormData("school", "logoPreview", uploadedUrl)
     } catch (error) {
       console.error("Failed to upload school logo:", error)
+    }
+  }
+
+  function handlePhoneChange(value: string) {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 10)
+    updateFormData("school", "phone", `${countryCode}${digitsOnly}`)
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: undefined }))
+    }
+  }
+
+  function handleCountryCodeChange(value: string) {
+    setCountryCode(value)
+    const digitsOnly = phoneNumberValue.replace(/\D/g, "").slice(0, 10)
+    updateFormData("school", "phone", `${value}${digitsOnly}`)
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: undefined }))
     }
   }
 
