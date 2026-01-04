@@ -2,14 +2,16 @@
 
 import Image from "next/image"
 import { Quote } from "lucide-react"
+import { useState } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
 
 export function TestimonialsSection() {
   const testimonials = useSchoolStore((state) => state.school.testimonials)
   const schoolName = useSchoolStore((state) => state.school.shortName)
   const copy = useSchoolStore((state) => state.school.sectionsContent)?.testimonials
+  const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({})
   const avatarFallback =
-    "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/bicycle.jpg"
+    "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/smiling-man.jpg"
 
   return (
     <section id="testimonials" className="bg-white py-16">
@@ -24,32 +26,45 @@ export function TestimonialsSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <article
-              key={testimonial.name}
-              className="flex h-full flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_10px_35px_rgba(0,0,0,0.04)]"
-            >
-              <Quote className="text-accent h-6 w-6" />
-              <p className="flex-1 text-base leading-relaxed text-[var(--text-secondary)]">
-                “{testimonial.quote}”
-              </p>
-              <div className="flex items-center gap-3">
-                <Image
-                  src={testimonial.avatar || avatarFallback}
-                  alt={testimonial.name}
-                  width={48}
-                  height={48}
-                  className="size-12 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold">{testimonial.name}</p>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {testimonial.role}
-                  </p>
+          {testimonials.map((testimonial, index) => {
+            const key = `${testimonial.name}-${index}`
+            const src =
+              failedAvatars[key] || !testimonial.avatar
+                ? avatarFallback
+                : testimonial.avatar
+            return (
+              <article
+                key={key}
+                className="flex h-full flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_10px_35px_rgba(0,0,0,0.04)]"
+              >
+                <Quote className="text-accent h-6 w-6" />
+                <p className="flex-1 text-base leading-relaxed text-[var(--text-secondary)]">
+                  “{testimonial.quote}”
+                </p>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={src}
+                    alt={testimonial.name}
+                    width={48}
+                    height={48}
+                    className="size-12 rounded-full object-cover"
+                    onError={() =>
+                      setFailedAvatars((prev) => ({
+                        ...prev,
+                        [key]: true,
+                      }))
+                    }
+                  />
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {testimonial.role}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>

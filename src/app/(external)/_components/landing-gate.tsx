@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { ReactNode, useEffect, useMemo, useState } from "react"
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
 import { defaultSchoolProfile, type SchoolProfile } from "@/data/school-profile"
 import { type LandingPageConfig } from "@/app/(portal)/setup/_types/setup"
@@ -14,31 +14,43 @@ type LandingGateProps = {
 
 const heroFallbackImages = [
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/boy-snow-hoodie.jpg",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-1_b3c8fs.jpg",
     alt: "Students learning together",
   },
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/kitchen-bar.jpg",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
     alt: "Collaborative classroom",
   },
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/landscapes/architecture-signs.jpg",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
     alt: "School community",
   },
 ]
 
 const galleryFallbackImages = [
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/bicycle.jpg",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561402/why-choose-4_eq1btu.jpg",
     alt: "Campus exterior",
   },
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/landscapes/beach-house.jpg",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/why-choose-1_elwhbe.jpg",
     alt: "Library study",
   },
   {
-    src: "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/landscapes/nature-mountains.jpg",
-    alt: "STEM lab",
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-2_alnxyc.jpg",
+    alt: "Creative arts session",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-4_rrzym7.jpg",
+    alt: "Science lab activity",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-3_p8vypo.jpg",
+    alt: "School grounds",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561349/about-2_pfwabt.jpg",
+    alt: "Library corner",
   },
 ]
 
@@ -109,7 +121,7 @@ const deriveSections = (landing: LandingPageConfig) => {
 
 const buildNavLinks = (sections: { key: string; enabled: boolean }[]) =>
   sections
-    .filter((s) => s.enabled && s.key !== "hero" && s.key !== "cta")
+    .filter((s) => s.enabled && s.key !== "hero" && s.key !== "cta" && s.key !== "footer")
     .map((s) => ({
       label: sectionLabels[s.key] ?? s.key,
       href: `#${sectionAnchors[s.key] ?? s.key}`,
@@ -118,6 +130,7 @@ const buildNavLinks = (sections: { key: string; enabled: boolean }[]) =>
 export function LandingGate({ children }: LandingGateProps) {
   const [allowed, setAllowed] = useState<boolean | null>(null)
   const [hydrated, setHydrated] = useState(false)
+  const hasHydrated = useRef(false)
 
   const school = useSchoolStore((state) => state.school)
   const setSchool = useSchoolStore((state) => state.setSchool)
@@ -125,6 +138,8 @@ export function LandingGate({ children }: LandingGateProps) {
 
   useEffect(() => {
     if (typeof window === "undefined") return
+    if (hasHydrated.current) return
+    hasHydrated.current = true
     const hydrate = async () => {
       try {
         const status = await SetupWizardAPI.getSetupStatus()
@@ -143,6 +158,7 @@ export function LandingGate({ children }: LandingGateProps) {
 
         const response = await LandingPageAPI.getLandingPage(schoolId)
         const landing = mapLandingPageResponse(response)
+        const schoolDetails = response.school
         const sections = deriveSections(landing)
         const enabledSections = sections.filter((s) => s.enabled).map((s) => s.key)
         const navLinks = buildNavLinks(sections)
@@ -169,6 +185,12 @@ export function LandingGate({ children }: LandingGateProps) {
 
         const updated: SchoolProfile = {
           ...mergedSchool,
+          name: schoolDetails?.name ?? mergedSchool.name,
+          shortName: schoolDetails?.name ?? mergedSchool.shortName,
+          logo: {
+            ...mergedSchool.logo,
+            full: schoolDetails?.logo_url ?? mergedSchool.logo.full,
+          },
           navLinks: safeNav.length ? safeNav : mergedSchool.navLinks,
           hero: landing.hero
             ? {
@@ -212,6 +234,8 @@ export function LandingGate({ children }: LandingGateProps) {
             ...mergedSchool.contact,
             office: landing.contact?.office ?? mergedSchool.contact.office,
             email: landing.contact?.email ?? mergedSchool.contact.email,
+            phone: schoolDetails?.phone ?? mergedSchool.contact.phone,
+            address: schoolDetails?.address ?? mergedSchool.contact.address,
           },
           brand: landing.palette ?? mergedSchool.brand,
           socials: landing.footer?.socials ?? mergedSchool.socials,
@@ -230,7 +254,7 @@ export function LandingGate({ children }: LandingGateProps) {
           root.style.setProperty("--sidebar", updated.brand.surface)
           root.style.setProperty("--accent", updated.brand.primary)
         }
-        setAllowed(enabledSections.length > 0)
+        setAllowed(true)
       } catch (error) {
         const message = error instanceof Error ? error.message : ""
         if (message) {
