@@ -25,6 +25,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
@@ -102,6 +109,7 @@ const SECTION_COPY_MAX = 240
 const CTA_LABEL_MAX = 40
 const CTA_LINK_MAX = 160
 const EMAIL_MAX = 120
+const TESTIMONIAL_ROLES = ["Parent", "Teacher", "Student"] as const
 
 const fileListToImages = async (files: FileList) => {
   const uploads = Array.from(files).map(async (file) => {
@@ -364,13 +372,13 @@ export function LandingSetupForm({
 
   const handleImagesChange = async (files: FileList | null) => {
     if (!files || !files.length) return
-    const images = await fileListToImages(files)
+    const images = (await fileListToImages(files)).filter((img) => img.src)
     updateFormData("landing", "hero", { ...landing.hero, images })
   }
 
   const handleGalleryChange = async (files: FileList | null) => {
     if (!files || !files.length) return
-    const gallery = await fileListToImages(files)
+    const gallery = (await fileListToImages(files)).filter((img) => img.src)
     updateFormData("landing", "gallery", gallery)
   }
 
@@ -690,14 +698,23 @@ export function LandingSetupForm({
                   </div>
                   <div className="space-y-2">
                     <Label>Role</Label>
-                    <Input
-                      placeholder="Parent, Student, Teacher"
+                    <Select
                       value={item.role}
-                      maxLength={TITLE_MAX}
-                      onChange={(e) =>
-                        updateArrayItem("testimonials", idx, "role", e.target.value)
+                      onValueChange={(value) =>
+                        updateArrayItem("testimonials", idx, "role", value)
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TESTIMONIAL_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -1007,18 +1024,21 @@ function SectionContent({
           accept="image/*"
           onChange={(e) => handleImagesChange(e.target.files)}
         />
-        {landing.hero.images?.length ? (
+        {landing.hero.images?.filter((img) => img.src).length ? (
           <div className="grid grid-cols-3 gap-2 pt-2">
-            {landing.hero.images.slice(0, 3).map((img) => (
-              <Image
-                key={img.src}
-                src={img.src}
-                alt={img.alt}
-                width={160}
-                height={80}
-                className="h-20 w-full rounded-lg object-cover"
-              />
-            ))}
+            {landing.hero.images
+              .filter((img) => img.src)
+              .slice(0, 3)
+              .map((img) => (
+                <Image
+                  key={img.src}
+                  src={img.src}
+                  alt={img.alt}
+                  width={160}
+                  height={80}
+                  className="h-20 w-full rounded-lg object-cover"
+                />
+              ))}
           </div>
         ) : null}
       </div>
@@ -1036,18 +1056,20 @@ function SectionContent({
           onChange={(e) => handleGalleryChange(e.target.files)}
         />
         <p className="text-muted-foreground text-xs">Pick multiple images at once.</p>
-        {landing.gallery?.length ? (
+        {landing.gallery?.filter((img) => img.src).length ? (
           <div className="grid grid-cols-3 gap-2 pt-2">
-            {landing.gallery.map((img, idx) => (
-              <Image
-                key={`${img.src}-${idx}`}
-                src={img.src}
-                alt={img.alt}
-                width={160}
-                height={80}
-                className="h-20 w-full rounded-lg object-cover"
-              />
-            ))}
+            {landing.gallery
+              .filter((img) => img.src)
+              .map((img, idx) => (
+                <Image
+                  key={`${img.src}-${idx}`}
+                  src={img.src}
+                  alt={img.alt}
+                  width={160}
+                  height={80}
+                  className="h-20 w-full rounded-lg object-cover"
+                />
+              ))}
           </div>
         ) : null}
       </div>
@@ -1069,7 +1091,7 @@ function SectionContent({
         <div>
           <Label>Email</Label>
           <Input
-            placeholder="hello@yourschool.edu"
+            placeholder="yourschool@gmail.com"
             value={landing.contact.email}
             maxLength={EMAIL_MAX}
             type="email"
