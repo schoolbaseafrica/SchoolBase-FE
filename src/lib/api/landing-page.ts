@@ -20,6 +20,16 @@ type ApiSocials = {
   twitter?: string
   website?: string
 }
+type ApiSchool = {
+  id?: string
+  name?: string
+  address?: string
+  phone?: string
+  logo_url?: string | null
+  primary_color?: string
+  secondary_color?: string
+  accent_color?: string
+}
 
 export type LandingPageApiPayload = {
   school_id: string
@@ -65,10 +75,17 @@ export type LandingPageApiPayload = {
 
 export type LandingPageApiResponse = LandingPageApiPayload & {
   id?: string
+  school?: ApiSchool
 }
 
 export type LandingPageCreateResponse = {
   school_id: string
+}
+
+type LandingPageEnvelope<T> = {
+  status_code: number
+  message: string
+  data: T
 }
 
 const splitName = (fullName: string) => {
@@ -218,31 +235,31 @@ export const toLandingPagePayload = (
 
 export const LandingPageAPI = {
   createLandingPage: (schoolId: string, landing: LandingPageConfig) =>
-    apiFetch<LandingPageCreateResponse>(
+    apiFetch<LandingPageEnvelope<LandingPageCreateResponse>>(
       "/landing-page",
       {
         method: "POST",
         data: toLandingPagePayload(schoolId, landing),
       },
       true
-    ),
+    ).then((res) => res.data),
 
   getLandingPage: (schoolId: string) =>
-    apiFetch<LandingPageApiResponse>(
+    apiFetch<LandingPageEnvelope<LandingPageApiResponse>>(
       `/landing-page/${schoolId}`,
       {
         method: "GET",
       },
       true
-    ),
+    ).then((res) => res.data),
 
   updateLandingPage: (schoolId: string, landing: LandingPageConfig) =>
-    apiFetch<LandingPageApiResponse>(
+    apiFetch<LandingPageEnvelope<LandingPageApiResponse>>(
       `/landing-page/${schoolId}`,
       {
         method: "PATCH",
         data: toLandingPagePayload(schoolId, landing),
       },
       true
-    ),
+    ).then((res) => res.data),
 }

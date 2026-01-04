@@ -19,10 +19,26 @@ const imageLayout = [
   },
 ]
 
+const heroFallbackImages = [
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-1_b3c8fs.jpg",
+    alt: "Students learning together",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+    alt: "Collaborative classroom",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+    alt: "School community",
+  },
+]
+
 export function HeroSection() {
   const hero = useSchoolStore((state) => state.school.hero)
   const name = useSchoolStore((state) => state.school.shortName)
   const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({})
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({})
   const ctaHref = hero.ctaHref?.trim() || null
 
   return (
@@ -51,20 +67,33 @@ export function HeroSection() {
             {!loadedImages[index] && (
               <Skeleton className="absolute inset-0 h-full w-full rounded-2xl bg-white/60" />
             )}
-            <Image
-              src={image.src}
-              alt={image.alt}
-              fill
-              sizes="(max-width: 768px) 50vw, 40vw"
-              priority={imageLayout[index]?.priority}
-              className="object-cover transition-transform duration-500 hover:scale-105"
-              onLoadingComplete={() =>
-                setLoadedImages((prev) => ({
-                  ...prev,
-                  [index]: true,
-                }))
-              }
-            />
+            {(() => {
+              const fallback = heroFallbackImages[index % heroFallbackImages.length]
+              const src = failedImages[index] ? fallback.src : image.src
+              const alt = failedImages[index] ? fallback.alt : image.alt
+              return (
+                <Image
+                  src={src}
+                  alt={alt}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 40vw"
+                  priority={imageLayout[index]?.priority}
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  onError={() =>
+                    setFailedImages((prev) => ({
+                      ...prev,
+                      [index]: true,
+                    }))
+                  }
+                  onLoadingComplete={() =>
+                    setLoadedImages((prev) => ({
+                      ...prev,
+                      [index]: true,
+                    }))
+                  }
+                />
+              )
+            })()}
           </div>
         ))}
       </div>

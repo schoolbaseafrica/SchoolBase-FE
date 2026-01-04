@@ -110,6 +110,48 @@ const CTA_LABEL_MAX = 40
 const CTA_LINK_MAX = 160
 const EMAIL_MAX = 120
 const TESTIMONIAL_ROLES = ["Parent", "Teacher", "Student"] as const
+const HERO_PREVIEW_FALLBACKS = [
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-1_b3c8fs.jpg",
+    alt: "Students learning together",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+    alt: "Collaborative classroom",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+    alt: "School community",
+  },
+]
+const GALLERY_PREVIEW_FALLBACKS = [
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561402/why-choose-4_eq1btu.jpg",
+    alt: "Campus exterior",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/why-choose-1_elwhbe.jpg",
+    alt: "Library study",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-2_alnxyc.jpg",
+    alt: "Creative arts session",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-4_rrzym7.jpg",
+    alt: "Science lab activity",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-3_p8vypo.jpg",
+    alt: "School grounds",
+  },
+  {
+    src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561349/about-2_pfwabt.jpg",
+    alt: "Library corner",
+  },
+]
+const TESTIMONIAL_AVATAR_FALLBACK =
+  "https://res.cloudinary.com/demo/image/upload/v1720000000/samples/people/smiling-man.jpg"
 
 const fileListToImages = async (files: FileList) => {
   const uploads = Array.from(files).map(async (file) => {
@@ -213,6 +255,9 @@ export function LandingSetupForm({
   const isMobile = useIsMobile()
   const [activeSection, setActiveSection] = useState<LandingSectionKey | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [testimonialPreviewFailed, setTestimonialPreviewFailed] = useState<
+    Record<string, boolean>
+  >({})
 
   const sections = useMemo(() => {
     const existing = landing.sections ?? []
@@ -739,11 +784,21 @@ export function LandingSetupForm({
                   />
                   {item.avatar && (
                     <Image
-                      src={item.avatar}
+                      src={
+                        testimonialPreviewFailed[item.avatar]
+                          ? TESTIMONIAL_AVATAR_FALLBACK
+                          : item.avatar
+                      }
                       alt={item.name || "Testimonial avatar"}
                       width={64}
                       height={64}
                       className="h-16 w-16 rounded-full object-cover"
+                      onError={() =>
+                        setTestimonialPreviewFailed((prev) => ({
+                          ...prev,
+                          [item.avatar ?? ""]: true,
+                        }))
+                      }
                     />
                   )}
                 </div>
@@ -1000,6 +1055,11 @@ function SectionContent({
   renderFaqs,
   renderTestimonials,
 }: SectionContentProps) {
+  const [heroPreviewFailed, setHeroPreviewFailed] = useState<Record<string, boolean>>({})
+  const [galleryPreviewFailed, setGalleryPreviewFailed] = useState<
+    Record<string, boolean>
+  >({})
+
   if (activeSection === "hero") {
     return (
       <div className="space-y-3">
@@ -1029,16 +1089,28 @@ function SectionContent({
             {landing.hero.images
               .filter((img) => img.src)
               .slice(0, 3)
-              .map((img) => (
-                <Image
-                  key={img.src}
-                  src={img.src}
-                  alt={img.alt}
-                  width={160}
-                  height={80}
-                  className="h-20 w-full rounded-lg object-cover"
-                />
-              ))}
+              .map((img, index) => {
+                const fallback =
+                  HERO_PREVIEW_FALLBACKS[index % HERO_PREVIEW_FALLBACKS.length]
+                const src = heroPreviewFailed[img.src] ? fallback.src : img.src
+                const alt = heroPreviewFailed[img.src] ? fallback.alt : img.alt
+                return (
+                  <Image
+                    key={img.src}
+                    src={src}
+                    alt={alt}
+                    width={160}
+                    height={80}
+                    className="h-20 w-full rounded-lg object-cover"
+                    onError={() =>
+                      setHeroPreviewFailed((prev) => ({
+                        ...prev,
+                        [img.src]: true,
+                      }))
+                    }
+                  />
+                )
+              })}
           </div>
         ) : null}
       </div>
@@ -1060,16 +1132,29 @@ function SectionContent({
           <div className="grid grid-cols-3 gap-2 pt-2">
             {landing.gallery
               .filter((img) => img.src)
-              .map((img, idx) => (
-                <Image
-                  key={`${img.src}-${idx}`}
-                  src={img.src}
-                  alt={img.alt}
-                  width={160}
-                  height={80}
-                  className="h-20 w-full rounded-lg object-cover"
-                />
-              ))}
+              .map((img, index) => {
+                const key = `${img.src}-${index}`
+                const fallback =
+                  GALLERY_PREVIEW_FALLBACKS[index % GALLERY_PREVIEW_FALLBACKS.length]
+                const src = galleryPreviewFailed[key] ? fallback.src : img.src
+                const alt = galleryPreviewFailed[key] ? fallback.alt : img.alt
+                return (
+                  <Image
+                    key={key}
+                    src={src}
+                    alt={alt}
+                    width={160}
+                    height={80}
+                    className="h-20 w-full rounded-lg object-cover"
+                    onError={() =>
+                      setGalleryPreviewFailed((prev) => ({
+                        ...prev,
+                        [key]: true,
+                      }))
+                    }
+                  />
+                )
+              })}
           </div>
         ) : null}
       </div>
