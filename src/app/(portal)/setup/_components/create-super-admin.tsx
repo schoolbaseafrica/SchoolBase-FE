@@ -106,6 +106,7 @@ export function AdminAccountForm({
       <div className="animate-onrender mb-6 space-y-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <FormField
+            name="admin-firstName"
             label="First Name"
             required
             error={errors.firstName}
@@ -114,6 +115,7 @@ export function AdminAccountForm({
             placeholder="Enter First Name"
           />
           <FormField
+            name="admin-lastName"
             label="Last Name"
             required
             error={errors.lastName}
@@ -124,6 +126,7 @@ export function AdminAccountForm({
         </div>
 
         <FormField
+          name="admin-email"
           label="Email Address"
           required
           type="email"
@@ -134,6 +137,7 @@ export function AdminAccountForm({
         />
 
         <FormField
+          name="admin-password"
           label="Password"
           required
           type={showPassword ? "text" : "password"}
@@ -166,9 +170,10 @@ export function AdminAccountForm({
         </FormField>
 
         <FormField
+          name="admin-confirmPassword"
           label="Confirm Password"
           required
-          type={showPassword ? "" : "password"}
+          type={showPassword ? "text" : "password"}
           error={errors.confirmPassword}
           value={formData.admin.confirmPassword}
           onChange={(e) => handleChange("admin", "confirmPassword", e.target.value)}

@@ -21,9 +21,9 @@ const getInputProps = (props: FormFieldProps) => {
 }
 
 export const FormField = (props: FormFieldProps) => (
-  <div key={props.name} className={props.type === "file" ? "lg:col-span-2" : ""}>
+  <div className={props.type === "file" ? "lg:col-span-2" : ""}>
     <label
-      htmlFor={props.name}
+      htmlFor={props.name || props.id}
       className="mb-2 block text-sm font-semibold text-gray-900"
     >
       {props.label} {props.required ? <span className="text-red-600">*</span> : <></>}

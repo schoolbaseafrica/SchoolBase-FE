@@ -322,7 +322,6 @@ export default function SchoolSetupWizard() {
           )}
           {currentStep === 2 && (
             <SchoolInfoForm
-              key={`school-info-${formData.school.name}-${formData.school.phone}`} // Force re-render when data changes
               formData={formData}
               updateFormData={updateForm}
               onSubmit={handleNext}

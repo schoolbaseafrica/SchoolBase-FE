@@ -79,6 +79,7 @@ export function SchoolInfoForm({
         </div>
 
         <FormField
+          name="school-name"
           label="School Name"
           required
           error={errors.name}
@@ -119,6 +120,7 @@ export function SchoolInfoForm({
         </div>
 
         <FormField
+          name="school-phone"
           label="Phone Number"
           type="tel"
           required
@@ -130,6 +132,7 @@ export function SchoolInfoForm({
         />
 
         <FormField
+          name="school-address"
           label="Address"
           required
           error={errors.address}

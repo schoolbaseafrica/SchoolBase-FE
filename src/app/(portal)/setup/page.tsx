@@ -24,9 +24,11 @@ export default async function SetupPage() {
     })
 
     if (response.ok) {
-      const data = await response.json()
+      const responseData = await response.json()
+      // Backend may wrap in {status_code, message, data} or return directly
+      const data = responseData?.data || responseData
       // If installation is complete, redirect to landing page
-      if (data?.installation_completed) {
+      if (data?.installation_completed === true) {
         redirect("/landing")
       }
     }

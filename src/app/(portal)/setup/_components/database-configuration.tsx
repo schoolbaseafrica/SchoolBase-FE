@@ -57,6 +57,7 @@ export function DatabaseConfigForm({
 
       <div className="animate-onrender mb-8 space-y-6">
         <FormField
+          name="database-name"
           label="Database Name"
           required
           error={errors.name}
@@ -68,6 +69,7 @@ export function DatabaseConfigForm({
         <div className="relative">
           <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[2fr_1fr] md:items-start">
             <FormField
+              name="database-username"
               label="Database Username"
               required
               value={formData.database.username}
@@ -76,6 +78,7 @@ export function DatabaseConfigForm({
             />
 
             <FormField
+              name="database-type"
               type="text"
               label="Type"
               required
@@ -96,6 +99,7 @@ export function DatabaseConfigForm({
         <div className="relative">
           <div className="grid grid-cols-[3fr_1fr] items-center gap-4">
             <FormField
+              name="database-host"
               label="Database Host"
               required
               value={formData.database.host}
@@ -104,6 +108,7 @@ export function DatabaseConfigForm({
             />
 
             <FormField
+              name="database-port"
               type="number"
               label="Port"
               required
@@ -124,6 +129,7 @@ export function DatabaseConfigForm({
         </div>
 
         <FormField
+          name="database-password"
           label="Database Password"
           required
           type={showPassword ? "text" : "password"}
