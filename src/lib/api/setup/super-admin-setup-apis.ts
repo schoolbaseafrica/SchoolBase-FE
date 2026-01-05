@@ -108,7 +108,7 @@ export const SetupWizardAPI = {
         method: "POST",
         data,
       },
-      true
+      false // Don't use proxy - use specific Next.js route at /api/auth/superadmin/login
     ),
 
   // Install School

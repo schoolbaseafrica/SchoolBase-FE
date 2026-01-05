@@ -204,25 +204,15 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
   }
 
   try {
-    // Debug: Log what we're getting for API URL
-    const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
-    if (typeof window !== "undefined") {
-      console.log("[Config] API Base URL from env:", envApiUrl)
-    }
-    let baseUrl = apiUrl || envApiUrl || "http://localhost:3008"
-    
-    // Normalize baseUrl: remove trailing slashes and /api/v1 if present
-    baseUrl = baseUrl.replace(/\/+$/, "") // Remove trailing slashes
-    baseUrl = baseUrl.replace(/\/api\/v1\/?$/, "") // Remove /api/v1 if present at the end
-
     // Use a timeout with AbortController for better browser compatibility
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
     try {
-      // Strategy 1: Try backend API first (single source of truth from database)
-      // Backend endpoint: /api/v1/school (returns snake_case fields)
-      const backendResponse = await fetch(`${baseUrl}/api/v1/school`, {
+      // Strategy 1: Use Next.js proxy route to backend API (single source of truth from database)
+      // This works regardless of NEXT_PUBLIC_API_BASE_URL being set
+      // The proxy route /api/proxy-auth/school proxies to backend /api/v1/school
+      const backendResponse = await fetch("/api/proxy-auth/school", {
         cache: "no-store", // Always fetch fresh config
         headers: {
           "Content-Type": "application/json",
@@ -244,11 +234,38 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
           : undefined
 
         // Transform backend response to frontend RuntimeConfig format
-        // Convert relative logo URL to absolute URL if needed
+        // For logo URL, convert relative paths to absolute URLs
+        // Logos are served by the backend, so we need the backend domain
         let logoUrl = backendData.logo_url
         if (logoUrl && !logoUrl.startsWith("http")) {
-          // Prepend backend base URL for relative paths
-          logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+          // Try to get API base URL from env first
+          const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
+          if (envApiUrl) {
+            const baseUrl = envApiUrl.replace(/\/+$/, "")
+            logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+          } else if (typeof window !== "undefined") {
+            // Fallback: construct backend URL from current origin
+            // If frontend is at dev.learningspaces.im, backend is at api.learningspaces.im
+            const currentOrigin = window.location.origin
+            const protocol = window.location.protocol
+            const hostname = window.location.hostname
+            
+            // Extract base domain (e.g., "learningspaces.im" from "dev.learningspaces.im")
+            const parts = hostname.split(".")
+            let backendHostname: string
+            
+            if (parts.length >= 2) {
+              // Replace first subdomain with 'api' (e.g., dev.learningspaces.im -> api.learningspaces.im)
+              parts[0] = "api"
+              backendHostname = parts.join(".")
+            } else {
+              // Single domain (localhost) - use as-is
+              backendHostname = hostname
+            }
+            
+            const backendOrigin = `${protocol}//${backendHostname}`
+            logoUrl = `${backendOrigin}${logoUrl.startsWith("/") ? "" : ""}${logoUrl}`
+          }
         }
 
         const config: RuntimeConfig = {
@@ -262,14 +279,14 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             supportEmail: backendData.email,
             supportPhone: backendData.phone,
           },
-          apiUrl: baseUrl,
+          apiUrl: apiUrl || getEnv("NEXT_PUBLIC_API_BASE_URL"),
           environment:
             (getEnv("NODE_ENV") as "development" | "staging" | "production") ||
             "development",
         }
 
         console.log(
-          "[Config] Loaded from backend API:",
+          "[Config] Loaded from backend API (via proxy):",
           config.school.name,
           config.school.primaryColor
         )

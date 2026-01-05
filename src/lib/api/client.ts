@@ -71,8 +71,13 @@ export async function apiFetch<TResponse>(
     headers["Content-Type"] = "application/json"
   }
 
-  const axiosInstance = proxy ? axios : api
   const url = resolveRequestUrl(path, proxy)
+  
+  // Use plain axios (no baseURL) for:
+  // 1. Proxy requests (go to Next.js proxy routes)
+  // 2. Internal Next.js API routes (paths starting with /api/)
+  // Use api instance (with baseURL) for direct backend requests
+  const axiosInstance = proxy || isInternalApiPath(url) ? axios : api
 
   try {
     const res = await axiosInstance.request({

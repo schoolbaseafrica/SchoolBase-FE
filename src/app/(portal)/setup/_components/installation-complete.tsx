@@ -27,25 +27,25 @@ export default function InstallationComplete() {
         <ul className="mb-4 space-y-2 text-sm text-gray-600">
           <li className="flex items-start gap-2">
             <span className="text-green-600">✓</span>
-            <span>Your first admin account has been created automatically</span>
+            <span>School profile has been configured</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-green-600">✓</span>
-            <span>Super admin account created (can be deactivated manually when ready)</span>
+            <span>Super admin account created</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600">→</span>
-            <span>Log in using your admin credentials to access the portal</span>
+            <span>Log in as super admin to create admin accounts and manage your school</span>
           </li>
         </ul>
         <p className="text-xs text-gray-500">
-          Note: Use the email and password you provided during setup to log in as the
-          first admin.
+          Note: Use the email and password you provided during setup to log in as super admin.
+          You can create admin accounts from the super admin dashboard.
         </p>
       </div>
 
       <Button asChild className="w-full md:max-w-xs">
-        <Link href="/login">Log In to Portal</Link>
+        <Link href="/super-admin/login">Log In as Super Admin</Link>
       </Button>
     </div>
   )
