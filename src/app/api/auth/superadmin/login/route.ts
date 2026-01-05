@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         refresh_token,
         session_id,
         session_expires_at,
-        user: { id: user_id },
+        id: user_id, // Super admin response has id directly, not nested in user object
       } = data.data
       const expiresAt = new Date(session_expires_at)
 
