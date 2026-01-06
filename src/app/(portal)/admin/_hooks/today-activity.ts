@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query"
 import { DashboardAPI } from "@/lib/dashboard"
 import { useDashboardStore } from "@/store/dashboard-store"
 import { useEffect } from "react"
+import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 export const useTodayActivities = () => {
+  const isSuperAdmin = useIsSuperAdmin()
   const setActivities = useDashboardStore((state) => state.setTodayActivities)
   const setLoading = useDashboardStore((state) => state.setLoading)
   // const setError = useDashboardStore((state) => state.setError)
@@ -21,6 +23,7 @@ export const useTodayActivities = () => {
         setLoading(false)
       }
     },
+    enabled: !isSuperAdmin, // Disable for super admin
   })
 
   useEffect(() => {

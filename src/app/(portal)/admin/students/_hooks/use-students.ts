@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { useStudentsStore } from "@/store/students-store"
 import { useEffect } from "react"
+import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 // The main list query key
 const STUDENTS_KEY = ["students"]
@@ -151,12 +152,15 @@ export function useDeleteStudent() {
 // COUNT ACTIVE STUDENTS
 // --------------------------
 export function useStudentsCount() {
+  const isSuperAdmin = useIsSuperAdmin()
+  
   return useQuery({
     queryKey: ["students_count"],
     queryFn: async () => {
       const res = await StudentsAPI.getTotal({ limit: 1, page: 1 })
       return res.meta?.total ?? 0
     },
+    enabled: !isSuperAdmin, // Disable for super admin
   })
 }
 

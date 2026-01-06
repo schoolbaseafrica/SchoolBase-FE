@@ -1,20 +1,20 @@
 "use client"
 
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/ui/form-field"
 import { createAdminSchema, CreateAdminValues } from "@/lib/schemas/create-admin.schema"
-import { CreateAdminSuccess } from "./create-admin-success"
 import { useCreateAdmin } from "../_hooks/use-create-admin"
+import { extractErrorMessage } from "@/lib/error-handler"
 
 export function CreateAdminForm() {
-  const [isSuccess, setIsSuccess] = useState(false)
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<CreateAdminValues>({
     resolver: zodResolver(createAdminSchema),
@@ -39,17 +39,30 @@ export function CreateAdminForm() {
         password: data.password || undefined,
       },
       {
-        onSuccess: () => setIsSuccess(true),
+        onSuccess: () => {
+          // Show success toast
+          toast.success("Admin account created successfully", {
+            description: "An email with login credentials has been sent to the admin's email address.",
+            duration: 5000,
+          })
+          // Clear the form on success
+          reset({
+            first_name: "",
+            last_name: "",
+            email: "",
+            phone: "",
+            password: "",
+          })
+        },
+        onError: (error) => {
+          // Show error toast, form data is preserved
+          const errorMessage = extractErrorMessage(error)
+          toast.error("Failed to create admin account", {
+            description: errorMessage || "Please check the form and try again.",
+            duration: 5000,
+          })
+        },
       }
-    )
-  }
-
-  if (isSuccess) {
-    return (
-      <CreateAdminSuccess
-        title="Admin Account Created"
-        subtitle="The admin account has been created successfully. An email with login credentials has been sent to the admin's email address."
-      />
     )
   }
 

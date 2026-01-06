@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { useClassesStore } from "@/store/classes-store"
 import { useEffect } from "react"
+import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 // QUERY KEYS
 export const CLASS_KEYS = {
@@ -19,6 +20,7 @@ export const useGetClassesInfo = (params?: {
   limit?: number
   includeArchived?: boolean
 }) => {
+  const isSuperAdmin = useIsSuperAdmin()
   const setClassItems = useClassesStore((state) => state.setClassItems)
   const setLoading = useClassesStore((state) => state.setLoading)
   // const setError = useClassesStore((state) => state.setError)
@@ -37,6 +39,7 @@ export const useGetClassesInfo = (params?: {
     // select: (data) => data.data, // Already returned data in queryFn
     refetchOnWindowFocus: false,
     refetchOnMount: true, // Always refetch when component mounts to get fresh data after mutations
+    enabled: !isSuperAdmin, // Disable for super admin
   })
 
   useEffect(() => {

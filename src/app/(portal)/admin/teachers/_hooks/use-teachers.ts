@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { useTeachersStore } from "@/store/teachers-store"
 import { useEffect } from "react"
+import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 // The main list query key - simplified
 const TEACHERS_KEY = ["teachers"]
@@ -220,12 +221,15 @@ export function useDeleteTeacher() {
 // COUNT TEACHERS
 // --------------------------
 export function useTeachersCount() {
+  const isSuperAdmin = useIsSuperAdmin()
+  
   return useQuery({
     queryKey: ["teachers_count", "active"],
     queryFn: async () => {
       const res = await TeachersAPI.getTotal({ is_active: true, limit: 1, page: 1 })
       return res.data?.total ?? 0
     },
+    enabled: !isSuperAdmin, // Disable for super admin
   })
 }
 
