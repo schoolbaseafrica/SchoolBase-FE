@@ -174,7 +174,6 @@ export function useStudentGrowthReport(academic_year?: string) {
     queryKey: ["student_growth_report", academic_year],
     queryFn: () => StudentsAPI.getStudentGrowthReport(academic_year),
     select: (data) => data.data,
-    enabled: !isSuperAdmin, // Disable for super admin
-    enabled: !!academic_year && academic_year.trim() !== "", // Only fetch when academic_year is provided and not empty
+    enabled: !isSuperAdmin && !!academic_year && academic_year.trim() !== "", // Disable for super admin and only fetch when academic_year is provided
   })
 }
