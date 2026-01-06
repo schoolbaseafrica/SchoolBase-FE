@@ -27,11 +27,39 @@ export interface CreateAdminResponse {
   }
 }
 
+export interface SuperAdminData {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  school_name: string
+  is_active: boolean
+  role: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SuperAdminMeResponse {
+  message: string
+  status_code: number
+  data: SuperAdminData
+}
+
 // ---------------------
 // SUPER ADMIN API
 // ---------------------
 
 export const SuperAdminAPI = {
+  // Get current super admin profile
+  getMe: () =>
+    apiFetch<SuperAdminMeResponse>(
+      "/superadmin/me",
+      {
+        method: "GET",
+      },
+      true // Use proxy route
+    ),
+
   // Create Admin Account
   createAdmin: (data: CreateAdminData) =>
     apiFetch<CreateAdminResponse>(

@@ -116,9 +116,30 @@ export async function apiFetch<TResponse>(
   } catch (err) {
     // Network or backend errors
     if (err instanceof AxiosError) {
-      // if unauthed
-      if (err.response?.status === 401) {
-        navigateTo("/login")
+      // Check if school exists before redirecting to login
+      // If school doesn't exist, redirect to setup instead
+      if (err.response?.status === 401 || err.response?.status === 409) {
+        // Check if this is a "School not found" error
+        const errorMessage = err.response?.data?.message || ""
+        const isSchoolNotFound = errorMessage.toLowerCase().includes("school not found")
+
+        // Also check if the request was to the /school endpoint and got 409
+        const isSchoolEndpoint =
+          err.config?.url?.includes("/school") && err.response?.status === 409
+
+        if (isSchoolNotFound || isSchoolEndpoint) {
+          // School doesn't exist - redirect to setup
+          navigateTo("/setup")
+          return {} as TResponse // Return empty object to prevent further processing
+        }
+
+        // For 401 errors, check if we're on a super admin route and redirect accordingly
+        if (err.response?.status === 401) {
+          const isSuperAdminRoute =
+            typeof window !== "undefined" &&
+            window.location.pathname.startsWith("/super-admin")
+          navigateTo(isSuperAdminRoute ? "/super-admin/login" : "/login")
+        }
       }
       // Skip logging for expected 404 empty states (e.g., "No students enrolled")
       const errorMsg =
