@@ -70,5 +70,15 @@ export const SuperAdminAPI = {
       },
       true // Use proxy route
     ),
+
+  // Logout
+  logout: () =>
+    apiFetch<{ message: string; status_code: number }>(
+      "/api/auth/superadmin/logout",
+      {
+        method: "POST",
+      },
+      false // Don't use proxy - use specific Next.js route at /api/auth/superadmin/logout
+    ),
 }
 

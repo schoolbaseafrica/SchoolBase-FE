@@ -168,10 +168,13 @@ export function useStudentsCount() {
 // STUDENT GROWTH REPORT
 // --------------------------
 export function useStudentGrowthReport(academic_year?: string) {
+  const isSuperAdmin = useIsSuperAdmin()
+  
   return useQuery({
     queryKey: ["student_growth_report", academic_year],
     queryFn: () => StudentsAPI.getStudentGrowthReport(academic_year),
     select: (data) => data.data,
+    enabled: !isSuperAdmin, // Disable for super admin
     enabled: !!academic_year && academic_year.trim() !== "", // Only fetch when academic_year is provided and not empty
   })
 }

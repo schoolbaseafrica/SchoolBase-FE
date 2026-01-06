@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserData, sendLogoutRequest } from "@/lib/api/auth"
 import { SuperAdminAPI } from "@/lib/api/superadmin"
+import { usePathname } from "next/navigation"
 
 const USER_DATA_KEY = ["user"]
 const SUPERADMIN_DATA_KEY = ["superadmin"]
@@ -33,13 +34,18 @@ export function useGetSuperAdmin(options?: { enabled?: boolean }) {
 
 export function useLogout() {
   const queryClient = useQueryClient()
+  const pathname = usePathname()
+  const isSuperAdminRoute = pathname?.startsWith("/super-admin")
 
   return useMutation({
-    mutationFn: sendLogoutRequest,
+    mutationFn: isSuperAdminRoute ? SuperAdminAPI.logout : sendLogoutRequest,
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: USER_DATA_KEY })
+      queryClient.removeQueries({ queryKey: SUPERADMIN_DATA_KEY })
 
-      if (typeof window !== "undefined") window.location.href = "/login"
+      if (typeof window !== "undefined") {
+        window.location.href = isSuperAdminRoute ? "/super-admin/login" : "/login"
+      }
     },
   })
 }

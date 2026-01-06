@@ -8,6 +8,7 @@ import {
   PaginatedSessions,
   UpdateAcademicSessionData,
 } from "@/lib/academic-session"
+import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 const ACADEMIC_SESSIONS_KEY = ["academic-sessions"]
 const ACTIVE_SESSION_KEY = ["academic-session", "active"]
@@ -25,10 +26,13 @@ export function useCreateAcademicSession() {
 }
 
 export function useAcademicSessions(params?: { page?: number; limit?: number }) {
+  const isSuperAdmin = useIsSuperAdmin()
+  
   return useQuery<PaginatedSessions>({
     queryKey: [ACADEMIC_SESSIONS_KEY[0], params?.page ?? 1, params?.limit ?? 20],
     queryFn: () => AcademicSessionAPI.list(params),
     refetchOnWindowFocus: false,
+    enabled: !isSuperAdmin, // Disable for super admin
   })
 }
 
@@ -41,6 +45,8 @@ export function useAcademicSession(id?: string) {
 }
 
 export function useActiveAcademicSession() {
+  const isSuperAdmin = useIsSuperAdmin()
+  
   return useQuery<AcademicSession | null>({
     queryKey: ACTIVE_SESSION_KEY,
     queryFn: async () => {
@@ -48,6 +54,7 @@ export function useActiveAcademicSession() {
     },
     refetchOnWindowFocus: false,
     staleTime: 20 * 60 * 1000, // 20 minutes
+    enabled: !isSuperAdmin, // Disable for super admin
     retry: (failureCount, error: any) => {
       // Don't retry if the result is null (no active session)
       // or if error message indicates 404
