@@ -48,8 +48,8 @@ export default async function RootPage() {
 
       // Check installation_completed flag (database is source of truth)
       if (data?.installation_completed === true) {
-        // Installation complete - show landing page
-        redirect("/landing")
+        // Installation complete - redirect to super admin login first
+        redirect("/super-admin/login")
       } else {
         // School exists but installation not complete - go to setup
         console.log(

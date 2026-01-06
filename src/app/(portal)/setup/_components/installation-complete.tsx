@@ -1,8 +1,23 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function InstallationComplete() {
+  const router = useRouter()
+
+  // Auto-redirect to super admin login after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/super-admin/login")
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  }, [router])
+
   return (
     <div className="px-2 py-5 text-center md:p-12">
       <div className="mb-6 flex justify-center">

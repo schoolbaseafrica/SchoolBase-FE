@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 /**
  * Setup page - Checks if installation is already complete
- * If complete, redirects to landing page
+ * If complete, redirects to super admin login
  */
 export default async function SetupPage() {
   // Check if installation is already complete
@@ -27,9 +27,9 @@ export default async function SetupPage() {
       const responseData = await response.json()
       // Backend may wrap in {status_code, message, data} or return directly
       const data = responseData?.data || responseData
-      // If installation is complete, redirect to landing page
+      // If installation is complete, redirect to super admin login
       if (data?.installation_completed === true) {
-        redirect("/landing")
+        redirect("/super-admin/login")
       }
     }
   } catch (error: any) {
