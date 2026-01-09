@@ -2,18 +2,57 @@ import { NextResponse } from "next/server"
 import { cookies as getCookies } from "next/headers"
 import { splitCookiesString } from "set-cookie-parser"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
 /* Helpers */
-const ensureApiBaseUrl = (): string => {
-  console.log("[_proxy] Checking API_BASE_URL...")
-  if (!API_BASE_URL) throw new Error("API base url missing")
-  console.log("[_proxy] API_BASE_URL found:", API_BASE_URL)
-  return API_BASE_URL.replace(/\/+$/, "")
+/**
+ * Determines the backend API URL dynamically from the request.
+ * For multi-school deployment, each school has its own backend domain.
+ * Pattern: if frontend is at stpaul.schoolbase.africa, backend is at api.stpaul.schoolbase.africa
+ */
+const getBackendBaseUrl = (req: Request): string => {
+  // First, try runtime environment variable (for server-side, not NEXT_PUBLIC_*)
+  const runtimeApiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+  
+  if (runtimeApiBaseUrl) {
+    console.log("[_proxy] Using runtime API_BASE_URL:", runtimeApiBaseUrl)
+    return runtimeApiBaseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+  }
+  
+  // Fallback: construct from request hostname
+  // Extract host from request URL or headers
+  const url = new URL(req.url)
+  const hostname = req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
+  const protocol = req.headers.get("x-forwarded-proto") || url.protocol.replace(":", "")
+  
+  console.log("[_proxy] Constructing backend URL from request hostname:", hostname)
+  
+  // For multi-school deployment, prepend 'api.' to the hostname
+  // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+  // e.g., demo.schoolbase.africa -> api.demo.schoolbase.africa
+  if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+    // Check if hostname already starts with 'api.'
+    if (hostname.startsWith("api.")) {
+      // Already an API domain, use as-is
+      const backendUrl = `${protocol}://${hostname}`
+      console.log("[_proxy] Hostname already starts with 'api.', using as-is:", backendUrl)
+      return backendUrl
+    }
+    
+    // Prepend 'api.' to the hostname
+    const backendHostname = `api.${hostname}`
+    const backendUrl = `${protocol}://${backendHostname}`
+    console.log("[_proxy] Constructed backend URL:", backendUrl)
+    return backendUrl
+  }
+  
+  // Fallback for localhost or single-domain setups
+  const fallbackUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
+  console.log("[_proxy] Using fallback backend URL (localhost):", fallbackUrl)
+  return fallbackUrl
 }
 
-const buildBackendUrl = (path: string): string => {
-  const url = `${ensureApiBaseUrl()}/${path.replace(/^\/+/, "")}`
+const buildBackendUrl = (req: Request, path: string): string => {
+  const baseUrl = getBackendBaseUrl(req)
+  const url = `${baseUrl}/${path.replace(/^\/+/, "")}`
   console.log("[_proxy] Built backend URL:", url)
   return url
 }
@@ -56,13 +95,13 @@ const forwardRequest = async (
 }
 
 /* Attempt Refresh Token */
-const attemptRefresh = async (): Promise<{
+const attemptRefresh = async (req: Request): Promise<{
   ok: boolean
   newAccessToken: string | null
   refreshResponse: Response | null
 }> => {
   console.log("[proxy] Attempting token refresh...")
-  const refreshUrl = buildBackendUrl("api/v1/auth/refresh")
+  const refreshUrl = buildBackendUrl(req, "api/v1/auth/refresh")
   const cookieStore = await getCookies()
   const refreshToken = cookieStore.get("refresh_token")?.value
   console.log("[proxy] Found refresh token:", refreshToken ? true : false)
@@ -91,7 +130,7 @@ const attemptRefresh = async (): Promise<{
 export const proxyAuthRequest = async (req: Request, pathname: string) => {
   console.log("[proxy] Starting proxy for path:", pathname)
   try {
-    const backendUrl = buildBackendUrl(pathname)
+    const backendUrl = buildBackendUrl(req, pathname)
 
     // Detect content type to handle FormData correctly
     const contentType = req.headers.get("content-type") || ""
@@ -129,7 +168,7 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
 
     if (backendRes.status === 401) {
       console.log("[proxy] Received 401, attempting refresh...")
-      const refresh = await attemptRefresh()
+      const refresh = await attemptRefresh(req)
       if (refresh.ok && refresh.newAccessToken) {
         console.log(
           "[proxy] Refresh successful, retrying original request with new access token..."
