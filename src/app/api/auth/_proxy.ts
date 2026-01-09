@@ -9,22 +9,24 @@ import { splitCookiesString } from "set-cookie-parser"
  * Pattern: if frontend is at stpaul.schoolbase.africa, backend is at api.stpaul.schoolbase.africa
  */
 const getBackendBaseUrl = (req: Request): string => {
-  // First, try runtime environment variable (for server-side, not NEXT_PUBLIC_*)
-  const runtimeApiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
-  
-  if (runtimeApiBaseUrl) {
-    console.log("[_proxy] Using runtime API_BASE_URL:", runtimeApiBaseUrl)
-    return runtimeApiBaseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-  }
-  
-  // Fallback: construct from request hostname
-  // Extract host from request URL or headers
+  // Extract host from request URL or headers first (needed for dynamic construction)
   const url = new URL(req.url)
   const hostname = req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
   const protocol = req.headers.get("x-forwarded-proto") || url.protocol.replace(":", "")
   
-  console.log("[_proxy] Constructing backend URL from request hostname:", hostname)
+  console.log("[_proxy] Request hostname:", hostname, "protocol:", protocol)
+  console.log("[_proxy] API_BASE_URL env:", process.env.API_BASE_URL || "not set")
+  console.log("[_proxy] NEXT_PUBLIC_API_BASE_URL env:", process.env.NEXT_PUBLIC_API_BASE_URL || "not set")
   
+  // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
+  // This is set in docker-compose.yml for each school
+  if (process.env.API_BASE_URL) {
+    const apiBaseUrl = process.env.API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+    console.log("[_proxy] Using runtime API_BASE_URL:", apiBaseUrl)
+    return apiBaseUrl
+  }
+  
+  // Priority 2: Construct dynamically from request hostname (most reliable for multi-school)
   // For multi-school deployment, prepend 'api.' to the hostname
   // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
   // e.g., demo.schoolbase.africa -> api.demo.schoolbase.africa
@@ -40,8 +42,15 @@ const getBackendBaseUrl = (req: Request): string => {
     // Prepend 'api.' to the hostname
     const backendHostname = `api.${hostname}`
     const backendUrl = `${protocol}://${backendHostname}`
-    console.log("[_proxy] Constructed backend URL:", backendUrl)
+    console.log("[_proxy] Constructed backend URL from hostname:", backendUrl)
     return backendUrl
+  }
+  
+  // Priority 3: Runtime NEXT_PUBLIC_API_BASE_URL (might be baked at build time, less reliable)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+    console.log("[_proxy] WARNING: Using NEXT_PUBLIC_API_BASE_URL (may be from build time):", apiBaseUrl)
+    return apiBaseUrl
   }
   
   // Fallback for localhost or single-domain setups
