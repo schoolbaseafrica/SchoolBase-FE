@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import SchoolSetupWizard from "./_components/setup-wizard"
 
 // Force dynamic rendering - this page checks installation status at runtime
@@ -11,11 +12,38 @@ export const dynamic = "force-dynamic"
 export default async function SetupPage() {
   // Check if installation is already complete
   try {
-    // Use NEXT_PUBLIC_API_BASE_URL (without /api/v1) or fallback
-    let baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3008"
+    // Construct backend URL dynamically from headers (multi-school support)
+    const headersList = await headers()
+    const hostname = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost"
+    const protocol = headersList.get("x-forwarded-proto") || "https"
+    
+    // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
+    let baseUrl = process.env.API_BASE_URL
+    
+    // Priority 2: Construct from request hostname
+    if (!baseUrl) {
+      if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+        // For multi-school: prepend 'api.' to hostname
+        // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+        if (hostname.startsWith("api.")) {
+          baseUrl = `${protocol}://${hostname}`
+        } else {
+          baseUrl = `${protocol}://api.${hostname}`
+        }
+      } else {
+        // Localhost fallback
+        baseUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
+      }
+    }
+    
+    // Priority 3: Fallback to baked-in NEXT_PUBLIC_API_BASE_URL (least reliable for multi-school)
+    if (!baseUrl) {
+      baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
+    }
+    
     // Normalize: remove trailing slashes and /api/v1 if present
-    baseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-    const response = await fetch(`${baseUrl}/api/v1/school`, {
+    const normalizedBaseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+    const response = await fetch(`${normalizedBaseUrl}/api/v1/school`, {
       method: "GET",
       cache: "no-store",
       headers: {

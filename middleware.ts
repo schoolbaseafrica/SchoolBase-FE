@@ -5,18 +5,17 @@ import type { NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Skip check for setup, login, and API routes
+  // Skip check for setup, API routes, and root (which handles its own redirect)
   if (
     pathname.startsWith("/setup") ||
-    pathname.startsWith("/login") ||
     pathname.startsWith("/api/") ||
-    pathname.startsWith("/super-admin/login") ||
     pathname === "/"
   ) {
     return NextResponse.next()
   }
 
-  // Check if school exists before allowing access to any protected route
+  // Check if school exists before allowing access to ANY route (including login routes)
+  // This ensures we redirect to setup if school doesn't exist, even for login pages
   try {
     // Construct backend URL dynamically from request hostname (multi-school support)
     // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
