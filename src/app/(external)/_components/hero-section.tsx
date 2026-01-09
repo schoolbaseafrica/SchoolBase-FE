@@ -43,6 +43,14 @@ export function HeroSection() {
     return imageSrc
   }
 
+  // Ensure we always have at least 3 images to display (use defaults if hero.images is empty)
+  const imagesToDisplay = hero.images && hero.images.length > 0
+    ? hero.images.slice(0, 3)
+    : DEFAULT_HERO_IMAGES.map((src, idx) => ({
+        src,
+        alt: `School image ${idx + 1}`,
+      }))
+
   return (
     <section
       id="home"
@@ -61,7 +69,7 @@ export function HeroSection() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-        {hero.images.slice(0, 3).map((image, index) => (
+        {imagesToDisplay.map((image, index) => (
           <div
             key={image.src || index}
             className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}

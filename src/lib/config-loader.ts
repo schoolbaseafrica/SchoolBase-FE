@@ -1,5 +1,6 @@
 import type { RuntimeConfig, RuntimeSchoolConfig } from "@/types/runtime-config"
 import type { SchoolProfile, BrandPalette } from "@/data/school-profile"
+import { defaultSchoolProfile } from "@/data/school-profile"
 
 /**
  * Helper to access process.env - matches pattern used in codebase
@@ -109,6 +110,9 @@ export function buildSchoolProfileFromRuntimeConfig(
     return null
   }
 
+  // Merge with default profile to preserve default images, gallery, testimonials, etc.
+  // Backend API only returns basic school info (name, logo, colors), so we keep defaults for rest
+
   // Derive shortName from name if not provided
   const shortName =
     runtimeConfig.shortName ||
@@ -132,49 +136,34 @@ export function buildSchoolProfileFromRuntimeConfig(
     surface: "#ffffff", // Standard white surface
   }
 
-  // Build minimal SchoolProfile using only runtime config values
-  // Required fields that aren't in runtime config get minimal/empty values
+  // Merge runtime config with default profile
+  // This preserves default images, gallery, testimonials, programs, etc.
+  // while overriding with backend-provided values where available
   return {
+    ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
     name: runtimeConfig.name,
     shortName: shortName,
     tagline: runtimeConfig.tagline || `${runtimeConfig.name} - Excellence in Education`,
     description:
       runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
     logo: {
-      full: runtimeConfig.logoUrl || "/assets/logo.png",
-      mark: runtimeConfig.logoMark || runtimeConfig.logoUrl || "/assets/logo.svg",
-      favicon: runtimeConfig.faviconUrl || runtimeConfig.logoUrl || "/assets/logo.png",
+      full: runtimeConfig.logoUrl || defaultSchoolProfile.logo.full,
+      mark: runtimeConfig.logoMark || runtimeConfig.logoUrl || defaultSchoolProfile.logo.mark,
+      favicon: runtimeConfig.faviconUrl || runtimeConfig.logoUrl || defaultSchoolProfile.logo.favicon,
     },
     brand: brandPalette,
-    navLinks: [], // Empty - not provided by runtime config
     hero: {
+      ...defaultSchoolProfile.hero, // Preserve default hero images, ctaLabel, ctaHref
       heading: `Welcome to ${runtimeConfig.name}`,
       body:
         runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
-      ctaLabel: "Get In Touch",
-      ctaHref: "#contact",
-      images: [], // Empty - not provided by runtime config
-    },
-    programs: [], // Empty - not provided by runtime config
-    testimonials: [], // Empty - not provided by runtime config
-    gallery: [], // Empty - not provided by runtime config
-    cta: {
-      heading: "Ready to get started?",
-      body: "Contact us today to learn more.",
-      ctaLabel: "Contact Us",
-      ctaHref: "#contact",
+      // Explicitly preserve images array from defaults (backend doesn't provide these)
+      images: defaultSchoolProfile.hero.images,
     },
     contact: {
-      office: "",
-      email: runtimeConfig.supportEmail || "",
-      phone: runtimeConfig.supportPhone || "",
-      address: "",
-    },
-    socials: {
-      facebook: "",
-      twitter: "",
-      instagram: "",
-      linkedin: "",
+      ...defaultSchoolProfile.contact,
+      email: runtimeConfig.supportEmail || defaultSchoolProfile.contact.email,
+      phone: runtimeConfig.supportPhone || defaultSchoolProfile.contact.phone,
     },
   }
 }
