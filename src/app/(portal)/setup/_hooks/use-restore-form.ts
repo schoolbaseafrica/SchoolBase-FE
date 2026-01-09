@@ -73,19 +73,20 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
   function calculateStep(data: FormData): number {
     const { database, school, admin } = data
 
+    // Add null/undefined checks to prevent errors with corrupted IndexedDB data
     const dbComplete =
-      database.host && database.name && database.username && database.password
+      database?.host && database?.name && database?.username && database?.password
     if (!dbComplete) return 0
 
-    const schoolComplete = school.name && school.phone && school.address
+    const schoolComplete = school?.name && school?.phone && school?.address
     if (!schoolComplete) return 2
 
     const adminComplete =
-      admin.firstName &&
-      admin.lastName &&
-      admin.email &&
-      admin.password &&
-      admin.confirmPassword
+      admin?.firstName &&
+      admin?.lastName &&
+      admin?.email &&
+      admin?.password &&
+      admin?.confirmPassword
     if (!adminComplete) return 3
 
     return 3 // admin step; installation is next
@@ -96,8 +97,14 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
     async function load() {
       const stored = await idbGet<FormData>(KEY)
       if (stored) {
-        setFormData(stored)
-        setCurrentStep(calculateStep(stored))
+        // Validate stored data structure to prevent errors with corrupted data
+        const validatedData: FormData = {
+          database: stored.database || defaultFormData.database,
+          school: stored.school || defaultFormData.school,
+          admin: stored.admin || defaultFormData.admin,
+        }
+        setFormData(validatedData)
+        setCurrentStep(calculateStep(validatedData))
       }
       setIsLoaded(true)
     }
