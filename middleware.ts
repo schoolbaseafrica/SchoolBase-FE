@@ -18,7 +18,34 @@ export async function middleware(req: NextRequest) {
 
   // Check if school exists before allowing access to any protected route
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
+    // Construct backend URL dynamically from request hostname (multi-school support)
+    // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
+    let baseUrl = process.env.API_BASE_URL
+    
+    // Priority 2: Construct from request hostname
+    if (!baseUrl) {
+      const hostname = req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.hostname
+      const protocol = req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "")
+      
+      if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+        // For multi-school: prepend 'api.' to hostname
+        // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+        if (hostname.startsWith("api.")) {
+          baseUrl = `${protocol}://${hostname}`
+        } else {
+          baseUrl = `${protocol}://api.${hostname}`
+        }
+      } else {
+        // Localhost fallback
+        baseUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
+      }
+    }
+    
+    // Priority 3: Fallback to baked-in NEXT_PUBLIC_API_BASE_URL (least reliable for multi-school)
+    if (!baseUrl) {
+      baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
+    }
+    
     const normalizedBaseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
     const schoolResponse = await fetch(`${normalizedBaseUrl}/api/v1/school`, {
       method: "GET",
