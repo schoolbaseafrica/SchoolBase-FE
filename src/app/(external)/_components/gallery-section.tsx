@@ -1,11 +1,33 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { useSchoolStore } from "@/store/use-school-store"
+
+// Default placeholder image for gallery
+const DEFAULT_GALLERY_IMAGE = "/assets/images/developer_coding.jpg"
 
 export function GallerySection() {
   const gallery = useSchoolStore((state) => state.school.gallery)
   const schoolName = useSchoolStore((state) => state.school.shortName)
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({})
+
+  const handleImageError = (index: number) => {
+    setImageErrors((prev) => ({ ...prev, [index]: true }))
+  }
+
+  // Use default image if original fails to load or is missing
+  const getImageSrc = (imageSrc: string, index: number) => {
+    if (imageErrors[index] || !imageSrc) {
+      return DEFAULT_GALLERY_IMAGE
+    }
+    return imageSrc
+  }
+
+  // If no gallery items, don't render the section
+  if (!gallery || gallery.length === 0) {
+    return null
+  }
 
   return (
     <section id="gallery" className="bg-gray-50 py-16">
@@ -27,13 +49,15 @@ export function GallerySection() {
                 className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm"
               >
                 <Image
-                  src={item.src}
-                  alt={item.alt}
+                  src={getImageSrc(item.src, index)}
+                  alt={item.alt || "Gallery image"}
                   width={340}
                   height={240}
                   className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                  onError={() => handleImageError(index)}
+                  unoptimized={getImageSrc(item.src, index).startsWith("/assets")}
                 />
-                <figcaption className="sr-only">{item.alt}</figcaption>
+                <figcaption className="sr-only">{item.alt || "Gallery image"}</figcaption>
               </figure>
             )
           })}

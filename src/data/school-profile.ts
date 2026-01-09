@@ -104,15 +104,15 @@ export const defaultSchoolProfile: SchoolProfile = {
     ctaHref: "#contact",
     images: [
       {
-        src: "https://res.cloudinary.com/demo/image/upload/w_900/samples/people/boy-snow-hoodie.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "Students learning together",
       },
       {
-        src: "https://res.cloudinary.com/demo/image/upload/w_900/samples/people/kitchen-bar.jpg",
+        src: "/assets/images/developer_coding.jpg",
         alt: "Classroom collaboration",
       },
       {
-        src: "https://res.cloudinary.com/demo/image/upload/w_900/samples/landscapes/architecture-signs.jpg",
+        src: "/assets/images/developer_coding.jpg",
         alt: "Community events",
       },
     ],
@@ -155,55 +155,53 @@ export const defaultSchoolProfile: SchoolProfile = {
         "Seeing my child's attendance and results in real time has changed everything for us.",
       name: "Ada Johnson",
       role: "Parent",
-      avatar:
-        "https://res.cloudinary.com/demo/image/upload/w_200/samples/people/kitchen-bar.jpg",
+      avatar: "/assets/images/auth/user-icon.png",
     },
     {
       quote:
         "Communication is smoother. No more missing reports or fee deadlines — we stay on top of everything.",
       name: "Michael Adeyemi",
       role: "Parent",
-      avatar:
-        "https://res.cloudinary.com/demo/image/upload/w_200/samples/people/bicycle.jpg",
+      avatar: "/assets/images/auth/user-icon.png",
     },
     {
       quote: "I feel more connected and involved in my child's education every day.",
       name: "Grace Eze",
       role: "Parent",
-      avatar: "https://res.cloudinary.com/demo/image/upload/w_200/samples/people/car.jpg",
+      avatar: "/assets/images/auth/user-icon.png",
     },
   ],
   gallery: [
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/people/boy-snow-hoodie.jpg",
+      src: "/assets/images/developer_coding.jpg",
       alt: "Playground smiles",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/people/kitchen-bar.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Hands-on science class",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/people/bicycle.jpg",
+      src: "/assets/images/developer_coding.jpg",
       alt: "Modern school building exterior",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/landscapes/beach-house.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Cozy library corner",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/landscapes/architecture-signs.jpg",
+      src: "/assets/images/developer_coding.jpg",
       alt: "Campus architecture",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/people/car.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Teacher leading a class",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/landscapes/nature-mountains.jpg",
+      src: "/assets/images/developer_coding.jpg",
       alt: "Outdoor sports ground",
     },
     {
-      src: "https://res.cloudinary.com/demo/image/upload/w_1000/samples/landscapes/architecture-signs.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Community events",
     },
   ],

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useSchoolStore } from "@/store/use-school-store"
@@ -17,10 +18,30 @@ const imageLayout = [
   },
 ]
 
+// Default placeholder images to use when hero images fail to load
+const DEFAULT_HERO_IMAGES = [
+  "/assets/images/developer_coding.jpg",
+  "/assets/Hero-img (2).png",
+  "/assets/images/developer_coding.jpg",
+]
+
 export function HeroSection() {
   const hero = useSchoolStore((state) => state.school.hero)
   const schoolName = useSchoolStore((state) => state.school.name)
   const shortName = useSchoolStore((state) => state.school.shortName)
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({})
+
+  const handleImageError = (index: number) => {
+    setImageErrors((prev) => ({ ...prev, [index]: true }))
+  }
+
+  // Use default images if original fails to load or is missing
+  const getImageSrc = (imageSrc: string, index: number) => {
+    if (imageErrors[index] || !imageSrc) {
+      return DEFAULT_HERO_IMAGES[index] || DEFAULT_HERO_IMAGES[0]
+    }
+    return imageSrc
+  }
 
   return (
     <section
@@ -42,16 +63,18 @@ export function HeroSection() {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
         {hero.images.slice(0, 3).map((image, index) => (
           <div
-            key={image.src}
+            key={image.src || index}
             className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}
           >
             <Image
-              src={image.src}
-              alt={image.alt}
+              src={getImageSrc(image.src, index)}
+              alt={image.alt || "School image"}
               fill
               sizes="(max-width: 768px) 50vw, 40vw"
               priority={imageLayout[index]?.priority}
               className="object-cover transition-transform duration-500 hover:scale-105"
+              onError={() => handleImageError(index)}
+              unoptimized={getImageSrc(image.src, index).startsWith("/assets")}
             />
           </div>
         ))}
