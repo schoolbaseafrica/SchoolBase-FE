@@ -12,6 +12,44 @@ export interface InviteUserResponse {
   file_key?: string
 }
 
+export interface Invite {
+  id: string
+  email: string
+  role: string
+  status: "pending" | "used" | "failed"
+  full_name: string
+  accepted: boolean
+  invited_at: string
+  expires_at?: string
+  school_id?: string
+}
+
+export interface GetInvitesParams {
+  page?: number
+  limit?: number
+  status?: "pending" | "used" | "failed"
+  role?: string
+  email?: string
+  invited_from?: string
+  invited_to?: string
+  expires_after?: string
+  expires_before?: string
+  sort_by?: "invited_at" | "expires_at" | "email" | "status"
+  order?: "asc" | "desc"
+}
+
+export interface GetInvitesResponse {
+  message: string
+  status_code: number
+  data: Invite[]
+  meta: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+
 export const InvitesAPI = {
   inviteUser: (data: InviteUserPayload) =>
     apiFetch<InviteUserResponse>(
@@ -19,6 +57,16 @@ export const InvitesAPI = {
       {
         method: "POST",
         data,
+      },
+      true
+    ),
+
+  getInvites: (params?: GetInvitesParams) =>
+    apiFetch<GetInvitesResponse>(
+      "/auth/invites",
+      {
+        method: "GET",
+        params,
       },
       true
     ),
