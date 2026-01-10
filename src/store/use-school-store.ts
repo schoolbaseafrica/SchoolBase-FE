@@ -63,11 +63,6 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
       if (envConfig?.school) {
         const schoolProfile = buildSchoolProfileFromRuntimeConfig(envConfig.school)
         if (schoolProfile) {
-          console.log(
-            "[Config Store] Loaded from env vars:",
-            schoolProfile.name,
-            schoolProfile.brand.primary
-          )
           set({ school: schoolProfile, isConfigLoading: false })
           return
         }
@@ -80,21 +75,12 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
       if (apiConfig?.school) {
         const schoolProfile = buildSchoolProfileFromRuntimeConfig(apiConfig.school)
         if (schoolProfile) {
-          console.log(
-            "[Config Store] Loaded from backend API:",
-            schoolProfile.name,
-            schoolProfile.brand.primary
-          )
           set({ school: schoolProfile, isConfigLoading: false })
           return
         }
       }
 
       // No valid config found (missing required fields or unavailable), use defaults
-      console.log(
-        "[Config Store] No valid config available (missing name/primaryColor), using defaults:",
-        defaultSchoolProfile.name
-      )
       set({ school: defaultSchoolProfile, isConfigLoading: false })
     } catch (error) {
       const errorMessage =

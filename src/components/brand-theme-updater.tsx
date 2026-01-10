@@ -19,11 +19,6 @@ export function BrandThemeUpdater() {
       return
     }
 
-    console.log("[BrandThemeUpdater] Updating theme with:", {
-      schoolName,
-      primaryColor: brand.primary,
-    })
-
     const root = document.documentElement
     const palette: Record<string, string> = {
       "--accent": brand.primary,

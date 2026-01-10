@@ -104,15 +104,15 @@ export const defaultSchoolProfile: SchoolProfile = {
     ctaHref: "#contact",
     images: [
       {
-        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-1_b3c8fs.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "Students learning together",
       },
       {
-        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "Collaborative classroom",
       },
       {
-        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "School community",
       },
     ],
@@ -173,35 +173,35 @@ export const defaultSchoolProfile: SchoolProfile = {
   ],
   gallery: [
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561402/why-choose-4_eq1btu.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Campus exterior",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/why-choose-1_elwhbe.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Library study",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-2_alnxyc.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Creative arts session",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-4_rrzym7.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Science lab activity",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-3_p8vypo.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "School grounds",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561349/about-2_pfwabt.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Library corner",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Collaborative classroom",
     },
     {
-      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "School community",
     },
   ],

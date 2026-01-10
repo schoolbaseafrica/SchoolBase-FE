@@ -30,25 +30,8 @@ export function GallerySection() {
     return null
   }
 
-  // Add cache-busting to gallery images and prepare for display
-  const galleryToDisplay = gallery.map((item) => {
-    // Add cache-busting query parameter for external images (Cloudinary)
-    if (item.src && (item.src.startsWith("http://") || item.src.startsWith("https://"))) {
-      try {
-        const url = new URL(item.src)
-        // Add timestamp-based cache buster (refreshes every hour)
-        url.searchParams.set("v", Math.floor(Date.now() / 3600000).toString())
-        return { ...item, src: url.toString() }
-      } catch {
-        // If URL parsing fails, return original
-        return item
-      }
-    }
-    return item
-  })
-
-  // Debug: Log gallery images being displayed
-  console.log("[GallerySection] Displaying gallery images:", galleryToDisplay.map((img) => img.src))
+  // Gallery images are now local placeholders (no cache-busting needed)
+  const galleryToDisplay = gallery
 
   return (
     <section id="gallery" className="bg-gray-50 py-16">

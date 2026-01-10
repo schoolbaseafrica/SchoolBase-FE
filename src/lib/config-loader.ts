@@ -39,18 +39,8 @@ export function loadConfigFromEnv(): RuntimeConfig | null {
           ?.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR
       : undefined
 
-  // Debug: Log what we found
-  if (typeof window !== "undefined") {
-    console.log("[Config] Checking env vars:", {
-      schoolName,
-      primaryColor,
-      hasWindow: typeof window !== "undefined",
-    })
-  }
-
   if (!schoolName) {
     // No env config available
-    console.log("[Config] No NEXT_PUBLIC_SCHOOL_NAME found, will use defaults")
     return null
   }
 
@@ -85,8 +75,6 @@ export function loadConfigFromEnv(): RuntimeConfig | null {
     environment:
       (env?.NODE_ENV as "development" | "staging" | "production") || "development",
   }
-
-  console.log("[Config] Loaded from env vars:", config)
 
   return config
 }
@@ -141,10 +129,6 @@ export function buildSchoolProfileFromRuntimeConfig(
   // while overriding with backend-provided values where available
   // IMPORTANT: Images and gallery are ALWAYS preserved from defaults - schools cannot change these
   const logoFull = runtimeConfig.logoUrl || defaultSchoolProfile.logo.full
-  console.log("[Config] Setting logo.full to:", logoFull)
-  // Debug: Log images being set
-  console.log("[Config] Hero images set to:", defaultSchoolProfile.hero.images.map((img) => img.src))
-  console.log("[Config] Gallery images set to:", defaultSchoolProfile.gallery.map((img) => img.src))
   
   return {
     ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
@@ -240,7 +224,6 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
         // IMPORTANT: Always construct backend URL dynamically from current hostname
         // to ensure we get the correct school's backend (not hardcoded build-time value)
         let logoUrl = backendData.logo_url
-        console.log("[Config] Backend logo_url:", logoUrl)
         if (logoUrl && !logoUrl.startsWith("http")) {
           if (typeof window !== "undefined") {
             // Construct backend URL dynamically from current origin
@@ -270,18 +253,14 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             logoUrl = logoUrl.startsWith("/") 
               ? `${backendOrigin}${logoUrl}`
               : `${backendOrigin}/${logoUrl}`
-            console.log("[Config] Constructed logo URL:", logoUrl, "from hostname:", hostname, "backend:", backendHostname)
           } else {
             // Server-side fallback: use env var if available
             const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
             if (envApiUrl) {
               const baseUrl = envApiUrl.replace(/\/+$/, "")
               logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
-              console.log("[Config] Using env API URL for logo:", logoUrl)
             }
           }
-        } else if (logoUrl) {
-          console.log("[Config] Logo URL already absolute:", logoUrl)
         }
 
         const config: RuntimeConfig = {
@@ -302,16 +281,10 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             "development",
         }
 
-        console.log(
-          "[Config] Loaded from backend API (via proxy):",
-          config.school.name,
-          config.school.primaryColor
-        )
         return config
       }
 
       // Strategy 2: Fallback to Next.js API route (env vars)
-      console.log("[Config] Backend API not available, trying Next.js API route...")
       const apiRouteResponse = await fetch("/api/config", {
         cache: "no-store",
         headers: {
@@ -324,7 +297,6 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
 
       if (apiRouteResponse.ok) {
         const data: RuntimeConfig = await apiRouteResponse.json()
-        console.log("[Config] Loaded from Next.js API route:", data.school.name)
         return data
       }
 
