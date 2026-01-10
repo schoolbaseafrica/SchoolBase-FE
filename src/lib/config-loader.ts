@@ -139,6 +139,7 @@ export function buildSchoolProfileFromRuntimeConfig(
   // Merge runtime config with default profile
   // This preserves default images, gallery, testimonials, programs, etc.
   // while overriding with backend-provided values where available
+  // IMPORTANT: Images and gallery are ALWAYS preserved from defaults - schools cannot change these
   return {
     ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
     name: runtimeConfig.name,
@@ -157,9 +158,11 @@ export function buildSchoolProfileFromRuntimeConfig(
       heading: `Welcome to ${runtimeConfig.name}`,
       body:
         runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
-      // Explicitly preserve images array from defaults (backend doesn't provide these)
-      images: defaultSchoolProfile.hero.images,
+      // ALWAYS preserve images array from defaults (backend doesn't provide these, and schools cannot customize)
+      images: [...defaultSchoolProfile.hero.images],
     },
+    // ALWAYS preserve gallery from defaults (schools cannot customize gallery images)
+    gallery: [...defaultSchoolProfile.gallery],
     contact: {
       ...defaultSchoolProfile.contact,
       email: runtimeConfig.supportEmail || defaultSchoolProfile.contact.email,

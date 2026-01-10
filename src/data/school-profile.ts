@@ -108,11 +108,11 @@ export const defaultSchoolProfile: SchoolProfile = {
         alt: "Students learning together",
       },
       {
-        src: "/assets/images/developer_coding.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "Classroom collaboration",
       },
       {
-        src: "/assets/images/developer_coding.jpg",
+        src: "/assets/Hero-img (2).png",
         alt: "Community events",
       },
     ],
@@ -173,7 +173,7 @@ export const defaultSchoolProfile: SchoolProfile = {
   ],
   gallery: [
     {
-      src: "/assets/images/developer_coding.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Playground smiles",
     },
     {
@@ -181,7 +181,7 @@ export const defaultSchoolProfile: SchoolProfile = {
       alt: "Hands-on science class",
     },
     {
-      src: "/assets/images/developer_coding.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Modern school building exterior",
     },
     {
@@ -189,7 +189,7 @@ export const defaultSchoolProfile: SchoolProfile = {
       alt: "Cozy library corner",
     },
     {
-      src: "/assets/images/developer_coding.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Campus architecture",
     },
     {
@@ -197,7 +197,7 @@ export const defaultSchoolProfile: SchoolProfile = {
       alt: "Teacher leading a class",
     },
     {
-      src: "/assets/images/developer_coding.jpg",
+      src: "/assets/Hero-img (2).png",
       alt: "Outdoor sports ground",
     },
     {

@@ -5,7 +5,8 @@ import Image from "next/image"
 import { useSchoolStore } from "@/store/use-school-store"
 
 // Default placeholder image for gallery
-const DEFAULT_GALLERY_IMAGE = "/assets/images/developer_coding.jpg"
+// Using the Study Bridge default landing page image
+const DEFAULT_GALLERY_IMAGE = "/assets/Hero-img (2).png"
 
 export function GallerySection() {
   const gallery = useSchoolStore((state) => state.school.gallery)

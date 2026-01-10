@@ -19,10 +19,11 @@ const imageLayout = [
 ]
 
 // Default placeholder images to use when hero images fail to load
+// Using the Study Bridge default landing page image
 const DEFAULT_HERO_IMAGES = [
-  "/assets/images/developer_coding.jpg",
   "/assets/Hero-img (2).png",
-  "/assets/images/developer_coding.jpg",
+  "/assets/Hero-img (2).png",
+  "/assets/Hero-img (2).png",
 ]
 
 export function HeroSection() {
