@@ -9,6 +9,10 @@ export type SocialLinks = {
 export type BrandPalette = {
   primary: string
   primaryHover: string
+  secondary?: string
+  secondaryHover?: string
+  accent?: string
+  accentHover?: string
   tint: string
   onPrimary: string
   text: string

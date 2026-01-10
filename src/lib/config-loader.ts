@@ -110,13 +110,27 @@ export function buildSchoolProfileFromRuntimeConfig(
   // Build brand palette from runtime config only (no fallbacks, already validated above)
   const primaryColor = runtimeConfig.primaryColor
   const primaryHover = runtimeConfig.primaryHover || darkenColor(primaryColor, 0.1)
-  const tintColor = runtimeConfig.accentColor
-    ? lightenColor(runtimeConfig.accentColor, 0.9)
-    : lightenColor(primaryColor, 0.9)
+  
+  // Secondary color (if provided)
+  const secondaryColor = runtimeConfig.secondaryColor
+  const secondaryHover = secondaryColor ? darkenColor(secondaryColor, 0.1) : undefined
+  
+  // Accent color (if provided, otherwise use primary)
+  const accentColor = runtimeConfig.accentColor || primaryColor
+  const accentHover = runtimeConfig.accentColor 
+    ? darkenColor(runtimeConfig.accentColor, 0.1)
+    : primaryHover
+  
+  // Tint color: lightened version of accent color (or primary if no accent)
+  const tintColor = lightenColor(accentColor, 0.9)
 
   const brandPalette: BrandPalette = {
     primary: primaryColor,
     primaryHover: primaryHover,
+    secondary: secondaryColor,
+    secondaryHover: secondaryHover,
+    accent: accentColor,
+    accentHover: accentHover,
     tint: tintColor,
     onPrimary: "#ffffff", // Standard white for text on primary
     text: "#1f2024", // Standard dark text

@@ -11,6 +11,8 @@ export function BrandThemeUpdater() {
   // Use individual brand properties as dependencies to ensure updates trigger
   const primaryColor = brand.primary
   const primaryHover = brand.primaryHover
+  const secondaryColor = brand.secondary
+  const accentColor = brand.accent
 
   useEffect(() => {
     // Don't apply theme until config has finished loading
@@ -21,10 +23,13 @@ export function BrandThemeUpdater() {
 
     const root = document.documentElement
     const palette: Record<string, string> = {
-      "--accent": brand.primary,
+      "--accent": accentColor || brand.primary,
+      "--accent-foreground": brand.onPrimary,
       "--primary": brand.primary,
       "--primary-hover": brand.primaryHover,
-      "--accent-foreground": brand.onPrimary,
+      "--secondary": secondaryColor || brand.primary,
+      "--secondary-hover": brand.secondaryHover || brand.primaryHover,
+      "--secondary-foreground": brand.onPrimary,
       "--text-primary": brand.text,
       "--text-secondary": brand.mutedText,
       "--tint": brand.tint,
@@ -39,7 +44,7 @@ export function BrandThemeUpdater() {
     Object.entries(palette).forEach(([key, value]) => {
       root.style.setProperty(key, value)
     })
-  }, [brand, schoolName, primaryColor, primaryHover, isConfigLoading])
+  }, [brand, schoolName, primaryColor, primaryHover, secondaryColor, accentColor, isConfigLoading])
 
   return null
 }

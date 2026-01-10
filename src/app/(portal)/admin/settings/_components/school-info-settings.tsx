@@ -42,6 +42,22 @@ export const SchoolInfoSettings = () => {
     email: "",
   })
 
+  // Predefined color palette for quick selection
+  const predefinedColors = [
+    { name: "Red", value: "#DA3743" },
+    { name: "Blue", value: "#2563EB" },
+    { name: "Green", value: "#10B981" },
+    { name: "Purple", value: "#8B5CF6" },
+    { name: "Orange", value: "#F97316" },
+    { name: "Teal", value: "#14B8A6" },
+    { name: "Pink", value: "#EC4899" },
+    { name: "Indigo", value: "#6366F1" },
+    { name: "Emerald", value: "#059669" },
+    { name: "Amber", value: "#F59E0B" },
+    { name: "Rose", value: "#F43F5E" },
+    { name: "Cyan", value: "#06B6D4" },
+  ]
+
   // Load current school data on mount
   useEffect(() => {
     const fetchSchoolData = async () => {
@@ -317,6 +333,32 @@ export const SchoolInfoSettings = () => {
               <Label htmlFor="primaryColor">
                 Primary Brand Color <span className="text-red-500">*</span>
               </Label>
+              
+              {/* Predefined color swatches */}
+              <div className="mb-3">
+                <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
+                <div className="flex flex-wrap gap-2">
+                  {predefinedColors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, primaryColor: color.value }))
+                      }
+                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                        formData.primaryColor.toUpperCase() === color.value.toUpperCase()
+                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                      aria-label={`Select ${color.name} color`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Color picker and text input */}
               <div className="flex gap-4">
                 <div className="relative h-12 w-16 overflow-hidden rounded-md border">
                   <input
@@ -334,6 +376,7 @@ export const SchoolInfoSettings = () => {
                   onChange={handleChange}
                   placeholder="#DA3743"
                   className="flex-1"
+                  pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$"
                 />
               </div>
               <p className="text-muted-foreground text-sm">
@@ -343,6 +386,32 @@ export const SchoolInfoSettings = () => {
 
             <div className="space-y-2">
               <Label htmlFor="secondaryColor">Secondary Brand Color</Label>
+              
+              {/* Predefined color swatches */}
+              <div className="mb-3">
+                <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
+                <div className="flex flex-wrap gap-2">
+                  {predefinedColors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, secondaryColor: color.value }))
+                      }
+                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                        formData.secondaryColor?.toUpperCase() === color.value.toUpperCase()
+                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                      aria-label={`Select ${color.name} color`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Color picker and text input */}
               <div className="flex gap-4">
                 <div className="relative h-12 w-16 overflow-hidden rounded-md border">
                   <input
@@ -360,6 +429,7 @@ export const SchoolInfoSettings = () => {
                   onChange={handleChange}
                   placeholder="#8B5CF6"
                   className="flex-1"
+                  pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$"
                 />
               </div>
               <p className="text-muted-foreground text-sm">
@@ -369,6 +439,32 @@ export const SchoolInfoSettings = () => {
 
             <div className="space-y-2">
               <Label htmlFor="accentColor">Accent Color</Label>
+              
+              {/* Predefined color swatches */}
+              <div className="mb-3">
+                <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
+                <div className="flex flex-wrap gap-2">
+                  {predefinedColors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, accentColor: color.value }))
+                      }
+                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                        formData.accentColor?.toUpperCase() === color.value.toUpperCase()
+                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                      aria-label={`Select ${color.name} color`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Color picker and text input */}
               <div className="flex gap-4">
                 <div className="relative h-12 w-16 overflow-hidden rounded-md border">
                   <input
@@ -386,6 +482,7 @@ export const SchoolInfoSettings = () => {
                   onChange={handleChange}
                   placeholder="#36D399"
                   className="flex-1"
+                  pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$"
                 />
               </div>
               <p className="text-muted-foreground text-sm">

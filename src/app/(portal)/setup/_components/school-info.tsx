@@ -30,6 +30,22 @@ export function SchoolInfoForm({
 }: SchoolInfoFormProps) {
   const [errors, setErrors] = useState<Errors>({})
 
+  // Predefined color palette for quick selection
+  const predefinedColors = [
+    { name: "Red", value: "#DA3743" },
+    { name: "Blue", value: "#2563EB" },
+    { name: "Green", value: "#10B981" },
+    { name: "Purple", value: "#8B5CF6" },
+    { name: "Orange", value: "#F97316" },
+    { name: "Teal", value: "#14B8A6" },
+    { name: "Pink", value: "#EC4899" },
+    { name: "Indigo", value: "#6366F1" },
+    { name: "Emerald", value: "#059669" },
+    { name: "Amber", value: "#F59E0B" },
+    { name: "Rose", value: "#F43F5E" },
+    { name: "Cyan", value: "#06B6D4" },
+  ]
+
   return (
     <form className="p-2 md:p-12" onSubmit={handleSubmit}>
       <h1 className="mb-3 text-center text-3xl font-semibold text-gray-900">
@@ -92,6 +108,30 @@ export function SchoolInfoForm({
           <label className="mb-2 block text-sm font-medium text-gray-700">
             Primary Brand Color <span className="text-accent">*</span>
           </label>
+          
+          {/* Predefined color swatches */}
+          <div className="mb-3">
+            <p className="mb-2 text-xs text-gray-500">Quick select:</p>
+            <div className="flex flex-wrap gap-2">
+              {predefinedColors.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => handleChange("school", "brandColor", color.value)}
+                  className={`h-10 w-10 rounded-lg border-2 transition-all hover:scale-110 ${
+                    formData.school.brandColor.toUpperCase() === color.value.toUpperCase()
+                      ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                  aria-label={`Select ${color.name} color`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Color picker and text input */}
           <div className="flex gap-3">
             <label className="h-11 w-16 cursor-pointer rounded-lg border border-gray-300 shadow-sm">
               <input
