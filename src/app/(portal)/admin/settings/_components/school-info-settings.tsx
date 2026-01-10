@@ -47,9 +47,9 @@ export const SchoolInfoSettings = () => {
     const fetchSchoolData = async () => {
       try {
         setIsLoading(true)
-        // Use direct fetch for public GET endpoint (same pattern as loadConfigFromAPI)
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
-        const response = await fetch(`${apiBaseUrl}/api/v1/school`, {
+        // Use proxy route to dynamically construct backend URL from request headers
+        // This ensures we always call the correct school's backend API
+        const response = await fetch("/api/proxy-auth/school", {
           cache: "no-store",
           headers: {
             "Content-Type": "application/json",
@@ -77,10 +77,23 @@ export const SchoolInfoSettings = () => {
 
           // Set logo preview if logo URL exists
           if (schoolData.logo_url) {
-            // If it's a relative URL, prepend the API base URL
-            const logoUrl = schoolData.logo_url.startsWith("http")
-              ? schoolData.logo_url
-              : `${apiBaseUrl}${schoolData.logo_url}`
+            // Logo URL from backend should already be absolute or relative
+            // If it's relative, construct the backend URL dynamically
+            let logoUrl = schoolData.logo_url
+            if (!logoUrl.startsWith("http")) {
+              // Construct backend URL from current origin (similar to proxy logic)
+              const protocol = window.location.protocol
+              const hostname = window.location.hostname
+              let backendHostname = hostname
+              
+              // If not localhost, prepend 'api.' to hostname
+              if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1") && !hostname.startsWith("api.")) {
+                backendHostname = `api.${hostname}`
+              }
+              
+              const backendUrl = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
+              logoUrl = `${backendUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+            }
             setLogoPreview(logoUrl)
           }
         }
