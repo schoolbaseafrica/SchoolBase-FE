@@ -7,8 +7,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import { UpdateProfileRequestNew } from "@/types/profile"
 import { useUpdateProfile, useGetProfile } from "@/hooks/use-profile"
 
@@ -30,6 +41,20 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
   const updateProfile = useUpdateProfile()
   const [isSaving, setIsSaving] = useState(false)
   const [phoneError, setPhoneError] = useState("")
+  
+  // Password state
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+  
+  // Delete account state
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const [formData, setFormData] = useState<FormData>({
     first_name: "",
@@ -275,6 +300,210 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Password Settings */}
+      <Card>
+        <CardContent className="px-0 lg:px-6">
+          <h2 className="mb-6 px-4 text-lg font-medium lg:px-0">Reset Password</h2>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              
+              if (passwordData.newPassword !== passwordData.confirmPassword) {
+                toast.error("New passwords do not match")
+                return
+              }
+              
+              if (passwordData.newPassword.length < 8) {
+                toast.error("Password must be at least 8 characters")
+                return
+              }
+              
+              setIsSavingPassword(true)
+              try {
+                // TODO: Implement actual password change API call
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+                toast.success("Password updated successfully")
+                setPasswordData({
+                  currentPassword: "",
+                  newPassword: "",
+                  confirmPassword: "",
+                })
+              } catch {
+                toast.error("Failed to update password")
+              } finally {
+                setIsSavingPassword(false)
+              }
+            }}
+            className="space-y-6 px-4 lg:px-0"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  name="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                >
+                  {showCurrentPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  name="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordData.newPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button
+                type="submit"
+                className="bg-accent hover:bg-accent/90 w-full text-white lg:w-fit"
+                disabled={isSavingPassword}
+              >
+                {isSavingPassword ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account */}
+      <Card>
+        <CardContent className="px-0 lg:px-6">
+          <h2 className="mb-6 px-4 text-lg font-medium lg:px-0">Delete Account</h2>
+          <div className="flex flex-col gap-6 px-4 lg:px-0">
+            <div className="text-muted-foreground flex items-start gap-2 rounded-md border border-red-100 bg-red-50 p-3 text-sm">
+              <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
+              <p>
+                This action will permanently remove your account and all associated data.
+                This cannot be undone. Please confirm to proceed.
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full lg:w-fit"
+                  >
+                    Delete account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your
+                      account and remove your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        setIsDeleting(true)
+                        try {
+                          // TODO: Implement actual account deletion API call
+                          await new Promise((resolve) => setTimeout(resolve, 2000))
+                          toast.success("Account deleted successfully")
+                          window.location.href = "/login"
+                        } catch {
+                          toast.error("Failed to delete account")
+                          setIsDeleting(false)
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete Account"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

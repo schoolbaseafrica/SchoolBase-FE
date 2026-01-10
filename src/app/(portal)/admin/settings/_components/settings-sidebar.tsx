@@ -8,7 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
-import { Bell, Building2, ChevronDown, FileText, Lock, Trash2, User } from "lucide-react"
+import { Bell, Building2, ChevronDown, FileText } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -26,29 +26,14 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
       icon: Building2,
     },
     {
-      id: "profile",
-      label: "Profile",
-      icon: User,
-    },
-    {
       id: "notifications",
       label: "Notifications",
       icon: Bell,
     },
     {
-      id: "reset-password",
-      label: "Reset Password",
-      icon: Lock,
-    },
-    {
       id: "legal",
       label: "Legal & Privacy",
       icon: FileText,
-    },
-    {
-      id: "delete-account",
-      label: "Delete Account",
-      icon: Trash2,
     },
   ]
 

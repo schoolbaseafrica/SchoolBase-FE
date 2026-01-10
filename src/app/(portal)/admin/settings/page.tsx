@@ -1,9 +1,6 @@
 import { SettingsSidebar } from "./_components/settings-sidebar"
-import { ProfileSettings } from "./_components/profile-settings"
 import { NotificationSettings } from "./_components/notification-settings"
-import { PasswordSettings } from "./_components/password-settings"
 import { LegalSettings } from "./_components/legal-settings"
-import { DeleteAccountSettings } from "./_components/delete-account"
 import { SchoolInfoSettings } from "./_components/school-info-settings"
 
 interface PageProps {
@@ -23,11 +20,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         <main className="min-w-0 flex-1">
           {activeTab === "school-info" && <SchoolInfoSettings />}
-          {activeTab === "profile" && <ProfileSettings />}
           {activeTab === "notifications" && <NotificationSettings />}
-          {activeTab === "reset-password" && <PasswordSettings />}
           {activeTab === "legal" && <LegalSettings />}
-          {activeTab === "delete-account" && <DeleteAccountSettings />}
         </main>
       </div>
     </div>
