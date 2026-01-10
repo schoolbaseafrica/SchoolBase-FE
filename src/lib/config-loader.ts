@@ -140,6 +140,9 @@ export function buildSchoolProfileFromRuntimeConfig(
   // This preserves default images, gallery, testimonials, programs, etc.
   // while overriding with backend-provided values where available
   // IMPORTANT: Images and gallery are ALWAYS preserved from defaults - schools cannot change these
+  const logoFull = runtimeConfig.logoUrl || defaultSchoolProfile.logo.full
+  console.log("[Config] Setting logo.full to:", logoFull)
+  
   return {
     ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
     name: runtimeConfig.name,
@@ -148,7 +151,7 @@ export function buildSchoolProfileFromRuntimeConfig(
     description:
       runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
     logo: {
-      full: runtimeConfig.logoUrl || defaultSchoolProfile.logo.full,
+      full: logoFull,
       mark: runtimeConfig.logoMark || runtimeConfig.logoUrl || defaultSchoolProfile.logo.mark,
       favicon: runtimeConfig.faviconUrl || runtimeConfig.logoUrl || defaultSchoolProfile.logo.favicon,
     },
@@ -167,6 +170,9 @@ export function buildSchoolProfileFromRuntimeConfig(
       ...defaultSchoolProfile.contact,
       email: runtimeConfig.supportEmail || defaultSchoolProfile.contact.email,
       phone: runtimeConfig.supportPhone || defaultSchoolProfile.contact.phone,
+      // Update address fields from backend (school can customize address)
+      office: runtimeConfig.supportAddress || defaultSchoolProfile.contact.office,
+      address: runtimeConfig.supportAddress || defaultSchoolProfile.contact.address,
     },
   }
 }
@@ -228,36 +234,51 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
         // Transform backend response to frontend RuntimeConfig format
         // For logo URL, convert relative paths to absolute URLs
         // Logos are served by the backend, so we need the backend domain
+        // IMPORTANT: Always construct backend URL dynamically from current hostname
+        // to ensure we get the correct school's backend (not hardcoded build-time value)
         let logoUrl = backendData.logo_url
+        console.log("[Config] Backend logo_url:", logoUrl)
         if (logoUrl && !logoUrl.startsWith("http")) {
-          // Try to get API base URL from env first
-          const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
-          if (envApiUrl) {
-            const baseUrl = envApiUrl.replace(/\/+$/, "")
-            logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
-          } else if (typeof window !== "undefined") {
-            // Fallback: construct backend URL from current origin
-            // If frontend is at dev.learningspaces.im, backend is at api.learningspaces.im
-            const currentOrigin = window.location.origin
+          if (typeof window !== "undefined") {
+            // Construct backend URL dynamically from current origin
+            // Pattern: if frontend is at stpaul.schoolbase.africa, backend is at api.stpaul.schoolbase.africa
             const protocol = window.location.protocol
             const hostname = window.location.hostname
             
-            // Extract base domain (e.g., "learningspaces.im" from "dev.learningspaces.im")
-            const parts = hostname.split(".")
             let backendHostname: string
             
-            if (parts.length >= 2) {
-              // Replace first subdomain with 'api' (e.g., dev.learningspaces.im -> api.learningspaces.im)
-              parts[0] = "api"
-              backendHostname = parts.join(".")
+            if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+              // Check if hostname already starts with 'api.'
+              if (hostname.startsWith("api.")) {
+                // Already an API domain, use as-is
+                backendHostname = hostname
+              } else {
+                // Prepend 'api.' to the hostname
+                // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+                backendHostname = `api.${hostname}`
+              }
             } else {
-              // Single domain (localhost) - use as-is
+              // Single domain (localhost) - use as-is with port
               backendHostname = hostname
             }
             
-            const backendOrigin = `${protocol}//${backendHostname}`
-            logoUrl = `${backendOrigin}${logoUrl.startsWith("/") ? "" : ""}${logoUrl}`
+            const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
+            // Ensure proper path concatenation - add leading slash if missing
+            logoUrl = logoUrl.startsWith("/") 
+              ? `${backendOrigin}${logoUrl}`
+              : `${backendOrigin}/${logoUrl}`
+            console.log("[Config] Constructed logo URL:", logoUrl, "from hostname:", hostname, "backend:", backendHostname)
+          } else {
+            // Server-side fallback: use env var if available
+            const envApiUrl = getEnv("NEXT_PUBLIC_API_BASE_URL")
+            if (envApiUrl) {
+              const baseUrl = envApiUrl.replace(/\/+$/, "")
+              logoUrl = `${baseUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+              console.log("[Config] Using env API URL for logo:", logoUrl)
+            }
           }
+        } else if (logoUrl) {
+          console.log("[Config] Logo URL already absolute:", logoUrl)
         }
 
         const config: RuntimeConfig = {
@@ -270,6 +291,7 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             accentColor: backendData.accent_color,
             supportEmail: backendData.email,
             supportPhone: backendData.phone,
+            supportAddress: backendData.address,
           },
           apiUrl: apiUrl || getEnv("NEXT_PUBLIC_API_BASE_URL"),
           environment:

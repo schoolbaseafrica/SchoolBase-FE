@@ -104,16 +104,16 @@ export const defaultSchoolProfile: SchoolProfile = {
     ctaHref: "#contact",
     images: [
       {
-        src: "/assets/Hero-img (2).png",
+        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-1_b3c8fs.jpg",
         alt: "Students learning together",
       },
       {
-        src: "/assets/Hero-img (2).png",
-        alt: "Classroom collaboration",
+        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+        alt: "Collaborative classroom",
       },
       {
-        src: "/assets/Hero-img (2).png",
-        alt: "Community events",
+        src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+        alt: "School community",
       },
     ],
   },
@@ -173,36 +173,36 @@ export const defaultSchoolProfile: SchoolProfile = {
   ],
   gallery: [
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Playground smiles",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561402/why-choose-4_eq1btu.jpg",
+      alt: "Campus exterior",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Hands-on science class",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/why-choose-1_elwhbe.jpg",
+      alt: "Library study",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Modern school building exterior",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-2_alnxyc.jpg",
+      alt: "Creative arts session",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Cozy library corner",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561401/user-4_rrzym7.jpg",
+      alt: "Science lab activity",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Campus architecture",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/user-3_p8vypo.jpg",
+      alt: "School grounds",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Teacher leading a class",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561349/about-2_pfwabt.jpg",
+      alt: "Library corner",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Outdoor sports ground",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561400/hero_xvc1m6.jpg",
+      alt: "Collaborative classroom",
     },
     {
-      src: "/assets/Hero-img (2).png",
-      alt: "Community events",
+      src: "https://res.cloudinary.com/ds6nd4lbj/image/upload/v1767561322/about-1_wcbdkl.jpg",
+      alt: "School community",
     },
   ],
   cta: {

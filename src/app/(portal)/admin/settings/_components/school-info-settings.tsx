@@ -81,18 +81,30 @@ export const SchoolInfoSettings = () => {
             // If it's relative, construct the backend URL dynamically
             let logoUrl = schoolData.logo_url
             if (!logoUrl.startsWith("http")) {
-              // Construct backend URL from current origin (similar to proxy logic)
+              // Construct backend URL from current origin (same as config-loader)
               const protocol = window.location.protocol
               const hostname = window.location.hostname
-              let backendHostname = hostname
               
-              // If not localhost, prepend 'api.' to hostname
-              if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1") && !hostname.startsWith("api.")) {
-                backendHostname = `api.${hostname}`
+              let backendHostname: string
+              
+              if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+                // Check if hostname already starts with 'api.'
+                if (hostname.startsWith("api.")) {
+                  backendHostname = hostname
+                } else {
+                  // Prepend 'api.' to the hostname
+                  // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+                  backendHostname = `api.${hostname}`
+                }
+              } else {
+                backendHostname = hostname
               }
               
-              const backendUrl = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
-              logoUrl = `${backendUrl}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+              const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
+              // Ensure proper path concatenation - add leading slash if missing
+              logoUrl = logoUrl.startsWith("/") 
+                ? `${backendOrigin}${logoUrl}`
+                : `${backendOrigin}/${logoUrl}`
             }
             setLogoPreview(logoUrl)
           }
@@ -184,12 +196,34 @@ export const SchoolInfoSettings = () => {
         })
 
         // Update logo preview if logo URL changed
+        // Construct backend URL dynamically from current origin (same as config-loader)
         if (updatedSchool.logo_url) {
-          const apiBaseUrl =
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
-          const logoUrl = updatedSchool.logo_url.startsWith("http")
-            ? updatedSchool.logo_url
-            : `${apiBaseUrl}${updatedSchool.logo_url}`
+          let logoUrl = updatedSchool.logo_url
+          if (!logoUrl.startsWith("http")) {
+            const protocol = window.location.protocol
+            const hostname = window.location.hostname
+            
+            let backendHostname: string
+            
+            if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+              // Check if hostname already starts with 'api.'
+              if (hostname.startsWith("api.")) {
+                backendHostname = hostname
+              } else {
+                // Prepend 'api.' to the hostname
+                // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
+                backendHostname = `api.${hostname}`
+              }
+            } else {
+              backendHostname = hostname
+            }
+            
+            const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
+            // Ensure proper path concatenation - add leading slash if missing
+            logoUrl = logoUrl.startsWith("/") 
+              ? `${backendOrigin}${logoUrl}`
+              : `${backendOrigin}/${logoUrl}`
+          }
           setLogoPreview(logoUrl)
         }
 

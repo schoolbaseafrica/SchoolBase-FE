@@ -30,11 +30,21 @@ const Logo: React.FC<LogoProps> = ({
   
   // Default logo fallback
   const defaultLogo = "/assets/logo.png"
-  const logoToUse = logo.full || defaultLogo
+  let logoToUse = logo.full || defaultLogo
+  
+  // Add cache-busting query parameter for external logos to ensure they refresh after updates
+  // This prevents Next.js Image component from serving cached versions
+  if (logoToUse && (logoToUse.startsWith("http://") || logoToUse.startsWith("https://"))) {
+    const url = new URL(logoToUse)
+    // Add timestamp-based cache buster (refreshes every minute)
+    // This ensures logo updates are visible within a reasonable time
+    url.searchParams.set("v", Math.floor(Date.now() / 60000).toString())
+    logoToUse = url.toString()
+  }
   
   // Detect if logo URL is external (backend URL) - disable optimization for external images
   const isExternalLogo =
-    logoToUse?.startsWith("http://") || logoToUse?.startsWith("https://")
+    logo.full?.startsWith("http://") || logo.full?.startsWith("https://")
   const isUsingDefault = !logo.full || logoToUse === defaultLogo
 
   // Use SVG fallback if image fails to load or no logo URL provided

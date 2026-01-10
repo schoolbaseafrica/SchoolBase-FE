@@ -16,6 +16,7 @@ export interface RuntimeSchoolConfig {
   accentColor?: string
   supportEmail?: string
   supportPhone?: string
+  supportAddress?: string
   description?: string
   tagline?: string
 }
