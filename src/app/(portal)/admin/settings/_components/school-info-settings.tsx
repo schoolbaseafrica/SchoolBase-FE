@@ -31,46 +31,263 @@ interface SchoolData {
   installation_completed: boolean
 }
 
-// Nigerian states list
-const NIGERIAN_STATES = [
-  "Abia",
-  "Adamawa",
-  "Akwa Ibom",
-  "Anambra",
-  "Bauchi",
-  "Bayelsa",
-  "Benue",
-  "Borno",
-  "Cross River",
-  "Delta",
-  "Ebonyi",
-  "Edo",
-  "Ekiti",
-  "Enugu",
-  "FCT",
-  "Gombe",
-  "Imo",
-  "Jigawa",
-  "Kaduna",
-  "Kano",
-  "Katsina",
-  "Kebbi",
-  "Kogi",
-  "Kwara",
-  "Lagos",
-  "Nasarawa",
-  "Niger",
-  "Ogun",
-  "Ondo",
-  "Osun",
-  "Oyo",
-  "Plateau",
-  "Rivers",
-  "Sokoto",
-  "Taraba",
-  "Yobe",
-  "Zamfara",
-]
+// African countries with their states/provinces/regions
+const AFRICAN_COUNTRIES: Record<string, string[]> = {
+  Nigeria: [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe",
+    "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara",
+    "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau",
+    "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
+  ],
+  "South Africa": [
+    "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo",
+    "Mpumalanga", "Northern Cape", "North West", "Western Cape"
+  ],
+  Kenya: [
+    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
+    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
+    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
+    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
+    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
+    "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
+  ],
+  Ghana: [
+    "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", "Greater Accra",
+    "North East", "Northern", "Oti", "Savannah", "Upper East", "Upper West",
+    "Volta", "Western", "Western North"
+  ],
+  Ethiopia: [
+    "Addis Ababa", "Afar", "Amhara", "Benishangul-Gumuz", "Dire Dawa", "Gambela",
+    "Harari", "Oromia", "Somali", "SNNPR", "Tigray"
+  ],
+  Tanzania: [
+    "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi",
+    "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Mjini Magharibi",
+    "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pemba North", "Pemba South",
+    "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu", "Singida", "Songwe",
+    "Tabora", "Tanga", "Unguja North", "Unguja South"
+  ],
+  Uganda: [
+    "Abim", "Adjumani", "Agago", "Alebtong", "Amolatar", "Amudat", "Amuria",
+    "Amuru", "Apac", "Arua", "Budaka", "Bududa", "Bugiri", "Buhweju", "Buikwe",
+    "Bukedea", "Bukomansimbi", "Bukwo", "Bulambuli", "Buliisa", "Bundibugyo",
+    "Bushenyi", "Busia", "Butaleja", "Butambala", "Butebo", "Buvuma", "Buyende",
+    "Central", "Eastern", "Northern", "Western"
+  ],
+  "Côte d'Ivoire": [
+    "Bas-Sassandra", "Comoé", "Denguélé", "Gôh-Djiboua", "Lacs", "Lagunes",
+    "Montagnes", "Sassandra-Marahoué", "Savanes", "Vallée du Bandama", "Woroba",
+    "Yamoussoukro", "Zanzan"
+  ],
+  "DR Congo": [
+    "Bas-Uele", "Équateur", "Haut-Katanga", "Haut-Lomami", "Haut-Uele", "Ituri",
+    "Kasaï", "Kasaï-Central", "Kasaï-Oriental", "Kinshasa", "Kongo-Central",
+    "Kwango", "Kwilu", "Lomami", "Lualaba", "Mai-Ndombe", "Maniema", "Mongala",
+    "Nord-Kivu", "Nord-Ubangi", "Sankuru", "Sud-Kivu", "Sud-Ubangi", "Tanganyika",
+    "Tshopo", "Tshuapa"
+  ],
+  Cameroon: [
+    "Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest",
+    "South", "Southwest", "West"
+  ],
+  Senegal: [
+    "Dakar", "Diourbel", "Fatick", "Kaffrine", "Kaolack", "Kédougou", "Kolda",
+    "Louga", "Matam", "Saint-Louis", "Sédhiou", "Tambacounda", "Thiès", "Ziguinchor"
+  ],
+  Morocco: [
+    "Casablanca-Settat", "Drâa-Tafilalet", "Fès-Meknès", "Guelmim-Oued Noun",
+    "Laâyoune-Sakia El Hamra", "Marrakech-Safi", "Oriental", "Rabat-Salé-Kénitra",
+    "Souss-Massa", "Tanger-Tétouan-Al Hoceïma"
+  ],
+  Algeria: [
+    "Adrar", "Aïn Defla", "Aïn Témouchent", "Algiers", "Annaba", "Batna", "Béchar",
+    "Béjaïa", "Biskra", "Blida", "Bordj Bou Arréridj", "Bouira", "Boumerdès",
+    "Chlef", "Constantine", "Djelfa", "El Bayadh", "El Oued", "El Tarf", "Ghardaïa",
+    "Guelma", "Illizi", "Jijel", "Khenchela", "Laghouat", "Mascara", "Médéa",
+    "Mila", "Mostaganem", "M'Sila", "Naâma", "Oran", "Ouargla", "Oum El Bouaghi",
+    "Relizane", "Saïda", "Sétif", "Sidi Bel Abbès", "Skikda", "Souk Ahras",
+    "Tamanghasset", "Tébessa", "Tiaret", "Tindouf", "Tipaza", "Tissemsilt",
+    "Tizi Ouzou", "Tlemcen"
+  ],
+  Angola: [
+    "Bengo", "Benguela", "Bié", "Cabinda", "Cuando Cubango", "Cuanza Norte",
+    "Cuanza Sul", "Cunene", "Huambo", "Huíla", "Luanda", "Lunda Norte", "Lunda Sul",
+    "Malanje", "Moxico", "Namibe", "Uíge", "Zaire"
+  ],
+  Mozambique: [
+    "Cabo Delgado", "Gaza", "Inhambane", "Manica", "Maputo", "Maputo City",
+    "Nampula", "Niassa", "Sofala", "Tete", "Zambézia"
+  ],
+  Madagascar: [
+    "Antananarivo", "Antsiranana", "Fianarantsoa", "Mahajanga", "Toamasina", "Toliara"
+  ],
+  Mali: [
+    "Bamako", "Gao", "Kayes", "Kidal", "Koulikoro", "Ménaka", "Mopti", "Ségou",
+    "Sikasso", "Taoudénit", "Tombouctou"
+  ],
+  Burkina_Faso: [
+    "Boucle du Mouhoun", "Cascades", "Centre", "Centre-Est", "Centre-Nord",
+    "Centre-Ouest", "Centre-Sud", "Est", "Hauts-Bassins", "Nord", "Plateau-Central",
+    "Sahel", "Sud-Ouest"
+  ],
+  Niger: [
+    "Agadez", "Diffa", "Dosso", "Maradi", "Niamey", "Tahoua", "Tillabéri", "Zinder"
+  ],
+  Chad: [
+    "Bahr el Gazel", "Batha", "Borkou", "Chari-Baguirmi", "Ennedi-Est", "Ennedi-Ouest",
+    "Guéra", "Hadjer-Lamis", "Kanem", "Lac", "Logone Occidental", "Logone Oriental",
+    "Mandoul", "Mayo-Kebbi Est", "Mayo-Kebbi Ouest", "Moyen-Chari", "N'Djamena",
+    "Ouaddaï", "Salamat", "Sila", "Tandjilé", "Tibesti", "Wadi Fira"
+  ],
+  Sudan: [
+    "Al Jazirah", "Blue Nile", "Central Darfur", "East Darfur", "Gedaref", "Kassala",
+    "Khartoum", "North Darfur", "North Kordofan", "Northern", "Red Sea", "River Nile",
+    "Sennar", "South Darfur", "South Kordofan", "West Darfur", "West Kordofan",
+    "White Nile"
+  ],
+  Tunisia: [
+    "Ariana", "Béja", "Ben Arous", "Bizerte", "Gabès", "Gafsa", "Jendouba",
+    "Kairouan", "Kasserine", "Kébili", "Kef", "Mahdia", "Manouba", "Médenine",
+    "Monastir", "Nabeul", "Sfax", "Sidi Bouzid", "Siliana", "Sousse", "Tataouine",
+    "Tozeur", "Tunis", "Zaghouan"
+  ],
+  Libya: [
+    "Al Butnan", "Al Jabal al Akhdar", "Al Jabal al Gharbi", "Al Jafarah",
+    "Al Jufrah", "Al Kufrah", "Al Marj", "Al Marqab", "Al Wahat", "An Nuqat al Khams",
+    "Az Zawiyah", "Benghazi", "Darnah", "Ghat", "Misratah", "Murzuq", "Nalut",
+    "Sabha", "Surt", "Tarabulus", "Wadi al Hayat", "Wadi ash Shati'"
+  ],
+  Egypt: [
+    "Alexandria", "Aswan", "Asyut", "Beheira", "Beni Suef", "Cairo", "Dakahlia",
+    "Damietta", "Faiyum", "Gharbia", "Giza", "Ismailia", "Kafr El Sheikh",
+    "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai", "Port Said",
+    "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"
+  ],
+  Zimbabwe: [
+    "Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East",
+    "Mashonaland West", "Masvingo", "Matabeleland North", "Matabeleland South",
+    "Midlands"
+  ],
+  Zambia: [
+    "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern",
+    "North-Western", "Southern", "Western"
+  ],
+  Malawi: [
+    "Central Region", "Northern Region", "Southern Region"
+  ],
+  Botswana: [
+    "Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North East",
+    "North West", "South East", "Southern"
+  ],
+  Namibia: [
+    "Erongo", "Hardap", "//Karas", "Kavango East", "Kavango West", "Khomas",
+    "Kunene", "Ohangwena", "Omaheke", "Omusati", "Oshana", "Oshikoto", "Otjozondjupa",
+    "Zambezi"
+  ],
+  Rwanda: [
+    "Eastern", "Kigali", "Northern", "Southern", "Western"
+  ],
+  Burundi: [
+    "Bubanza", "Bujumbura Mairie", "Bujumbura Rural", "Bururi", "Cankuzo", "Cibitoke",
+    "Gitega", "Karuzi", "Kayanza", "Kirundo", "Makamba", "Muramvya", "Muyinga",
+    "Mwaro", "Ngozi", "Rumonge", "Rutana", "Ruyigi"
+  ],
+  "Cape Verde": [
+    "Barlavento Islands", "Sotavento Islands"
+  ],
+  "São Tomé and Príncipe": [
+    "Príncipe", "São Tomé"
+  ],
+  "Equatorial Guinea": [
+    "Annobón", "Bioko Norte", "Bioko Sur", "Centro Sur", "Kié-Ntem", "Litoral",
+    "Wele-Nzas"
+  ],
+  Gabon: [
+    "Estuaire", "Haut-Ogooué", "Moyen-Ogooué", "Ngounié", "Nyanga", "Ogooué-Ivindo",
+    "Ogooué-Lolo", "Ogooué-Maritime", "Woleu-Ntem"
+  ],
+  "Republic of the Congo": [
+    "Bouenza", "Brazzaville", "Cuvette", "Cuvette-Ouest", "Kouilou", "Lékoumou",
+    "Likouala", "Niari", "Plateaux", "Pointe-Noire", "Pool", "Sangha"
+  ],
+  "Central African Republic": [
+    "Bamingui-Bangoran", "Bangui", "Basse-Kotto", "Haute-Kotto", "Haut-Mbomou",
+    "Kémo", "Lobaye", "Mambéré-Kadéï", "Mbomou", "Nana-Grébizi", "Nana-Mambéré",
+    "Ombella-M'Poko", "Ouaka", "Ouham", "Ouham-Pendé", "Sangha-Mbaéré", "Vakaga"
+  ],
+  Togo: [
+    "Centrale", "Kara", "Maritime", "Plateaux", "Savanes"
+  ],
+  Benin: [
+    "Alibori", "Atakora", "Atlantique", "Borgou", "Collines", "Couffo", "Donga",
+    "Littoral", "Mono", "Ouémé", "Plateau", "Zou"
+  ],
+  Guinea: [
+    "Boké", "Conakry", "Faranah", "Kankan", "Kindia", "Labé", "Mamou", "Nzérékoré"
+  ],
+  "Sierra Leone": [
+    "Eastern", "Northern", "North West", "Southern", "Western Area"
+  ],
+  Liberia: [
+    "Bomi", "Bong", "Gbarpolu", "Grand Bassa", "Grand Cape Mount", "Grand Gedeh",
+    "Grand Kru", "Lofa", "Margibi", "Maryland", "Montserrado", "Nimba", "River Cess",
+    "River Gee", "Sinoe"
+  ],
+  "Guinea-Bissau": [
+    "Bafatá", "Biombo", "Bissau", "Bolama", "Cacheu", "Gabú", "Oio", "Quinara", "Tombali"
+  ],
+  Gambia: [
+    "Banjul", "Central River", "Lower River", "North Bank", "Upper River", "West Coast"
+  ],
+  Mauritania: [
+    "Adrar", "Assaba", "Brakna", "Dakhlet Nouadhibou", "Gorgol", "Guidimaka",
+    "Hodh Ech Chargui", "Hodh El Gharbi", "Inchiri", "Nouakchott Nord", "Nouakchott Ouest",
+    "Nouakchott Sud", "Tagant", "Tiris Zemmour", "Trarza"
+  ],
+  Eritrea: [
+    "Anseba", "Debub", "Debubawi K'eyih Bahri", "Gash-Barka", "Ma'akel", "Semenawi K'eyih Bahri"
+  ],
+  Djibouti: [
+    "Ali Sabieh", "Arta", "Dikhil", "Djibouti", "Obock", "Tadjourah"
+  ],
+  Somalia: [
+    "Awdal", "Bakool", "Banaadir", "Bari", "Bay", "Galguduud", "Gedo", "Hiiraan",
+    "Jubbada Dhexe", "Jubbada Hoose", "Mudug", "Nugaal", "Sanaag", "Shabeellaha Dhexe",
+    "Shabeellaha Hoose", "Sool", "Togdheer", "Woqooyi Galbeed"
+  ],
+  "South Sudan": [
+    "Central Equatoria", "Eastern Equatoria", "Jonglei", "Lakes", "Northern Bahr el Ghazal",
+    "Unity", "Upper Nile", "Warrap", "Western Bahr el Ghazal", "Western Equatoria"
+  ],
+  Comoros: [
+    "Anjouan", "Grande Comore", "Mohéli"
+  ],
+  Mauritius: [
+    "Agalega Islands", "Black River", "Flacq", "Grand Port", "Moka", "Pamplemousses",
+    "Plaines Wilhems", "Port Louis", "Rivière du Rempart", "Rodrigues", "Savanne"
+  ],
+  Seychelles: [
+    "Anse aux Pins", "Anse Boileau", "Anse Etoile", "Anse Royale", "Anse Volbert",
+    "Au Cap", "Baie Lazare", "Baie Sainte Anne", "Beau Vallon", "Bel Air", "Bel Ombre",
+    "Cascade", "Glacis", "Grand'Anse", "Grand'Anse", "La Digue", "La Rivière Anglaise",
+    "Les Mamelles", "Mont Buxton", "Mont Fleuri", "Plaisance", "Pointe La Rue",
+    "Port Glaud", "Roche Caiman", "Saint Louis", "Takamaka"
+  ],
+  Lesotho: [
+    "Berea", "Butha-Buthe", "Leribe", "Mafeteng", "Maseru", "Mohale's Hoek",
+    "Mokhotlong", "Qacha's Nek", "Quthing", "Thaba-Tseka"
+  ],
+  Eswatini: [
+    "Hhohho", "Lubombo", "Manzini", "Shiselweni"
+  ],
+}
+
+// Get states for a country
+const getStatesForCountry = (country: string): string[] => {
+  return AFRICAN_COUNTRIES[country] || []
+}
 
 export const SchoolInfoSettings = () => {
   const [isLoading, setIsLoading] = useState(true)
@@ -644,39 +861,54 @@ export const SchoolInfoSettings = () => {
                     <Select
                       value={formData.country}
                       onValueChange={(value) =>
-                        setFormData((prev) => ({ ...prev, country: value }))
+                        setFormData((prev) => ({ 
+                          ...prev, 
+                          country: value,
+                          state: "" // Reset state when country changes
+                        }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full h-11 rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Nigeria">Nigeria</SelectItem>
-                        <SelectItem value="Ghana">Ghana</SelectItem>
-                        <SelectItem value="Kenya">Kenya</SelectItem>
-                        <SelectItem value="South Africa">South Africa</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                      <SelectContent className="max-h-[300px] rounded-md border shadow-lg">
+                        {Object.keys(AFRICAN_COUNTRIES)
+                          .sort()
+                          .map((country) => (
+                            <SelectItem key={country} value={country} className="cursor-pointer">
+                              {country}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="state">
-                      State <span className="text-red-500">*</span>
+                      State/Province <span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={formData.state}
                       onValueChange={(value) =>
                         setFormData((prev) => ({ ...prev, state: value }))
                       }
+                      disabled={!formData.country || getStatesForCountry(formData.country).length === 0}
                       required
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
+                      <SelectTrigger className="w-full h-11 rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 disabled:bg-gray-50 disabled:cursor-not-allowed">
+                        <SelectValue 
+                          placeholder={
+                            !formData.country 
+                              ? "Select country first" 
+                              : getStatesForCountry(formData.country).length === 0
+                              ? "No states available"
+                              : "Select state/province"
+                          } 
+                        />
                       </SelectTrigger>
-                      <SelectContent>
-                        {NIGERIAN_STATES.map((state) => (
-                          <SelectItem key={state} value={state}>
+                      <SelectContent className="max-h-[300px] rounded-md border shadow-lg">
+                        {getStatesForCountry(formData.country).map((state) => (
+                          <SelectItem key={state} value={state} className="cursor-pointer">
                             {state}
                           </SelectItem>
                         ))}
