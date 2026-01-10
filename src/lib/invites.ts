@@ -71,6 +71,24 @@ export const InvitesAPI = {
       true
     ),
 
+  resendInvite: (inviteId: string) =>
+    apiFetch<InviteUserResponse>(
+      `/auth/invites/${inviteId}/resend`,
+      {
+        method: "PATCH",
+      },
+      true
+    ),
+
+  deleteInvite: (inviteId: string) =>
+    apiFetch<{ message: string; status_code: number; data: { id: string } }>(
+      `/auth/invites/${inviteId}`,
+      {
+        method: "DELETE",
+      },
+      true
+    ),
+
   uploadCsv: (file: File, type: string) => {
     const formData = new FormData()
     formData.append("file", file)

@@ -48,3 +48,33 @@ export function useGetInvites(params?: GetInvitesParams) {
     gcTime: 1000 * 60 * 5, // 5 minutes
   })
 }
+
+export function useResendInvite() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (inviteId: string) => InvitesAPI.resendInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: INVITES_KEY })
+      toast.success("Invitation email resent successfully")
+    },
+    onError: (error: Error) => {
+      toast.error(error?.message || "Failed to resend invitation")
+    },
+  })
+}
+
+export function useDeleteInvite() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (inviteId: string) => InvitesAPI.deleteInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: INVITES_KEY })
+      toast.success("Invite deleted successfully")
+    },
+    onError: (error: Error) => {
+      toast.error(error?.message || "Failed to delete invite")
+    },
+  })
+}
