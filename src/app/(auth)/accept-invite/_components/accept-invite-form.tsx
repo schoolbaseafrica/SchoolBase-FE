@@ -24,7 +24,6 @@ interface AcceptInviteFormProps {
 }
 
 const AcceptInviteForm: React.FC<AcceptInviteFormProps> = ({ token }) => {
-  const router = useRouter()
   const [formData, setFormData] = useState(initialValues)
   const [errors, setErrors] = useState<Partial<Record<ResetField, string>>>({})
   const [touched, setTouched] = useState<Record<ResetField, boolean>>({
