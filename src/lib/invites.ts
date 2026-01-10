@@ -103,4 +103,14 @@ export const InvitesAPI = {
       true
     )
   },
+
+  acceptInvite: (data: { token: string; password: string }) =>
+    apiFetch<{ message: string; status_code: number; data: { id: string; email: string; role: string[] } }>(
+      "/auth/invites/accept",
+      {
+        method: "POST",
+        data,
+      },
+      true
+    ),
 }

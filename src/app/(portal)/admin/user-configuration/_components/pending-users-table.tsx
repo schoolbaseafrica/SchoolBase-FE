@@ -7,11 +7,21 @@ import { Invite } from "@/lib/invites"
 
 // Map invite data to User type for the table
 function mapInviteToUser(invite: Invite, index: number): User {
+  // Normalize role to handle both uppercase (from backend) and lowercase
+  const normalizedRole = invite.role?.toUpperCase() || ""
+  
+  // Map backend role values to display values
+  const roleMap: Record<string, "Admin" | "Teacher"> = {
+    ADMIN: "Admin",
+    TEACHER: "Teacher",
+    // Default to Teacher for any other role (PARENT, STUDENT, etc.)
+  }
+  
   return {
     id: invite.id,
     name: invite.full_name || invite.email,
     regNumber: `INV-${index + 1}`,
-    role: invite.role === "admin" ? "Admin" : "Teacher",
+    role: roleMap[normalizedRole] || "Teacher",
     status: invite.accepted ? "Accepted" : "Pending",
     date: new Date(invite.invited_at).toLocaleString(),
   }
