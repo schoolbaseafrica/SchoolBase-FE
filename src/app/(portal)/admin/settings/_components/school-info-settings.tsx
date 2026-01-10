@@ -42,20 +42,24 @@ export const SchoolInfoSettings = () => {
     email: "",
   })
 
-  // Predefined color palette for quick selection
+  // Predefined color palette for quick selection - modern, professional colors
   const predefinedColors = [
-    { name: "Red", value: "#DA3743" },
-    { name: "Blue", value: "#2563EB" },
-    { name: "Green", value: "#10B981" },
-    { name: "Purple", value: "#8B5CF6" },
-    { name: "Orange", value: "#F97316" },
-    { name: "Teal", value: "#14B8A6" },
-    { name: "Pink", value: "#EC4899" },
-    { name: "Indigo", value: "#6366F1" },
-    { name: "Emerald", value: "#059669" },
-    { name: "Amber", value: "#F59E0B" },
-    { name: "Rose", value: "#F43F5E" },
-    { name: "Cyan", value: "#06B6D4" },
+    { name: "Crimson Red", value: "#DC2626" },
+    { name: "Royal Blue", value: "#1E40AF" },
+    { name: "Forest Green", value: "#166534" },
+    { name: "Deep Purple", value: "#7C3AED" },
+    { name: "Vibrant Orange", value: "#EA580C" },
+    { name: "Ocean Teal", value: "#0D9488" },
+    { name: "Magenta", value: "#C026D3" },
+    { name: "Navy Blue", value: "#1E3A8A" },
+    { name: "Emerald", value: "#047857" },
+    { name: "Amber Gold", value: "#D97706" },
+    { name: "Rose Pink", value: "#DB2777" },
+    { name: "Sky Blue", value: "#0284C7" },
+    { name: "Lime Green", value: "#65A30D" },
+    { name: "Violet", value: "#9333EA" },
+    { name: "Coral", value: "#F97316" },
+    { name: "Turquoise", value: "#0891B2" },
   ]
 
   // Load current school data on mount
@@ -337,7 +341,7 @@ export const SchoolInfoSettings = () => {
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {predefinedColors.map((color) => (
                     <button
                       key={color.value}
@@ -345,10 +349,10 @@ export const SchoolInfoSettings = () => {
                       onClick={() =>
                         setFormData((prev) => ({ ...prev, primaryColor: color.value }))
                       }
-                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                      className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                         formData.primaryColor.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
-                          : "border-gray-200 hover:border-gray-400"
+                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                          : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
@@ -390,7 +394,7 @@ export const SchoolInfoSettings = () => {
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {predefinedColors.map((color) => (
                     <button
                       key={color.value}
@@ -398,10 +402,10 @@ export const SchoolInfoSettings = () => {
                       onClick={() =>
                         setFormData((prev) => ({ ...prev, secondaryColor: color.value }))
                       }
-                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                      className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                         formData.secondaryColor?.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
-                          : "border-gray-200 hover:border-gray-400"
+                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                          : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
@@ -443,7 +447,7 @@ export const SchoolInfoSettings = () => {
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {predefinedColors.map((color) => (
                     <button
                       key={color.value}
@@ -451,10 +455,10 @@ export const SchoolInfoSettings = () => {
                       onClick={() =>
                         setFormData((prev) => ({ ...prev, accentColor: color.value }))
                       }
-                      className={`h-10 w-10 rounded-md border-2 transition-all hover:scale-110 ${
+                      className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                         formData.accentColor?.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-2 ring-offset-2 ring-gray-400"
-                          : "border-gray-200 hover:border-gray-400"
+                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                          : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
