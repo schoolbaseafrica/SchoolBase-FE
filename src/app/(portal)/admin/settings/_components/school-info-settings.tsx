@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { apiFetch } from "@/lib/api/client"
@@ -24,6 +31,47 @@ interface SchoolData {
   installation_completed: boolean
 }
 
+// Nigerian states list
+const NIGERIAN_STATES = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "FCT",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+]
+
 export const SchoolInfoSettings = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -38,7 +86,10 @@ export const SchoolInfoSettings = () => {
     secondaryColor: "",
     accentColor: "",
     phone: "",
-    address: "",
+    country: "Nigeria",
+    state: "",
+    city: "",
+    streetAddress: "",
     email: "",
   })
 
@@ -85,13 +136,39 @@ export const SchoolInfoSettings = () => {
         const schoolData = responseData?.data || responseData
 
         if (schoolData && typeof schoolData === "object") {
+          // Parse existing address if it exists
+          // Format: "Street Address, City, State, Country" or just "Street Address"
+          const address = schoolData.address || ""
+          let parsedCountry = "Nigeria"
+          let parsedState = ""
+          let parsedCity = ""
+          let parsedStreet = address
+
+          // Try to parse address if it contains commas
+          if (address.includes(",")) {
+            const parts = address.split(",").map((p: string) => p.trim())
+            if (parts.length >= 2) {
+              parsedStreet = parts[0] || ""
+              parsedCity = parts[1] || ""
+              if (parts.length >= 3) {
+                parsedState = parts[2] || ""
+              }
+              if (parts.length >= 4) {
+                parsedCountry = parts[3] || "Nigeria"
+              }
+            }
+          }
+
           setFormData({
             schoolName: schoolData.name || "",
             primaryColor: schoolData.primary_color || "#DA3743",
             secondaryColor: schoolData.secondary_color || "",
             accentColor: schoolData.accent_color || "",
             phone: schoolData.phone || "",
-            address: schoolData.address || "",
+            country: parsedCountry,
+            state: parsedState,
+            city: parsedCity,
+            streetAddress: parsedStreet,
             email: schoolData.email || "",
           })
 
@@ -175,7 +252,15 @@ export const SchoolInfoSettings = () => {
 
       // Add text fields
       formDataToSend.append("name", formData.schoolName)
-      if (formData.address) formDataToSend.append("address", formData.address)
+      // Combine address fields into a single address string
+      const addressParts = [
+        formData.streetAddress,
+        formData.city,
+        formData.state,
+        formData.country,
+      ].filter(Boolean)
+      const fullAddress = addressParts.join(", ")
+      if (fullAddress) formDataToSend.append("address", fullAddress)
       if (formData.email) formDataToSend.append("email", formData.email)
       if (formData.phone) formDataToSend.append("phone", formData.phone)
       if (formData.primaryColor)
@@ -205,13 +290,37 @@ export const SchoolInfoSettings = () => {
 
       // Update form fields with the response data
       if (updatedSchool) {
+        // Parse updated address
+        const updatedAddress = updatedSchool.address || ""
+        let parsedCountry = "Nigeria"
+        let parsedState = ""
+        let parsedCity = ""
+        let parsedStreet = updatedAddress
+
+        if (updatedAddress.includes(",")) {
+          const parts = updatedAddress.split(",").map((p: string) => p.trim())
+          if (parts.length >= 2) {
+            parsedStreet = parts[0] || ""
+            parsedCity = parts[1] || ""
+            if (parts.length >= 3) {
+              parsedState = parts[2] || ""
+            }
+            if (parts.length >= 4) {
+              parsedCountry = parts[3] || "Nigeria"
+            }
+          }
+        }
+
         setFormData({
           schoolName: updatedSchool.name || formData.schoolName,
           primaryColor: updatedSchool.primary_color || formData.primaryColor,
           secondaryColor: updatedSchool.secondary_color || formData.secondaryColor,
           accentColor: updatedSchool.accent_color || formData.accentColor,
           phone: updatedSchool.phone || formData.phone,
-          address: updatedSchool.address || formData.address,
+          country: parsedCountry,
+          state: parsedState,
+          city: parsedCity,
+          streetAddress: parsedStreet,
           email: updatedSchool.email || formData.email,
         })
 
@@ -523,17 +632,87 @@ export const SchoolInfoSettings = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">
+            <div className="space-y-4">
+              <Label>
                 Address <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                required
-              />
+              
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Select
+                      value={formData.country}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, country: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Nigeria">Nigeria</SelectItem>
+                        <SelectItem value="Ghana">Ghana</SelectItem>
+                        <SelectItem value="Kenya">Kenya</SelectItem>
+                        <SelectItem value="South Africa">South Africa</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="state">
+                      State <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.state}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, state: value }))
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NIGERIAN_STATES.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">
+                    City/Town <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="e.g. Lagos, Abuja, Port Harcourt"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="streetAddress">
+                    Street Address <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="streetAddress"
+                    name="streetAddress"
+                    value={formData.streetAddress}
+                    onChange={handleChange}
+                    placeholder="e.g. 123 Main Street, Victoria Island"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end pt-4">
