@@ -67,20 +67,12 @@ const Footer = () => {
                 <h3 className="text-lg font-bold lg:text-xl">Support</h3>
                 <ul className="space-y-3">
                   <li>
-                    <Link
-                      href="/faq"
-                      className="text-white/70 transition hover:text-white"
-                    >
-                      FAQs
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
+                    <a
                       href="#contact"
                       className="text-white/70 transition hover:text-white"
                     >
                       Contact us
-                    </Link>
+                    </a>
                   </li>
                 </ul>
               </section>
@@ -119,15 +111,7 @@ const Footer = () => {
         </section>
 
         <section className="flex flex-col justify-between gap-2 border-t border-white/20 pt-6 text-sm text-white/80 md:flex-row md:items-center">
-          <p>Copyright &copy; {new Date().getFullYear()}</p>
-          <div className="flex items-center gap-6 [&_p]:cursor-pointer">
-            <Link href="/terms">
-              <p>Terms & Conditions</p>
-            </Link>
-            <Link href="/privacy">
-              <p>Privacy Policy</p>
-            </Link>
-          </div>
+          <p>Copyright &copy; {new Date().getFullYear()} {school.name}. All rights reserved.</p>
         </section>
       </div>
     </footer>

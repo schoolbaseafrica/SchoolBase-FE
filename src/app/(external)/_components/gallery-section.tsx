@@ -30,6 +30,26 @@ export function GallerySection() {
     return null
   }
 
+  // Add cache-busting to gallery images and prepare for display
+  const galleryToDisplay = gallery.map((item) => {
+    // Add cache-busting query parameter for external images (Cloudinary)
+    if (item.src && (item.src.startsWith("http://") || item.src.startsWith("https://"))) {
+      try {
+        const url = new URL(item.src)
+        // Add timestamp-based cache buster (refreshes every hour)
+        url.searchParams.set("v", Math.floor(Date.now() / 3600000).toString())
+        return { ...item, src: url.toString() }
+      } catch {
+        // If URL parsing fails, return original
+        return item
+      }
+    }
+    return item
+  })
+
+  // Debug: Log gallery images being displayed
+  console.log("[GallerySection] Displaying gallery images:", galleryToDisplay.map((img) => img.src))
+
   return (
     <section id="gallery" className="bg-gray-50 py-16">
       <div className="container space-y-8">
@@ -42,7 +62,7 @@ export function GallerySection() {
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {gallery.map((item, index) => {
+          {galleryToDisplay.map((item, index) => {
             const key = `${item.src}-${index}`
             return (
               <figure

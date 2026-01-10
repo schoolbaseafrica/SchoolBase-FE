@@ -46,11 +46,28 @@ export function HeroSection() {
 
   // Ensure we always have at least 3 images to display (use defaults if hero.images is empty)
   const imagesToDisplay = hero.images && hero.images.length > 0
-    ? hero.images.slice(0, 3)
+    ? hero.images.slice(0, 3).map((img) => {
+        // Add cache-busting query parameter for external images (Cloudinary)
+        if (img.src && (img.src.startsWith("http://") || img.src.startsWith("https://"))) {
+          try {
+            const url = new URL(img.src)
+            // Add timestamp-based cache buster (refreshes every hour)
+            url.searchParams.set("v", Math.floor(Date.now() / 3600000).toString())
+            return { ...img, src: url.toString() }
+          } catch {
+            // If URL parsing fails, return original
+            return img
+          }
+        }
+        return img
+      })
     : DEFAULT_HERO_IMAGES.map((src, idx) => ({
         src,
         alt: `School image ${idx + 1}`,
       }))
+  
+  // Debug: Log images being displayed
+  console.log("[HeroSection] Displaying images:", imagesToDisplay.map((img) => img.src))
 
   return (
     <section

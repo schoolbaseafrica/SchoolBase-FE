@@ -142,6 +142,9 @@ export function buildSchoolProfileFromRuntimeConfig(
   // IMPORTANT: Images and gallery are ALWAYS preserved from defaults - schools cannot change these
   const logoFull = runtimeConfig.logoUrl || defaultSchoolProfile.logo.full
   console.log("[Config] Setting logo.full to:", logoFull)
+  // Debug: Log images being set
+  console.log("[Config] Hero images set to:", defaultSchoolProfile.hero.images.map((img) => img.src))
+  console.log("[Config] Gallery images set to:", defaultSchoolProfile.gallery.map((img) => img.src))
   
   return {
     ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
