@@ -48,9 +48,10 @@ export function ClassroomsToolbar({
         </div>
         <Button
           onClick={onAddClassroom}
-          className="w-full rounded-xl font-medium sm:w-auto"
+          size="lg"
+          className="w-full sm:w-auto"
         >
-          <Plus className="mr-2 h-5 w-5" />
+          <Plus className="mr-2 h-4 w-4" />
           Create New Room
         </Button>
       </div>

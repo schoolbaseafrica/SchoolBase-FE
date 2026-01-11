@@ -73,15 +73,15 @@ export default function CreateClassroomPage() {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={createClassroomMutation.isPending}
-          submitText="Create Classroom"
+          submitText="Create Room"
         />
       </div>
 
       <SuccessModal
         open={successModalOpen}
         onOpenChange={setSuccessModalOpen}
-        title="Classroom Created Successfully"
-        description="Classroom has been activated successfully"
+        title="Room Created Successfully"
+        description="Room has been activated successfully"
         onContinue={handleContinue}
       />
     </div>

@@ -68,9 +68,10 @@ export function UsersToolbar({
         </div>
         <Button
           onClick={onAddUser}
-          className="w-full rounded-xl font-medium sm:w-auto lg:w-[357px]"
+          size="lg"
+          className="w-full sm:w-auto lg:w-[357px]"
         >
-          <Plus className="mr-2 h-5 w-5" />
+          <Plus className="mr-2 h-4 w-4" />
           {addButtonText}
         </Button>
       </div>

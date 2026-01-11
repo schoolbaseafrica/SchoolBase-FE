@@ -55,7 +55,7 @@ export default function EditClassroomPage() {
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading classroom details...</p>
+            <p className="text-gray-600">Loading room details...</p>
           </div>
         </div>
       </div>
@@ -71,13 +71,13 @@ export default function EditClassroomPage() {
               <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
             <h2 className="mb-2 text-xl font-bold text-gray-900">
-              {error?.message || "Classroom Not Found"}
+              {error?.message || "Room Not Found"}
             </h2>
             <p className="mb-6 text-gray-600">
-              {error?.message || "The classroom you're looking for doesn't exist."}
+              {error?.message || "The room you're looking for doesn't exist."}
             </p>
-            <Button asChild>
-              <Link href="/admin/class-management/classrooms">Back to Classrooms</Link>
+            <Button asChild size="lg">
+              <Link href="/admin/class-management/classrooms">Back to Rooms</Link>
             </Button>
           </div>
         </div>
@@ -107,8 +107,8 @@ export default function EditClassroomPage() {
             </Link>
           </Button>
         </div>
-        <h1 className="mb-2 text-xl font-bold text-gray-900">Edit Classroom</h1>
-        <p className="text-gray-600">Update classroom details.</p>
+        <h1 className="mb-2 text-xl font-bold text-gray-900">Edit Room</h1>
+        <p className="text-gray-600">Update room details.</p>
       </div>
 
       <div className="md:px-8">
@@ -117,15 +117,15 @@ export default function EditClassroomPage() {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={updateClassroomMutation.isPending}
-          submitText="Update Classroom"
+          submitText="Update Room"
         />
       </div>
 
       <SuccessModal
         open={successModalOpen}
         onOpenChange={setSuccessModalOpen}
-        title="Classroom Updated Successfully"
-        description="Classroom has been successfully updated"
+        title="Room Updated Successfully"
+        description="Room has been successfully updated"
         onContinue={handleContinue}
       />
     </div>

@@ -40,7 +40,7 @@ export function ClassroomForm({
     const newErrors: Partial<ClassroomFormData> = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = "Classroom name is required"
+      newErrors.name = "Room name is required"
     }
 
     if (!formData.capacity.trim()) {
@@ -100,13 +100,13 @@ export function ClassroomForm({
             htmlFor="name"
             className="mb-2 block text-sm font-semibold text-gray-900"
           >
-            Classroom Name <span className="text-red-600">*</span>
+            Room Name <span className="text-red-600">*</span>
           </label>
           <Input
             id="name"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            placeholder="Enter classroom name"
+            placeholder="Enter room name"
             className="w-full"
           />
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}

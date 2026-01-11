@@ -20,17 +20,18 @@ export function EmptyClassrooms() {
             className="mx-auto"
           />
         </div>
-        <h3 className="mb-4 text-2xl font-bold text-gray-900">No Room yet</h3>
+        <h3 className="mb-4 text-lg font-medium text-gray-600">No rooms yet</h3>
         <p className="mb-8 max-w-md text-gray-600">
-          Create your first room with it’s name, description, and capacity to Manage
+          Create your first room with it's name, description, and capacity to Manage
           academic operations.
         </p>
         <Button
           onClick={() => router.push("/admin/class-management/classrooms/new")}
-          className="px-8 py-3"
+          size="lg"
+          className="w-full sm:w-auto"
         >
-          <Plus className="mr-2 h-5 w-5" />
-          Create Classroom
+          <Plus className="mr-2 h-4 w-4" />
+          Create Room
         </Button>
       </div>
     </div>

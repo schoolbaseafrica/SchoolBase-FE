@@ -63,8 +63,8 @@ export default function ClassroomsPage() {
       await deleteClassroomMutation.mutateAsync(classroom.id)
       setSuccessModal({
         open: true,
-        title: "Classroom Deleted Successfully",
-        description: "The classroom has been successfully deleted from the system.",
+        title: "Room Deleted Successfully",
+        description: "The room has been successfully deleted from the system.",
       })
     } catch (error) {
       console.error("Failed to create teacher:", error)
@@ -83,9 +83,9 @@ export default function ClassroomsPage() {
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-4">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Create Classroom</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Room Management</h1>
         <p className="text-muted-foreground">
-          View, add and assign classroom to streamline academic operations
+          View, add and assign rooms to streamline academic operations
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function ClassroomsPage() {
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading classrooms...</p>
+            <p className="text-gray-600">Loading rooms...</p>
           </div>
         </div>
       ) : classrooms.length === 0 && !searchQuery ? (
@@ -111,11 +111,11 @@ export default function ClassroomsPage() {
           {filteredClassrooms.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-muted-foreground">
-                No classrooms found matching your search.
+                No rooms found matching your search.
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
               {filteredClassrooms.map((classroom) => (
                 <ClassroomCard
                   key={classroom.id}

@@ -42,7 +42,7 @@ export function ClassroomCard({
 
   return (
     <>
-      <Card className="w-full">
+      <Card>
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -115,8 +115,8 @@ export function ClassroomCard({
           onDelete(classroom)
           setDeleteDialogOpen(false)
         }}
-        title="Delete Classroom"
-        description="Are you sure you want to delete this classroom? This action cannot be undone."
+        title="Delete Room"
+        description="Are you sure you want to delete this room? This action cannot be undone."
         itemName={classroom.name}
       />
     </>
