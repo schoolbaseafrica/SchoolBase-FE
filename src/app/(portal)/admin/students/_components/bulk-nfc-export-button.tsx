@@ -27,7 +27,7 @@ export default function BulkNfcExportButton() {
       variant="outline"
       size="lg"
       disabled={isLoading}
-      className="w-full sm:w-auto"
+      className="whitespace-nowrap"
     >
       <Download className="mr-2 h-4 w-4" />
       {isLoading ? "Exporting..." : "Export NFC Cards (CSV)"}

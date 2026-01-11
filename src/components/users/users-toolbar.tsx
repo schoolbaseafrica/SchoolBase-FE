@@ -69,7 +69,7 @@ export function UsersToolbar({
         <Button
           onClick={onAddUser}
           size="lg"
-          className="w-full sm:w-auto lg:w-[357px]"
+          className="whitespace-nowrap"
         >
           <Plus className="mr-2 h-4 w-4" />
           {addButtonText}

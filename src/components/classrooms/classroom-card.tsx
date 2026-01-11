@@ -87,7 +87,16 @@ export function ClassroomCard({
                   </div>
 
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Type:</span> {classroom.type}
+                    <span className="font-medium">Type:</span>{" "}
+                    {classroom.type
+                      ? classroom.type
+                          .split(" ")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                          )
+                          .join(" ")
+                      : classroom.type}
                   </div>
                 </div>
 

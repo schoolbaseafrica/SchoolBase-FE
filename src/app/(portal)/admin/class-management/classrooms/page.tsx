@@ -82,13 +82,6 @@ export default function ClassroomsPage() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Room Management</h1>
-        <p className="text-muted-foreground">
-          View, add and assign rooms to streamline academic operations
-        </p>
-      </div>
-
       {isLoading ? (
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">

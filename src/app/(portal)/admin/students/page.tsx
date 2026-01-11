@@ -68,7 +68,7 @@ export default function StudentsPage() {
             onClick={() => setShowBulkNfcImportDialog(true)}
             variant="outline"
             size="lg"
-            className="w-full sm:w-auto"
+            className="whitespace-nowrap"
           >
             Import NFC Cards (CSV)
           </Button>
@@ -76,7 +76,7 @@ export default function StudentsPage() {
             onClick={() => setShowBulkAssignDialog(true)}
             variant="default"
             size="lg"
-            className="w-full sm:w-auto"
+            className="whitespace-nowrap"
           >
             <Users className="mr-2 h-4 w-4" />
             Assign Students to Class
