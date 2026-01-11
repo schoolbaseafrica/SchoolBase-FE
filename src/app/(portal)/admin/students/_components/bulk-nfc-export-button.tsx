@@ -25,10 +25,11 @@ export default function BulkNfcExportButton() {
     <Button
       onClick={handleExport}
       variant="outline"
+      size="lg"
       disabled={isLoading}
-      className="w-full rounded-xl font-medium sm:w-auto"
+      className="w-full sm:w-auto"
     >
-      <Download className="mr-2 h-5 w-5" />
+      <Download className="mr-2 h-4 w-4" />
       {isLoading ? "Exporting..." : "Export NFC Cards (CSV)"}
     </Button>
   )

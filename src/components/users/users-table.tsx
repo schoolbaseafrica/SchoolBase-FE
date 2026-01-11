@@ -122,6 +122,7 @@ export function UsersTable({
               </TableHead>
             )}
             {isTeacher && <TableHead>Email</TableHead>}
+            {isStudent && <TableHead>Class</TableHead>}
             {isStudent && <TableHead>Address</TableHead>}
             <TableHead>Status</TableHead>
             <TableHead>Phone Number</TableHead>
@@ -157,6 +158,9 @@ export function UsersTable({
               {isTeacher && <TableCell>{user.email}</TableCell>}
               {isStudent && (
                 <>
+                  <TableCell>
+                    {user.class || <span className="text-muted-foreground">Not assigned</span>}
+                  </TableCell>
                   <TableCell>{user.home_address}</TableCell>
                 </>
               )}
