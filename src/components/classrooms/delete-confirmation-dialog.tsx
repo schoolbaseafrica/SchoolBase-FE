@@ -41,7 +41,7 @@ export function DeleteConfirmationDialog({
         </DialogHeader>
         <div className="py-4">
           <p className="text-sm text-gray-600">
-            You are about to delete <strong style={{ fontVariant: 'normal', textTransform: 'none' }}>{itemName}</strong>. This action cannot be
+            You are about to delete <strong>{itemName}</strong>. This action cannot be
             undone.
           </p>
         </div>

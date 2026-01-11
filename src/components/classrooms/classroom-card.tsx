@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Classroom } from "@/types/classroom"
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog"
+import { titleCase } from "@/lib/utils"
 
 interface ClassroomCardProps {
   classroom: Classroom
@@ -48,11 +49,8 @@ export function ClassroomCard({
             <div className="flex-1">
               <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h3 
-                    className="text-lg font-semibold text-gray-900"
-                    style={{ fontVariant: 'normal', textTransform: 'none' }}
-                  >
-                    {classroom.name}
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {titleCase(classroom.name)}
                   </h3>
                 </div>
 
@@ -129,7 +127,7 @@ export function ClassroomCard({
         }}
         title="Delete Room"
         description="Are you sure you want to delete this room? This action cannot be undone."
-        itemName={classroom.name}
+        itemName={titleCase(classroom.name)}
       />
     </>
   )
