@@ -48,7 +48,10 @@ export function ClassroomCard({
             <div className="flex-1">
               <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 
+                    className="text-lg font-semibold text-gray-900"
+                    style={{ fontVariant: 'normal', textTransform: 'none' }}
+                  >
                     {classroom.name}
                   </h3>
                 </div>
