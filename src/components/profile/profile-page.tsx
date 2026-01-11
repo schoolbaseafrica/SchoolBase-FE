@@ -35,19 +35,19 @@ export const ProfilePage = ({ profile, role }: ProfilePageProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
           <p className="text-muted-foreground">
             View and manage your profile information
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleBackToDashboard}>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="outline" size="lg" onClick={handleBackToDashboard}>
             Back to Dashboard
           </Button>
-          <Button onClick={handleEditProfile} className="gap-2">
+          <Button size="lg" onClick={handleEditProfile} className="gap-2">
             <Edit className="h-4 w-4" />
             Edit Profile
           </Button>

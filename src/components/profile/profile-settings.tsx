@@ -177,15 +177,15 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Profile Settings</h2>
         <p className="text-muted-foreground">Manage your personal information.</p>
       </div>
 
       <Card>
-        <CardContent className="px-0 lg:px-6">
-          <div className="mb-6 flex items-center gap-6 px-4 lg:px-0">
+        <CardContent className="p-6">
+          <div className="mb-6 flex items-center gap-6">
             <Avatar className="border-border h-20 w-20 border-2">
               <AvatarImage src={profile?.photo_url} className="object-cover" />
               <AvatarFallback className="bg-muted text-xl">
@@ -195,8 +195,8 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
             </Avatar>
           </div>
 
-          <h2 className="my-6 px-4 text-lg font-medium lg:px-0">Personal Information</h2>
-          <form onSubmit={handleSubmit} className="space-y-6 px-4 lg:px-0">
+          <h2 className="mb-6 text-lg font-medium">Personal Information</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="first_name">First Name *</Label>
@@ -276,17 +276,20 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
               />
             </div>
 
-            <div className="flex justify-between pt-4">
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-between">
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 onClick={() => router.push(`/${role}/profile`)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-accent hover:bg-accent/90 text-white"
+                size="lg"
+                className="bg-accent hover:bg-accent/90 w-full text-white sm:w-auto"
                 disabled={isSaving || !!phoneError}
               >
                 {isSaving ? (
@@ -305,8 +308,8 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
 
       {/* Password Settings */}
       <Card>
-        <CardContent className="px-0 lg:px-6">
-          <h2 className="mb-6 px-4 text-lg font-medium lg:px-0">Reset Password</h2>
+        <CardContent className="p-6">
+          <h2 className="mb-6 text-lg font-medium">Reset Password</h2>
           <form
             onSubmit={async (e) => {
               e.preventDefault()
@@ -337,7 +340,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
                 setIsSavingPassword(false)
               }
             }}
-            className="space-y-6 px-4 lg:px-0"
+            className="space-y-6"
           >
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Current Password</Label>
@@ -432,7 +435,8 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
             <div className="flex justify-end pt-4">
               <Button
                 type="submit"
-                className="bg-accent hover:bg-accent/90 w-full text-white lg:w-fit"
+                size="lg"
+                className="bg-accent hover:bg-accent/90 w-full text-white sm:w-auto"
                 disabled={isSavingPassword}
               >
                 {isSavingPassword ? (
@@ -451,9 +455,9 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
 
       {/* Delete Account */}
       <Card>
-        <CardContent className="px-0 lg:px-6">
-          <h2 className="mb-6 px-4 text-lg font-medium lg:px-0">Delete Account</h2>
-          <div className="flex flex-col gap-6 px-4 lg:px-0">
+        <CardContent className="p-6">
+          <h2 className="mb-6 text-lg font-medium">Delete Account</h2>
+          <div className="flex flex-col gap-6">
             <div className="text-muted-foreground flex items-start gap-2 rounded-md border border-red-100 bg-red-50 p-3 text-sm">
               <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
               <p>
@@ -467,7 +471,8 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    className="w-full lg:w-fit"
+                    size="lg"
+                    className="w-full sm:w-auto"
                   >
                     Delete account
                   </Button>
