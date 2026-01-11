@@ -149,17 +149,17 @@ export default function AssignSubjectPageContent() {
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
               {!currentSession ? (
-                <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
+                <Button asChild size="lg" className="whitespace-nowrap bg-orange-500 text-white hover:bg-orange-600">
                   <Link href="/admin/class-management/session/create-session">
                     Create Active Session
                   </Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild>
+                  <Button asChild size="lg" className="whitespace-nowrap">
                     <Link href="/admin/class-management/class/new">Create Classes</Link>
                   </Button>
-                  <Button variant="outline" onClick={() => refetchClasses()}>
+                  <Button variant="outline" size="lg" className="whitespace-nowrap" onClick={() => refetchClasses()}>
                     Refresh
                   </Button>
                 </>

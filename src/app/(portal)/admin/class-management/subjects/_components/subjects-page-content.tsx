@@ -74,10 +74,11 @@ export default function SubjectsPageContent() {
           description="View, manage, or create subjects "
         />
         <Button
-          className="flex h-12 w-full items-center gap-2 lg:w-90"
+          size="lg"
+          className="whitespace-nowrap"
           onClick={handleAddSubject}
         >
-          <PlusIcon />
+          <PlusIcon className="h-4 w-4" />
           Create Subject
         </Button>
       </header>

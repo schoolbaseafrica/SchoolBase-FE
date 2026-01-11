@@ -76,7 +76,7 @@ export default function EditClassroomPage() {
             <p className="mb-6 text-gray-600">
               {error?.message || "The room you're looking for doesn't exist."}
             </p>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="whitespace-nowrap">
               <Link href="/admin/class-management/classrooms">Back to Rooms</Link>
             </Button>
           </div>

@@ -88,17 +88,18 @@ const ExistingClasses = ({
           {onToggleArchived && (
             <Button
               variant="outline"
+              size="lg"
               onClick={onToggleArchived}
-              className="flex items-center gap-2"
+              className="whitespace-nowrap"
             >
               {showArchived ? (
                 <>
-                  <RotateCcw className="size-4" />
+                  <RotateCcw className="mr-2 h-4 w-4" />
                   Show Active
                 </>
               ) : (
                 <>
-                  <Archive className="size-4" />
+                  <Archive className="mr-2 h-4 w-4" />
                   Show Archived
                 </>
               )}
@@ -106,12 +107,12 @@ const ExistingClasses = ({
           )}
 
           {classesData.length > 0 && !showArchived && (
-            <Button asChild className="h-10">
+            <Button asChild size="lg" className="whitespace-nowrap">
               <Link
                 href="/admin/class-management/class/new"
                 className="flex items-center gap-2"
               >
-                <Plus />
+                <Plus className="h-4 w-4" />
                 Create Class
               </Link>
             </Button>

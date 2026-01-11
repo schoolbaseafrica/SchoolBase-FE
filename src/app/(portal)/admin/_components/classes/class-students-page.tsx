@@ -79,16 +79,16 @@ export default function ViewClassStudents() {
               heading="Class Students"
               description="View the students assigned to this class"
             />
-            <div className="flex flex-col items-stretch gap-2">
-              <Button asChild className="h-10 w-full gap-2 md:w-auto">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild size="lg" className="whitespace-nowrap">
                 <Link href={`/admin/class-management/class/${classID}/students/assign`}>
-                  <UserPlusIcon className="h-4 w-4" />
+                  <UserPlusIcon className="mr-2 h-4 w-4" />
                   Assign Students
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-10 w-full gap-2 md:w-auto">
+              <Button asChild variant="outline" size="lg" className="whitespace-nowrap">
                 <Link href={`/admin/class-management/class/${classID}/subjects`}>
-                  <BookOpenIcon className="h-4 w-4" />
+                  <BookOpenIcon className="mr-2 h-4 w-4" />
                   View Subjects
                 </Link>
               </Button>

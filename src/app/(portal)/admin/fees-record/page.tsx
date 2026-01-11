@@ -87,10 +87,11 @@ const FeesRecord = () => {
             heading="Fees Dashboard"
             description="Overview of student fee collections for the current academic year"
           />
-          <div className="flex w-full gap-3 md:w-auto">
+          <div className="flex gap-3">
             <Button
               variant="outline"
-              className="flex-1 border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 md:flex-none"
+              size="lg"
+              className="whitespace-nowrap border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600"
               onClick={handleExport}
               disabled={!payments.length}
             >
@@ -98,7 +99,7 @@ const FeesRecord = () => {
               Export Records
             </Button>
             <Link href="/admin/fees-record/add-payment">
-              <Button className="flex-1 bg-[#DA3743] hover:bg-[#DA3743]/90 md:flex-none">
+              <Button size="lg" className="whitespace-nowrap bg-[#DA3743] hover:bg-[#DA3743]/90">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Payment
               </Button>
