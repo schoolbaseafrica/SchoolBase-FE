@@ -45,7 +45,7 @@ const DocumentItem = ({ title, lastUpdated }: DocumentItemProps) => {
 
 export const LegalSettings = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Legal & Privacy</h2>
         <p className="text-muted-foreground">

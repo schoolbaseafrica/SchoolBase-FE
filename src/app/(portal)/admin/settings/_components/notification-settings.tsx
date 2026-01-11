@@ -39,7 +39,7 @@ export const NotificationSettings = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Notification Settings</h2>
         <p className="text-muted-foreground">
