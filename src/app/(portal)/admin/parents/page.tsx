@@ -21,14 +21,6 @@ export default function ParentsPage() {
     }))
   )
 
-  console.log("ParentsPage: Render state", {
-    isLoading: isQueryLoading,
-    isError,
-    error: error?.message,
-    queryDataLength: queryData?.length,
-    storeParentCount: parentIds.length,
-    filters,
-  })
   const setFilters = useParentsStore((state) => state.setFilters)
 
   const filteredAll = useMemo(

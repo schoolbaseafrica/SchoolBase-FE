@@ -28,17 +28,9 @@ export function useGetTeachers() {
   const query = useQuery({
     queryKey: TEACHERS_KEY, // Stable key, ignore filters
     queryFn: async () => {
-      console.log("useGetTeachers: Fetching teachers from API...")
       setLoading(true)
       try {
         const res = await TeachersAPI.getAll({ limit: 100 }) // Backend max limit is 100
-        console.log("useGetTeachers: API response:", res)
-        console.log("useGetTeachers: API response structure:", {
-          hasData: !!res?.data,
-          dataType: typeof res?.data,
-          isArray: Array.isArray(res?.data),
-          nestedData: res?.data?.data,
-        })
         // Handle nested response structure: ResponsePack<ResponsePack<User[]>>
         // Try multiple possible response structures
         let teachers: User[] = []
@@ -60,13 +52,8 @@ export function useGetTeachers() {
             }
           }
         }
-        console.log("useGetTeachers: Extracted teachers:", teachers.length, teachers)
         // Ensure we always return an array
         const result = Array.isArray(teachers) ? teachers : []
-        console.log(
-          "useGetTeachers: Returning teachers array with length:",
-          result.length
-        )
         return result
       } catch (error) {
         console.error("Failed to fetch teachers:", error)
@@ -86,19 +73,7 @@ export function useGetTeachers() {
 
   // Sync with store
   useEffect(() => {
-    console.log("useGetTeachers: useEffect triggered", {
-      hasData: !!query.data,
-      isArray: Array.isArray(query.data),
-      dataLength: query.data?.length,
-      status: query.status,
-      isLoading: query.isLoading,
-      isError: query.isError,
-    })
     if (query.data && Array.isArray(query.data)) {
-      console.log(
-        "useGetTeachers: Syncing query data to store, teacher count:",
-        query.data.length
-      )
       setTeachers(query.data)
     }
   }, [query.data, query.status, query.isLoading, query.isError, setTeachers])
@@ -137,7 +112,6 @@ export function useCreateTeacher() {
   return useMutation({
     mutationFn: (data: CreateTeacherData) => TeachersAPI.create(data),
     onSuccess: async (newTeacher) => {
-      console.log("Teacher created successfully, adding to store:", newTeacher)
       // Update store instantly
       addTeacher(newTeacher)
 
@@ -150,7 +124,6 @@ export function useCreateTeacher() {
       // Force refetch to ensure we have the latest data
       await queryClient.refetchQueries({ queryKey: TEACHERS_KEY, type: "active" })
 
-      console.log("Query invalidated and refetched")
       toast.success("Teacher created successfully")
     },
     onError: (error) => {

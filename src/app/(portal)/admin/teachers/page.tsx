@@ -23,16 +23,6 @@ export default function TeachersPage() {
     }))
   )
 
-  // Debug logging
-  console.log("TeachersPage: Render state", {
-    isLoading: isQueryLoading,
-    isError,
-    error: error?.message,
-    queryDataLength: queryData?.length,
-    storeTeacherCount: teacherIds.length,
-    storeTeachers: Object.keys(teachers).length,
-    filters,
-  })
   const setFilters = useTeachersStore((state) => state.setFilters)
 
   // 3. Compute derived state (memoized)

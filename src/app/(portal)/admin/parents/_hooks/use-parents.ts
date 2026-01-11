@@ -26,16 +26,12 @@ export function useGetParents() {
   const query = useQuery({
     queryKey: PARENTS_KEY,
     queryFn: async () => {
-      console.log("useGetParents: Fetching parents from API...")
       setLoading(true)
       try {
         const res = await ParentsAPI.getAll({ limit: 100 } as GetParentsParams)
         // Handle nested response structure: ResponsePack<ResponsePack<User[]>>
         const parents = res?.data?.data || res?.data || []
-        console.log("useGetParents: API response:", res)
-        console.log("useGetParents: Extracted parents:", parents.length, parents)
         const result = Array.isArray(parents) ? parents : []
-        console.log("useGetParents: Returning parents array with length:", result.length)
         return result
       } catch (error) {
         console.error("Failed to fetch parents:", error)
@@ -51,19 +47,7 @@ export function useGetParents() {
   })
 
   useEffect(() => {
-    console.log("useGetParents: useEffect triggered", {
-      hasData: !!query.data,
-      isArray: Array.isArray(query.data),
-      dataLength: query.data?.length,
-      status: query.status,
-      isLoading: query.isLoading,
-      isFetching: query.isFetching,
-    })
     if (query.data && Array.isArray(query.data)) {
-      console.log(
-        "useGetParents: Syncing query data to store, parent count:",
-        query.data.length
-      )
       setParents(query.data as User[])
     }
   }, [query.data, setParents, query.status, query.isLoading, query.isFetching])
@@ -101,7 +85,6 @@ export function useCreateParent() {
   return useMutation({
     mutationFn: (data: CreateParentData) => ParentsAPI.create(data),
     onSuccess: (newParent) => {
-      console.log("Parent created successfully, adding to store:", newParent)
       addParent(newParent)
       queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
       queryClient.refetchQueries({ queryKey: PARENTS_KEY }) // Explicitly refetch

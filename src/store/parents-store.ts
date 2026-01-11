@@ -52,22 +52,12 @@ export const useParentsStore = create<ParentsState>((set, get) => ({
     }),
 
   addParent: (parent) => {
-    console.log("addParent called with:", parent)
-    console.log("Parent ID:", parent?.id)
-    set((state) => {
-      const newState = {
-        parents: { ...state.parents, [parent.id]: parent },
-        parentIds: state.parentIds.includes(parent.id)
-          ? state.parentIds
-          : [...state.parentIds, parent.id],
-      }
-      console.log("Updated store state:", {
-        parentCount: Object.keys(newState.parents).length,
-        parentIds: newState.parentIds.length,
-        newParentId: parent.id,
-      })
-      return newState
-    })
+    set((state) => ({
+      parents: { ...state.parents, [parent.id]: parent },
+      parentIds: state.parentIds.includes(parent.id)
+        ? state.parentIds
+        : [...state.parentIds, parent.id],
+    }))
   },
 
   updateParent: (id, updates) =>

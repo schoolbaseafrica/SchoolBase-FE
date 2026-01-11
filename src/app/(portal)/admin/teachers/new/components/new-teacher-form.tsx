@@ -221,30 +221,11 @@ export default function NewTeacherForm() {
     }
 
     try {
-      // Log payload so we can inspect what is sent to the backend
-      console.log("Creating teacher — payload:", newTeacher)
-      console.log(
-        "Creating teacher — payload (JSON):",
-        JSON.stringify(newTeacher, null, 2)
-      )
-      const createdTeacher = await createNewTeacher(newTeacher)
-      console.log("Teacher creation response:", createdTeacher)
+      await createNewTeacher(newTeacher)
       // Small delay to ensure store update completes before redirect
       await new Promise((resolve) => setTimeout(resolve, 100))
       router.push("/admin/teachers")
     } catch (err) {
-      // Surface error details in the console for debugging
-      console.error("Failed to create teacher:", err)
-      // Log the full error object for better debugging
-      if (err instanceof Error) {
-        console.error("Error message:", err.message)
-      }
-      // Log Axios error response if available
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosErr = err as { response?: { data?: unknown; status?: number } }
-        console.error("Backend error response:", axiosErr.response?.data)
-        console.error("Backend error status:", axiosErr.response?.status)
-      }
       throw err
     }
   }

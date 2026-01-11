@@ -46,7 +46,6 @@ export const useTeachersStore = create<TeachersState>((set, get) => ({
   filters: DEFAULT_FILTERS,
 
   setTeachers: (teachers) => {
-    console.log("setTeachers called with", teachers.length, "teachers")
     set({
       teachers: teachers.reduce((acc, t) => ({ ...acc, [t.id]: t }), {}),
       teacherIds: teachers.map((t) => t.id),
@@ -54,22 +53,12 @@ export const useTeachersStore = create<TeachersState>((set, get) => ({
   },
 
   addTeacher: (teacher) => {
-    console.log("addTeacher called with:", teacher)
-    console.log("Teacher ID:", teacher?.id)
-    set((state) => {
-      const newState = {
-        teachers: { ...state.teachers, [teacher.id]: teacher },
-        teacherIds: state.teacherIds.includes(teacher.id)
-          ? state.teacherIds
-          : [...state.teacherIds, teacher.id],
-      }
-      console.log("Updated store state:", {
-        teacherCount: Object.keys(newState.teachers).length,
-        teacherIds: newState.teacherIds.length,
-        newTeacherId: teacher.id,
-      })
-      return newState
-    })
+    set((state) => ({
+      teachers: { ...state.teachers, [teacher.id]: teacher },
+      teacherIds: state.teacherIds.includes(teacher.id)
+        ? state.teacherIds
+        : [...state.teacherIds, teacher.id],
+    }))
   },
 
   updateTeacher: (id, updates) =>

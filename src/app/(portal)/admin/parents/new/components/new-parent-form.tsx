@@ -136,15 +136,12 @@ export default function NewParentForm() {
     }
 
     try {
-      console.log("Creating parent — payload:", newParent)
-      const response = await createNewParent(newParent)
-      console.log("Parent creation response:", response)
+      await createNewParent(newParent)
       // Delay redirect to allow store to update
       setTimeout(() => {
         router.push("/admin/parents")
       }, 300)
     } catch (err) {
-      console.error("Failed to create parent:", err)
       throw err
     }
   }
