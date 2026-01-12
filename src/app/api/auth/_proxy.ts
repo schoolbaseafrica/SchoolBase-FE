@@ -232,13 +232,23 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     const responseText = await backendRes.text()
     
     // Log error responses for debugging upload issues
-    if (backendRes.status >= 400 && isMultipart) {
-      console.error("[proxy] Upload error response:", {
+    if (backendRes.status >= 400) {
+      let parsedBody = responseText
+      try {
+        const jsonBody = JSON.parse(responseText)
+        parsedBody = JSON.stringify(jsonBody, null, 2)
+      } catch {
+        // Not JSON, keep as string
+      }
+      
+      console.error("[proxy] Error response:", {
         status: backendRes.status,
         statusText: backendRes.statusText,
         contentType: backendRes.headers.get("content-type"),
-        body: responseText.substring(0, 500), // First 500 chars
+        body: parsedBody.substring(0, 1000), // First 1000 chars
+        bodyLength: responseText.length,
         url: backendUrl,
+        isMultipart: isMultipart,
       })
     }
     

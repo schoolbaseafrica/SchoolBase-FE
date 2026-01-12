@@ -130,16 +130,41 @@ export async function apiFetch<TResponse>(
       // Always log error details for upload requests to help debug
       const isUploadRequest = err.config?.url?.includes('/upload') || err.config?.method === 'POST' && err.config?.data instanceof FormData
       if (isUploadRequest) {
+        // Try to extract error message from various possible response structures
+        let errorMessage = 'Unknown error'
+        let errorData = err.response?.data
+        
+        // Force stringify to see full object structure
+        let errorDataString = 'No data'
+        try {
+          if (errorData) {
+            if (typeof errorData === 'string') {
+              errorDataString = errorData
+              errorMessage = errorData
+            } else if (typeof errorData === 'object') {
+              errorDataString = JSON.stringify(errorData, null, 2)
+              errorMessage = errorData.message || errorData.error || errorData.detail || errorDataString
+            } else {
+              errorDataString = String(errorData)
+              errorMessage = errorDataString
+            }
+          }
+        } catch (stringifyError) {
+          errorDataString = `Error stringifying: ${stringifyError}`
+        }
+        
         console.error('[apiFetch] Upload error details:', {
           status: err.response?.status,
           statusText: err.response?.statusText,
-          data: err.response?.data,
-          dataType: typeof err.response?.data,
-          dataString: typeof err.response?.data === 'string' ? err.response.data.substring(0, 500) : undefined,
-          headers: err.response?.headers ? Object.fromEntries(Object.entries(err.response.headers)) : undefined,
+          dataType: typeof errorData,
+          errorMessage: errorMessage,
+          dataFull: errorDataString,
           url: err.config?.url,
           method: err.config?.method,
         })
+        
+        // Also log the raw response data separately for clarity
+        console.error('[apiFetch] Raw response data:', errorData)
       }
       // Check if school exists before redirecting to login
       // If school doesn't exist, redirect to setup instead
