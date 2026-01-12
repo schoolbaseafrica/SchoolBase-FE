@@ -8,6 +8,7 @@ import { Toaster } from "sonner"
 import { defaultSchoolProfile } from "@/data/school-profile"
 import { BrandThemeUpdater } from "@/components/brand-theme-updater"
 import { PageTitleFaviconUpdater } from "@/components/page-title-favicon-updater"
+import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -87,6 +88,9 @@ export default function RootLayout({
   return (
     <QueryProvider>
       <html lang="en">
+        <head>
+          <GoogleAnalytics />
+        </head>
         <body className={`${outfit.variable} font-outfit antialiased`}>
           <ConfigProvider>
             <BrandThemeUpdater />

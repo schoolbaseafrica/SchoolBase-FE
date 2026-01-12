@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/dashboard/admin-sidebar"
 import DashboardHeader from "@/components/dashboard/dashboard-header"
 import { QueryProvider } from "@/providers/query-provider"
 import { UserProvider } from "@/providers/user-provider"
+import { PageViewTracker } from "@/components/analytics/page-view-tracker"
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
@@ -19,6 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebar />
           <main className="mt-[50px] h-full w-full bg-white">
             <DashboardHeader />
+            <PageViewTracker />
             {children}
           </main>
         </SidebarProvider>
