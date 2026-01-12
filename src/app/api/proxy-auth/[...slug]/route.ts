@@ -47,9 +47,18 @@ async function methodHandler(
     })
   }
 
-  const response = new NextResponse(body, {
+  // For error responses, ensure we preserve the error body
+  // This is critical for axios to capture the error details
+  const responseHeaders = new Headers(backendRes.headers)
+  
+  // Ensure content-type is set for error responses
+  if (backendRes.status >= 400 && !responseHeaders.get("content-type")) {
+    responseHeaders.set("content-type", "application/json; charset=utf-8")
+  }
+
+  const response = new NextResponse(body || null, {
     status: backendRes.status,
-    headers: backendRes.headers, // preserves content-type, etc.
+    headers: responseHeaders,
   })
 
   return response

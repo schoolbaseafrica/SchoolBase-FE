@@ -86,6 +86,8 @@ const forwardRequest = async (
   console.log("[proxy] Headers:", Object.fromEntries(headers.entries()))
   if (body && typeof body === "string")
     console.log("[proxy] Body (string):", body.substring(0, 100))
+  if (body && body instanceof ArrayBuffer)
+    console.log("[proxy] Body (ArrayBuffer):", body.byteLength, "bytes")
 
   try {
     const res = await fetch(backendUrl, {
@@ -96,6 +98,24 @@ const forwardRequest = async (
       redirect: "manual",
     })
     console.log(`[proxy] Backend response status: ${res.status}`)
+    
+    // For error responses, log the response body for debugging
+    if (res.status >= 400) {
+      const responseClone = res.clone() // Clone to avoid consuming the stream
+      try {
+        const errorText = await responseClone.text()
+        console.error(`[proxy] Backend error response (${res.status}):`, {
+          status: res.status,
+          statusText: res.statusText,
+          contentType: res.headers.get("content-type"),
+          body: errorText.substring(0, 1000), // First 1000 chars
+          url: backendUrl,
+        })
+      } catch (textError) {
+        console.error("[proxy] Could not read error response body:", textError)
+      }
+    }
+    
     return res
   } catch (err) {
     console.error("[proxy] Error in forwardRequest:", err)

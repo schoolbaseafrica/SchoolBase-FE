@@ -53,38 +53,56 @@ export function uploadToCloudinary(file: File) {
     true
   ).catch((error: any) => {
     // Enhanced error logging to capture all possible error details
+    // Try to extract response data in multiple ways since axios error structure can vary
+    let responseData = error?.response?.data
+    let responseStatus = error?.response?.status
+    let responseStatusText = error?.response?.statusText
+    
+    // If response.data is a string, try to parse it as JSON
+    if (typeof responseData === 'string' && responseData.length > 0) {
+      try {
+        responseData = JSON.parse(responseData)
+      } catch {
+        // If parsing fails, keep it as string
+      }
+    }
+    
     const errorDetails = {
       message: error?.message,
       name: error?.name,
       stack: error?.stack,
       response: {
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
-        headers: error?.response?.headers,
+        status: responseStatus,
+        statusText: responseStatusText,
+        data: responseData,
+        headers: error?.response?.headers ? Object.fromEntries(Object.entries(error.response.headers)) : undefined,
+        rawData: typeof error?.response?.data === 'string' ? error.response.data.substring(0, 200) : error?.response?.data,
       },
       request: {
-        url: error?.config?.url,
+        url: error?.config?.url || error?.request?.responseURL,
         method: error?.config?.method,
-        headers: error?.config?.headers,
+        headers: error?.config?.headers ? Object.fromEntries(Object.entries(error.config.headers)) : undefined,
       },
       code: error?.code,
+      isAxiosError: error?.isAxiosError,
     }
     
     console.error("[upload-photo] Upload failed - Full error details:", JSON.stringify(errorDetails, null, 2))
     
-    // Extract backend error message if available
+    // Extract backend error message if available (try multiple paths)
     const backendMessage = 
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.response?.data?.detail ||
+      (responseData && typeof responseData === 'object' && responseData.message) ||
+      (responseData && typeof responseData === 'object' && responseData.error) ||
+      (responseData && typeof responseData === 'object' && responseData.detail) ||
+      (typeof responseData === 'string' && responseData) ||
       error?.message ||
-      "Image upload failed"
+      `Image upload failed (${responseStatus ? `Status: ${responseStatus}` : 'No response'})`
     
     // Create a more informative error
     const uploadError = new Error(backendMessage)
-    ;(uploadError as any).statusCode = error?.response?.status
-    ;(uploadError as any).responseData = error?.response?.data
+    ;(uploadError as any).statusCode = responseStatus
+    ;(uploadError as any).responseData = responseData
+    ;(uploadError as any).originalError = error
     throw uploadError
   })
 }

@@ -48,6 +48,17 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   validateStatus: (status) => status >= 200 && status < 400,
+  // Ensure error responses are properly parsed
+  transformResponse: [(data) => {
+    if (typeof data === 'string') {
+      try {
+        return JSON.parse(data)
+      } catch {
+        return data
+      }
+    }
+    return data
+  }],
 })
 
 const navigateTo = (path: string) => {
@@ -116,6 +127,20 @@ export async function apiFetch<TResponse>(
   } catch (err) {
     // Network or backend errors
     if (err instanceof AxiosError) {
+      // Always log error details for upload requests to help debug
+      const isUploadRequest = err.config?.url?.includes('/upload') || err.config?.method === 'POST' && err.config?.data instanceof FormData
+      if (isUploadRequest) {
+        console.error('[apiFetch] Upload error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          dataType: typeof err.response?.data,
+          dataString: typeof err.response?.data === 'string' ? err.response.data.substring(0, 500) : undefined,
+          headers: err.response?.headers ? Object.fromEntries(Object.entries(err.response.headers)) : undefined,
+          url: err.config?.url,
+          method: err.config?.method,
+        })
+      }
       // Check if school exists before redirecting to login
       // If school doesn't exist, redirect to setup instead
       if (err.response?.status === 401 || err.response?.status === 409) {
