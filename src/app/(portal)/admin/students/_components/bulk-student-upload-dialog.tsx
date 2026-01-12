@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { StudentsAPI } from "@/lib/students"
 
 interface BulkStudentUploadDialogProps {
   open: boolean
@@ -49,16 +50,17 @@ export default function BulkStudentUploadDialog({
 
     setIsLoading(true)
     try {
-      // TODO: Implement bulk student upload API call
-      // const response = await StudentsAPI.bulkUpload(file)
-      
-      // For now, show a placeholder message
-      toast.info("Bulk student upload feature is coming soon")
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      toast.success("Students uploaded successfully")
+      const response = await StudentsAPI.bulkUpload(file)
+      const result = response.data
+
+      if (result.failed === 0) {
+        toast.success(`Successfully uploaded ${result.successful} students`)
+      } else {
+        toast.warning(
+          `Upload completed: ${result.successful} successful, ${result.failed} failed`
+        )
+      }
+
       onSuccess?.()
       setTimeout(() => {
         setOpen(false)
@@ -66,7 +68,7 @@ export default function BulkStudentUploadDialog({
         if (fileInputRef.current) {
           fileInputRef.current.value = ""
         }
-      }, 1500)
+      }, 2000)
     } catch (error: any) {
       toast.error(error?.message || "Failed to upload students")
     } finally {

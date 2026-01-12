@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { ParentsAPI } from "@/lib/parents"
 
 interface BulkParentUploadDialogProps {
   open: boolean
@@ -49,16 +50,17 @@ export default function BulkParentUploadDialog({
 
     setIsLoading(true)
     try {
-      // TODO: Implement bulk parent upload API call
-      // const response = await ParentsAPI.bulkUpload(file)
-      
-      // For now, show a placeholder message
-      toast.info("Bulk parent upload feature is coming soon")
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      toast.success("Parents uploaded successfully")
+      const response = await ParentsAPI.bulkUpload(file)
+      const result = response.data
+
+      if (result.failed === 0) {
+        toast.success(`Successfully uploaded ${result.successful} parents`)
+      } else {
+        toast.warning(
+          `Upload completed: ${result.successful} successful, ${result.failed} failed`
+        )
+      }
+
       onSuccess?.()
       setTimeout(() => {
         setOpen(false)
@@ -66,7 +68,7 @@ export default function BulkParentUploadDialog({
         if (fileInputRef.current) {
           fileInputRef.current.value = ""
         }
-      }, 1500)
+      }, 2000)
     } catch (error: any) {
       toast.error(error?.message || "Failed to upload parents")
     } finally {

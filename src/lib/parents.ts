@@ -96,4 +96,29 @@ export const ParentsAPI = {
       },
       true
     ),
+
+  bulkUpload: (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    return apiFetch<
+      ResponsePack<{
+        total: number
+        successful: number
+        failed: number
+        results: Array<{
+          email: string
+          success: boolean
+          parent?: User
+          error?: string
+        }>
+      }>
+    >(
+      "/parents/bulk-upload",
+      {
+        method: "POST",
+        data: formData,
+      },
+      true
+    )
+  },
 }

@@ -182,6 +182,31 @@ export const StudentsAPI = {
     )
   },
 
+  bulkUpload: (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    return apiFetch<
+      ResponsePack<{
+        total: number
+        successful: number
+        failed: number
+        results: Array<{
+          email: string
+          success: boolean
+          student?: User
+          error?: string
+        }>
+      }>
+    >(
+      "/students/bulk-upload",
+      {
+        method: "POST",
+        data: formData,
+      },
+      true
+    )
+  },
+
   exportNfcCardsCsv: async () => {
     const response = await fetch("/api/proxy-auth/students/nfc-cards/export-csv", {
       method: "GET",
