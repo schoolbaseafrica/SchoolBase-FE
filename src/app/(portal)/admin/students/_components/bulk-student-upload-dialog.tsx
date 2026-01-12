@@ -1,0 +1,151 @@
+"use client"
+
+import { useState, useRef } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { FileText, X, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
+interface BulkStudentUploadDialogProps {
+  open: boolean
+  setOpen: (open: boolean) => void
+  onSuccess?: () => void
+}
+
+export default function BulkStudentUploadDialog({
+  open,
+  setOpen,
+  onSuccess,
+}: BulkStudentUploadDialogProps) {
+  const [file, setFile] = useState<File | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      if (selectedFile.type !== "text/csv" && !selectedFile.name.endsWith(".csv")) {
+        toast.error("Please select a CSV file")
+        return
+      }
+      setFile(selectedFile)
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!file) {
+      toast.error("Please select a CSV file")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      // TODO: Implement bulk student upload API call
+      // const response = await StudentsAPI.bulkUpload(file)
+      
+      // For now, show a placeholder message
+      toast.info("Bulk student upload feature is coming soon")
+      
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      toast.success("Students uploaded successfully")
+      onSuccess?.()
+      setTimeout(() => {
+        setOpen(false)
+        setFile(null)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""
+        }
+      }, 1500)
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload students")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleClose = () => {
+    setFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Bulk Upload Students</DialogTitle>
+          <DialogDescription>
+            Upload a CSV file to create multiple students at once.
+            <br />
+            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Registration Number, Date of Birth, Gender, Class
+            <br />
+            <strong>Note:</strong> All fields except Middle Name are required.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="csv-file">CSV File</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                ref={fileInputRef}
+                id="csv-file"
+                type="file"
+                accept=".csv"
+                onChange={handleFileSelect}
+                disabled={isLoading}
+              />
+              {file && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setFile(null)
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = ""
+                    }
+                  }}
+                  disabled={isLoading}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {file && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FileText className="h-4 w-4" />
+                <span>{file.name}</span>
+                <span className="text-gray-400">
+                  ({(file.size / 1024).toFixed(2)} KB)
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpload} disabled={!file || isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Upload Students
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

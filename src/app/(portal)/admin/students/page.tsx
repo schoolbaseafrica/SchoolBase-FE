@@ -8,16 +8,10 @@ import {
   selectPaginatedStudents,
 } from "@/store/students-store"
 import { useShallow } from "zustand/react/shallow"
-import { useMemo, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Users } from "lucide-react"
-import BulkAssignClassDialog from "./_components/bulk-assign-class-dialog"
-import BulkNfcImportDialog from "./_components/bulk-nfc-import-dialog"
-import BulkNfcExportButton from "./_components/bulk-nfc-export-button"
+import { useMemo } from "react"
+import { BulkActionsMenu } from "./_components/bulk-actions-menu"
 
 export default function StudentsPage() {
-  const [showBulkAssignDialog, setShowBulkAssignDialog] = useState(false)
-  const [showBulkNfcImportDialog, setShowBulkNfcImportDialog] = useState(false)
   const { isLoading: isQueryLoading, isError, error } = useGetStudents()
 
   const { students, studentIds, filters } = useStudentsStore(
@@ -60,62 +54,25 @@ export default function StudentsPage() {
     filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
   return (
-    <>
-      <div className="mx-auto p-4 sm:p-6">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-          <BulkNfcExportButton />
-          <Button
-            onClick={() => setShowBulkNfcImportDialog(true)}
-            variant="outline"
-            size="lg"
-            className="whitespace-nowrap"
-          >
-            Import NFC Cards (CSV)
-          </Button>
-          <Button
-            onClick={() => setShowBulkAssignDialog(true)}
-            variant="default"
-            size="lg"
-            className="whitespace-nowrap"
-          >
-            <Users className="mr-2 h-4 w-4" />
-            Assign Students to Class
-          </Button>
-        </div>
-
-        <UsersView
-          isLoading={isQueryLoading && studentIds.length === 0}
-          isError={isError}
-          error={error?.message}
-          users={paginatedStudents}
-          userType="students"
-          searchQuery={filters.search}
-          statusFilter={currentStatusFilter}
-          currentPage={filters.page}
-          totalPages={totalPages}
-          onSearchChange={handleSearchChange}
-          onStatusFilterChange={handleStatusFilterChange}
-          onPageChange={handlePageChange}
-        />
+    <div className="mx-auto p-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+        <BulkActionsMenu />
       </div>
 
-      {/* Bulk Assign Dialog */}
-      <BulkAssignClassDialog
-        open={showBulkAssignDialog}
-        setOpen={setShowBulkAssignDialog}
-        onSuccess={() => {
-          // Optionally refresh the students list
-        }}
+      <UsersView
+        isLoading={isQueryLoading && studentIds.length === 0}
+        isError={isError}
+        error={error?.message}
+        users={paginatedStudents}
+        userType="students"
+        searchQuery={filters.search}
+        statusFilter={currentStatusFilter}
+        currentPage={filters.page}
+        totalPages={totalPages}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
+        onPageChange={handlePageChange}
       />
-
-      {/* Bulk NFC Import Dialog */}
-      <BulkNfcImportDialog
-        open={showBulkNfcImportDialog}
-        setOpen={setShowBulkNfcImportDialog}
-        onSuccess={() => {
-          // Optionally refresh the students list
-        }}
-      />
-    </>
+    </div>
   )
 }
