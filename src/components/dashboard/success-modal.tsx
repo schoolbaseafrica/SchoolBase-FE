@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
@@ -35,9 +35,14 @@ export function SuccessModal({
           </div>
 
           <DialogTitle className="text-center text-xl font-semibold">{title}</DialogTitle>
+          {message && (
+            <DialogDescription className="mt-1 text-sm text-gray-500">
+              {message}
+            </DialogDescription>
+          )}
         </DialogHeader>
 
-        {message && <p className="mt-1 text-sm text-gray-500">{message}</p>}
+        {!message && <p className="mt-1 text-sm text-gray-500 sr-only">Success</p>}
 
         <Button
           className="mt-6 w-full rounded-md bg-red-600 py-5 text-base text-white hover:bg-red-700"

@@ -236,23 +236,27 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
             <p className="text-sm text-gray-500">Loading classes...</p>
           ) : classes?.items?.length ? (
             <div className="grid max-h-40 grid-cols-2 gap-2 overflow-y-auto rounded-md border p-2">
-              {classes.items.map((clsItem) =>
-                clsItem.classes.map((cls) => (
-                  <div key={cls.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={cls.id}
-                      checked={selectedClassIds.includes(cls.id)}
-                      onCheckedChange={() => toggleClass(cls.id)}
-                    />
-                    <label
-                      htmlFor={cls.id}
-                      className="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {clsItem.name} {cls.arm}
-                    </label>
-                  </div>
-                ))
-              )}
+              {classes.items
+                .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
+                .map((clsItem) =>
+                  clsItem.classes
+                    .filter((cls) => cls?.id)
+                    .map((cls) => (
+                      <div key={cls.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={cls.id}
+                          checked={selectedClassIds.includes(cls.id)}
+                          onCheckedChange={() => toggleClass(cls.id)}
+                        />
+                        <label
+                          htmlFor={cls.id}
+                          className="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {clsItem.name || "Unknown"} {cls.arm || ""}
+                        </label>
+                      </div>
+                    ))
+                )}
             </div>
           ) : (
             <p className="text-sm text-gray-500">No classes available</p>

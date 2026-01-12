@@ -86,7 +86,7 @@ export const selectFilteredFees = (
     const search = filters.search.toLowerCase()
     filtered = filtered.filter(
       (f) =>
-        f.component_name.toLowerCase().includes(search) ||
+        f.component_name?.toLowerCase().includes(search) ||
         f.description?.toLowerCase().includes(search)
     )
   }
