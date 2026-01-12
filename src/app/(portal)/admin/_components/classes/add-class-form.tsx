@@ -166,12 +166,15 @@ const AddClassForm = ({ onSubmit, isLoading, defaultValues }: AddClassFormProps)
 
             {/* arm */}
             <div>
-              <Label htmlFor="arm">Arms</Label>
+              <Label htmlFor="arm">
+                Arm <span className="ml-2 text-xs text-gray-500">Optional</span>
+              </Label>
               <Input
                 id="arm"
                 {...register("arm")}
-                placeholder="Enter class name e.g, JSS 3A"
+                placeholder="Enter arm letter (e.g., A, B, C)"
                 type="text"
+                maxLength={1}
                 className={errors.arm ? "border-red-500" : ""}
               />
               {errors.arm && (
