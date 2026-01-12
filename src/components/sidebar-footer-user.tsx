@@ -9,6 +9,7 @@ import { LogoutDialog } from "@/components/dashboard/logout-confirmation-dialog"
 import { useLogout } from "@/hooks/use-user-data"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { AvatarSkeleton } from "@/components/ui/avatar-skeleton"
 
 interface SidebarFooterUserProps {
   isCollapsed?: boolean
@@ -44,13 +45,7 @@ export function SidebarFooterUser({ isCollapsed = false }: SidebarFooterUserProp
                   className="h-10 w-10 rounded-full object-cover"
                 />
               ) : (
-                <Image
-                  src={"/assets/images/dashboard/avatar.svg"}
-                  alt="avatar"
-                  width={32}
-                  height={32}
-                  className="w-full object-cover"
-                />
+                <AvatarSkeleton size={40} />
               )}
               <div className="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
             </div>

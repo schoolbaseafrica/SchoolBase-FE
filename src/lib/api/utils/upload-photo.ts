@@ -8,17 +8,22 @@ interface UploadFileResponse {
   mimetype: string
 }
 
+interface UploadApiResponse {
+  status_code: number
+  message: string
+  data: UploadFileResponse
+}
+
 export function uploadToCloudinary(file: File) {
   const formData = new FormData()
-  formData.append(file.name, file, file.name)
+  // Backend expects field name to be "file" (not the filename)
+  formData.append("file", file)
 
-  return apiFetch<UploadFileResponse>(
+  return apiFetch<UploadApiResponse>(
     "/upload/picture",
     {
       method: "POST",
-      headers: {
-        "Content-Type": "multipart/formData",
-      },
+      // Don't set Content-Type header - browser will set it automatically with boundary
       data: formData,
     },
     true
@@ -26,6 +31,13 @@ export function uploadToCloudinary(file: File) {
 }
 
 export async function getPhotoUrl(file: File) {
-  const fileData = await uploadToCloudinary(file)
-  return fileData.url
+  const response = await uploadToCloudinary(file)
+  // Backend returns { status_code, message, data: { url, ... } }
+  // apiFetch returns res.data, so response is already the API response object
+  // Extract the nested data.url
+  if (response && typeof response === 'object' && 'data' in response) {
+    return (response as UploadApiResponse).data.url
+  }
+  // Fallback: if response is already the nested data object
+  return (response as any).url
 }
