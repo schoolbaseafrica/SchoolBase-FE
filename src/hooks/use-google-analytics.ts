@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { pageview, event } from "@/lib/gtag"
 import { useSchoolStore } from "@/store/use-school-store"
-import { useUserStore } from "@/store/use-user-store"
+import { useAuthStore } from "@/store/auth-store"
 
 /**
  * Hook to automatically track page views and provide event tracking
@@ -13,7 +13,7 @@ export function useGoogleAnalytics() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const school = useSchoolStore((state) => state.school)
-  const user = useUserStore((state) => state.user)
+  const user = useAuthStore((state) => state.user)
 
   // Track page views on route change
   useEffect(() => {
@@ -53,7 +53,7 @@ export function useGoogleAnalytics() {
  */
 export function useTrackEvent() {
   const school = useSchoolStore((state) => state.school)
-  const user = useUserStore((state) => state.user)
+  const user = useAuthStore((state) => state.user)
 
   const trackEvent = (
     action: string,
