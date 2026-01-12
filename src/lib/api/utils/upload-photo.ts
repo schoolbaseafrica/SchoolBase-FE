@@ -51,14 +51,41 @@ export function uploadToCloudinary(file: File) {
       data: formData,
     },
     true
-  ).catch((error) => {
-    console.error("[upload-photo] Upload failed:", {
-      error,
+  ).catch((error: any) => {
+    // Enhanced error logging to capture all possible error details
+    const errorDetails = {
       message: error?.message,
-      response: error?.response?.data,
-      status: error?.response?.status,
-    })
-    throw error
+      name: error?.name,
+      stack: error?.stack,
+      response: {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        headers: error?.response?.headers,
+      },
+      request: {
+        url: error?.config?.url,
+        method: error?.config?.method,
+        headers: error?.config?.headers,
+      },
+      code: error?.code,
+    }
+    
+    console.error("[upload-photo] Upload failed - Full error details:", JSON.stringify(errorDetails, null, 2))
+    
+    // Extract backend error message if available
+    const backendMessage = 
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.response?.data?.detail ||
+      error?.message ||
+      "Image upload failed"
+    
+    // Create a more informative error
+    const uploadError = new Error(backendMessage)
+    ;(uploadError as any).statusCode = error?.response?.status
+    ;(uploadError as any).responseData = error?.response?.data
+    throw uploadError
   })
 }
 

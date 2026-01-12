@@ -210,6 +210,18 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     }
 
     const responseText = await backendRes.text()
+    
+    // Log error responses for debugging upload issues
+    if (backendRes.status >= 400 && isMultipart) {
+      console.error("[proxy] Upload error response:", {
+        status: backendRes.status,
+        statusText: backendRes.statusText,
+        contentType: backendRes.headers.get("content-type"),
+        body: responseText.substring(0, 500), // First 500 chars
+        url: backendUrl,
+      })
+    }
+    
     const nextRes = new NextResponse(responseText || null, {
       status: backendRes.status,
       headers: {
