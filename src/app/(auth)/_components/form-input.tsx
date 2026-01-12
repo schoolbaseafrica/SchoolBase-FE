@@ -201,10 +201,10 @@ const LoginForm = () => {
                   onBlur={handleBlur}
                   disabled={isLoading}
                   aria-invalid={touched.email && Boolean(errors.email)}
-                  className={`w-full ${
+                  className={`w-full border-2 ${
                     errors.email && touched.email
                       ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                      : "border-gray-400"
                   } ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
                 />
                 {renderError("email")}
@@ -230,17 +230,17 @@ const LoginForm = () => {
                   onBlur={handleBlur}
                   disabled={isLoading}
                   aria-invalid={touched.password && Boolean(errors.password)}
-                  className={`w-full pr-10 ${
+                  className={`w-full pr-10 border-2 ${
                     errors.password && touched.password
                       ? "border-red-500 bg-red-50"
-                      : "border-gray-300"
+                      : "border-gray-400"
                   } ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   disabled={isLoading}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 disabled:cursor-not-allowed transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (

@@ -28,7 +28,11 @@ function AvatarImage({
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("aspect-square size-full", className)}
+      className={cn(
+        "aspect-square size-full",
+        "animate-none", // Disable fade-in animations
+        className
+      )}
       {...props}
     />
   )
@@ -43,6 +47,7 @@ function AvatarFallback({
       data-slot="avatar-fallback"
       className={cn(
         "bg-muted flex size-full items-center justify-center rounded-full",
+        "animate-none", // Disable any animations
         className
       )}
       {...props}

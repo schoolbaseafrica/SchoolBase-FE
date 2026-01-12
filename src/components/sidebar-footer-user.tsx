@@ -35,13 +35,23 @@ export function SidebarFooterUser({ isCollapsed = false }: SidebarFooterUserProp
         <div className="flex items-center justify-between">
           <Link href={`/${role}/profile`} className="flex flex-1 items-center gap-3">
             <div className="relative h-10 w-10">
-              <Image
-                src={"/assets/images/dashboard/avatar.svg"}
-                alt="avatar"
-                width={32}
-                height={32}
-                className="w-full object-cover"
-              />
+              {user?.photo_url ? (
+                <Image
+                  src={user.photo_url}
+                  alt={`${user.first_name} ${user.last_name}`}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={"/assets/images/dashboard/avatar.svg"}
+                  alt="avatar"
+                  width={32}
+                  height={32}
+                  className="w-full object-cover"
+                />
+              )}
               <div className="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
             </div>
             {!isCollapsed && (

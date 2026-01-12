@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ import { toast } from "sonner"
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import { UpdateProfileRequestNew } from "@/types/profile"
 import { useUpdateProfile, useGetProfile } from "@/hooks/use-profile"
+import { getPhotoUrl } from "@/lib/api/utils/upload-photo"
 
 interface ProfileSettingsProps {
   role: "student" | "teacher" | "parent" | "admin" | "super admin"
@@ -41,6 +42,9 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
   const updateProfile = useUpdateProfile()
   const [isSaving, setIsSaving] = useState(false)
   const [phoneError, setPhoneError] = useState("")
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Password state
   const [isSavingPassword, setIsSavingPassword] = useState(false)
@@ -74,6 +78,10 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
         phone: profile.phone || "",
         homeAddress: profile.homeAddress || "",
       })
+      // Set avatar preview if photo_url exists
+      if (profile.photo_url) {
+        setAvatarPreview(profile.photo_url)
+      }
     }
   }, [profile])
 
@@ -132,6 +140,26 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
     validatePhoneNumber(filteredValue)
   }
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size should be less than 5MB")
+        return
+      }
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -144,15 +172,33 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
     setIsSaving(true)
 
     try {
+      // If avatar file is provided, upload it first to get the URL
+      let photoUrl = profile?.photo_url
+      if (avatarFile) {
+        try {
+          photoUrl = await getPhotoUrl(avatarFile)
+        } catch (uploadError) {
+          console.error("Failed to upload photo:", uploadError)
+          toast.error("Failed to upload photo, but will continue with profile update")
+        }
+      }
+
       const updateData: UpdateProfileRequestNew = {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         middle_name: formData.middle_name.trim() || null,
         phone: formData.phone.trim(),
         homeAddress: formData.homeAddress.trim() || undefined,
+        photo_url: photoUrl,
       }
 
       await updateProfile.mutateAsync(updateData)
+
+      // Clear avatar file after successful upload
+      if (avatarFile && fileInputRef.current) {
+        fileInputRef.current.value = ""
+        setAvatarFile(null)
+      }
 
       // Redirect back to profile page
       router.push(`/${role}/profile`)
@@ -187,12 +233,31 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
         <CardContent className="p-6">
           <div className="mb-6 flex items-center gap-6">
             <Avatar className="border-border h-20 w-20 border-2">
-              <AvatarImage src={profile?.photo_url} className="object-cover" />
+              <AvatarImage
+                src={avatarPreview || profile?.photo_url}
+                className="object-cover"
+              />
               <AvatarFallback className="bg-muted text-xl">
                 {profile?.first_name?.[0]}
                 {profile?.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handlePhotoClick}
+              className="text-muted-foreground hover:bg-muted gap-2 border text-sm hover:border-2"
+            >
+              Change photo
+            </Button>
           </div>
 
           <h2 className="mb-6 text-lg font-medium">Personal Information</h2>
@@ -217,7 +282,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
                   name="middle_name"
                   value={formData.middle_name}
                   onChange={handleChange}
-                  placeholder="Michael"
+                  placeholder="Enter middle name (optional)"
                 />
               </div>
               <div className="space-y-2">
