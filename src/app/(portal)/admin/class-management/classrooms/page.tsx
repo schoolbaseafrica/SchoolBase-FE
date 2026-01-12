@@ -3,10 +3,11 @@
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ClassroomsToolbar } from "@/components/classrooms/classrooms-toolbar"
-import { ClassroomCard } from "@/components/classrooms/classroom-card"
+import { ClassroomsTable } from "@/components/classrooms/classrooms-table"
 import { EmptyClassrooms } from "@/components/classrooms/empty-classrooms"
 import { SuccessModal } from "@/components/classrooms/success-modal"
-import { ClassroomsSkeleton } from "@/components/classrooms/classrooms-skeleton"
+import { ClassroomsTableSkeleton } from "@/components/classrooms/classrooms-table-skeleton"
+import { Pagination } from "@/components/ui/pagination"
 import {
   useGetClassrooms,
   useDeleteClassroom,
@@ -18,6 +19,8 @@ export default function ClassroomsPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterType, setFilterType] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
   const [successModal, setSuccessModal] = useState<{
     open: boolean
     title: string
@@ -54,6 +57,15 @@ export default function ClassroomsPage() {
       }
     })
   }, [classrooms, searchQuery, filterType])
+
+  // Paginate filtered classrooms
+  const paginatedClassrooms = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredClassrooms.slice(start, end)
+  }, [filteredClassrooms, currentPage])
+
+  const totalPages = Math.ceil(filteredClassrooms.length / itemsPerPage)
 
   const handleEdit = (classroom: Classroom) => {
     router.push(`/admin/class-management/classrooms/${classroom.id}`)
@@ -92,7 +104,7 @@ export default function ClassroomsPage() {
             onFilterTypeChange={() => {}}
             onAddClassroom={handleAddClassroom}
           />
-          <ClassroomsSkeleton count={6} />
+          <ClassroomsTableSkeleton rows={10} />
         </>
       ) : classrooms.length === 0 && !searchQuery ? (
         <EmptyClassrooms />
@@ -100,9 +112,15 @@ export default function ClassroomsPage() {
         <>
           <ClassroomsToolbar
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            onSearchChange={(query) => {
+              setSearchQuery(query)
+              setCurrentPage(1) // Reset to first page on search
+            }}
             filterType={filterType}
-            onFilterTypeChange={setFilterType}
+            onFilterTypeChange={(type) => {
+              setFilterType(type)
+              setCurrentPage(1) // Reset to first page on filter change
+            }}
             onAddClassroom={handleAddClassroom}
           />
 
@@ -113,17 +131,25 @@ export default function ClassroomsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-              {filteredClassrooms.map((classroom) => (
-                <ClassroomCard
-                  key={classroom.id}
-                  classroom={classroom}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onToggleAvailability={handleToggleAvailability}
-                />
-              ))}
-            </div>
+            <>
+              <ClassroomsTable
+                classrooms={paginatedClassrooms}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleAvailability={handleToggleAvailability}
+              />
+              {totalPages > 1 && (
+                <div className="mt-6">
+                  <Pagination
+                    itemName="rooms"
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredClassrooms.length}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </>
       )}
