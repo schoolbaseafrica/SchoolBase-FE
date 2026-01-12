@@ -160,12 +160,32 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     const headers = new Headers()
     for (const [key, value] of req.headers.entries()) {
       const lower = key.toLowerCase()
+      // Always exclude these headers - they'll be set by fetch or are not needed
       if (
-        ["host", "connection", "content-length", "expect"].includes(lower) ||
+        ["host", "connection", "expect"].includes(lower) ||
         value === null
-      )
+      ) {
         continue
+      }
+      
+      // For multipart, preserve Content-Type (with boundary) but let fetch set Content-Length
+      // For other requests, exclude content-length as fetch will set it
+      if (lower === "content-length" && !isMultipart) {
+        continue
+      }
+      
       headers.set(key, value)
+    }
+    
+    // For multipart, ensure Content-Type is preserved with boundary
+    // and set Content-Length to match the arrayBuffer size
+    if (isMultipart) {
+      if (contentType) {
+        headers.set("Content-Type", contentType)
+      }
+      if (rawBody instanceof ArrayBuffer) {
+        headers.set("Content-Length", rawBody.byteLength.toString())
+      }
     }
 
     const cookieStore = await getCookies()

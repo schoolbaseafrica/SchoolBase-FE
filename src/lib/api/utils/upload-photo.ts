@@ -15,6 +15,23 @@ interface UploadApiResponse {
 }
 
 export function uploadToCloudinary(file: File) {
+  // Validate file before upload
+  if (!file) {
+    throw new Error("No file provided")
+  }
+
+  // Validate file type
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Invalid file type. Only JPEG, PNG, and WebP images are allowed.")
+  }
+
+  // Validate file size (5MB limit)
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    throw new Error("File size exceeds 5MB limit")
+  }
+
   const formData = new FormData()
   // Backend expects field name to be "file" (not the filename)
   formData.append("file", file)
@@ -23,7 +40,7 @@ export function uploadToCloudinary(file: File) {
     "/upload/picture",
     {
       method: "POST",
-      // Don't set Content-Type header - browser will set it automatically with boundary
+      // Don't set Content-Type header - browser/axios will set it automatically with boundary
       data: formData,
     },
     true

@@ -148,7 +148,7 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                   id="email"
                   value={emailFromParams || ""}
                   placeholder="jamesjackendfornd@gmail.com"
-                  className="bg-red-200"
+                  className="w-full border-2 border-gray-400 bg-gray-50"
                   readOnly
                 />
               </div>
@@ -182,10 +182,10 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                       value={formData[field]}
                       onChange={handlePasswordChange}
                       onBlur={handleBlur}
-                      className={`pr-12 ${
+                      className={`w-full pr-10 border-2 ${
                         touched[field] && errors[field]
-                          ? "border-[var(--accent)]"
-                          : "border-[#E0E0E0]"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-400"
                       }`}
                     />
                     <button
@@ -195,7 +195,12 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                           ? setShowNewPassword((s) => !s)
                           : setShowConfirmPassword((s) => !s)
                       }
-                      className="absolute top-1/2 right-4 -translate-y-1/2"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 transition-colors"
+                      aria-label={
+                        (field === "newPassword" ? showNewPassword : showConfirmPassword)
+                          ? "Hide password"
+                          : "Show password"
+                      }
                     >
                       <Image
                         src={
@@ -208,8 +213,8 @@ const InvitedUserActivate: React.FC<InvitedUserActivateProps> = ({
                               : "/assets/images/auth/hide-password-icon.png"
                         }
                         alt="Toggle"
-                        width={20}
-                        height={20}
+                        width={16}
+                        height={16}
                       />
                     </button>
                   </div>

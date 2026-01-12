@@ -164,10 +164,10 @@ const AcceptInviteForm: React.FC<AcceptInviteFormProps> = ({ token }) => {
                         value={formData[field]}
                         onChange={handlePasswordChange}
                         onBlur={handleBlur}
-                        className={`pr-12 ${
+                        className={`w-full pr-10 border-2 ${
                           touched[field] && errors[field]
-                            ? "border-[var(--accent)]"
-                            : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
+                            ? "border-red-500 bg-red-50"
+                            : "border-gray-400"
                         }`}
                       />
                       <button
@@ -177,7 +177,12 @@ const AcceptInviteForm: React.FC<AcceptInviteFormProps> = ({ token }) => {
                             ? setShowNewPassword((s) => !s)
                             : setShowConfirmPassword((s) => !s)
                         }
-                        className="absolute top-1/2 right-4 -translate-y-1/2"
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 transition-colors"
+                        aria-label={
+                          (field === "newPassword" ? showNewPassword : showConfirmPassword)
+                            ? "Hide password"
+                            : "Show password"
+                        }
                       >
                         <Image
                           src={
@@ -190,8 +195,8 @@ const AcceptInviteForm: React.FC<AcceptInviteFormProps> = ({ token }) => {
                                 : "/assets/images/auth/hide-password-icon.png"
                           }
                           alt="Toggle"
-                          width={20}
-                          height={20}
+                          width={16}
+                          height={16}
                         />
                       </button>
                     </div>

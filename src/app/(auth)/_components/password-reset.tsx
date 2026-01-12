@@ -181,17 +181,18 @@ const PasswordReset = () => {
                       value={formData.newPassword}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={`pr-12 ${
+                      className={`w-full pr-10 border-2 ${
                         touched.newPassword && errors.newPassword
-                          ? "border-[var(--accent)]"
-                          : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-400"
                       }`}
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowNewPassword((s) => !s)}
-                      className="absolute top-1/2 right-4 -translate-y-1/2"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 transition-colors"
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
                     >
                       <Image
                         src={
@@ -200,8 +201,8 @@ const PasswordReset = () => {
                             : "/assets/images/auth/hide-password-icon.png"
                         }
                         alt="Toggle"
-                        width={20}
-                        height={20}
+                        width={16}
+                        height={16}
                       />
                     </button>
                   </div>
@@ -230,17 +231,18 @@ const PasswordReset = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={`pr-12 ${
+                      className={`w-full pr-10 border-2 ${
                         touched.confirmPassword && errors.confirmPassword
-                          ? "border-[var(--accent)]"
-                          : "border-[#E0E0E0] focus:border-[var(--text-primary)]"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-400"
                       }`}
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((s) => !s)}
-                      className="absolute top-1/2 right-4 -translate-y-1/2"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 transition-colors"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
                       <Image
                         src={
@@ -249,8 +251,8 @@ const PasswordReset = () => {
                             : "/assets/images/auth/hide-password-icon.png"
                         }
                         alt="Toggle"
-                        width={20}
-                        height={20}
+                        width={16}
+                        height={16}
                       />
                     </button>
                   </div>

@@ -177,9 +177,13 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
       if (avatarFile) {
         try {
           photoUrl = await getPhotoUrl(avatarFile)
-        } catch (uploadError) {
+        } catch (uploadError: any) {
           console.error("Failed to upload photo:", uploadError)
-          toast.error("Failed to upload photo, but will continue with profile update")
+          const errorMessage = uploadError?.message || "Failed to upload photo"
+          toast.error(errorMessage)
+          // Don't continue with profile update if photo upload fails
+          setIsSaving(false)
+          return
         }
       }
 

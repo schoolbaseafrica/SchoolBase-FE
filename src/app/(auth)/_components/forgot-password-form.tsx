@@ -115,8 +115,8 @@ export default function ForgotPasswordForm() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   aria-invalid={Boolean(touched && error)}
-                  className={`w-full ${
-                    error && touched ? "border-red-500 bg-red-50" : "border-gray-300"
+                  className={`w-full border-2 ${
+                    error && touched ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
                 />
 
