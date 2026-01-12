@@ -19,9 +19,10 @@ export function useGoogleAnalytics() {
   useEffect(() => {
     if (pathname) {
       const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "")
-      pageview(url, school.id, school.name)
+      // Use shortName as school identifier since SchoolProfile doesn't have an id
+      pageview(url, school.shortName, school.name)
     }
-  }, [pathname, searchParams, school.id, school.name])
+  }, [pathname, searchParams, school.shortName, school.name])
 
   // Track custom events
   const trackEvent = (
@@ -38,7 +39,7 @@ export function useGoogleAnalytics() {
       category: options?.category,
       label: options?.label,
       value: options?.value,
-      schoolId: school.id,
+      schoolId: school.shortName, // Use shortName as identifier
       schoolName: school.name,
       userRole: user?.role?.join(","),
       ...options,
@@ -69,7 +70,7 @@ export function useTrackEvent() {
       category: options?.category,
       label: options?.label,
       value: options?.value,
-      schoolId: school.id,
+      schoolId: school.shortName, // Use shortName as identifier
       schoolName: school.name,
       userRole: user?.role?.join(","),
       ...options,

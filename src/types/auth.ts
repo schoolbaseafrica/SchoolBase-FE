@@ -32,6 +32,7 @@ export interface UserProfileResponse {
   created_at: string
   updated_at: string
   role: string[] // ["STUDENT"] | ["ADMIN"] | ["TEACHER"] | etc
+  photo_url?: string | null // User profile photo URL
 }
 
 export type LoginResponse = {
