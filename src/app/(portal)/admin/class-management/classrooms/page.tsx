@@ -6,6 +6,7 @@ import { ClassroomsToolbar } from "@/components/classrooms/classrooms-toolbar"
 import { ClassroomCard } from "@/components/classrooms/classroom-card"
 import { EmptyClassrooms } from "@/components/classrooms/empty-classrooms"
 import { SuccessModal } from "@/components/classrooms/success-modal"
+import { ClassroomsSkeleton } from "@/components/classrooms/classrooms-skeleton"
 import {
   useGetClassrooms,
   useDeleteClassroom,
@@ -83,12 +84,16 @@ export default function ClassroomsPage() {
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-4">
       {isLoading ? (
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading rooms...</p>
-          </div>
-        </div>
+        <>
+          <ClassroomsToolbar
+            searchQuery=""
+            onSearchChange={() => {}}
+            filterType="all"
+            onFilterTypeChange={() => {}}
+            onAddClassroom={handleAddClassroom}
+          />
+          <ClassroomsSkeleton count={6} />
+        </>
       ) : classrooms.length === 0 && !searchQuery ? (
         <EmptyClassrooms />
       ) : (

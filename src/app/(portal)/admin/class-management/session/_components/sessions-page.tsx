@@ -10,8 +10,8 @@ import AcademicSessionTable from "./academic-session-table"
 import AcademicSessionsMobile from "./academic-session-mobile"
 import { useAcademicSessions } from "../_hooks/use-session"
 import EmptyState from "../../../_components/empty-state"
-import { ItemLoader } from "../../../_components/sub-loader"
 import { ItemsError } from "../../../_components/loading-error"
+import { SessionsTableSkeleton } from "@/components/sessions/sessions-table-skeleton"
 
 import {
   DropdownMenu,
@@ -53,7 +53,7 @@ const SessionsPage = () => {
   }, [sessions, searchQuery, filter])
 
   const renderContent = () => {
-    if (isLoading) return <ItemLoader item="Sessions" />
+    if (isLoading) return <SessionsTableSkeleton rows={8} />
     if (isError)
       return (
         <ItemsError

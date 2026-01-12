@@ -9,6 +9,8 @@ import { ClassroomForm } from "../_components/classroom-form"
 import { SuccessModal } from "@/components/classrooms/success-modal"
 import { useGetClassroom, useUpdateClassroom } from "../_hooks/use-classrooms"
 import { UpdateClassroomData } from "@/types/classroom"
+import { FormSkeleton } from "@/components/ui/form-skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ClassroomFormData {
   name: string
@@ -52,12 +54,11 @@ export default function EditClassroomPage() {
   if (isLoading) {
     return (
       <div className="mb-10 w-full space-y-8 bg-white p-4 md:p-10">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-red-600" />
-            <p className="text-gray-600">Loading room details...</p>
-          </div>
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
         </div>
+        <FormSkeleton fields={4} showHeader={false} />
       </div>
     )
   }

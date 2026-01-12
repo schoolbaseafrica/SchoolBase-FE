@@ -20,13 +20,15 @@ export default function AuthLayout({
   return (
     <QueryProvider>
       <main className="h-screen w-full overflow-hidden lg:grid lg:grid-cols-2">
-        <div className="relative hidden h-full w-full lg:top-0 lg:flex">
+        <div className="relative hidden h-screen w-full lg:block">
           <Image
             src={"/assets/images/auth/sign-up-image.png"}
             alt="A science teacher guiding a group of students in maroon school uniforms as they examine samples using a microscope and test tubes in a well-lit laboratory."
             fill
             priority
             className="object-cover"
+            sizes="50vw"
+            quality={90}
           />
         </div>
         <div className="scrollbar-hide flex h-full w-full overflow-y-auto px-4 sm:px-8 lg:items-center lg:justify-center lg:px-16">
