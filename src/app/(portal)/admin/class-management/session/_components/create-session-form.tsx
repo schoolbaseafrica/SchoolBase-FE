@@ -19,10 +19,12 @@ import { parseDate } from "../_utils/date"
 import { useCreateAcademicSession } from "../_hooks/use-session"
 import { AcademicSession, AcademicSessionAPI } from "@/lib/academic-session"
 import { AcademicTermAPI } from "@/lib/academic-term"
+import { useQueryClient } from "@tanstack/react-query"
 
 const CreateSessionForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
   const sessionId = searchParams.get("id")
   const isEdit = Boolean(sessionId)
 
@@ -141,6 +143,15 @@ const CreateSessionForm = () => {
         })
 
         await Promise.all(promises)
+        // Invalidate queries to ensure fresh data after update
+        await queryClient.invalidateQueries({ 
+          queryKey: ["academic-sessions"],
+          refetchType: "active" 
+        })
+        await queryClient.invalidateQueries({ 
+          queryKey: ["academic-session", "active"],
+          refetchType: "active" 
+        })
         setShowSuccessModal(true)
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Failed to update session.")
@@ -165,8 +176,13 @@ const CreateSessionForm = () => {
     }
   }
 
-  const handleSuccessModalClose = () => {
+  const handleSuccessModalClose = async () => {
     setShowSuccessModal(false)
+    // Ensure queries are refetched before navigating
+    await queryClient.refetchQueries({ 
+      queryKey: ["academic-sessions"],
+      type: "active" 
+    })
     router.push("/admin/class-management/session")
   }
 

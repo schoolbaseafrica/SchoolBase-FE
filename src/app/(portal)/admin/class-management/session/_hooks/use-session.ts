@@ -18,9 +18,21 @@ export function useCreateAcademicSession() {
 
   return useMutation({
     mutationFn: (data: CreateAcademicSessionData) => AcademicSessionAPI.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ACADEMIC_SESSIONS_KEY })
-      queryClient.invalidateQueries({ queryKey: ACTIVE_SESSION_KEY })
+    onSuccess: async () => {
+      // Invalidate and refetch all session-related queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ACADEMIC_SESSIONS_KEY,
+        refetchType: "active" 
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: ACTIVE_SESSION_KEY,
+        refetchType: "active" 
+      })
+      // Force refetch to ensure data is fresh
+      await queryClient.refetchQueries({ 
+        queryKey: ACADEMIC_SESSIONS_KEY,
+        type: "active" 
+      })
     },
   })
 }
@@ -32,6 +44,8 @@ export function useAcademicSessions(params?: { page?: number; limit?: number }) 
     queryKey: [ACADEMIC_SESSIONS_KEY[0], params?.page ?? 1, params?.limit ?? 20],
     queryFn: () => AcademicSessionAPI.list(params),
     refetchOnWindowFocus: false,
+    refetchOnMount: true, // Always refetch when component mounts to ensure fresh data
+    staleTime: 0, // Consider data stale immediately to allow refetching
     enabled: !isSuperAdmin, // Disable for super admin
   })
 }
