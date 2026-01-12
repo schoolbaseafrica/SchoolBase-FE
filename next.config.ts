@@ -42,6 +42,13 @@ const nextConfig: NextConfig = {
         port: "3008",
         pathname: "/**",
       },
+      // Allow images from backend API domains (multi-school deployment)
+      // This matches all subdomains of schoolbase.africa (e.g., api.demo.schoolbase.africa)
+      {
+        protocol: "https",
+        hostname: "*.schoolbase.africa",
+        pathname: "/**",
+      },
     ],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,
