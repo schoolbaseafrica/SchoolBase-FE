@@ -44,11 +44,22 @@ export const useFeesStore = create<FeesState>((set, get) => ({
       feeIds: fees.map((f) => f.id),
     }),
 
-  addFee: (fee) =>
-    set((state) => ({
-      fees: { ...state.fees, [fee.id]: fee },
-      feeIds: [...state.feeIds, fee.id],
-    })),
+  addFee: (fee) => {
+    if (!fee || !fee.id) {
+      console.error("[fees-store] Cannot add fee: invalid fee object", fee)
+      return
+    }
+    set((state) => {
+      // Prevent duplicate fee IDs
+      const feeIds = state.feeIds.includes(fee.id)
+        ? state.feeIds
+        : [...state.feeIds, fee.id]
+      return {
+        fees: { ...state.fees, [fee.id]: fee },
+        feeIds,
+      }
+    })
+  },
 
   updateFee: (id, updates) =>
     set((state) => ({

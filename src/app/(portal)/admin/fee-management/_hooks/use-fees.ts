@@ -72,7 +72,17 @@ export const useCreateFee = () => {
     mutationFn: (data: CreateFeeComponentData) => FeesAPI.create(data),
 
     onSuccess: (res) => {
-      if (res.data) addFee(res.data)
+      // Handle both response structures for backward compatibility
+      const fee = res.data || (res as any).fee
+      if (fee && fee.id) {
+        try {
+          addFee(fee)
+        } catch (error) {
+          console.error("[useCreateFee] Error adding fee to store:", error)
+        }
+      } else {
+        console.warn("[useCreateFee] Invalid fee response structure:", res)
+      }
       toast.success("Fee component created successfully")
       queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
@@ -94,7 +104,17 @@ export const useUpdateFee = (id: string) => {
     mutationFn: (data: UpdateFeeComponentData) => FeesAPI.update(id, data),
 
     onSuccess: (res) => {
-      if (res.data) updateFee(id, res.data)
+      // Handle both response structures for backward compatibility
+      const fee = res.data || (res as any).fee
+      if (fee && id) {
+        try {
+          updateFee(id, fee)
+        } catch (error) {
+          console.error("[useUpdateFee] Error updating fee in store:", error)
+        }
+      } else {
+        console.warn("[useUpdateFee] Invalid fee response structure:", res)
+      }
       toast.success("Fee component updated successfully")
       queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
@@ -138,7 +158,17 @@ export const useAactivateFee = (id: string) => {
     mutationFn: (reason: string) => FeesAPI.activate(id, reason),
 
     onSuccess: (res) => {
-      if (res.data) updateFee(id, res.data)
+      // Handle both response structures for backward compatibility
+      const fee = res.data || (res as any).fee
+      if (fee && id) {
+        try {
+          updateFee(id, fee)
+        } catch (error) {
+          console.error("[useAactivateFee] Error updating fee in store:", error)
+        }
+      } else {
+        console.warn("[useAactivateFee] Invalid fee response structure:", res)
+      }
       toast.success("Fee component activated successfully")
       queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
