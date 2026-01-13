@@ -32,14 +32,19 @@ interface ActivityLogsFiltersProps {
 
 const entityTypes = [
   "Student",
-  "Class",
   "Teacher",
   "Parent",
-  "Fee",
+  "Class",
   "Subject",
   "Room",
-  "Session",
-  "User",
+  "AcademicSession",
+  "AcademicTerm",
+  "Fee",
+  "Payment",
+  "Attendance",
+  "Result",
+  "Timetable",
+  "School",
 ]
 
 const actionOptions: { value: ActivityAction | "all"; label: string }[] = [
