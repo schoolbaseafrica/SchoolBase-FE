@@ -12,8 +12,8 @@ export default function ActivityLogsPage() {
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
   const [userFilter, setUserFilter] = useState<string>("")
-  const [entityTypeFilter, setEntityTypeFilter] = useState<string>("")
-  const [actionFilter, setActionFilter] = useState<ActivityAction | "">("")
+  const [entityTypeFilter, setEntityTypeFilter] = useState<string>("all")
+  const [actionFilter, setActionFilter] = useState<ActivityAction | "all">("all")
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
 
@@ -21,8 +21,8 @@ export default function ActivityLogsPage() {
     page,
     limit,
     user_id: userFilter || undefined,
-    entity_type: entityTypeFilter || undefined,
-    action: actionFilter || undefined,
+    entity_type: entityTypeFilter === "all" ? undefined : entityTypeFilter,
+    action: actionFilter === "all" ? undefined : actionFilter,
     start_date: startDate || undefined,
     end_date: endDate || undefined,
   })
@@ -37,13 +37,13 @@ export default function ActivityLogsPage() {
   const handleFiltersChange = (filters: {
     user?: string
     entityType?: string
-    action?: ActivityAction | ""
+    action?: ActivityAction | "all"
     startDate?: string
     endDate?: string
   }) => {
     setUserFilter(filters.user || "")
-    setEntityTypeFilter(filters.entityType || "")
-    setActionFilter(filters.action || "")
+    setEntityTypeFilter(filters.entityType || "all")
+    setActionFilter(filters.action || "all")
     setStartDate(filters.startDate || "")
     setEndDate(filters.endDate || "")
     setPage(1) // Reset to page 1 when filters change

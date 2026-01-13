@@ -17,14 +17,14 @@ interface ActivityLogsFiltersProps {
   onFiltersChange: (filters: {
     user?: string
     entityType?: string
-    action?: ActivityAction | ""
+    action?: ActivityAction | "all"
     startDate?: string
     endDate?: string
   }) => void
   initialFilters?: {
     user?: string
     entityType?: string
-    action?: ActivityAction | ""
+    action?: ActivityAction | "all"
     startDate?: string
     endDate?: string
   }
@@ -42,8 +42,8 @@ const entityTypes = [
   "User",
 ]
 
-const actionOptions: { value: ActivityAction | ""; label: string }[] = [
-  { value: "", label: "All Actions" },
+const actionOptions: { value: ActivityAction | "all"; label: string }[] = [
+  { value: "all", label: "All Actions" },
   { value: "CREATE", label: "Create" },
   { value: "UPDATE", label: "Update" },
   { value: "DELETE", label: "Delete" },
@@ -53,25 +53,25 @@ export function ActivityLogsFilters({
   onFiltersChange,
   initialFilters = {},
 }: ActivityLogsFiltersProps) {
-  const [entityType, setEntityType] = useState(initialFilters.entityType || "")
-  const [action, setAction] = useState<ActivityAction | "">(initialFilters.action || "")
+  const [entityType, setEntityType] = useState(initialFilters.entityType || "all")
+  const [action, setAction] = useState<ActivityAction | "all">(initialFilters.action || "all")
   const [startDate, setStartDate] = useState(initialFilters.startDate || "")
   const [endDate, setEndDate] = useState(initialFilters.endDate || "")
 
   useEffect(() => {
     onFiltersChange({
-      entityType: entityType || undefined,
-      action: action || undefined,
+      entityType: entityType === "all" ? undefined : entityType,
+      action: action === "all" ? undefined : action,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     })
   }, [entityType, action, startDate, endDate, onFiltersChange])
 
-  const hasFilters = entityType || action || startDate || endDate
+  const hasFilters = (entityType && entityType !== "all") || (action && action !== "all") || startDate || endDate
 
   const clearFilters = () => {
-    setEntityType("")
-    setAction("")
+    setEntityType("all")
+    setAction("all")
     setStartDate("")
     setEndDate("")
   }
@@ -88,7 +88,7 @@ export function ActivityLogsFilters({
               <SelectValue placeholder="All Entity Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Entity Types</SelectItem>
+              <SelectItem value="all">All Entity Types</SelectItem>
               {entityTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -102,7 +102,7 @@ export function ActivityLogsFilters({
           <label className="mb-2 block text-sm font-medium text-gray-700">Action</label>
           <Select
             value={action}
-            onValueChange={(value) => setAction(value as ActivityAction | "")}
+            onValueChange={(value) => setAction(value as ActivityAction | "all")}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Actions" />
