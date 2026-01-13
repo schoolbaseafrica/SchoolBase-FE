@@ -29,6 +29,7 @@ interface SchoolData {
   secondary_color?: string
   accent_color?: string
   installation_completed: boolean
+  activity_log_retention_days?: number | null
 }
 
 // African countries with their states/provinces/regions
@@ -308,6 +309,7 @@ export const SchoolInfoSettings = () => {
     city: "",
     streetAddress: "",
     email: "",
+    activityLogRetentionDays: null as number | null,
   })
 
   // Predefined color palette for quick selection - modern, professional colors
@@ -387,6 +389,7 @@ export const SchoolInfoSettings = () => {
             city: parsedCity,
             streetAddress: parsedStreet,
             email: schoolData.email || "",
+            activityLogRetentionDays: schoolData.activity_log_retention_days ?? null,
           })
 
           // Set logo preview if logo URL exists
@@ -486,6 +489,14 @@ export const SchoolInfoSettings = () => {
         formDataToSend.append("secondary_color", formData.secondaryColor)
       if (formData.accentColor)
         formDataToSend.append("accent_color", formData.accentColor)
+      
+      // Add activity log retention days
+      if (formData.activityLogRetentionDays !== null && formData.activityLogRetentionDays !== undefined) {
+        formDataToSend.append("activity_log_retention_days", formData.activityLogRetentionDays.toString())
+      } else {
+        // Send null/empty to indicate "keep forever"
+        formDataToSend.append("activity_log_retention_days", "")
+      }
 
       // Add logo file if provided
       if (logoFile) {
@@ -539,6 +550,7 @@ export const SchoolInfoSettings = () => {
           city: parsedCity,
           streetAddress: parsedStreet,
           email: updatedSchool.email || formData.email,
+          activityLogRetentionDays: updatedSchool.activity_log_retention_days ?? null,
         })
 
         // Update logo preview if logo URL changed
@@ -943,6 +955,93 @@ export const SchoolInfoSettings = () => {
                     placeholder="e.g. 123 Main Street, Victoria Island"
                     required
                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t pt-6">
+              <div>
+                <Label htmlFor="activityLogRetention">
+                  Activity Log Retention Period
+                </Label>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Set how long to keep activity logs. Logs older than this period will be automatically deleted. Leave empty to keep logs forever.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="activityLogRetention"
+                      name="activityLogRetention"
+                      type="number"
+                      min="0"
+                      placeholder="Days (e.g., 90) or leave empty for forever"
+                      value={formData.activityLogRetentionDays ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setFormData((prev) => ({
+                          ...prev,
+                          activityLogRetentionDays: value === "" ? null : parseInt(value, 10) || 0,
+                        }))
+                      }}
+                      className="max-w-xs"
+                    />
+                    <span className="text-muted-foreground text-sm">
+                      {formData.activityLogRetentionDays === null || formData.activityLogRetentionDays === undefined
+                        ? "Keep forever"
+                        : formData.activityLogRetentionDays === 0
+                        ? "Delete immediately"
+                        : `Keep for ${formData.activityLogRetentionDays} day${formData.activityLogRetentionDays !== 1 ? "s" : ""}`}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 30 }))}
+                      className="text-xs"
+                    >
+                      30 days
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 90 }))}
+                      className="text-xs"
+                    >
+                      90 days
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 180 }))}
+                      className="text-xs"
+                    >
+                      180 days
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 365 }))}
+                      className="text-xs"
+                    >
+                      1 year
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: null }))}
+                      className="text-xs"
+                    >
+                      Forever
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

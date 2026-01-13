@@ -12,6 +12,7 @@ import {
   Menu,
   Calendar,
   School,
+  History,
 } from "lucide-react"
 import { PiMoneyWavyBold } from "react-icons/pi"
 import { FaRegUser } from "react-icons/fa6"
@@ -89,6 +90,7 @@ const mainItems = [
     ],
   },
   { title: "User Configuration", url: "/admin/user-configuration", icon: TbSettingsCog },
+  { title: "Activity Log", url: "/admin/activity-logs", icon: History },
   // { title: "User Configuration", url: "/admin/user-configuration", icon: AiOutlinePieChart },
 ]
 
