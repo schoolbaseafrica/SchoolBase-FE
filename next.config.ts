@@ -42,13 +42,17 @@ const nextConfig: NextConfig = {
         port: "3008",
         pathname: "/**",
       },
-      // Allow images from backend API domains (multi-school deployment)
-      // This matches all subdomains of schoolbase.africa (e.g., api.demo.schoolbase.africa)
-      {
-        protocol: "https",
-        hostname: "*.schoolbase.africa",
-        pathname: "/**",
-      },
+      // Note: External images (from backend API domains) use unoptimized={true} in components
+      // which should bypass Next.js image optimizer. However, if you need to optimize
+      // external images, add your domain pattern here. Example:
+      // {
+      //   protocol: "https",
+      //   hostname: "*.yourdomain.com",
+      //   pathname: "/**",
+      // },
+      // Note: Next.js remotePatterns only supports single-level wildcards (*.example.com)
+      // Multi-level subdomains (e.g., api.demo.schoolbase.africa) are not supported,
+      // so unoptimized={true} is used for external images instead.
     ],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,

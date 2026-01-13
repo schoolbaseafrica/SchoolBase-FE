@@ -43,6 +43,7 @@ export function SidebarFooterUser({ isCollapsed = false }: SidebarFooterUserProp
                   width={40}
                   height={40}
                   className="h-10 w-10 rounded-full object-cover"
+                  unoptimized={user.photo_url?.startsWith("http://") || user.photo_url?.startsWith("https://")}
                 />
               ) : (
                 <AvatarSkeleton size={40} />

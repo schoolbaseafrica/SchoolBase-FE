@@ -83,6 +83,7 @@ export default function ParentDashboard() {
               width={70}
               height={70}
               className="h-20 w-20 rounded-full object-cover"
+              unoptimized={student?.photo_url?.startsWith("http://") || student?.photo_url?.startsWith("https://")}
             />
           </div>
           <div>
