@@ -17,6 +17,10 @@ const outfit = Outfit({
 
 // Use default for viewport (will be updated by BrandThemeUpdater at runtime)
 export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: defaultSchoolProfile.brand.primary,
 }
 

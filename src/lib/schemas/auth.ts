@@ -70,7 +70,7 @@ export const userProfileSchema = z.object({
       }
       return null
     }),
-  dob: z.string().optional(),
+  dob: z.string().nullable().optional(),
   email: emailSchema,
   phone: z
     .string()

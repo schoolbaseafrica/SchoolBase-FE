@@ -4,6 +4,8 @@
 html {
   scrollbar-gutter: stable;
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .container {
@@ -151,6 +153,9 @@ html {
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 }
 

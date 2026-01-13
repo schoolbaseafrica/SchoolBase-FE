@@ -24,6 +24,13 @@ export async function POST(req: Request) {
 
     const SECURE = false // so i fit comot am while testing
 
+    // Clear previous authentication cookies before setting new ones
+    // This ensures no conflicts when logging in as a different user
+    response.cookies.delete("access_token")
+    response.cookies.delete("refresh_token")
+    response.cookies.delete("session_id")
+    response.cookies.delete("user_id")
+
     // Set cookies — HTTP-only for security
     response.cookies.set("access_token", access_token, {
       httpOnly: true,

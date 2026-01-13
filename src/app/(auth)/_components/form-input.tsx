@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { AlertCircle, Loader2Icon } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,7 @@ import {
 import { loginSchema, type LoginFormValues } from "@/lib/schemas/auth"
 import { loginUsingEmail } from "@/lib/api/auth"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/store/auth-store"
 import SchoolLogo from "./school-logo"
 
 type LoginField = keyof LoginFormValues
@@ -48,6 +50,8 @@ const LoginForm = () => {
     new URLSearchParams(window.location.search).get("next")
 
   const router = useRouter()
+  const queryClient = useQueryClient()
+  const clearAuth = useAuthStore((state) => state.clearAuth)
 
   const getFieldError = (field: LoginField, value: string) => {
     const schema = loginSchema.shape[field]
@@ -117,6 +121,11 @@ const LoginForm = () => {
 
     setIsLoading(true)
     setErrors({})
+
+    // Clear previous authentication state to prevent role conflicts
+    // This ensures a clean slate when logging in as a different user
+    clearAuth()
+    queryClient.clear()
 
     try {
       const res = await loginUsingEmail(formData)
