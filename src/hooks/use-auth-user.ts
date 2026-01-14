@@ -65,3 +65,16 @@ export function useTeacherAuth() {
     hasTeacherId: !!teacherId,
   }
 }
+
+export function useStaffAuth() {
+  const { data: user, isLoading, error } = useAuthUser()
+
+  const isStaff = user ? user.role.includes("STAFF") : false
+
+  return {
+    user,
+    isLoading,
+    error,
+    isStaff,
+  }
+}

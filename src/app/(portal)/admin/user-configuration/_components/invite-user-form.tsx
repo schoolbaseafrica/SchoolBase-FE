@@ -84,6 +84,12 @@ export function InviteUserForm() {
                 >
                   Teacher
                 </SelectItem>
+                <SelectItem
+                  value="staff"
+                  className="text-muted-foreground focus:bg-accent/10 focus:text-accent data-[state=checked]:text-accent"
+                >
+                  Staff
+                </SelectItem>
               </SelectContent>
             </Select>
           )}

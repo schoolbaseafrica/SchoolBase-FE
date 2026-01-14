@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const inviteUserSchema = z.object({
-  userType: z.enum(["admin", "teacher"], {
+  userType: z.enum(["admin", "teacher", "staff"], {
     message: "Please select a user type",
   }),
   firstName: z.string().min(1, "First name is required"),

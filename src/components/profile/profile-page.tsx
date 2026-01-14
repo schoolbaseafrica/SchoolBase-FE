@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 
 interface ProfilePageProps {
   profile: UserProfileNew
-  role: "student" | "teacher" | "parent" | "admin" | "super admin"
+  role: "student" | "teacher" | "parent" | "admin" | "super admin" | "staff"
 }
 
 export const ProfilePage = ({ profile, role }: ProfilePageProps) => {

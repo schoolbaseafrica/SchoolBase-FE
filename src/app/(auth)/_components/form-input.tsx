@@ -117,6 +117,7 @@ const LoginForm = () => {
       TEACHER: "teacher",
       STUDENT: "student",
       PARENT: "parent",
+      STAFF: "staff",
     }
 
     setIsLoading(true)
