@@ -121,12 +121,13 @@ export function UsersTable({
             </TableHead>
             {isParent && <TableHead>Email</TableHead>}
             {isParent && <TableHead>Address</TableHead>}
-            {!isParent && (
+            {!isParent && !isAdmin && (
               <TableHead>
                 {isTeacher ? "Employee Number" : "Registration Number"}
               </TableHead>
             )}
             {isTeacher && <TableHead>Email</TableHead>}
+            {isAdmin && <TableHead>Email</TableHead>}
             {isStudent && <TableHead>Class</TableHead>}
             {isStudent && <TableHead>Address</TableHead>}
             <TableHead>Status</TableHead>
@@ -159,8 +160,9 @@ export function UsersTable({
                   <TableCell>{user.home_address}</TableCell>
                 </>
               )}
-              {!isParent && <TableCell>{getID(user)}</TableCell>}
+              {!isParent && !isAdmin && <TableCell>{getID(user)}</TableCell>}
               {isTeacher && <TableCell>{user.email}</TableCell>}
+              {isAdmin && <TableCell>{user.email}</TableCell>}
               {isStudent && (
                 <>
                   <TableCell>

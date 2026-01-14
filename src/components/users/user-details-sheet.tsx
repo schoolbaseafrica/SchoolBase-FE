@@ -195,7 +195,9 @@ export function UserDetailsSheet({
                 ? "Teacher"
                 : userType === "students"
                   ? "Student"
-                  : "Parent"}{" "}
+                  : userType === "admins"
+                    ? "Admin"
+                    : "Parent"}{" "}
               Details
             </SheetTitle>
           </SheetHeader>
@@ -211,14 +213,16 @@ export function UserDetailsSheet({
               </Avatar>
               <div>
                 <h3 className="text-lg font-semibold">{getFullName()}</h3>
-                <p className="text-sm text-gray-600">
-                  {userType === "teachers"
-                    ? "Employee ID"
-                    : userType === "students"
-                      ? "Registration No"
-                      : "Parent ID"}
-                  : {getID()}
-                </p>
+                {userType !== "admins" && (
+                  <p className="text-sm text-gray-600">
+                    {userType === "teachers"
+                      ? "Employee ID"
+                      : userType === "students"
+                        ? "Registration No"
+                        : "Parent ID"}
+                    : {getID()}
+                  </p>
+                )}
                 <Badge variant={user.is_active ? "default" : "inactive"} className="mt-1">
                   {user.is_active ? "Active" : "Inactive"}
                 </Badge>
@@ -237,16 +241,20 @@ export function UserDetailsSheet({
                   <p className="text-sm text-gray-600">Phone</p>
                   <p className="font-medium">{user.phone}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Gender</p>
-                  <p className="font-medium">{user.gender}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Date of Birth</p>
-                  <p className="font-medium">
-                    {new Date(user.date_of_birth).toLocaleDateString("en-CA")}
-                  </p>
-                </div>
+                {user.gender && (
+                  <div>
+                    <p className="text-sm text-gray-600">Gender</p>
+                    <p className="font-medium">{user.gender}</p>
+                  </div>
+                )}
+                {user.date_of_birth && (
+                  <div>
+                    <p className="text-sm text-gray-600">Date of Birth</p>
+                    <p className="font-medium">
+                      {new Date(user.date_of_birth).toLocaleDateString("en-CA")}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {user.home_address && (
