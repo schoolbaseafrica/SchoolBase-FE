@@ -9,8 +9,10 @@ import {
 } from "@/store/admins-store"
 import { useShallow } from "zustand/react/shallow"
 import { useMemo } from "react"
+import { useRouter } from "next/navigation"
 
 export default function AdminsPage() {
+  const router = useRouter()
   const { isLoading: isQueryLoading, isError, error } = useGetAdmins()
 
   const { admins, adminIds, filters } = useAdminsStore(
@@ -50,6 +52,11 @@ export default function AdminsPage() {
     })
   }
 
+  const handleAddAdmin = () => {
+    // Redirect to user configuration page with invite tab
+    router.push("/admin/user-configuration?tab=invite")
+  }
+
   const currentStatusFilter =
     filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
@@ -67,6 +74,7 @@ export default function AdminsPage() {
       onSearchChange={handleSearchChange}
       onStatusFilterChange={handleStatusFilterChange}
       onPageChange={handlePageChange}
+      onAddUser={handleAddAdmin}
     />
   )
 }

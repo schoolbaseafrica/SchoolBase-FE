@@ -211,10 +211,12 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                           Link Student
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={() => handleEditClick(user)}>
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
+                      {!isAdmin && (
+                        <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                          <Edit3 className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(user)}
                         className="text-destructive"

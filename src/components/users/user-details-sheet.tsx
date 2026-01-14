@@ -348,14 +348,16 @@ export function UserDetailsSheet({
                   Link Student to Parent
                 </Button>
               )}
-              <Button
-                onClick={handleEdit}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <Edit3 className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
+              {userType !== "admins" && (
+                <Button
+                  onClick={handleEdit}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              )}
               <Button
                 onClick={() => setDeleteDialogOpen(true)}
                 variant="outline"
