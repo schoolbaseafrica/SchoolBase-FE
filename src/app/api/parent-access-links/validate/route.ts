@@ -59,12 +59,63 @@ export async function POST(req: Request) {
       status_code: responseData.status_code,
     })
 
-    return NextResponse.json(responseData, {
+    // If validation was successful, set cookies directly in this response
+    // This ensures cookies are available immediately, especially for Firefox
+    const nextResponse = NextResponse.json(responseData, {
       status: response.status,
       headers: {
         "Content-Type": "application/json",
       },
     })
+
+    if (response.ok && responseData.data) {
+      const { access_token, refresh_token, session_id, session_expires_at } = responseData.data
+      
+      if (access_token && refresh_token && session_id) {
+        const SECURE = process.env.NODE_ENV === "production"
+        const expiresAt = new Date(session_expires_at)
+
+        // Set cookies directly in the validate response
+        // This ensures they're available immediately, especially for Firefox
+        nextResponse.cookies.set("access_token", access_token, {
+          httpOnly: true,
+          secure: SECURE,
+          sameSite: "lax",
+          path: "/",
+          expires: expiresAt,
+        })
+
+        nextResponse.cookies.set("refresh_token", refresh_token, {
+          httpOnly: true,
+          secure: SECURE,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+        })
+
+        nextResponse.cookies.set("session_id", session_id, {
+          httpOnly: true,
+          secure: SECURE,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365 * 10, // 10 years
+        })
+
+        if (responseData.data.user?.id) {
+          nextResponse.cookies.set("user_id", responseData.data.user.id, {
+            httpOnly: true,
+            secure: SECURE,
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 365 * 10, // 10 years
+          })
+        }
+
+        console.log("[parent-access-links/validate] Cookies set in validate response")
+      }
+    }
+
+    return nextResponse
   } catch (error) {
     console.error("[parent-access-links/validate] Error:", error)
     return NextResponse.json(

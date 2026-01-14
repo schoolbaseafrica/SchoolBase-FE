@@ -42,40 +42,26 @@ export default function ParentAutoLoginPage() {
         console.log("[Auto-login] Validate response:", response)
 
         if (response.data) {
-          console.log("[Auto-login] Validation successful, setting cookies...")
-          // Set cookies via Next.js API route (similar to login)
-          // IMPORTANT: Include credentials to ensure cookies are set and sent
-          const loginResponse = await fetch("/api/auth/auto-login", {
-            method: "POST",
-            credentials: "include", // Ensure cookies are included
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              access_token: response.data.access_token,
-              refresh_token: response.data.refresh_token,
-              session_id: response.data.session_id,
-              session_expires_at: response.data.session_expires_at,
-              user: response.data.user,
-            }),
-          })
-
-          const responseData = await loginResponse.json().catch(() => ({}))
+          console.log("[Auto-login] Validation successful, cookies should be set in response")
           
-          if (!loginResponse.ok) {
-            console.error("[Auto-login] Failed to set cookies:", responseData)
-            throw new Error(responseData.message || "Failed to set authentication cookies")
-          }
-
-          console.log("[Auto-login] Cookies set successfully, redirecting...", responseData)
+          // Cookies are now set directly in the validate API response
+          // This ensures they're available immediately, especially for Firefox
+          // No need for a separate cookie-setting call
           
           setStatus("success")
 
-          // Redirect to parent dashboard after ensuring cookies are set
-          // Use window.location for a full page reload to ensure cookies are available
+          // Verify cookies are accessible (they're httpOnly so we can't read them directly,
+          // but we can wait a bit for the browser to process them)
+          // Firefox sometimes needs more time to process cookies from API responses
+          console.log("[Auto-login] Waiting for cookies to be processed...")
+          
+          // Use a longer delay for Firefox compatibility
+          // Also use window.location.replace instead of href to avoid adding to history
           setTimeout(() => {
-            window.location.href = "/parent"
-          }, 2000)
+            console.log("[Auto-login] Redirecting to parent dashboard...")
+            // Use replace instead of href to avoid back button issues
+            window.location.replace("/parent")
+          }, 3000) // Increased delay for Firefox compatibility
         }
       } catch (error) {
         console.error("Auto-login error:", error)
