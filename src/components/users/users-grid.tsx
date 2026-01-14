@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useDeleteTeacher } from "@/app/(portal)/admin/teachers/_hooks/use-teachers"
 import { useDeleteStudent } from "@/app/(portal)/admin/students/_hooks/use-students"
 import { useDeleteParent } from "@/app/(portal)/admin/parents/_hooks/use-parents"
+import { useDeleteAdmin } from "@/app/(portal)/admin/admins/_hooks/use-admins"
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog"
 import { getInitials } from "@/lib/utils"
 import { UserDetailsSheet } from "./user-details-sheet"
@@ -63,6 +64,7 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
   const deleteTeacherMutation = useDeleteTeacher()
   const deleteStudentMutation = useDeleteStudent()
   const deleteParentMutation = useDeleteParent()
+  const deleteAdminMutation = useDeleteAdmin()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -74,6 +76,7 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
   const isTeacher = userType === "teachers"
   const isStudent = userType === "students"
   const isParent = userType === "parents"
+  const isAdmin = userType === "admins"
   const router = useRouter()
 
   // Fetch subjects for each teacher (this can be optimized with a bulk endpoint if available)
@@ -150,6 +153,8 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
       await deleteStudentMutation.mutateAsync(userToDelete.id)
     } else if (isParent) {
       await deleteParentMutation.mutateAsync(userToDelete.id)
+    } else if (isAdmin) {
+      await deleteAdminMutation.mutateAsync(userToDelete.id)
     }
   }
 
@@ -294,14 +299,16 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteConfirm}
           title={
-            isTeacher ? "Delete Teacher" : isStudent ? "Delete Student" : "Delete Parent"
+            isTeacher ? "Delete Teacher" : isStudent ? "Delete Student" : isAdmin ? "Delete Admin" : "Delete Parent"
           }
           description={
             isTeacher
               ? "Are you sure you want to delete this teacher? This action cannot be undone."
               : isStudent
                 ? "Are you sure you want to delete this student? This action cannot be undone."
-                : "Are you sure you want to delete this parent? This action cannot be undone."
+                : isAdmin
+                  ? "Are you sure you want to delete this admin? This action cannot be undone."
+                  : "Are you sure you want to delete this parent? This action cannot be undone."
           }
           itemName={getFullName(userToDelete)}
         />

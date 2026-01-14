@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { useDeleteTeacher } from "@/app/(portal)/admin/teachers/_hooks/use-teachers"
 import { useDeleteStudent } from "@/app/(portal)/admin/students/_hooks/use-students"
 import { useDeleteParent } from "@/app/(portal)/admin/parents/_hooks/use-parents"
+import { useDeleteAdmin } from "@/app/(portal)/admin/admins/_hooks/use-admins"
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog"
 import { getInitials } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
@@ -142,6 +143,7 @@ export function UserDetailsSheet({
   const deleteTeacherMutation = useDeleteTeacher()
   const deleteStudentMutation = useDeleteStudent()
   const deleteParentMutation = useDeleteParent()
+  const deleteAdminMutation = useDeleteAdmin()
 
   if (!user) return null
 
@@ -161,6 +163,8 @@ export function UserDetailsSheet({
         await deleteStudentMutation.mutateAsync(user.id)
       } else if (userType === "parents") {
         await deleteParentMutation.mutateAsync(user.id)
+      } else if (userType === "admins") {
+        await deleteAdminMutation.mutateAsync(user.id)
       }
       onOpenChange(false)
     } catch (error) {
@@ -381,14 +385,18 @@ export function UserDetailsSheet({
             ? "Delete Teacher"
             : userType === "students"
               ? "Delete Student"
-              : "Delete Parent"
+              : userType === "admins"
+                ? "Delete Admin"
+                : "Delete Parent"
         }
         description={
           userType === "teachers"
             ? "Are you sure you want to delete this teacher? This action cannot be undone."
             : userType === "students"
               ? "Are you sure you want to delete this student? This action cannot be undone."
-              : "Are you sure you want to delete this parent? This action cannot be undone."
+              : userType === "admins"
+                ? "Are you sure you want to delete this admin? This action cannot be undone."
+                : "Are you sure you want to delete this parent? This action cannot be undone."
         }
         itemName={getFullName()}
       />

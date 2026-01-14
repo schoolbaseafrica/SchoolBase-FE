@@ -67,6 +67,7 @@ const mainItems = [
     ],
   },
   { title: "Results", url: "/admin/results", icon: Calendar },
+  { title: "Admins", url: "/admin/admins", icon: Users },
   { title: "Teachers", url: "/admin/teachers", icon: Users },
   { title: "Students", url: "/admin/students", icon: GraduationCap },
   { title: "Parents", url: "/admin/parents", icon: FaRegUser },
