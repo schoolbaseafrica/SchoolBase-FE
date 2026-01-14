@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useParentAuth } from "@/hooks/use-auth-user"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -18,13 +18,27 @@ import { Button } from "@/components/ui/button"
 export function ParentRouteGuard({ children }: { children: React.ReactNode }) {
   const { isParent, isLoading, error } = useParentAuth()
   const router = useRouter()
+  const pathname = usePathname()
+
+  // Skip auth check for auto-login page
+  const isAutoLoginPage = pathname === "/parent/auto-login"
 
   useEffect(() => {
+    // Skip redirect for auto-login page
+    if (isAutoLoginPage) {
+      return
+    }
+
     // If auth check is complete and user is not a parent, redirect to dashboard
     if (!isLoading && !isParent && !error) {
       router.push("/dashboard")
     }
-  }, [isLoading, isParent, error, router])
+  }, [isLoading, isParent, error, router, isAutoLoginPage])
+
+  // Skip guard for auto-login page
+  if (isAutoLoginPage) {
+    return <>{children}</>
+  }
 
   // Show loading state while checking auth
   if (isLoading) {

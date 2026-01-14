@@ -9,7 +9,10 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { token } = body
 
+    console.log("[parent-access-links/validate] Received request with token:", token ? token.substring(0, 10) + "..." : "missing")
+
     if (!token) {
+      console.error("[parent-access-links/validate] Token is missing")
       return NextResponse.json(
         { message: "Token is required" },
         { status: 400 }
@@ -35,6 +38,7 @@ export async function POST(req: Request) {
     }
 
     const backendUrl = `${backendBaseUrl}/api/v1/parent-access-links/validate`
+    console.log("[parent-access-links/validate] Calling backend:", backendUrl)
 
     // Call backend directly without authentication headers
     const response = await fetch(backendUrl, {
@@ -46,7 +50,14 @@ export async function POST(req: Request) {
       cache: "no-store",
     })
 
+    console.log("[parent-access-links/validate] Backend response status:", response.status)
+
     const responseData = await response.json()
+    console.log("[parent-access-links/validate] Backend response data:", {
+      hasData: !!responseData.data,
+      message: responseData.message,
+      status_code: responseData.status_code,
+    })
 
     return NextResponse.json(responseData, {
       status: response.status,

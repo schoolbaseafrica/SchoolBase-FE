@@ -31,13 +31,18 @@ export default function ParentAutoLoginPage() {
     // Validate and use the access link
     const validateLink = async () => {
       try {
+        console.log("[Auto-login] Starting validation with token:", token.substring(0, 10) + "...")
+        
         // Clear any existing auth state
         clearAuth()
         queryClient.clear()
 
+        console.log("[Auto-login] Calling validate API...")
         const response = await ParentAccessLinksAPI.validate(token)
+        console.log("[Auto-login] Validate response:", response)
 
         if (response.data) {
+          console.log("[Auto-login] Validation successful, setting cookies...")
           // Set cookies via Next.js API route (similar to login)
           // We'll create a special endpoint for this
           const loginResponse = await fetch("/api/auth/auto-login", {
@@ -55,9 +60,12 @@ export default function ParentAutoLoginPage() {
           })
 
           if (!loginResponse.ok) {
-            throw new Error("Failed to set authentication cookies")
+            const errorData = await loginResponse.json().catch(() => ({}))
+            console.error("[Auto-login] Failed to set cookies:", errorData)
+            throw new Error(errorData.message || "Failed to set authentication cookies")
           }
 
+          console.log("[Auto-login] Cookies set successfully, redirecting...")
           setStatus("success")
 
           // Redirect to parent dashboard after a brief delay
