@@ -11,7 +11,7 @@ export default function StaffPage() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <DashboardTitle title="Staff Dashboard" description="Welcome to your staff portal" />
+        <DashboardTitle heading="Staff Dashboard" description="Welcome to your staff portal" />
         <div className="mt-6 space-y-4">
           <div className="h-32 w-full animate-pulse rounded-lg bg-gray-200" />
         </div>
@@ -22,7 +22,7 @@ export default function StaffPage() {
   return (
     <div className="container mx-auto p-6">
       <DashboardTitle
-        title="Staff Dashboard"
+        heading="Staff Dashboard"
         description={`Welcome, ${user?.first_name || "Staff Member"}`}
       />
 
