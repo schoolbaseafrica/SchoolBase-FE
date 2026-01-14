@@ -17,6 +17,7 @@ import { getInitials } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { apiFetch } from "@/lib/api/client"
 import { useAuthUser } from "@/hooks/use-auth-user"
+import { GenerateAccessLinkDialog } from "@/app/(portal)/admin/parents/[id]/_components/generate-access-link-dialog"
 
 interface UserDetailsSheetProps {
   open: boolean
@@ -339,14 +340,20 @@ export function UserDetailsSheet({
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pt-4">
               {userType === "parents" && (
-                <Button
-                  onClick={handleLinkStudent}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Link Student to Parent
-                </Button>
+                <>
+                  <GenerateAccessLinkDialog
+                    parentId={user.id}
+                    parentName={getFullName()}
+                  />
+                  <Button
+                    onClick={handleLinkStudent}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Link Student to Parent
+                  </Button>
+                </>
               )}
               {userType !== "admins" && (
                 <Button

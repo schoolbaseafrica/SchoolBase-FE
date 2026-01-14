@@ -12,7 +12,6 @@ import Link from "next/link"
 import { useGetParent, useUpdateParent } from "../_hooks/use-parents"
 import { parentFormConfig } from "../new/components/new-parent-form"
 import { ItemLoader } from "../../_components/sub-loader"
-import { GenerateAccessLinkDialog } from "./_components/generate-access-link-dialog"
 
 export default function EditParentPage() {
   const { id } = useParams()
@@ -150,14 +149,6 @@ export default function EditParentPage() {
           <h1 className="mb-2 text-xl font-bold text-gray-900">Edit Parent</h1>
           <p className="text-gray-600">Update parent details.</p>
         </div>
-        {parent && (
-          <div>
-            <GenerateAccessLinkDialog
-              parentId={parent.id}
-              parentName={`${parent.first_name} ${parent.last_name}`}
-            />
-          </div>
-        )}
       </div>
       <div>
         <NewPersonFormBuilder
