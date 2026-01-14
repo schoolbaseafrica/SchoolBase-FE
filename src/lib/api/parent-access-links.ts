@@ -108,17 +108,18 @@ export const ParentAccessLinksAPI = {
 
   /**
    * Validate and use an access link (Public endpoint)
+   * Uses a dedicated Next.js API route that doesn't add auth headers
    */
   validate: async (
     token: string
   ): Promise<ValidateAccessLinkResponse> => {
     return apiFetch<ValidateAccessLinkResponse>(
-      `/parent-access-links/validate`,
+      `/api/parent-access-links/validate`,
       {
         method: "POST",
         data: { token },
       },
-      true // use proxy
+      false // Use internal Next.js API route, not proxy
     )
   },
 }
