@@ -31,13 +31,17 @@ export async function POST(req: Request) {
       { status: 200 }
     )
 
+    // In production, use secure cookies. In development, allow insecure for localhost
     const SECURE = process.env.NODE_ENV === "production"
+    // Use 'lax' instead of 'strict' for better cross-site compatibility
+    // 'strict' can block cookies when navigating from external links (like access links)
 
     // Set cookies — HTTP-only for security
+    // Use 'lax' sameSite for better compatibility with external link navigation
     response.cookies.set("access_token", access_token, {
       httpOnly: true,
       secure: SECURE,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict" to allow cookies from external links
       path: "/",
       expires: expiresAt,
     })
@@ -45,25 +49,25 @@ export async function POST(req: Request) {
     response.cookies.set("refresh_token", refresh_token, {
       httpOnly: true,
       secure: SECURE,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict"
       path: "/",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days (fixed: removed 1000 multiplier)
     })
 
     response.cookies.set("session_id", session_id, {
       httpOnly: true,
       secure: SECURE,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict"
       path: "/",
-      maxAge: Infinity,
+      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
     })
 
     response.cookies.set("user_id", user.id, {
       httpOnly: true,
       secure: SECURE,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict"
       path: "/",
-      maxAge: Infinity,
+      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
     })
 
     return response

@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       secure: SECURE,
       sameSite: "strict",
       path: "/",
-      maxAge: Infinity,
+      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
     })
 
     response.cookies.set("user_id", user_id, {
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       secure: SECURE,
       sameSite: "strict",
       path: "/",
-      maxAge: Infinity,
+      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
     })
 
     return response

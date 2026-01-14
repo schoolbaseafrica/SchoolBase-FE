@@ -44,9 +44,10 @@ export default function ParentAutoLoginPage() {
         if (response.data) {
           console.log("[Auto-login] Validation successful, setting cookies...")
           // Set cookies via Next.js API route (similar to login)
-          // We'll create a special endpoint for this
+          // IMPORTANT: Include credentials to ensure cookies are set and sent
           const loginResponse = await fetch("/api/auth/auto-login", {
             method: "POST",
+            credentials: "include", // Ensure cookies are included
             headers: {
               "Content-Type": "application/json",
             },
@@ -59,19 +60,22 @@ export default function ParentAutoLoginPage() {
             }),
           })
 
+          const responseData = await loginResponse.json().catch(() => ({}))
+          
           if (!loginResponse.ok) {
-            const errorData = await loginResponse.json().catch(() => ({}))
-            console.error("[Auto-login] Failed to set cookies:", errorData)
-            throw new Error(errorData.message || "Failed to set authentication cookies")
+            console.error("[Auto-login] Failed to set cookies:", responseData)
+            throw new Error(responseData.message || "Failed to set authentication cookies")
           }
 
-          console.log("[Auto-login] Cookies set successfully, redirecting...")
+          console.log("[Auto-login] Cookies set successfully, redirecting...", responseData)
+          
           setStatus("success")
 
-          // Redirect to parent dashboard after a brief delay
+          // Redirect to parent dashboard after ensuring cookies are set
+          // Use window.location for a full page reload to ensure cookies are available
           setTimeout(() => {
-            router.push("/parent")
-          }, 1500)
+            window.location.href = "/parent"
+          }, 2000)
         }
       } catch (error) {
         console.error("Auto-login error:", error)

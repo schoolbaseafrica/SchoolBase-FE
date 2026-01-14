@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { buildSchoolProfileFromRuntimeConfig } from "@/lib/config-loader"
 import { defaultSchoolProfile } from "@/data/school-profile"
 
-async function getSchoolConfig() {
+async function getSchoolConfig(requestUrl?: string) {
   // Try to load from environment variables first (fast, server-side)
   const schoolName = process.env.SCHOOL_NAME || process.env.NEXT_PUBLIC_SCHOOL_NAME
   
@@ -28,8 +29,26 @@ async function getSchoolConfig() {
   }
   
   // Fallback: Try to fetch from backend API
+  // For server-side, we need to construct the backend URL from the request
   try {
-    const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+    let apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+    
+    // If no API URL in env, try to construct from request URL
+    if (!apiBaseUrl && requestUrl) {
+      try {
+        const url = new URL(requestUrl)
+        const hostname = url.hostname
+        
+        // Construct backend URL: demo.schoolbase.africa -> api.demo.schoolbase.africa
+        if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+          const backendHostname = hostname.startsWith("api.") ? hostname : `api.${hostname}`
+          apiBaseUrl = `${url.protocol}//${backendHostname}`
+        }
+      } catch (e) {
+        // Invalid URL, skip
+      }
+    }
+    
     if (apiBaseUrl) {
       const apiUrl = `${apiBaseUrl.replace(/\/+$/, "")}/api/v1/school`
       const response = await fetch(apiUrl, {
@@ -41,11 +60,17 @@ async function getSchoolConfig() {
 
       if (response.ok) {
         const data = await response.json()
+        // Backend wraps in {status_code, message, data} or just returns data
         const schoolData = data.data || data
         
         if (schoolData?.name) {
           const shortName = schoolData.name.split(" ").slice(0, 2).join(" ") || schoolData.name.substring(0, 12)
-          const logoUrl = schoolData.logo_url || schoolData.logoUrl || defaultSchoolProfile.logo.full
+          
+          // Construct full logo URL if it's relative
+          let logoUrl = schoolData.logo_url || schoolData.logoUrl || defaultSchoolProfile.logo.full
+          if (logoUrl && !logoUrl.startsWith("http") && apiBaseUrl) {
+            logoUrl = `${apiBaseUrl.replace(/\/+$/, "")}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`
+          }
           
           const runtimeConfig = {
             name: schoolData.name,
@@ -76,7 +101,15 @@ async function getSchoolConfig() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const schoolProfile = await getSchoolConfig()
+  // Get host from headers to construct backend URL
+  const headersList = await headers()
+  const host = headersList.get("host") || headersList.get("x-forwarded-host")
+  const protocol = headersList.get("x-forwarded-proto") || "https"
+  
+  // Construct request URL for backend API call
+  const requestUrl = host ? `${protocol}://${host}` : undefined
+  
+  const schoolProfile = await getSchoolConfig(requestUrl)
   
   const title = `${schoolProfile.shortName} - Parent Access`
   const description = schoolProfile.description || `${schoolProfile.name} - Access your child's academic information and updates.`
