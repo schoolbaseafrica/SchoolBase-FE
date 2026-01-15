@@ -20,6 +20,15 @@ import { RejectionModal } from "@/components/results/rejection-modal"
 import { useApproveSubmission, useRejectSubmission } from "../_hooks/use-admin-results"
 import { toast } from "sonner"
 import { ResultsAPI } from "@/lib/results"
+import { Pagination } from "@/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 // Define a type for the grade with student info based on your console log
 interface GradeWithStudentInfo {
@@ -56,6 +65,8 @@ export function SubmissionReview({ submission }: SubmissionReviewProps) {
     GradeWithStudentInfo[]
   >([])
   const [loadingStudentInfo, setLoadingStudentInfo] = useState(true)
+  const [page, setPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
 
   const approveMutation = useApproveSubmission()
   const rejectMutation = useRejectSubmission()
@@ -322,39 +333,82 @@ export function SubmissionReview({ submission }: SubmissionReviewProps) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  gradesWithStudentInfo.map((grade) => (
-                    <TableRow key={grade.id || grade.student_id}>
-                      <TableCell>
-                        {/* Fix 1: Get student name correctly */}
-                        {getStudentName(grade)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {/* Fix 3: Display scores correctly */}
-                        {formatScore(grade.ca_score)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {/* Fix 3: Display scores correctly */}
-                        {formatScore(grade.exam_score)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {/* Fix 3: Display scores correctly */}
-                        {formatScore(grade.total_score)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {/* Fix 3: Display grade correctly - looking at console log it's grade_letter */}
-                        {getGradeLetter(grade)}
-                      </TableCell>
-                      <TableCell>
-                        {/* Fix 3: Display comment correctly */}
-                        {grade.comment || "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  gradesWithStudentInfo
+                    .slice((page - 1) * rowsPerPage, page * rowsPerPage)
+                    .map((grade) => (
+                      <TableRow key={grade.id || grade.student_id}>
+                        <TableCell>
+                          {/* Fix 1: Get student name correctly */}
+                          {getStudentName(grade)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {/* Fix 3: Display scores correctly */}
+                          {formatScore(grade.ca_score)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {/* Fix 3: Display scores correctly */}
+                          {formatScore(grade.exam_score)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {/* Fix 3: Display scores correctly */}
+                          {formatScore(grade.total_score)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {/* Fix 3: Display grade correctly - looking at console log it's grade_letter */}
+                          {getGradeLetter(grade)}
+                        </TableCell>
+                        <TableCell>
+                          {/* Fix 3: Display comment correctly */}
+                          {grade.comment || "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
                 )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
+        {gradesWithStudentInfo.length > 0 && (
+          <div className="border-t p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="rows-per-page" className="text-sm text-muted-foreground">
+                  Rows per page:
+                </Label>
+                <Select
+                  value={rowsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setRowsPerPage(Number(value))
+                    setPage(1) // Reset to page 1 when rows per page changes
+                  }}
+                >
+                  <SelectTrigger id="rows-per-page" className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {Math.ceil(gradesWithStudentInfo.length / rowsPerPage) > 1 && (
+                <Pagination
+                  itemName="students"
+                  currentPage={page}
+                  totalPages={Math.ceil(gradesWithStudentInfo.length / rowsPerPage)}
+                  totalItems={gradesWithStudentInfo.length}
+                  onPageChange={(newPage) => {
+                    setPage(newPage)
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Action Buttons */}
