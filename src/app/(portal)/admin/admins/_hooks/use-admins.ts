@@ -21,13 +21,25 @@ const ADMINS_KEY = ["admins"]
 export function useGetAdmins() {
   const setAdmins = useAdminsStore((state) => state.setAdmins)
   const setLoading = useAdminsStore((state) => state.setLoading)
+  const filters = useAdminsStore(
+    useShallow((state) => ({
+      isActive: state.filters.isActive,
+      search: state.filters.search,
+    }))
+  )
 
   const query = useQuery({
-    queryKey: ADMINS_KEY,
+    // Include is_active filter in queryKey so it refetches when filter changes
+    queryKey: [...ADMINS_KEY, "all", { is_active: filters.isActive, search: filters.search }],
     queryFn: async () => {
       setLoading(true)
       try {
-        const res = await AdminsAPI.getAll({ limit: 100 })
+        // Pass the is_active filter to the backend API
+        const res = await AdminsAPI.getAll({ 
+          limit: 100,
+          is_active: filters.isActive,
+          search: filters.search || undefined,
+        })
         let admins: User[] = []
         const resData = res?.data as unknown
         if (Array.isArray(resData)) {

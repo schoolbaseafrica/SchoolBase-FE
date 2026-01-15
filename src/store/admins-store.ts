@@ -117,7 +117,18 @@ export const selectFilteredAdmins = (
 
   // Active status filter
   if (filters.isActive !== undefined) {
-    filtered = filtered.filter((admin) => admin.is_active === filters.isActive)
+    if (filters.isActive === true) {
+      // Active filter: only show active, non-deleted admins
+      filtered = filtered.filter(
+        (admin) => admin.is_active === true && !admin.deleted_at
+      )
+    } else if (filters.isActive === false) {
+      // Inactive filter: show inactive admins (includes soft-deleted admins)
+      // A deleted admin is effectively inactive, so include them
+      filtered = filtered.filter(
+        (admin) => admin.is_active === false || admin.deleted_at
+      )
+    }
   }
 
   return filtered
