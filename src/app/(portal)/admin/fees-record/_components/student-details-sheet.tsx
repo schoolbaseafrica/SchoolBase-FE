@@ -22,20 +22,6 @@ const StudentDetailsSheet = ({
     sessionId: student?.session_id,
   })
 
-  // Debug logging
-  React.useEffect(() => {
-    if (data) {
-      console.log("[StudentDetailsSheet] Full API response:", data)
-      console.log("[StudentDetailsSheet] data.data:", data.data)
-      console.log("[StudentDetailsSheet] data keys:", Object.keys(data))
-      if ((data as any)?.data) {
-        console.log("[StudentDetailsSheet] data.data keys:", Object.keys((data as any).data))
-      }
-    }
-    if (error) {
-      console.error("[StudentDetailsSheet] Error:", error)
-    }
-  }, [data, error])
 
   // Handle different response structures
   // Backend returns: { message, data: StudentFeeDetailsResponse }
@@ -43,11 +29,8 @@ const StudentDetailsSheet = ({
   // So we need to access data.data to get StudentFeeDetailsResponse
   const details = React.useMemo(() => {
     if (!data) {
-      console.log("[StudentDetailsSheet] No data from API")
       return null
     }
-    
-    console.log("[StudentDetailsSheet] Raw API response:", JSON.stringify(data, null, 2))
     
     // Try different possible structures
     // 1. Double-nested: { status_code, message, data: { data: StudentFeeDetailsResponse } }
@@ -58,7 +41,6 @@ const StudentDetailsSheet = ({
         if (secondLevel && typeof secondLevel === 'object') {
           // Check for key indicators of StudentFeeDetailsResponse
           if ('student_info' in secondLevel || 'fee_breakdown' in secondLevel || 'payment_history' in secondLevel) {
-            console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in data.data.data")
             return secondLevel
           }
         }
@@ -69,27 +51,18 @@ const StudentDetailsSheet = ({
       if (nestedData && typeof nestedData === 'object' && !Array.isArray(nestedData)) {
         // Check for key indicators of StudentFeeDetailsResponse
         if ('student_info' in nestedData || 'fee_breakdown' in nestedData || 'payment_history' in nestedData) {
-          console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in data.data")
           return nestedData
         }
       }
     }
     
-    // 2. If data itself is StudentFeeDetailsResponse (direct return)
+    // 3. If data itself is StudentFeeDetailsResponse (direct return)
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       if ('student_info' in data || 'fee_breakdown' in data || 'payment_history' in data) {
-        console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse directly in data")
         return data as any
       }
     }
     
-    console.warn("[StudentDetailsSheet] ✗ Could not extract StudentFeeDetailsResponse")
-    console.warn("[StudentDetailsSheet] Data structure:", {
-      type: typeof data,
-      isArray: Array.isArray(data),
-      keys: data && typeof data === 'object' ? Object.keys(data) : 'N/A',
-      hasDataKey: data && typeof data === 'object' && 'data' in data,
-    })
     return null
   }, [data])
 
