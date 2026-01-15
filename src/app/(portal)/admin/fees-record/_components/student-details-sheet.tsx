@@ -153,7 +153,7 @@ const StudentDetailsSheet = ({
                   <span className="text-right">Status</span>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {(details.fee_breakdown || []).map((item, i) => (
+                  {(details.fee_breakdown || []).map((item: { component_name?: string; amount?: number; status?: string }, i: number) => (
                     <div key={i} className="grid grid-cols-3 items-center p-4 text-sm">
                       <span className="text-gray-600">{item.component_name || "N/A"}</span>
                       <span className="text-center font-medium text-gray-900">
@@ -187,7 +187,7 @@ const StudentDetailsSheet = ({
             <div>
               <h4 className="mb-4 text-lg font-bold text-gray-900">Payment History</h4>
               <div className="space-y-6">
-                {(details.payment_history || []).map((item, i) => (
+                {(details.payment_history || []).map((item: { fee_component?: string; payment_date?: string | Date; payment_method?: string; amount_paid?: number }, i: number) => (
                   <div key={i} className="flex items-start justify-between">
                     <div className="flex gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
