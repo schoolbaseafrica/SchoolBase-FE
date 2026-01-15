@@ -38,27 +38,48 @@ const StudentDetailsSheet = ({
   }, [data, error])
 
   // Handle different response structures
-  // ResponsePack structure: { status_code, message, data: StudentFeeDetailsResponse }
+  // Backend returns: { message, data: StudentFeeDetailsResponse }
   // apiFetch returns res.data, which is the ResponsePack
   // So we need to access data.data to get StudentFeeDetailsResponse
   const details = React.useMemo(() => {
-    if (!data) return null
+    if (!data) {
+      console.log("[StudentDetailsSheet] No data from API")
+      return null
+    }
+    
+    console.log("[StudentDetailsSheet] Raw API response:", JSON.stringify(data, null, 2))
     
     // Try different possible structures
-    // 1. Direct ResponsePack: { status_code, message, data: StudentFeeDetailsResponse }
+    // 1. ResponsePack: { status_code?, message, data: StudentFeeDetailsResponse }
     if (data && typeof data === 'object' && 'data' in data) {
       const nestedData = (data as any).data
+      console.log("[StudentDetailsSheet] Extracted nested data:", nestedData)
+      
       // Check if nestedData is the StudentFeeDetailsResponse
-      if (nestedData && typeof nestedData === 'object' && ('student_info' in nestedData || 'fee_breakdown' in nestedData)) {
-        return nestedData
+      if (nestedData && typeof nestedData === 'object') {
+        // Check for key indicators of StudentFeeDetailsResponse
+        if ('student_info' in nestedData || 'fee_breakdown' in nestedData || 'payment_history' in nestedData) {
+          console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in nested data")
+          return nestedData
+        }
       }
     }
     
-    // 2. If data itself is StudentFeeDetailsResponse (shouldn't happen but handle it)
-    if (data && typeof data === 'object' && ('student_info' in data || 'fee_breakdown' in data)) {
-      return data as any
+    // 2. If data itself is StudentFeeDetailsResponse (direct return)
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      if ('student_info' in data || 'fee_breakdown' in data || 'payment_history' in data) {
+        console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse directly in data")
+        return data as any
+      }
     }
     
+    console.warn("[StudentDetailsSheet] ✗ Could not extract StudentFeeDetailsResponse")
+    console.warn("[StudentDetailsSheet] Data structure:", {
+      type: typeof data,
+      isArray: Array.isArray(data),
+      keys: data && typeof data === 'object' ? Object.keys(data) : 'N/A',
+      hasDataKey: data && typeof data === 'object' && 'data' in data,
+    })
     return null
   }, [data])
 
@@ -84,6 +105,19 @@ const StudentDetailsSheet = ({
             </div>
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-40 w-full" />
+          </div>
+        ) : error ? (
+          <div className="flex h-full flex-col items-center justify-center space-y-4 text-gray-500">
+            <p className="text-lg font-semibold">Error loading details</p>
+            <p className="text-sm">{error instanceof Error ? error.message : "Unknown error"}</p>
+            {student && (
+              <div className="mt-4 rounded-lg border border-gray-200 p-4 text-left">
+                <p className="text-sm font-medium text-gray-900">Payment Information:</p>
+                <p className="text-xs text-gray-600">Student ID: {student.student_id}</p>
+                <p className="text-xs text-gray-600">Term ID: {student.term_id}</p>
+                <p className="text-xs text-gray-600">Session ID: {student.session_id}</p>
+              </div>
+            )}
           </div>
         ) : details ? (
           <div className="space-y-8 pb-10">
