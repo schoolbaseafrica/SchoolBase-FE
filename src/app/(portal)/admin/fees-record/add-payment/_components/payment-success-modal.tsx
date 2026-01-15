@@ -3,7 +3,7 @@
 import React from "react"
 import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -43,9 +43,9 @@ export function PaymentSuccessModal({
             <DialogTitle className="text-xl font-bold text-gray-900">
               Payment Recorded Successfully!
             </DialogTitle>
-            <p className="mt-1 text-sm text-gray-500">
+            <DialogDescription className="mt-1 text-sm text-gray-500">
               The student&apos;s fee record have been update
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
 

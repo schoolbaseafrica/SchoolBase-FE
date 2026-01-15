@@ -53,21 +53,23 @@ const StudentDetailsSheet = ({
             <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
               <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-gray-100 shadow-sm">
                 <span className="text-2xl font-bold text-gray-500">
-                  {details.student_info.first_name[0]}
-                  {details.student_info.last_name[0]}
+                  {details.student_info?.first_name?.[0] || "?"}
+                  {details.student_info?.last_name?.[0] || ""}
                 </span>
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  {details.student_info.first_name} {details.student_info.last_name}
+                  {details.student_info?.first_name && details.student_info?.last_name
+                    ? `${details.student_info.first_name} ${details.student_info.last_name}`
+                    : "Unknown Student"}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  ID: {details.student_info.registration_number}
+                  ID: {details.student_info?.registration_number || "N/A"}
                 </p>
                 <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-gray-600 sm:justify-start">
-                  <span>Session: {details.student_info.session}</span>
-                  <span>Class: {details.student_info.class}</span>
-                  <span>Term: {details.student_info.term}</span>
+                  <span>Session: {details.student_info?.session || "N/A"}</span>
+                  <span>Class: {details.student_info?.class || "N/A"}</span>
+                  <span>Term: {details.student_info?.term || "N/A"}</span>
                 </div>
               </div>
             </div>
@@ -78,8 +80,8 @@ const StudentDetailsSheet = ({
                 <p className="text-xs font-medium text-gray-600">Total Fees</p>
                 <p className="mt-1 text-sm font-bold text-gray-900">
                   ₦
-                  {details.fee_breakdown
-                    .reduce((acc, curr) => acc + curr.amount, 0)
+                  {(details.fee_breakdown || [])
+                    .reduce((acc, curr) => acc + (curr.amount || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
@@ -87,8 +89,8 @@ const StudentDetailsSheet = ({
                 <p className="text-xs font-medium text-gray-600">Total Paid</p>
                 <p className="mt-1 text-sm font-bold text-green-500">
                   ₦
-                  {details.fee_breakdown
-                    .reduce((acc, curr) => acc + curr.amount_paid, 0)
+                  {(details.fee_breakdown || [])
+                    .reduce((acc, curr) => acc + (curr.amount_paid || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
@@ -96,8 +98,8 @@ const StudentDetailsSheet = ({
                 <p className="text-xs font-medium text-gray-600">Unpaid</p>
                 <p className="mt-1 text-sm font-bold text-red-500">
                   ₦
-                  {details.fee_breakdown
-                    .reduce((acc, curr) => acc + curr.outstanding_amount, 0)
+                  {(details.fee_breakdown || [])
+                    .reduce((acc, curr) => acc + (curr.outstanding_amount || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
@@ -113,11 +115,11 @@ const StudentDetailsSheet = ({
                   <span className="text-right">Status</span>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {details.fee_breakdown.map((item, i) => (
+                  {(details.fee_breakdown || []).map((item, i) => (
                     <div key={i} className="grid grid-cols-3 items-center p-4 text-sm">
-                      <span className="text-gray-600">{item.component_name}</span>
+                      <span className="text-gray-600">{item.component_name || "N/A"}</span>
                       <span className="text-center font-medium text-gray-900">
-                        ₦{item.amount.toLocaleString()}
+                        ₦{(item.amount || 0).toLocaleString()}
                       </span>
                       <div className="text-right">
                         <span
@@ -129,11 +131,16 @@ const StudentDetailsSheet = ({
                                 : "bg-red-100 text-red-700"
                           }`}
                         >
-                          {item.status.replace("_", " ")}
+                          {item.status?.replace("_", " ") || "N/A"}
                         </span>
                       </div>
                     </div>
                   ))}
+                  {(!details.fee_breakdown || details.fee_breakdown.length === 0) && (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      No fee breakdown available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -142,25 +149,32 @@ const StudentDetailsSheet = ({
             <div>
               <h4 className="mb-4 text-lg font-bold text-gray-900">Payment History</h4>
               <div className="space-y-6">
-                {details.payment_history.map((item, i) => (
+                {(details.payment_history || []).map((item, i) => (
                   <div key={i} className="flex items-start justify-between">
                     <div className="flex gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
                         <ArrowDown className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">{item.fee_component}</p>
+                        <p className="font-bold text-gray-900">{item.fee_component || "N/A"}</p>
                         <p className="text-xs text-gray-500">
-                          {new Date(item.payment_date).toLocaleDateString()} via{" "}
-                          {item.payment_method.replace("_", " ")}
+                          {item.payment_date
+                            ? new Date(item.payment_date).toLocaleDateString()
+                            : "N/A"}{" "}
+                          via {item.payment_method?.replace("_", " ") || "N/A"}
                         </p>
                       </div>
                     </div>
                     <span className="font-bold text-green-500">
-                      ₦{item.amount_paid.toLocaleString()}
+                      ₦{(item.amount_paid || 0).toLocaleString()}
                     </span>
                   </div>
                 ))}
+                {(!details.payment_history || details.payment_history.length === 0) && (
+                  <div className="text-center text-sm text-gray-500">
+                    No payment history available
+                  </div>
+                )}
               </div>
             </div>
           </div>
