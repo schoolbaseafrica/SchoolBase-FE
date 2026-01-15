@@ -58,9 +58,9 @@ export interface FeePayment {
   student_id: string
   student: {
     id: string
-    first_name: string
-    last_name: string
-  }
+    first_name: string | null
+    last_name: string | null
+  } | null
   fee_component_id: string
   fee_component: {
     id: string

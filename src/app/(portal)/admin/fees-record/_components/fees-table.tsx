@@ -114,13 +114,15 @@ const FeesTable = ({
                           <div className="relative h-10 w-10 overflow-hidden rounded-full bg-gray-100">
                             {/* Avatar placeholder or image if available */}
                             <div className="flex h-full w-full items-center justify-center text-gray-500">
-                              {payment.student.first_name[0]}
-                              {payment.student.last_name[0]}
+                              {payment.student?.first_name?.[0] || "?"}
+                              {payment.student?.last_name?.[0] || ""}
                             </div>
                           </div>
                           <div className="flex flex-col">
                             <span className="font-medium text-gray-900">
-                              {payment.student.first_name} {payment.student.last_name}
+                              {payment.student?.first_name && payment.student?.last_name
+                                ? `${payment.student.first_name} ${payment.student.last_name}`
+                                : "Unknown Student"}
                             </span>
                             <span className="text-xs text-gray-500">
                               ID: {payment.invoice_number}
@@ -184,7 +186,9 @@ const FeesTable = ({
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-900">
-                      {payment.student.first_name} {payment.student.last_name}
+                      {payment.student?.first_name && payment.student?.last_name
+                        ? `${payment.student.first_name} ${payment.student.last_name}`
+                        : "Unknown Student"}
                     </span>
                     <span className="text-xs text-gray-500">
                       Inv: {payment.invoice_number}
