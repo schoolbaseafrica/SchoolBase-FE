@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useGetActivityLogs } from "./_hooks/use-activity-logs"
 import { ActivityLogsTable } from "./_components/activity-logs-table"
 import { ActivityLogsFilters } from "./_components/activity-logs-filters"
@@ -25,23 +25,31 @@ export default function ActivityLogsPage() {
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
 
-  const { data, isLoading, isError, error } = useGetActivityLogs({
+  // Construct params object to ensure proper query key serialization
+  const queryParams = {
     page,
     limit,
-    user_id: userFilter || undefined,
-    entity_type: entityTypeFilter === "all" ? undefined : entityTypeFilter,
-    action: actionFilter === "all" ? undefined : actionFilter,
-    start_date: startDate || undefined,
-    end_date: endDate || undefined,
-  })
+    ...(userFilter && { user_id: userFilter }),
+    ...(entityTypeFilter !== "all" && { entity_type: entityTypeFilter }),
+    ...(actionFilter !== "all" && { action: actionFilter }),
+    ...(startDate && { start_date: startDate }),
+    ...(endDate && { end_date: endDate }),
+  }
+
+  const { data, isLoading, isError, error } = useGetActivityLogs(queryParams)
 
   const logs = data?.data || []
   const pagination = data?.pagination
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage)
-    // Scroll to top when page changes
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    if (newPage !== page) {
+      setPage(newPage)
+      // Scroll to top when page changes
+      // Use a small delay to ensure state update completes before scrolling
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }, 100)
+    }
   }
 
   const handleLimitChange = (newLimit: string) => {
@@ -113,7 +121,7 @@ export default function ActivityLogsPage() {
           {pagination.total_pages > 1 && (
             <Pagination
               itemName="logs"
-              currentPage={page}
+              currentPage={pagination.page || page}
               totalPages={pagination.total_pages}
               totalItems={pagination.total}
               onPageChange={handlePageChange}
