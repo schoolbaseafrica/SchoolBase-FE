@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { useAdminsStore } from "@/store/admins-store"
 import { useEffect } from "react"
+import { useShallow } from "zustand/react/shallow"
 
 // The main list query key
 const ADMINS_KEY = ["admins"]
