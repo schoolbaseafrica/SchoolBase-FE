@@ -16,13 +16,51 @@ const StudentDetailsSheet = ({
   onOpenChange,
   student,
 }: StudentDetailsSheetProps) => {
-  const { data, isLoading } = useStudentFeeDetails({
+  const { data, isLoading, error } = useStudentFeeDetails({
     studentId: student?.student_id,
     termId: student?.term_id,
     sessionId: student?.session_id,
   })
 
-  const details = data?.data
+  // Debug logging
+  React.useEffect(() => {
+    if (data) {
+      console.log("[StudentDetailsSheet] Full API response:", data)
+      console.log("[StudentDetailsSheet] data.data:", data.data)
+      console.log("[StudentDetailsSheet] data keys:", Object.keys(data))
+      if ((data as any)?.data) {
+        console.log("[StudentDetailsSheet] data.data keys:", Object.keys((data as any).data))
+      }
+    }
+    if (error) {
+      console.error("[StudentDetailsSheet] Error:", error)
+    }
+  }, [data, error])
+
+  // Handle different response structures
+  // ResponsePack structure: { status_code, message, data: StudentFeeDetailsResponse }
+  // apiFetch returns res.data, which is the ResponsePack
+  // So we need to access data.data to get StudentFeeDetailsResponse
+  const details = React.useMemo(() => {
+    if (!data) return null
+    
+    // Try different possible structures
+    // 1. Direct ResponsePack: { status_code, message, data: StudentFeeDetailsResponse }
+    if (data && typeof data === 'object' && 'data' in data) {
+      const nestedData = (data as any).data
+      // Check if nestedData is the StudentFeeDetailsResponse
+      if (nestedData && typeof nestedData === 'object' && ('student_info' in nestedData || 'fee_breakdown' in nestedData)) {
+        return nestedData
+      }
+    }
+    
+    // 2. If data itself is StudentFeeDetailsResponse (shouldn't happen but handle it)
+    if (data && typeof data === 'object' && ('student_info' in data || 'fee_breakdown' in data)) {
+      return data as any
+    }
+    
+    return null
+  }, [data])
 
   if (!student) return null
 

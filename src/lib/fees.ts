@@ -157,7 +157,7 @@ export const FeesAPI = {
         params,
       },
       true
-    ).then((res) => ({ ...res, data: res.data })), // Ensure data is unwrapped if needed
+    ),
 }
 
 export interface StudentFeeDetailsResponse {
