@@ -119,7 +119,7 @@ const StudentDetailsSheet = ({
                 <p className="mt-1 text-sm font-bold text-gray-900">
                   ₦
                   {(details.fee_breakdown || [])
-                    .reduce((acc, curr) => acc + (curr.amount || 0), 0)
+                    .reduce((acc: number, curr: { amount?: number }) => acc + (curr.amount || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
@@ -128,7 +128,7 @@ const StudentDetailsSheet = ({
                 <p className="mt-1 text-sm font-bold text-green-500">
                   ₦
                   {(details.fee_breakdown || [])
-                    .reduce((acc, curr) => acc + (curr.amount_paid || 0), 0)
+                    .reduce((acc: number, curr: { amount_paid?: number }) => acc + (curr.amount_paid || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
@@ -137,7 +137,7 @@ const StudentDetailsSheet = ({
                 <p className="mt-1 text-sm font-bold text-red-500">
                   ₦
                   {(details.fee_breakdown || [])
-                    .reduce((acc, curr) => acc + (curr.outstanding_amount || 0), 0)
+                    .reduce((acc: number, curr: { outstanding_amount?: number }) => acc + (curr.outstanding_amount || 0), 0)
                     .toLocaleString()}
                 </p>
               </div>
