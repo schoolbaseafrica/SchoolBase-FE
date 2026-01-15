@@ -50,16 +50,26 @@ const StudentDetailsSheet = ({
     console.log("[StudentDetailsSheet] Raw API response:", JSON.stringify(data, null, 2))
     
     // Try different possible structures
-    // 1. ResponsePack: { status_code?, message, data: StudentFeeDetailsResponse }
+    // 1. Double-nested: { status_code, message, data: { data: StudentFeeDetailsResponse } }
     if (data && typeof data === 'object' && 'data' in data) {
-      const nestedData = (data as any).data
-      console.log("[StudentDetailsSheet] Extracted nested data:", nestedData)
+      const firstLevel = (data as any).data
+      if (firstLevel && typeof firstLevel === 'object' && 'data' in firstLevel) {
+        const secondLevel = firstLevel.data
+        if (secondLevel && typeof secondLevel === 'object') {
+          // Check for key indicators of StudentFeeDetailsResponse
+          if ('student_info' in secondLevel || 'fee_breakdown' in secondLevel || 'payment_history' in secondLevel) {
+            console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in data.data.data")
+            return secondLevel
+          }
+        }
+      }
       
-      // Check if nestedData is the StudentFeeDetailsResponse
-      if (nestedData && typeof nestedData === 'object') {
+      // 2. Single-nested: { status_code, message, data: StudentFeeDetailsResponse }
+      const nestedData = firstLevel
+      if (nestedData && typeof nestedData === 'object' && !Array.isArray(nestedData)) {
         // Check for key indicators of StudentFeeDetailsResponse
         if ('student_info' in nestedData || 'fee_breakdown' in nestedData || 'payment_history' in nestedData) {
-          console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in nested data")
+          console.log("[StudentDetailsSheet] ✓ Found StudentFeeDetailsResponse in data.data")
           return nestedData
         }
       }
