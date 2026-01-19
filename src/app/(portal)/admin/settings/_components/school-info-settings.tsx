@@ -1124,7 +1124,9 @@ export const SchoolInfoSettings = () => {
               <div>
                 <Label>ID Format Configuration</Label>
                 <p className="text-muted-foreground text-sm mb-4">
-                  Configure custom ID formats for students, teachers, parents, and staff. This allows you to maintain compatibility with existing ID systems.
+                  Configure custom ID formats for auto-generation, or use your existing IDs by enabling manual entry. 
+                  <strong> Format configuration is optional</strong> - if you leave it empty, you can use any existing ID format from your system. 
+                  Simply enable "Allow Manual IDs" and enter your existing IDs when creating users or importing from CSV.
                 </p>
               </div>
 
@@ -1160,18 +1162,19 @@ export const SchoolInfoSettings = () => {
                 <TabsContent value="students" className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="studentIdFormat">
-                      Student ID Format
+                      Student ID Format (Optional)
                     </Label>
                     <Input
                       id="studentIdFormat"
                       name="studentIdFormat"
                       value={formData.studentIdFormat}
                       onChange={handleChange}
-                      placeholder="e.g., STU-{YEAR}-{SEQUENCE:4}"
+                      placeholder="e.g., STU-{YEAR}-{SEQUENCE:4} or leave empty"
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. 
+                      <strong> Leave empty to use any existing ID format</strong> - just enable "Allow Manual IDs" below and enter your existing IDs directly.
                     </p>
                   </div>
 
@@ -1199,7 +1202,7 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Student IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        Allow manual entry of student registration numbers during creation/import
+                        <strong>Enable this to use your existing student ID format.</strong> When enabled, you can enter any student ID format directly when creating students or importing from CSV. Perfect for schools migrating from existing systems.
                       </p>
                     </div>
                     <Switch
@@ -1216,18 +1219,18 @@ export const SchoolInfoSettings = () => {
                 <TabsContent value="teachers" className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="teacherIdFormat">
-                      Teacher ID Format
+                      Teacher ID Format (Optional)
                     </Label>
                     <Input
                       id="teacherIdFormat"
                       name="teacherIdFormat"
                       value={formData.teacherIdFormat}
                       onChange={handleChange}
-                      placeholder="e.g., EMP-{YEAR}-{SEQUENCE:3}"
+                      placeholder="e.g., EMP-{YEAR}-{SEQUENCE:3} or leave empty"
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Leave empty to use any existing ID format - enable "Allow Manual IDs" below to enter existing IDs directly.
                     </p>
                   </div>
 
@@ -1255,7 +1258,7 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Teacher IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        Allow manual entry of teacher employment IDs during creation/import
+                        <strong>Enable this to use your existing teacher ID format.</strong> When enabled, you can enter any teacher ID format directly when creating teachers or importing from CSV.
                       </p>
                     </div>
                     <Switch
@@ -1311,7 +1314,7 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Parent IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        Allow manual entry of parent IDs during creation/import
+                        <strong>Enable this to use your existing parent ID format.</strong> When enabled, you can enter any parent ID format directly when creating parents or importing from CSV.
                       </p>
                     </div>
                     <Switch
@@ -1328,18 +1331,18 @@ export const SchoolInfoSettings = () => {
                 <TabsContent value="staff" className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="staffIdFormat">
-                      Staff ID Format
+                      Staff ID Format (Optional)
                     </Label>
                     <Input
                       id="staffIdFormat"
                       name="staffIdFormat"
                       value={formData.staffIdFormat}
                       onChange={handleChange}
-                      placeholder="e.g., STF-{YEAR}-{SEQUENCE:3}"
+                      placeholder="e.g., STF-{YEAR}-{SEQUENCE:3} or leave empty"
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Leave empty to use any existing ID format - enable "Allow Manual IDs" below to enter existing IDs directly.
                     </p>
                   </div>
 
@@ -1367,7 +1370,7 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Staff IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        Allow manual entry of staff employment IDs during creation/import
+                        <strong>Enable this to use your existing staff ID format.</strong> When enabled, you can enter any staff ID format directly when creating staff or importing from CSV.
                       </p>
                     </div>
                     <Switch
