@@ -97,9 +97,9 @@ export default function BulkParentUploadDialog({
           <DialogDescription>
             Upload a CSV file to create multiple parents at once.
             <br />
-            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Address
+            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Date of Birth, Gender, Home Address, Password (optional), Parent ID (optional)
             <br />
-            <strong>Note:</strong> All fields except Middle Name are required.
+            <strong>Note:</strong> All fields except Middle Name, Password, and Parent ID are required. Parent ID will be auto-generated if not provided.
           </DialogDescription>
         </DialogHeader>
 

@@ -40,6 +40,13 @@ export const parentFormConfig: NewPersonFormConfig = {
       placeholder: "Enter middle name",
     },
     {
+      name: "parent_id",
+      label: "Parent ID (Optional)",
+      type: "text",
+      placeholder: "Enter custom ID or leave empty for auto-generation",
+      required: false,
+    },
+    {
       name: "email",
       label: "Email Address",
       type: "email",
@@ -125,6 +132,7 @@ export default function NewParentForm() {
       first_name: formData.first_name as string,
       last_name: formData.last_name as string,
       middle_name: formData.middle_name as string,
+      parent_id: formData.parent_id as string | undefined,
       email: formData.email as string,
       password: formData.password as string,
       gender: formData.gender as string,

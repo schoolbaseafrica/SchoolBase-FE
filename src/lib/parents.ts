@@ -17,6 +17,7 @@ export type CreateParentData = Omit<
   password: string
   photo_url?: string
   title?: string
+  parent_id?: string
 }
 
 export type UpdateParentData = Partial<CreateParentData>
