@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { apiFetch } from "@/lib/api/client"
@@ -30,6 +32,20 @@ interface SchoolData {
   accent_color?: string
   installation_completed: boolean
   activity_log_retention_days?: number | null
+  // ID Format Configuration
+  school_code?: string
+  student_id_format?: string
+  student_id_prefix?: string
+  allow_manual_student_ids?: boolean
+  teacher_id_format?: string
+  teacher_id_prefix?: string
+  allow_manual_teacher_ids?: boolean
+  parent_id_format?: string
+  parent_id_prefix?: string
+  allow_manual_parent_ids?: boolean
+  staff_id_format?: string
+  staff_id_prefix?: string
+  allow_manual_staff_ids?: boolean
 }
 
 // African countries with their states/provinces/regions
@@ -310,6 +326,20 @@ export const SchoolInfoSettings = () => {
     streetAddress: "",
     email: "",
     activityLogRetentionDays: null as number | null,
+    // ID Format Configuration
+    schoolCode: "",
+    studentIdFormat: "",
+    studentIdPrefix: "STU",
+    allowManualStudentIds: true,
+    teacherIdFormat: "",
+    teacherIdPrefix: "EMP",
+    allowManualTeacherIds: true,
+    parentIdFormat: "",
+    parentIdPrefix: "PAR",
+    allowManualParentIds: true,
+    staffIdFormat: "",
+    staffIdPrefix: "STF",
+    allowManualStaffIds: true,
   })
 
   // Predefined color palette for quick selection - modern, professional colors
@@ -390,6 +420,20 @@ export const SchoolInfoSettings = () => {
             streetAddress: parsedStreet,
             email: schoolData.email || "",
             activityLogRetentionDays: schoolData.activity_log_retention_days ?? null,
+            // ID Format Configuration
+            schoolCode: schoolData.school_code || "",
+            studentIdFormat: schoolData.student_id_format || "",
+            studentIdPrefix: schoolData.student_id_prefix || "STU",
+            allowManualStudentIds: schoolData.allow_manual_student_ids ?? true,
+            teacherIdFormat: schoolData.teacher_id_format || "",
+            teacherIdPrefix: schoolData.teacher_id_prefix || "EMP",
+            allowManualTeacherIds: schoolData.allow_manual_teacher_ids ?? true,
+            parentIdFormat: schoolData.parent_id_format || "",
+            parentIdPrefix: schoolData.parent_id_prefix || "PAR",
+            allowManualParentIds: schoolData.allow_manual_parent_ids ?? true,
+            staffIdFormat: schoolData.staff_id_format || "",
+            staffIdPrefix: schoolData.staff_id_prefix || "STF",
+            allowManualStaffIds: schoolData.allow_manual_staff_ids ?? true,
           })
 
           // Set logo preview if logo URL exists
@@ -498,6 +542,21 @@ export const SchoolInfoSettings = () => {
         formDataToSend.append("activity_log_retention_days", "")
       }
 
+      // Add ID Format Configuration
+      if (formData.schoolCode) formDataToSend.append("school_code", formData.schoolCode)
+      if (formData.studentIdFormat) formDataToSend.append("student_id_format", formData.studentIdFormat)
+      if (formData.studentIdPrefix) formDataToSend.append("student_id_prefix", formData.studentIdPrefix)
+      formDataToSend.append("allow_manual_student_ids", formData.allowManualStudentIds ? "true" : "false")
+      if (formData.teacherIdFormat) formDataToSend.append("teacher_id_format", formData.teacherIdFormat)
+      if (formData.teacherIdPrefix) formDataToSend.append("teacher_id_prefix", formData.teacherIdPrefix)
+      formDataToSend.append("allow_manual_teacher_ids", formData.allowManualTeacherIds ? "true" : "false")
+      if (formData.parentIdFormat) formDataToSend.append("parent_id_format", formData.parentIdFormat)
+      if (formData.parentIdPrefix) formDataToSend.append("parent_id_prefix", formData.parentIdPrefix)
+      formDataToSend.append("allow_manual_parent_ids", formData.allowManualParentIds ? "true" : "false")
+      if (formData.staffIdFormat) formDataToSend.append("staff_id_format", formData.staffIdFormat)
+      if (formData.staffIdPrefix) formDataToSend.append("staff_id_prefix", formData.staffIdPrefix)
+      formDataToSend.append("allow_manual_staff_ids", formData.allowManualStaffIds ? "true" : "false")
+
       // Add logo file if provided
       if (logoFile) {
         formDataToSend.append("logo", logoFile)
@@ -551,6 +610,20 @@ export const SchoolInfoSettings = () => {
           streetAddress: parsedStreet,
           email: updatedSchool.email || formData.email,
           activityLogRetentionDays: updatedSchool.activity_log_retention_days ?? null,
+          // ID Format Configuration
+          schoolCode: updatedSchool.school_code || "",
+          studentIdFormat: updatedSchool.student_id_format || "",
+          studentIdPrefix: updatedSchool.student_id_prefix || "STU",
+          allowManualStudentIds: updatedSchool.allow_manual_student_ids ?? true,
+          teacherIdFormat: updatedSchool.teacher_id_format || "",
+          teacherIdPrefix: updatedSchool.teacher_id_prefix || "EMP",
+          allowManualTeacherIds: updatedSchool.allow_manual_teacher_ids ?? true,
+          parentIdFormat: updatedSchool.parent_id_format || "",
+          parentIdPrefix: updatedSchool.parent_id_prefix || "PAR",
+          allowManualParentIds: updatedSchool.allow_manual_parent_ids ?? true,
+          staffIdFormat: updatedSchool.staff_id_format || "",
+          staffIdPrefix: updatedSchool.staff_id_prefix || "STF",
+          allowManualStaffIds: updatedSchool.allow_manual_staff_ids ?? true,
         })
 
         // Update logo preview if logo URL changed
@@ -1044,6 +1117,269 @@ export const SchoolInfoSettings = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* ID Format Configuration Section */}
+            <div className="space-y-4 border-t pt-6">
+              <div>
+                <Label>ID Format Configuration</Label>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Configure custom ID formats for students, teachers, parents, and staff. This allows you to maintain compatibility with existing ID systems.
+                </p>
+              </div>
+
+              {/* School Code (Shared) */}
+              <div className="space-y-2">
+                <Label htmlFor="schoolCode">
+                  School Code
+                </Label>
+                <Input
+                  id="schoolCode"
+                  name="schoolCode"
+                  value={formData.schoolCode}
+                  onChange={handleChange}
+                  placeholder="e.g., ABC, XYZ"
+                  maxLength={20}
+                  className="max-w-xs"
+                />
+                <p className="text-muted-foreground text-xs">
+                  School abbreviation/code used in ID formats with {'{SCHOOL_CODE}'} placeholder (max 20 characters)
+                </p>
+              </div>
+
+              {/* Tabs for different user types */}
+              <Tabs defaultValue="students" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="students">Students</TabsTrigger>
+                  <TabsTrigger value="teachers">Teachers</TabsTrigger>
+                  <TabsTrigger value="parents">Parents</TabsTrigger>
+                  <TabsTrigger value="staff">Staff</TabsTrigger>
+                </TabsList>
+
+                {/* Students Tab */}
+                <TabsContent value="students" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="studentIdFormat">
+                      Student ID Format
+                    </Label>
+                    <Input
+                      id="studentIdFormat"
+                      name="studentIdFormat"
+                      value={formData.studentIdFormat}
+                      onChange={handleChange}
+                      placeholder="e.g., STU-{YEAR}-{SEQUENCE:4}"
+                      maxLength={100}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="studentIdPrefix">
+                      Student ID Prefix
+                    </Label>
+                    <Input
+                      id="studentIdPrefix"
+                      name="studentIdPrefix"
+                      value={formData.studentIdPrefix}
+                      onChange={handleChange}
+                      placeholder="STU"
+                      maxLength={20}
+                      className="max-w-xs"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Default prefix used with {'{PREFIX}'} placeholder (default: STU)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allowManualStudentIds">
+                        Allow Manual Student IDs
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Allow manual entry of student registration numbers during creation/import
+                      </p>
+                    </div>
+                    <Switch
+                      id="allowManualStudentIds"
+                      checked={formData.allowManualStudentIds}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, allowManualStudentIds: checked }))
+                      }
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Teachers Tab */}
+                <TabsContent value="teachers" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="teacherIdFormat">
+                      Teacher ID Format
+                    </Label>
+                    <Input
+                      id="teacherIdFormat"
+                      name="teacherIdFormat"
+                      value={formData.teacherIdFormat}
+                      onChange={handleChange}
+                      placeholder="e.g., EMP-{YEAR}-{SEQUENCE:3}"
+                      maxLength={100}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="teacherIdPrefix">
+                      Teacher ID Prefix
+                    </Label>
+                    <Input
+                      id="teacherIdPrefix"
+                      name="teacherIdPrefix"
+                      value={formData.teacherIdPrefix}
+                      onChange={handleChange}
+                      placeholder="EMP"
+                      maxLength={20}
+                      className="max-w-xs"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Default prefix used with {'{PREFIX}'} placeholder (default: EMP)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allowManualTeacherIds">
+                        Allow Manual Teacher IDs
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Allow manual entry of teacher employment IDs during creation/import
+                      </p>
+                    </div>
+                    <Switch
+                      id="allowManualTeacherIds"
+                      checked={formData.allowManualTeacherIds}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, allowManualTeacherIds: checked }))
+                      }
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Parents Tab */}
+                <TabsContent value="parents" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="parentIdFormat">
+                      Parent ID Format (Optional)
+                    </Label>
+                    <Input
+                      id="parentIdFormat"
+                      name="parentIdFormat"
+                      value={formData.parentIdFormat}
+                      onChange={handleChange}
+                      placeholder="e.g., PAR-{YEAR}-{SEQUENCE:4}"
+                      maxLength={100}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Format pattern with placeholders. Leave empty if parent IDs are not needed.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parentIdPrefix">
+                      Parent ID Prefix
+                    </Label>
+                    <Input
+                      id="parentIdPrefix"
+                      name="parentIdPrefix"
+                      value={formData.parentIdPrefix}
+                      onChange={handleChange}
+                      placeholder="PAR"
+                      maxLength={20}
+                      className="max-w-xs"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Default prefix used with {'{PREFIX}'} placeholder (default: PAR)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allowManualParentIds">
+                        Allow Manual Parent IDs
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Allow manual entry of parent IDs during creation/import
+                      </p>
+                    </div>
+                    <Switch
+                      id="allowManualParentIds"
+                      checked={formData.allowManualParentIds}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, allowManualParentIds: checked }))
+                      }
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Staff Tab */}
+                <TabsContent value="staff" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="staffIdFormat">
+                      Staff ID Format
+                    </Label>
+                    <Input
+                      id="staffIdFormat"
+                      name="staffIdFormat"
+                      value={formData.staffIdFormat}
+                      onChange={handleChange}
+                      placeholder="e.g., STF-{YEAR}-{SEQUENCE:3}"
+                      maxLength={100}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Format pattern with placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. Leave empty for default.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="staffIdPrefix">
+                      Staff ID Prefix
+                    </Label>
+                    <Input
+                      id="staffIdPrefix"
+                      name="staffIdPrefix"
+                      value={formData.staffIdPrefix}
+                      onChange={handleChange}
+                      placeholder="STF"
+                      maxLength={20}
+                      className="max-w-xs"
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Default prefix used with {'{PREFIX}'} placeholder (default: STF)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allowManualStaffIds">
+                        Allow Manual Staff IDs
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Allow manual entry of staff employment IDs during creation/import
+                      </p>
+                    </div>
+                    <Switch
+                      id="allowManualStaffIds"
+                      checked={formData.allowManualStaffIds}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, allowManualStaffIds: checked }))
+                      }
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="flex justify-end pt-4">
