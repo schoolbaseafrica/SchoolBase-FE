@@ -60,12 +60,10 @@ export const teacherFormConfig: NewPersonFormConfig = {
     },
     {
       name: "employmentId",
-      label: "Employment ID",
+      label: "Employment ID (Optional)",
       type: "text",
-      placeholder: "EMP-YYYY-XXX",
-      required: true,
-      // add regex checker
-      pattern: "EMP-\\d{4}-\\d{3}",
+      placeholder: "Enter custom ID or leave empty for auto-generation",
+      required: false,
     },
     {
       name: "dateOfBirth",
