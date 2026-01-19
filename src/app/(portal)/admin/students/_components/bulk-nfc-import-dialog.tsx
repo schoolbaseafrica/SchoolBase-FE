@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, FileText, X, AlertCircle, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query"
 import { StudentsAPI } from "@/lib/students"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -30,6 +31,7 @@ export default function BulkNfcImportDialog({
 }: BulkNfcImportDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [result, setResult] = useState<{
     total: number
     successful: number
@@ -68,15 +70,24 @@ export default function BulkNfcImportDialog({
 
       if (response.data.failed === 0) {
         toast.success(`Successfully assigned ${response.data.successful} NFC card IDs`)
-        onSuccess?.()
-        setTimeout(() => {
-          setOpen(false)
-          setFile(null)
-          setResult(null)
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ""
-          }
-        }, 2000)
+      } else {
+        toast.warning(
+          `Import completed: ${response.data.successful} successful, ${response.data.failed} failed`
+        )
+      }
+
+      // Invalidate students queries to refetch the list with updated NFC card IDs
+      queryClient.invalidateQueries({ queryKey: ["students"] })
+      
+      onSuccess?.()
+      setTimeout(() => {
+        setOpen(false)
+        setFile(null)
+        setResult(null)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""
+        }
+      }, 2000)
       } else {
         toast.warning(
           `Completed: ${response.data.successful} successful, ${response.data.failed} failed`

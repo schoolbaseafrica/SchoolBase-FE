@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query"
 import { ParentsAPI } from "@/lib/parents"
 
 interface BulkParentUploadDialogProps {
@@ -30,6 +31,7 @@ export default function BulkParentUploadDialog({
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -61,6 +63,9 @@ export default function BulkParentUploadDialog({
         )
       }
 
+      // Invalidate parents queries to refetch the list
+      queryClient.invalidateQueries({ queryKey: ["parents"] })
+      
       onSuccess?.()
       setTimeout(() => {
         setOpen(false)

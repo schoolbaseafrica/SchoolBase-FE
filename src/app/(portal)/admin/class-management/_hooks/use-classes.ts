@@ -207,6 +207,7 @@ export const useAddStudentsToClass = (classID: string) => {
     onSuccess: async () => {
       toast.success("Students added to class successfully")
       await qc.invalidateQueries({ queryKey: ["class_students", classID] })
+      await qc.invalidateQueries({ queryKey: ["students"] })
       await qc.refetchQueries({ queryKey: ["class_students", classID] })
     },
     onError: (err) => {
@@ -227,10 +228,10 @@ export const useAssignStudentToClass = () => {
   return useMutation({
     mutationFn: ({ classId, studentId }: { classId: string; studentId: string }) =>
       ClassesAPI.assignStudentToClass(classId, studentId),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Student assigned to class successfully")
-      qc.invalidateQueries({ queryKey: ["class_students"] })
-      qc.invalidateQueries({ queryKey: ["students"] })
+      await qc.invalidateQueries({ queryKey: ["class_students"] })
+      await qc.invalidateQueries({ queryKey: ["students"] })
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err))
@@ -247,6 +248,7 @@ export const useRemoveStudentFromClass = (classID: string) => {
     onSuccess: async () => {
       toast.success("Student removed from class successfully")
       await qc.invalidateQueries({ queryKey: ["class_students", classID] })
+      await qc.invalidateQueries({ queryKey: ["students"] })
       await qc.refetchQueries({ queryKey: ["class_students", classID] })
     },
     onError: (err) => {
