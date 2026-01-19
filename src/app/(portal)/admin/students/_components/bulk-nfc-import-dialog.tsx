@@ -88,11 +88,6 @@ export default function BulkNfcImportDialog({
           fileInputRef.current.value = ""
         }
       }, 2000)
-      } else {
-        toast.warning(
-          `Completed: ${response.data.successful} successful, ${response.data.failed} failed`
-        )
-      }
     } catch (error: any) {
       toast.error(error?.message || "Failed to import NFC cards")
     } finally {
