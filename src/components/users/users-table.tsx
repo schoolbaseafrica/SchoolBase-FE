@@ -78,7 +78,9 @@ export function UsersTable({
         users.map(async (teacher) => {
           try {
             const response = await ClassesAPI.getClassesByTeacher(teacher.teacher_id || teacher.id)
-            const classes = response.data?.data || []
+            // Response structure: ResponsePack<{ id: string; name: string; arm?: string; ... }[]>
+            // So response.data is the array directly
+            const classes = response.data || []
             return {
               teacherId: teacher.teacher_id || teacher.id,
               classNames: classes.map((cls) => `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`),
