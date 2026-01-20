@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2, AlertCircle, CheckCircle2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -36,8 +36,15 @@ export default function ParentAutoLoginPage() {
     confirmPassword?: string
   }>({})
   const [isResetting, setIsResetting] = useState(false)
+  const hasValidatedRef = useRef(false) // Prevent multiple validations
+  const isPasswordResetModeRef = useRef(false) // Track if we're in password reset mode
 
   useEffect(() => {
+    // Prevent re-validation if we've already validated or are in password reset mode
+    if (hasValidatedRef.current || isPasswordResetModeRef.current) {
+      return
+    }
+
     const token = searchParams.get("token")
 
     if (!token) {
@@ -47,8 +54,10 @@ export default function ParentAutoLoginPage() {
     }
 
     setMagicLinkToken(token)
+    hasValidatedRef.current = true // Mark as validated
     validateLink(token)
-  }, [searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]) // Only depend on searchParams
 
   const validateLink = async (token: string) => {
     try {
@@ -68,6 +77,7 @@ export default function ParentAutoLoginPage() {
           console.log("[Auto-login] Password reset required")
           setResetToken(response.data.reset_token)
           setUserName(`${response.data.user.first_name} ${response.data.user.last_name}`)
+          isPasswordResetModeRef.current = true // Mark as in password reset mode
           setStatus("password_reset")
           return
         }
@@ -138,6 +148,9 @@ export default function ParentAutoLoginPage() {
 
       // After successful password reset, validate the magic link again to log in
       if (magicLinkToken) {
+        // Reset the flags to allow re-validation after password reset
+        isPasswordResetModeRef.current = false
+        hasValidatedRef.current = false
         // Wait a moment for the backend to process the password reset
         setTimeout(async () => {
           await validateLink(magicLinkToken)
