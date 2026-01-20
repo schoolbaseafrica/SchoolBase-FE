@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useGetActivityLogs } from "./_hooks/use-activity-logs"
 import { ActivityLogsTable } from "./_components/activity-logs-table"
 import { ActivityLogsFilters } from "./_components/activity-logs-filters"
@@ -24,6 +24,9 @@ export default function ActivityLogsPage() {
   const [actionFilter, setActionFilter] = useState<ActivityAction | "all">("all")
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
+  
+  // Track the page we're waiting to scroll for
+  const pendingScrollPageRef = useRef<number | null>(null)
 
   // Construct params object to ensure proper query key serialization
   const queryParams = {
@@ -41,13 +44,29 @@ export default function ActivityLogsPage() {
   const logs = data?.data || []
   const pagination = data?.pagination
 
-  // Scroll to top only after new data has loaded (not immediately on page change)
+  // Mark that we need to scroll when page changes
   useEffect(() => {
-    if (!isLoading && page > 1) {
+    if (page > 1) {
+      pendingScrollPageRef.current = page
+    }
+  }, [page])
+
+  // Scroll to top only when:
+  // 1. We have a pending scroll for the current page
+  // 2. Loading is complete
+  // 3. We have data to show
+  useEffect(() => {
+    if (
+      pendingScrollPageRef.current === page &&
+      !isLoading &&
+      logs.length > 0
+    ) {
       // Scroll to top smoothly after data has loaded
       window.scrollTo({ top: 0, behavior: "smooth" })
+      // Clear the pending scroll flag
+      pendingScrollPageRef.current = null
     }
-  }, [page, isLoading])
+  }, [page, isLoading, logs.length])
 
   const handlePageChange = (newPage: number) => {
     if (newPage !== page) {
