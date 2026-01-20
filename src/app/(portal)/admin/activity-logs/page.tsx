@@ -25,9 +25,6 @@ export default function ActivityLogsPage() {
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
   
-  // Track the page we're waiting to scroll for
-  const pendingScrollPageRef = useRef<number | null>(null)
-
   // Construct params object to ensure proper query key serialization
   const queryParams = {
     page,
@@ -43,30 +40,46 @@ export default function ActivityLogsPage() {
 
   const logs = data?.data || []
   const pagination = data?.pagination
-
-  // Mark that we need to scroll when page changes
-  useEffect(() => {
-    if (page > 1) {
-      pendingScrollPageRef.current = page
-    }
-  }, [page])
+  
+  // Track the last page we scrolled for to avoid duplicate scrolls
+  const lastScrolledPageRef = useRef<number | null>(null)
 
   // Scroll to top only when:
-  // 1. We have a pending scroll for the current page
-  // 2. Loading is complete
+  // 1. Pagination data confirms we're on a different page than last scroll
+  // 2. Loading is complete (or was never needed if cached)
   // 3. We have data to show
+  // 4. We haven't already scrolled for this page
   useEffect(() => {
+    const currentPaginationPage = pagination?.page || page
+    
+    // Only scroll if:
+    // - We have pagination data
+    // - The pagination page matches the current page (data is synced)
+    // - Loading is complete
+    // - We have data
+    // - We haven't already scrolled for this page
+    // - Page is greater than 1 (don't scroll on first page)
     if (
-      pendingScrollPageRef.current === page &&
+      pagination &&
+      currentPaginationPage === page &&
       !isLoading &&
-      logs.length > 0
+      logs.length > 0 &&
+      lastScrolledPageRef.current !== page &&
+      page > 1
     ) {
       // Scroll to top smoothly after data has loaded
       window.scrollTo({ top: 0, behavior: "smooth" })
-      // Clear the pending scroll flag
-      pendingScrollPageRef.current = null
+      // Mark that we've scrolled for this page
+      lastScrolledPageRef.current = page
     }
-  }, [page, isLoading, logs.length])
+  }, [page, isLoading, logs.length, pagination?.page])
+
+  // Reset scroll tracking when filters or limit change (which resets to page 1)
+  useEffect(() => {
+    if (page === 1) {
+      lastScrolledPageRef.current = null
+    }
+  }, [page, limit, userFilter, entityTypeFilter, actionFilter, startDate, endDate])
 
   const handlePageChange = (newPage: number) => {
     if (newPage !== page) {
