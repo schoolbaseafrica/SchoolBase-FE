@@ -83,6 +83,7 @@ export default function ParentsPage() {
           statusFilter={currentStatusFilter}
           currentPage={filters.page}
           totalPages={totalPages}
+          pageSize={filters.limit}
           onSearchChange={handleSearchChange}
           onStatusFilterChange={handleStatusFilterChange}
           onPageChange={handlePageChange}
