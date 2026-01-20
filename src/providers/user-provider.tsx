@@ -8,9 +8,11 @@ import { usePathname } from "next/navigation"
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
   const isSuperAdminRoute = pathname?.startsWith("/super-admin")
+  const isAutoLoginPage = pathname === "/parent/auto-login"
   
+  // Disable user fetching on auto-login page to prevent auth checks during password reset flow
   // Use super admin hook for super admin routes, regular user hook for others
-  const { data: userData } = useGetUser({ enabled: !isSuperAdminRoute })
+  const { data: userData } = useGetUser({ enabled: !isSuperAdminRoute && !isAutoLoginPage })
   const { data: superAdminData } = useGetSuperAdmin({ enabled: isSuperAdminRoute })
   const setUser = useAuthStore((state) => state.setUser)
 

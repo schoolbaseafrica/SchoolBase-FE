@@ -184,11 +184,17 @@ export async function apiFetch<TResponse>(
         }
 
         // For 401 errors, check if we're on a super admin route and redirect accordingly
+        // BUT skip redirect if we're on the auto-login page (password reset flow)
         if (err.response?.status === 401) {
-          const isSuperAdminRoute =
-            typeof window !== "undefined" &&
-            window.location.pathname.startsWith("/super-admin")
-          navigateTo(isSuperAdminRoute ? "/super-admin/login" : "/login")
+          const currentPath =
+            typeof window !== "undefined" ? window.location.pathname : ""
+          const isAutoLoginPage = currentPath === "/parent/auto-login"
+          
+          // Don't redirect if we're on the auto-login page - let the page handle auth flow
+          if (!isAutoLoginPage) {
+            const isSuperAdminRoute = currentPath.startsWith("/super-admin")
+            navigateTo(isSuperAdminRoute ? "/super-admin/login" : "/login")
+          }
         }
       }
       // Skip logging for expected 404 empty states (e.g., "No students enrolled")
