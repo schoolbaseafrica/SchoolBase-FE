@@ -41,6 +41,7 @@ export function UsersTableSkeleton({
               </TableHead>
             )}
             {isTeacher && <TableHead>Email</TableHead>}
+            {isTeacher && <TableHead>Classes</TableHead>}
             {isStudent && <TableHead>Class</TableHead>}
             {isStudent && <TableHead>Address</TableHead>}
             <TableHead>Status</TableHead>
@@ -78,6 +79,11 @@ export function UsersTableSkeleton({
               {isTeacher && (
                 <TableCell>
                   <Skeleton className="h-4 w-40" />
+                </TableCell>
+              )}
+              {isTeacher && (
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
                 </TableCell>
               )}
               {isStudent && (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import { DeleteConfirmationDialog } from "./delete-confirmation-dialog"
 import { getInitials } from "@/lib/utils"
 import { UserDetailsSheet } from "./user-details-sheet"
 import { Button } from "@/components/ui/button"
+import { ClassesAPI } from "@/lib/classes"
 
 interface UsersTableProps {
   users: User[]
@@ -67,9 +68,48 @@ export function UsersTable({
   const isAdmin = userType === "admins"
   const router = useRouter()
 
+  // Fetch class assignments for all teachers
+  const [teacherClassesMap, setTeacherClassesMap] = useState<Record<string, string[]>>({})
+  
+  useEffect(() => {
+    if (isTeacher && users.length > 0) {
+      // Fetch classes for all teachers in parallel
+      Promise.all(
+        users.map(async (teacher) => {
+          try {
+            const response = await ClassesAPI.getClassesByTeacher(teacher.teacher_id || teacher.id)
+            const classes = response.data?.data || []
+            return {
+              teacherId: teacher.teacher_id || teacher.id,
+              classNames: classes.map((cls) => `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`),
+            }
+          } catch (error) {
+            console.error(`Error fetching classes for teacher ${teacher.id}:`, error)
+            return { teacherId: teacher.teacher_id || teacher.id, classNames: [] }
+          }
+        })
+      ).then((results) => {
+        const map: Record<string, string[]> = {}
+        results.forEach(({ teacherId, classNames }) => {
+          map[teacherId] = classNames
+        })
+        setTeacherClassesMap(map)
+      })
+    }
+  }, [isTeacher, users])
+
   const handleViewClick = (user: User) => {
     setSelectedUser(user)
     setSheetOpen(true)
+  }
+
+  const getTeacherClasses = (teacher: User): string => {
+    const teacherId = teacher.teacher_id || teacher.id
+    const classes = teacherClassesMap[teacherId] || []
+    if (classes.length === 0) {
+      return <span className="text-muted-foreground">Not assigned</span>
+    }
+    return classes.join(", ")
   }
 
   // const handleDeleteClick = (user: User, e?: React.MouseEvent) => {
@@ -127,6 +167,7 @@ export function UsersTable({
               </TableHead>
             )}
             {isTeacher && <TableHead>Email</TableHead>}
+            {isTeacher && <TableHead>Classes</TableHead>}
             {isAdmin && <TableHead>Email</TableHead>}
             {isStudent && <TableHead>Class</TableHead>}
             {isStudent && <TableHead>Address</TableHead>}
@@ -162,6 +203,11 @@ export function UsersTable({
               )}
               {!isParent && !isAdmin && <TableCell>{getID(user)}</TableCell>}
               {isTeacher && <TableCell>{user.email}</TableCell>}
+              {isTeacher && (
+                <TableCell className="max-w-xs">
+                  <div className="truncate">{getTeacherClasses(user)}</div>
+                </TableCell>
+              )}
               {isAdmin && <TableCell>{user.email}</TableCell>}
               {isStudent && (
                 <>
