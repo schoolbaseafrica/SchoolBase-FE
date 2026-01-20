@@ -43,11 +43,11 @@ export default function ActivityLogsPage() {
 
   // Scroll to top only after new data has loaded (not immediately on page change)
   useEffect(() => {
-    if (!isLoading && logs.length > 0 && page > 1) {
+    if (!isLoading && page > 1) {
       // Scroll to top smoothly after data has loaded
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
-  }, [isLoading, logs.length, page])
+  }, [page, isLoading])
 
   const handlePageChange = (newPage: number) => {
     if (newPage !== page) {
