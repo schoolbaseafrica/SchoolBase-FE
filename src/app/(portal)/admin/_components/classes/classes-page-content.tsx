@@ -16,6 +16,7 @@ const ClassesPageContent = () => {
   const [showArchived, setShowArchived] = useState(false)
 
   // 1. Fetch - include archived if toggle is on
+  // Use high limit to ensure all class arms are loaded (avoid pagination issues)
   const {
     isError,
     error,
@@ -23,6 +24,8 @@ const ClassesPageContent = () => {
     isLoading: isQueryLoading,
   } = useGetClassesInfo({
     includeArchived: showArchived,
+    limit: 1000, // Get all classes/arms at once to avoid missing arms due to pagination
+    page: 1,
   })
 
   // 2. Store selection

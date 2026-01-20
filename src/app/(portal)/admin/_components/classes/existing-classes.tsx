@@ -184,7 +184,7 @@ const ExistingClasses = ({
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
-                              {classItem.name} {arm.arm}
+                              {classItem.name}{arm.arm ? ` ${arm.arm}` : ""}
                             </p>
                           </div>
 
