@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Check, Loader2, ExternalLink } from "lucide-react"
+import { Copy, Check, Loader2, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { ParentAccessLinksAPI } from "@/lib/api/parent-access-links"
 import { useQueryClient } from "@tanstack/react-query"
@@ -31,9 +32,10 @@ export function GenerateAccessLinkDialog({
   const [open, setOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
-  const [expiresInHours, setExpiresInHours] = useState(24)
+  const [expiresInHours, setExpiresInHours] = useState<number | null>(null) // null = never expires
   const [isSingleUse, setIsSingleUse] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [requiresPasswordReset, setRequiresPasswordReset] = useState(false)
   const queryClient = useQueryClient()
 
   const handleGenerate = async () => {
@@ -47,8 +49,9 @@ export function GenerateAccessLinkDialog({
       })
 
       setGeneratedLink(response.data.link)
+      setRequiresPasswordReset(response.data.requires_password_reset)
       toast.success("Access link generated", {
-        description: "The access link has been created successfully.",
+        description: "The access link has been created and emailed to the parent.",
       })
 
       // Invalidate access links list query
@@ -84,9 +87,10 @@ export function GenerateAccessLinkDialog({
     if (!newOpen) {
       // Reset state when dialog closes
       setGeneratedLink(null)
-      setExpiresInHours(24)
+      setExpiresInHours(null)
       setIsSingleUse(true)
       setCopied(false)
+      setRequiresPasswordReset(false)
     }
   }
 
@@ -114,14 +118,17 @@ export function GenerateAccessLinkDialog({
               <Input
                 id="expires-in-hours"
                 type="number"
-                min="1"
-                max="168"
-                value={expiresInHours}
-                onChange={(e) => setExpiresInHours(Number(e.target.value))}
-                placeholder="24"
+                min="0"
+                max="8760"
+                value={expiresInHours === null ? "" : expiresInHours}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setExpiresInHours(value === "" || value === "0" ? null : Number(value))
+                }}
+                placeholder="Leave empty for never expires"
               />
               <p className="text-xs text-muted-foreground">
-                Link will expire after this many hours (max: 168 hours / 7 days)
+                Leave empty or set to 0 for non-expiring link (default). Max: 8760 hours (1 year)
               </p>
             </div>
 
@@ -141,6 +148,24 @@ export function GenerateAccessLinkDialog({
           </div>
         ) : (
           <div className="space-y-4 py-4">
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Email Sent!</AlertTitle>
+              <AlertDescription>
+                The access link has been emailed to the parent. They can also use the link below.
+              </AlertDescription>
+            </Alert>
+            
+            {requiresPasswordReset && (
+              <Alert variant="default" className="bg-blue-50 border-blue-200">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-blue-900">Password Reset Required</AlertTitle>
+                <AlertDescription className="text-blue-800">
+                  The parent will need to set their password before accessing the portal. This will happen automatically when they click the link.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label>Access Link</Label>
               <div className="flex items-center gap-2">
@@ -163,7 +188,9 @@ export function GenerateAccessLinkDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link with the parent. {isSingleUse && "It can only be used once."}
+                This link {expiresInHours === null ? "never expires" : `expires in ${expiresInHours} hour${expiresInHours !== 1 ? 's' : ''}`}. 
+                {isSingleUse ? " It can only be used once." : " It can be used multiple times."}
+                {" The parent has also received this link via email."}
               </p>
             </div>
           </div>

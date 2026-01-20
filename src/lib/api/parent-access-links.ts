@@ -2,7 +2,7 @@ import { apiFetch } from "./client"
 
 export interface GenerateAccessLinkRequest {
   parent_id: string
-  expires_in_hours?: number
+  expires_in_hours?: number | null
   is_single_use?: boolean
   metadata?: Record<string, unknown>
 }
@@ -16,6 +16,7 @@ export interface GenerateAccessLinkResponse {
     token: string
     expires_at: string
     is_single_use: boolean
+    requires_password_reset: boolean
   }
 }
 
@@ -39,6 +40,8 @@ export interface ValidateAccessLinkResponse {
       last_name: string
       role: string[]
     }
+    requires_password_reset?: boolean
+    reset_token?: string
   }
 }
 

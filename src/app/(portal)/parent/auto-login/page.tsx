@@ -2,22 +2,40 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ParentAccessLinksAPI } from "@/lib/api/parent-access-links"
-import { loginUsingEmail } from "@/lib/api/auth"
+import { sendResetPasswordRequest } from "@/lib/api/auth"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/store/auth-store"
+import { toast } from "sonner"
 
 export default function ParentAutoLoginPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const queryClient = useQueryClient()
   const clearAuth = useAuthStore((state) => state.clearAuth)
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
+  
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "password_reset">("loading")
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [magicLinkToken, setMagicLinkToken] = useState<string | null>(null)
+  const [resetToken, setResetToken] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string>("")
+  
+  // Password reset form state
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordErrors, setPasswordErrors] = useState<{
+    newPassword?: string
+    confirmPassword?: string
+  }>({})
+  const [isResetting, setIsResetting] = useState(false)
 
   useEffect(() => {
     const token = searchParams.get("token")
@@ -28,54 +46,111 @@ export default function ParentAutoLoginPage() {
       return
     }
 
-    // Validate and use the access link
-    const validateLink = async () => {
-      try {
-        console.log("[Auto-login] Starting validation with token:", token.substring(0, 10) + "...")
-        
-        // Clear any existing auth state
-        clearAuth()
-        queryClient.clear()
+    setMagicLinkToken(token)
+    validateLink(token)
+  }, [searchParams])
 
-        console.log("[Auto-login] Calling validate API...")
-        const response = await ParentAccessLinksAPI.validate(token)
-        console.log("[Auto-login] Validate response:", response)
+  const validateLink = async (token: string) => {
+    try {
+      console.log("[Auto-login] Starting validation with token:", token.substring(0, 10) + "...")
+      
+      // Clear any existing auth state
+      clearAuth()
+      queryClient.clear()
 
-        if (response.data) {
-          console.log("[Auto-login] Validation successful, cookies should be set in response")
-          
-          // Cookies are now set directly in the validate API response
-          // This ensures they're available immediately, especially for Firefox
-          // No need for a separate cookie-setting call
-          
-          setStatus("success")
+      console.log("[Auto-login] Calling validate API...")
+      const response = await ParentAccessLinksAPI.validate(token)
+      console.log("[Auto-login] Validate response:", response)
 
-          // Verify cookies are accessible (they're httpOnly so we can't read them directly,
-          // but we can wait a bit for the browser to process them)
-          // Firefox sometimes needs more time to process cookies from API responses
-          console.log("[Auto-login] Waiting for cookies to be processed...")
-          
-          // Use a longer delay for Firefox compatibility
-          // Also use window.location.replace instead of href to avoid adding to history
-          setTimeout(() => {
-            console.log("[Auto-login] Redirecting to parent dashboard...")
-            // Use replace instead of href to avoid back button issues
-            window.location.replace("/parent")
-          }, 3000) // Increased delay for Firefox compatibility
+      if (response.data) {
+        // Check if password reset is required
+        if (response.data.requires_password_reset && response.data.reset_token) {
+          console.log("[Auto-login] Password reset required")
+          setResetToken(response.data.reset_token)
+          setUserName(`${response.data.user.first_name} ${response.data.user.last_name}`)
+          setStatus("password_reset")
+          return
         }
-      } catch (error) {
-        console.error("Auto-login error:", error)
-        setStatus("error")
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Invalid or expired access link. Please contact the administrator for a new link."
-        )
+
+        // Password already reset or not required - proceed with auto-login
+        console.log("[Auto-login] Validation successful, cookies should be set in response")
+        setStatus("success")
+
+        // Redirect to parent portal
+        setTimeout(() => {
+          console.log("[Auto-login] Redirecting to parent dashboard...")
+          window.location.replace("/parent")
+        }, 2000)
       }
+    } catch (error) {
+      console.error("Auto-login error:", error)
+      setStatus("error")
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Invalid or expired access link. Please contact the administrator for a new link."
+      )
+    }
+  }
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Clear previous errors
+    setPasswordErrors({})
+
+    // Validate passwords
+    const errors: { newPassword?: string; confirmPassword?: string } = {}
+
+    if (!newPassword) {
+      errors.newPassword = "Password is required"
+    } else if (newPassword.length < 8) {
+      errors.newPassword = "Password must be at least 8 characters"
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      errors.newPassword = "Password must contain uppercase, lowercase, and number"
     }
 
-    validateLink()
-  }, [searchParams, router, queryClient, clearAuth])
+    if (!confirmPassword) {
+      errors.confirmPassword = "Please confirm your password"
+    } else if (newPassword !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match"
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors)
+      return
+    }
+
+    if (!resetToken) {
+      setPasswordErrors({ newPassword: "Reset token is missing. Please contact support." })
+      return
+    }
+
+    setIsResetting(true)
+
+    try {
+      await sendResetPasswordRequest({
+        token: resetToken,
+        newPassword: newPassword,
+      })
+
+      toast.success("Password set successfully! Logging you in...")
+
+      // After successful password reset, validate the magic link again to log in
+      if (magicLinkToken) {
+        // Wait a moment for the backend to process the password reset
+        setTimeout(async () => {
+          await validateLink(magicLinkToken)
+        }, 1000)
+      }
+    } catch (error) {
+      console.error("Password reset error:", error)
+      const message = error instanceof Error ? error.message : "Failed to set password. Please try again."
+      setPasswordErrors({ newPassword: message })
+      toast.error(message)
+      setIsResetting(false)
+    }
+  }
 
   if (status === "loading") {
     return (
@@ -99,6 +174,97 @@ export default function ParentAutoLoginPage() {
                 This may take a few seconds
               </p>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (status === "password_reset") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Set Your Password
+            </CardTitle>
+            <CardDescription>
+              Hello {userName}! Before accessing your parent portal, please set your password.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className={passwordErrors.newPassword ? "border-red-500" : ""}
+                    disabled={isResetting}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isResetting}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </Button>
+                </div>
+                {passwordErrors.newPassword && (
+                  <p className="text-sm text-red-600">{passwordErrors.newPassword}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Must be at least 8 characters with uppercase, lowercase, and number
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    className={passwordErrors.confirmPassword ? "border-red-500" : ""}
+                    disabled={isResetting}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isResetting}
+                  >
+                    {showConfirmPassword ? "Hide" : "Show"}
+                  </Button>
+                </div>
+                {passwordErrors.confirmPassword && (
+                  <p className="text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isResetting}>
+                {isResetting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Setting Password...
+                  </>
+                ) : (
+                  "Set Password & Continue"
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
