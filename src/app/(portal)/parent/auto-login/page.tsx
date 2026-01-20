@@ -38,10 +38,16 @@ export default function ParentAutoLoginPage() {
   const [isResetting, setIsResetting] = useState(false)
   const hasValidatedRef = useRef(false) // Prevent multiple validations
   const isPasswordResetModeRef = useRef(false) // Track if we're in password reset mode
+  const validationInProgressRef = useRef(false) // Track if validation is in progress
 
   useEffect(() => {
-    // Prevent re-validation if we've already validated or are in password reset mode
-    if (hasValidatedRef.current || isPasswordResetModeRef.current) {
+    // Prevent re-validation if we've already validated, are in password reset mode, or validation is in progress
+    if (hasValidatedRef.current || isPasswordResetModeRef.current || validationInProgressRef.current) {
+      return
+    }
+
+    // Also prevent if we're already showing password reset form or have a reset token
+    if (status === "password_reset" || resetToken) {
       return
     }
 
@@ -53,11 +59,17 @@ export default function ParentAutoLoginPage() {
       return
     }
 
+    // Prevent multiple runs with the same token
+    if (magicLinkToken === token && hasValidatedRef.current) {
+      return
+    }
+
     setMagicLinkToken(token)
     hasValidatedRef.current = true // Mark as validated
+    validationInProgressRef.current = true // Mark validation as in progress
     validateLink(token)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]) // Only depend on searchParams
+  }, [searchParams]) // Only depend on searchParams to prevent unnecessary re-runs
 
   const validateLink = async (token: string) => {
     try {
@@ -70,6 +82,9 @@ export default function ParentAutoLoginPage() {
       console.log("[Auto-login] Calling validate API...")
       const response = await ParentAccessLinksAPI.validate(token)
       console.log("[Auto-login] Validate response:", response)
+
+      // Mark validation as complete
+      validationInProgressRef.current = false
 
       if (response.data) {
         // Check if password reset is required
@@ -84,6 +99,7 @@ export default function ParentAutoLoginPage() {
 
         // Password already reset or not required - proceed with auto-login
         console.log("[Auto-login] Validation successful, cookies should be set in response")
+        isPasswordResetModeRef.current = false // Clear password reset mode flag
         setStatus("success")
 
         // Redirect to parent portal
@@ -94,6 +110,7 @@ export default function ParentAutoLoginPage() {
       }
     } catch (error) {
       console.error("Auto-login error:", error)
+      validationInProgressRef.current = false // Mark validation as complete even on error
       setStatus("error")
       setErrorMessage(
         error instanceof Error
@@ -151,10 +168,14 @@ export default function ParentAutoLoginPage() {
         // Reset the flags to allow re-validation after password reset
         isPasswordResetModeRef.current = false
         hasValidatedRef.current = false
+        validationInProgressRef.current = false
         // Wait a moment for the backend to process the password reset
         setTimeout(async () => {
+          validationInProgressRef.current = true
           await validateLink(magicLinkToken)
         }, 1000)
+      } else {
+        setIsResetting(false)
       }
     } catch (error) {
       console.error("Password reset error:", error)
