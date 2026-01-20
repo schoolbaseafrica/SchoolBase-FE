@@ -36,40 +36,62 @@ export default function ParentAutoLoginPage() {
     confirmPassword?: string
   }>({})
   const [isResetting, setIsResetting] = useState(false)
-  const hasValidatedRef = useRef(false) // Prevent multiple validations
-  const isPasswordResetModeRef = useRef(false) // Track if we're in password reset mode
-  const validationInProgressRef = useRef(false) // Track if validation is in progress
+  
+  // Use refs to track state that should prevent re-validation
+  const hasValidatedRef = useRef(false)
+  const isPasswordResetModeRef = useRef(false)
+  const validationInProgressRef = useRef(false)
+  const initialTokenRef = useRef<string | null>(null) // Store initial token value
 
+  // Single effect to handle token extraction and validation
   useEffect(() => {
-    // Prevent re-validation if we've already validated, are in password reset mode, or validation is in progress
-    if (hasValidatedRef.current || isPasswordResetModeRef.current || validationInProgressRef.current) {
-      return
-    }
-
-    // Also prevent if we're already showing password reset form or have a reset token
-    if (status === "password_reset" || resetToken) {
-      return
-    }
-
+    // Get token from URL
     const token = searchParams.get("token")
 
+    // If no token, show error (only if we haven't started validation)
     if (!token) {
-      setStatus("error")
-      setErrorMessage("No access token provided in the link")
+      if (!hasValidatedRef.current) {
+        setStatus("error")
+        setErrorMessage("No access token provided in the link")
+      }
       return
     }
 
-    // Prevent multiple runs with the same token
-    if (magicLinkToken === token && hasValidatedRef.current) {
+    // Store token if not already stored
+    if (!initialTokenRef.current) {
+      initialTokenRef.current = token
+      setMagicLinkToken(token)
+    }
+
+    // CRITICAL: If we're in password reset mode, NEVER validate again
+    if (isPasswordResetModeRef.current) {
+      console.log("[Auto-login] In password reset mode - BLOCKING validation")
       return
     }
 
-    setMagicLinkToken(token)
-    hasValidatedRef.current = true // Mark as validated
-    validationInProgressRef.current = true // Mark validation as in progress
+    // If validation is already in progress, skip
+    if (validationInProgressRef.current) {
+      console.log("[Auto-login] Validation in progress - skipping")
+      return
+    }
+
+    // If we've already validated, skip (unless we're re-validating after password reset)
+    if (hasValidatedRef.current && !isPasswordResetModeRef.current) {
+      console.log("[Auto-login] Already validated - skipping")
+      return
+    }
+
+    // All guards passed - start validation
+    hasValidatedRef.current = true
+    validationInProgressRef.current = true
+    
+    console.log("[Auto-login] Starting validation", {
+      tokenPreview: token.substring(0, 10) + "...",
+    })
+    
     validateLink(token)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]) // Only depend on searchParams to prevent unnecessary re-runs
+  }, [searchParams]) // Only depend on searchParams - refs handle state tracking
 
   const validateLink = async (token: string) => {
     try {
