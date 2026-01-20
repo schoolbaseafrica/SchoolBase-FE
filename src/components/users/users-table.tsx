@@ -109,7 +109,7 @@ export function UsersTable({
     const teacherId = teacher.teacher_id || teacher.id
     const classes = teacherClassesMap[teacherId] || []
     if (classes.length === 0) {
-      return <span className="text-muted-foreground">Not assigned</span>
+      return "Not assigned"
     }
     return classes.join(", ")
   }
