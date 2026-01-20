@@ -68,6 +68,13 @@ export function SubmissionReview({ submission }: SubmissionReviewProps) {
   const [page, setPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(20)
 
+  // Scroll to top when page changes (client-side pagination, so can scroll immediately after render)
+  useEffect(() => {
+    if (page > 1 && gradesWithStudentInfo.length > 0) {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }, [page, gradesWithStudentInfo.length])
+
   const approveMutation = useApproveSubmission()
   const rejectMutation = useRejectSubmission()
 
@@ -400,10 +407,7 @@ export function SubmissionReview({ submission }: SubmissionReviewProps) {
                   currentPage={page}
                   totalPages={Math.ceil(gradesWithStudentInfo.length / rowsPerPage)}
                   totalItems={gradesWithStudentInfo.length}
-                  onPageChange={(newPage) => {
-                    setPage(newPage)
-                    window.scrollTo({ top: 0, behavior: "smooth" })
-                  }}
+                  onPageChange={setPage}
                 />
               )}
             </div>
