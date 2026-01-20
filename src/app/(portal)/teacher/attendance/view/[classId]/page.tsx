@@ -36,8 +36,9 @@ const ViewAttendancePage = () => {
         .includes(search.toLowerCase())
     ) || []
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
+  const getStatusBadgeClass = (status: string | null | undefined) => {
+    if (!status) return "bg-gray-100 text-gray-800"
+    switch (status.toUpperCase()) {
       case "PRESENT":
         return "bg-green-100 text-green-800"
       case "ABSENT":
@@ -51,6 +52,11 @@ const ViewAttendancePage = () => {
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const formatStatus = (status: string | null | undefined): string => {
+    if (!status) return "Not Marked"
+    return status.replace(/_/g, " ")
   }
 
   return (
@@ -180,7 +186,7 @@ const ViewAttendancePage = () => {
                           <span
                             className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(student.status)}`}
                           >
-                            {student.status.replace("_", " ")}
+                            {formatStatus(student.status)}
                           </span>
                         </TableCell>
                         <TableCell>{student.check_in_time || "-"}</TableCell>
