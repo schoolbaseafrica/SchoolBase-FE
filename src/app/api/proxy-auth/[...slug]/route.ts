@@ -11,27 +11,7 @@ async function methodHandler(
   const reqUrl = new URL(req.url)
   const pathWithQuery = slugPath + reqUrl.search
 
-  // Log fee students requests for debugging
-  if (slugPath.includes("/fees/") && slugPath.includes("/students")) {
-    console.log("[proxy-auth] Fee students request:", {
-      method: req.method,
-      slug: resolvedParams.slug,
-      slugPath,
-      pathWithQuery,
-      fullUrl: req.url,
-    })
-  }
-
   const backendRes = await proxyAuthRequest(req, pathWithQuery)
-  
-  // Log fee students responses for debugging
-  if (slugPath.includes("/fees/") && slugPath.includes("/students")) {
-    console.log("[proxy-auth] Fee students response:", {
-      status: backendRes.status,
-      statusText: backendRes.statusText,
-      contentType: backendRes.headers.get("content-type"),
-    })
-  }
 
   // Special handling for DELETE requests with no content
   if (req.method === "DELETE") {

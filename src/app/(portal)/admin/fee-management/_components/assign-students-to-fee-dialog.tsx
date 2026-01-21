@@ -70,29 +70,11 @@ export function AssignStudentsToFeeDialog({
 
     setLoadingAssigned(true)
     try {
-      console.log("[AssignStudentsDialog] Fetching assigned students for fee:", fee.id)
       const response = await apiFetch<{ message: string; data: FeeStudent[] }>(
         `/fees/${fee.id}/students`,
         undefined,
         true
       )
-      
-      // Debug: Log full response structure
-      console.log("[AssignStudentsDialog] Raw API response:", {
-        fullResponse: response,
-        responseType: typeof response,
-        isArray: Array.isArray(response),
-        hasData: !!(response as any)?.data,
-        dataType: typeof (response as any)?.data,
-        dataIsArray: Array.isArray((response as any)?.data),
-        hasNestedData: !!(response as any)?.data?.data,
-        nestedDataType: typeof (response as any)?.data?.data,
-        nestedDataIsArray: Array.isArray((response as any)?.data?.data),
-        dataLength: Array.isArray((response as any)?.data) ? (response as any).data.length : "not array",
-        nestedDataLength: Array.isArray((response as any)?.data?.data) ? (response as any).data.data.length : "not array",
-        responseKeys: response ? Object.keys(response as any) : [],
-        dataKeys: (response as any)?.data ? Object.keys((response as any).data) : [],
-      })
       
       // Handle response structure: TransformInterceptor wraps it as { status_code, message, data: { data: [...] } }
       // Check for nested data first (double-wrapped), then fall back to direct data
@@ -104,22 +86,8 @@ export function AssignStudentsToFeeDialog({
         : []
       const assignedIds = new Set(students.map((s: FeeStudent) => s.id))
       
-      console.log("[AssignStudentsDialog] Fetched assigned students:", {
-        fee_id: fee.id,
-        fee_name: fee.component_name,
-        response_data: (response as any)?.data,
-        students_count: students.length,
-        assigned_ids: Array.from(assignedIds),
-        student_details: students.map((s: FeeStudent) => ({ id: s.id, name: s.name }))
-      })
-      
       setAssignedStudentIds(assignedIds)
     } catch (error) {
-      console.error("[AssignStudentsDialog] Failed to fetch assigned students:", {
-        fee_id: fee?.id,
-        error: error instanceof Error ? error.message : String(error),
-        error_details: error
-      })
       // Set empty set on error to prevent UI issues
       setAssignedStudentIds(new Set())
     } finally {
@@ -178,35 +146,20 @@ export function AssignStudentsToFeeDialog({
     if (!fee?.id || !hasValidSelections) return
 
     try {
-      console.log("[AssignStudentsDialog] Submitting assignments:", {
-        fee_id: fee.id,
-        fee_name: fee.component_name,
-        toAssign: toAssign,
-        toAssign_count: toAssign.length,
-        toUnassign: toUnassign,
-        toUnassign_count: toUnassign.length,
-        current_assigned_ids: Array.from(assignedStudentIds),
-      })
-
       // Only assign if there are new students to assign
       if (toAssign.length > 0) {
-        console.log("[AssignStudentsDialog] Assigning students:", toAssign)
-        const assignResult = await assignMutation.mutateAsync(toAssign)
-        console.log("[AssignStudentsDialog] Assignment result:", assignResult)
+        await assignMutation.mutateAsync(toAssign)
       }
 
       // Only unassign if there are students to unassign
       if (toUnassign.length > 0) {
-        console.log("[AssignStudentsDialog] Unassigning students:", toUnassign)
-        const unassignResult = await unassignMutation.mutateAsync(toUnassign)
-        console.log("[AssignStudentsDialog] Unassignment result:", unassignResult)
+        await unassignMutation.mutateAsync(toUnassign)
       }
 
       // Wait a bit for backend to update
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Refresh assigned students list
-      console.log("[AssignStudentsDialog] Refreshing assigned students list after submission")
       await fetchAssignedStudents()
 
       // Clear selections
@@ -221,12 +174,7 @@ export function AssignStudentsToFeeDialog({
         onOpenChange(false)
       }, 500)
     } catch (error) {
-      console.error("[AssignStudentsDialog] Failed to update student assignments:", {
-        fee_id: fee?.id,
-        error: error instanceof Error ? error.message : String(error),
-        error_details: error
-      })
-      // Don't close on error
+      // Error handling is done by the mutation hooks which show toast notifications
     }
   }
 

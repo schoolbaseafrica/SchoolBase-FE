@@ -84,16 +84,6 @@ export async function apiFetch<TResponse>(
 
   const url = resolveRequestUrl(path, proxy)
   
-  // Log fee students requests for debugging
-  if (path.includes("/fees/") && path.includes("/students")) {
-    console.log("[apiFetch] Fee students request:", {
-      originalPath: path,
-      resolvedUrl: url,
-      proxy: proxy,
-      method: config.method || "GET",
-    })
-  }
-  
   // Use plain axios (no baseURL) for:
   // 1. Proxy requests (go to Next.js proxy routes)
   // 2. Internal Next.js API routes (paths starting with /api/)
@@ -106,20 +96,6 @@ export async function apiFetch<TResponse>(
       ...config,
       headers,
     })
-    
-    // Log fee students responses for debugging
-    if (path.includes("/fees/") && path.includes("/students")) {
-      console.log("[apiFetch] Fee students response:", {
-        url,
-        status: res.status,
-        hasData: !!res.data,
-        dataStructure: res.data ? {
-          message: (res.data as any)?.message,
-          hasData: !!(res.data as any)?.data,
-          dataLength: Array.isArray((res.data as any)?.data) ? (res.data as any).data.length : "not array",
-        } : null,
-      })
-    }
 
     // Handle 204 No Content (common for DELETE requests)
     if (res.status === 204) {
