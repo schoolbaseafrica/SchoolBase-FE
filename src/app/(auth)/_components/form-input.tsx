@@ -129,7 +129,12 @@ const LoginForm = () => {
     queryClient.clear()
 
     try {
-      const res = await loginUsingEmail(formData)
+      // Normalize email to lowercase before sending
+      const normalizedFormData = {
+        ...formData,
+        email: formData.email.trim().toLowerCase(),
+      }
+      const res = await loginUsingEmail(normalizedFormData)
 
       if (nextRoute) {
         router.push(nextRoute)

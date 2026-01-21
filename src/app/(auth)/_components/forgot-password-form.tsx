@@ -58,7 +58,9 @@ export default function ForgotPasswordForm() {
     setError(undefined)
 
     try {
-      await sendForgotPasswordEmail(validation.data.email)
+      // Normalize email to lowercase before sending
+      const normalizedEmail = validation.data.email.trim().toLowerCase()
+      await sendForgotPasswordEmail(normalizedEmail)
       setIsSubmitted(true)
     } catch {
       setError("Failed to send reset link. Please try again later.")
