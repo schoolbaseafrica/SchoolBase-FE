@@ -14,114 +14,6 @@ import { useMemo } from "react"
 const generatePassword = () => {
   return generateSecurePassword(12)
 }
-  fields: [
-    {
-      name: "first_name",
-      label: "First Name",
-      type: "text",
-      placeholder: "Enter first name",
-      required: true,
-    },
-    {
-      name: "last_name",
-      label: "Last Name",
-      type: "text",
-      placeholder: "Enter last name",
-      required: true,
-    },
-    {
-      name: "middle_name",
-      label: "Middle Name",
-      type: "text",
-      placeholder: "Enter middle name",
-    },
-    {
-      name: "registration_number",
-      label: "Registration Number (Optional)",
-      type: "text",
-      placeholder: "Enter custom ID or leave empty for auto-generation",
-      required: false,
-    },
-    {
-      name: "email",
-      label: "Email Address",
-      type: "email",
-      placeholder: "Enter email address",
-      required: true,
-    },
-    {
-      name: "password",
-      label: "Password",
-      type: "password-generate", // Changed to allow editing
-      placeholder: "Enter or generate password",
-      required: true,
-      generateButton: {
-        text: "Generate",
-        onGenerate: generatePassword,
-      },
-    },
-    {
-      name: "gender",
-      label: "Gender",
-      type: "select",
-      required: true,
-      options: [
-        { value: "Male", label: "Male" },
-        { value: "Female", label: "Female" },
-      ],
-    },
-    {
-      name: "date_of_birth",
-      label: "Date of Birth",
-      type: "date",
-      required: true,
-    },
-    {
-      name: "phone",
-      label: "Phone Number",
-      type: "tel",
-      placeholder: "Enter phone number",
-      required: true,
-    },
-    {
-      name: "home_address",
-      label: "Home Address",
-      type: "text",
-      placeholder: "Enter home address",
-      required: true,
-    },
-    // {
-    //   name: "photo_url",
-    //   label: "Upload Photo (150x150)",
-    //   type: "file",
-    //   accept: "image/*",
-    //   buttonText: "Select file",
-    //   required: false,
-    // },
-    {
-      name: "class_id",
-      label: "Class (Optional)",
-      type: "select",
-      required: false,
-      placeholder: "Select a class",
-      options: [
-        { value: "", label: "None (Unassigned)" },
-        ...classOptions,
-      ],
-    },
-  ],
-  submitText: "Save",
-  cancelText: "Cancel",
-}), [classOptions])
-
-  return (
-    <NewPersonFormBuilder
-      key={"new-student"}
-      config={studentFormConfig}
-      onCancel={handleCancel}
-      onSubmit={handleSubmit}
-    />
-  )
 
 export default function NewStudentForm() {
   const router = useRouter()
@@ -143,6 +35,97 @@ export default function NewStudentForm() {
 
   // Create dynamic form config with class field
   const studentFormConfig: NewPersonFormConfig = useMemo(() => ({
+    fields: [
+      {
+        name: "first_name",
+        label: "First Name",
+        type: "text",
+        placeholder: "Enter first name",
+        required: true,
+      },
+      {
+        name: "last_name",
+        label: "Last Name",
+        type: "text",
+        placeholder: "Enter last name",
+        required: true,
+      },
+      {
+        name: "middle_name",
+        label: "Middle Name",
+        type: "text",
+        placeholder: "Enter middle name",
+      },
+      {
+        name: "registration_number",
+        label: "Registration Number (Optional)",
+        type: "text",
+        placeholder: "Enter custom ID or leave empty for auto-generation",
+        required: false,
+      },
+      {
+        name: "email",
+        label: "Email Address",
+        type: "email",
+        placeholder: "Enter email address",
+        required: true,
+      },
+      {
+        name: "password",
+        label: "Password",
+        type: "password-generate",
+        placeholder: "Enter or generate password",
+        required: true,
+        generateButton: {
+          text: "Generate",
+          onGenerate: generatePassword,
+        },
+      },
+      {
+        name: "gender",
+        label: "Gender",
+        type: "select",
+        required: true,
+        options: [
+          { value: "Male", label: "Male" },
+          { value: "Female", label: "Female" },
+        ],
+      },
+      {
+        name: "date_of_birth",
+        label: "Date of Birth",
+        type: "date",
+        required: true,
+      },
+      {
+        name: "phone",
+        label: "Phone Number",
+        type: "tel",
+        placeholder: "Enter phone number",
+        required: true,
+      },
+      {
+        name: "home_address",
+        label: "Home Address",
+        type: "text",
+        placeholder: "Enter home address",
+        required: true,
+      },
+      {
+        name: "class_id",
+        label: "Class (Optional)",
+        type: "select",
+        required: false,
+        placeholder: "Select a class",
+        options: [
+          { value: "", label: "None (Unassigned)" },
+          ...classOptions,
+        ],
+      },
+    ],
+    submitText: "Save",
+    cancelText: "Cancel",
+  }), [classOptions])
 
   async function handleCancel() {
     router.push("/admin/students")
@@ -173,4 +156,13 @@ export default function NewStudentForm() {
       throw err
     }
   }
+
+  return (
+    <NewPersonFormBuilder
+      key={"new-student"}
+      config={studentFormConfig}
+      onCancel={handleCancel}
+      onSubmit={handleSubmit}
+    />
+  )
 }
