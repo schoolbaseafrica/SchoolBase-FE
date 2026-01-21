@@ -23,7 +23,10 @@ export function SuccessModal({
 }: SuccessModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-xl p-6 text-center">
+      <DialogContent 
+        className="max-w-sm rounded-xl p-6 text-center"
+        aria-describedby="success-modal-description"
+      >
         <DialogHeader>
           <div className="mb-3 flex justify-center">
             <Image
@@ -35,14 +38,16 @@ export function SuccessModal({
           </div>
 
           <DialogTitle className="text-center text-xl font-semibold">{title}</DialogTitle>
-          {message && (
-            <DialogDescription className="mt-1 text-sm text-gray-500">
+          {message ? (
+            <DialogDescription id="success-modal-description" className="mt-1 text-sm text-gray-500">
               {message}
+            </DialogDescription>
+          ) : (
+            <DialogDescription id="success-modal-description" className="sr-only">
+              Success
             </DialogDescription>
           )}
         </DialogHeader>
-
-        {!message && <p className="mt-1 text-sm text-gray-500 sr-only">Success</p>}
 
         <Button
           className="mt-6 w-full rounded-md bg-red-600 py-5 text-base text-white hover:bg-red-700"

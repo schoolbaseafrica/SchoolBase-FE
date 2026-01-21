@@ -37,7 +37,10 @@ export function SuccessModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        aria-describedby="success-modal-description"
+      >
         <DialogHeader className="text-center">
           <div className="mx-auto mb-4 flex h-[90px] w-[90px] items-center justify-center rounded-full md:h-52 md:w-52">
             <Image
@@ -49,7 +52,7 @@ export function SuccessModal({
             />
           </div>
           <DialogTitle className="text-center text-xl">{title}</DialogTitle>
-          <DialogDescription className="text-center text-base">
+          <DialogDescription id="success-modal-description" className="text-center text-base">
             {description}
           </DialogDescription>
         </DialogHeader>

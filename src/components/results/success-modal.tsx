@@ -27,13 +27,16 @@ export function SuccessModal({
 }: SuccessModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        aria-describedby="success-modal-description"
+      >
         <DialogHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           <DialogTitle className="text-center text-xl">{title}</DialogTitle>
-          <DialogDescription className="text-center text-base">
+          <DialogDescription id="success-modal-description" className="text-center text-base">
             {description}
           </DialogDescription>
         </DialogHeader>
