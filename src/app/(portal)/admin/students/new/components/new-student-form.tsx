@@ -7,14 +7,10 @@ import {
 import { CreateStudentData } from "@/lib/students"
 import { useRouter } from "next/navigation"
 import { useCreateStudent } from "../../_hooks/use-students"
+import { generateSecurePassword } from "@/lib/utils/password-generator"
 
 const generatePassword = () => {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let password = ""
-  for (let i = 0; i < 8; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return password
+  return generateSecurePassword(12)
 }
 
 // ... existing imports ...
