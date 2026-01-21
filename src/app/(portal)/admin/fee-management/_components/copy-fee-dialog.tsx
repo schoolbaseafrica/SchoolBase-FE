@@ -126,13 +126,16 @@ export function CopyFeeDialog({ open, onOpenChange, fee, onSuccess }: CopyFeeDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent 
+        className="sm:max-w-lg"
+        aria-describedby="copy-fee-description"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Copy className="h-5 w-5" />
             Copy Fee to New Period
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="copy-fee-description">
             Copy "{fee.component_name}" to a new term or session. The fee details and class
             assignments will be copied.
           </DialogDescription>
