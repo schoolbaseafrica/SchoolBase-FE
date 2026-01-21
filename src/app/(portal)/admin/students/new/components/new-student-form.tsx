@@ -8,14 +8,12 @@ import { CreateStudentData } from "@/lib/students"
 import { useRouter } from "next/navigation"
 import { useCreateStudent } from "../../_hooks/use-students"
 import { generateSecurePassword } from "@/lib/utils/password-generator"
+import { useGetClassesInfo } from "@/app/(portal)/admin/class-management/_hooks/use-classes"
+import { useMemo } from "react"
 
 const generatePassword = () => {
   return generateSecurePassword(12)
 }
-
-// ... existing imports ...
-
-export const studentFormConfig: NewPersonFormConfig = {
   fields: [
     {
       name: "first_name",
@@ -100,14 +98,21 @@ export const studentFormConfig: NewPersonFormConfig = {
     //   buttonText: "Select file",
     //   required: false,
     // },
+    {
+      name: "class_id",
+      label: "Class (Optional)",
+      type: "select",
+      required: false,
+      placeholder: "Select a class",
+      options: [
+        { value: "", label: "None (Unassigned)" },
+        ...classOptions,
+      ],
+    },
   ],
   submitText: "Save",
   cancelText: "Cancel",
-}
-
-export default function NewStudentForm() {
-  const router = useRouter()
-  const createNewStudent = useCreateStudent().mutateAsync
+}), [classOptions])
 
   return (
     <NewPersonFormBuilder
@@ -117,6 +122,27 @@ export default function NewStudentForm() {
       onSubmit={handleSubmit}
     />
   )
+
+export default function NewStudentForm() {
+  const router = useRouter()
+  const createNewStudent = useCreateStudent().mutateAsync
+  
+  // Fetch classes for class selection
+  const { data: classesInfo } = useGetClassesInfo({ includeArchived: false })
+  
+  // Flatten classes structure for select options
+  const classOptions = useMemo(() => {
+    if (!classesInfo?.items) return []
+    return classesInfo.items.flatMap((group) =>
+      group.classes.map((cls) => ({
+        value: cls.id,
+        label: `${group.name}${cls.arm ? ` ${cls.arm}` : ""}`.trim(),
+      }))
+    )
+  }, [classesInfo])
+
+  // Create dynamic form config with class field
+  const studentFormConfig: NewPersonFormConfig = useMemo(() => ({
 
   async function handleCancel() {
     router.push("/admin/students")
@@ -135,6 +161,9 @@ export default function NewStudentForm() {
       phone: formData.phone as string,
       home_address: formData.home_address as string,
       is_active: true,
+      class_id: formData.class_id && (formData.class_id as string).trim() !== "" 
+        ? (formData.class_id as string) 
+        : undefined,
     }
 
     try {

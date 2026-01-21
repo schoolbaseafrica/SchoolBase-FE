@@ -13,6 +13,7 @@ export type CreateStudentData = Omit<
   title?: string
   nfc_card_id?: string | null
   auto_generate_nfc_id?: boolean
+  class_id?: string
 }
 
 export type UpdateStudentData = Partial<CreateStudentData>
