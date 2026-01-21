@@ -34,7 +34,7 @@ const feeComponentSchema = z.object({
     .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
   session_id: z.string().uuid("Select a session"),
   term_id: z.string().uuid("Select a term"),
-  class_ids: z.array(z.string().uuid()).optional().default([]),
+  class_ids: z.array(z.string().uuid()).default([]),
 })
 
 type FeeComponentFormValues = z.infer<typeof feeComponentSchema>
