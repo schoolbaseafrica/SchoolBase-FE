@@ -114,6 +114,14 @@ export function AssignStudentsToFeeDialog({
   const toUnassign = Array.from(selectedStudentIds).filter((id) =>
     assignedStudentIds.has(id)
   )
+  
+  // Check if user is trying to assign already-assigned students
+  const attemptingToAssignAlreadyAssigned = selectedStudentIds.size > 0 && 
+    toAssign.length === 0 && 
+    toUnassign.length === 0
+  
+  // Show warning if trying to assign already-assigned (though this shouldn't happen with our UI)
+  const hasValidSelections = toAssign.length > 0 || toUnassign.length > 0
 
   function handleToggleStudent(studentId: string) {
     setSelectedStudentIds((prev) => {
@@ -128,15 +136,15 @@ export function AssignStudentsToFeeDialog({
   }
 
   async function handleSubmit() {
-    if (!fee?.id || selectedStudentIds.size === 0) return
+    if (!fee?.id || !hasValidSelections) return
 
     try {
-      // Assign new students
+      // Only assign if there are new students to assign
       if (toAssign.length > 0) {
         await assignMutation.mutateAsync(toAssign)
       }
 
-      // Unassign selected students
+      // Only unassign if there are students to unassign
       if (toUnassign.length > 0) {
         await unassignMutation.mutateAsync(toUnassign)
       }
@@ -199,25 +207,34 @@ export function AssignStudentsToFeeDialog({
             </div>
 
             {/* Summary */}
-            <div className="flex items-center justify-between rounded-lg border bg-gray-50 p-3 text-sm">
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">
-                  {selectedStudentIds.size} selected
-                </span>
-                {toAssign.length > 0 && (
-                  <span className="text-green-600">
-                    +{toAssign.length} to assign
+            <div className="rounded-lg border bg-gray-50 p-3 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-600 font-medium">
+                    {selectedStudentIds.size} selected
                   </span>
-                )}
-                {toUnassign.length > 0 && (
-                  <span className="text-red-600">
-                    -{toUnassign.length} to unassign
-                  </span>
-                )}
+                  {toAssign.length > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                      +{toAssign.length} new assignment{toAssign.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {toUnassign.length > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                      -{toUnassign.length} to remove
+                    </span>
+                  )}
+                </div>
+                <div className="text-gray-600 font-medium">
+                  {assignedStudentIds.size} currently assigned
+                </div>
               </div>
-              <div className="text-gray-600">
-                {assignedStudentIds.size} currently assigned
-              </div>
+              {attemptingToAssignAlreadyAssigned && (
+                <div className="rounded-md bg-yellow-50 border border-yellow-200 p-2">
+                  <p className="text-xs text-yellow-800">
+                    ⚠️ All selected students are already assigned to this fee. Select students from the "Available Students" section to add new assignments, or select from "Already Assigned" to remove them.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Students List */}
@@ -225,9 +242,14 @@ export function AssignStudentsToFeeDialog({
               {/* Already Assigned Students */}
               {assignedStudents.length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Users className="h-4 w-4" />
-                    <span>Already Assigned ({assignedStudents.length})</span>
+                  <div className="flex items-center gap-2 rounded-md bg-blue-100 px-3 py-2">
+                    <Users className="h-4 w-4 text-blue-700" />
+                    <span className="text-sm font-semibold text-blue-900">
+                      Already Assigned ({assignedStudents.length})
+                    </span>
+                    <span className="ml-auto text-xs text-blue-700">
+                      ✓ These students already have this fee assigned
+                    </span>
                   </div>
                   {assignedStudents.map((student: SnakeUser) => {
                     const isSelected = selectedStudentIds.has(student.id)
@@ -238,7 +260,7 @@ export function AssignStudentsToFeeDialog({
                         className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all hover:border-gray-300 ${
                           isSelected
                             ? "border-red-500 bg-red-50"
-                            : "border-blue-200 bg-blue-50/50"
+                            : "border-blue-200 bg-blue-50"
                         }`}
                         onClick={() => handleToggleStudent(student.id)}
                       >
@@ -250,15 +272,22 @@ export function AssignStudentsToFeeDialog({
                           }`}
                         />
                         <div className="flex-1">
-                          <h5 className="text-sm font-semibold text-gray-900">
-                            {student.full_name}
-                          </h5>
+                          <div className="flex items-center gap-2">
+                            <h5 className="text-sm font-semibold text-gray-900">
+                              {student.full_name}
+                            </h5>
+                            {!isSelected && (
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                Assigned
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-0.5 text-xs text-gray-600">
                             {student.registration_number || student.email}
                           </p>
                           {isSelected && (
-                            <p className="mt-1 text-xs text-red-600">
-                              Will be unassigned
+                            <p className="mt-1 text-xs font-medium text-red-600">
+                              ✓ Selected to remove from this fee
                             </p>
                           )}
                         </div>
@@ -340,7 +369,14 @@ export function AssignStudentsToFeeDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={selectedStudentIds.size === 0 || isPending}
+            disabled={!hasValidSelections || isPending || attemptingToAssignAlreadyAssigned}
+            title={
+              attemptingToAssignAlreadyAssigned
+                ? "Please select students from the 'Available Students' section to add new assignments"
+                : !hasValidSelections
+                ? "Please select students to assign or unassign"
+                : undefined
+            }
           >
             {isPending ? (
               <>
@@ -348,7 +384,15 @@ export function AssignStudentsToFeeDialog({
                 Updating...
               </>
             ) : (
-              "Update Assignments"
+              <>
+                {toAssign.length > 0 && toUnassign.length > 0
+                  ? `Add ${toAssign.length} & Remove ${toUnassign.length}`
+                  : toAssign.length > 0
+                  ? `Assign ${toAssign.length} Student${toAssign.length !== 1 ? 's' : ''}`
+                  : toUnassign.length > 0
+                  ? `Remove ${toUnassign.length} Student${toUnassign.length !== 1 ? 's' : ''}`
+                  : "Update Assignments"}
+              </>
             )}
           </Button>
         </DialogFooter>
