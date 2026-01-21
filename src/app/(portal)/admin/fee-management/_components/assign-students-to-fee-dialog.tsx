@@ -90,8 +90,8 @@ export function AssignStudentsToFeeDialog({
       })
       
       // Handle response structure: backend returns { message, data: [...] }
-      const students = Array.isArray((response as any)?.data) ? (response as any).data : []
-      const assignedIds = new Set(students.map((s) => s.id))
+      const students: FeeStudent[] = Array.isArray((response as any)?.data) ? (response as any).data : []
+      const assignedIds = new Set(students.map((s: FeeStudent) => s.id))
       
       console.log("[AssignStudentsDialog] Fetched assigned students:", {
         fee_id: fee.id,
@@ -99,7 +99,7 @@ export function AssignStudentsToFeeDialog({
         response_data: (response as any)?.data,
         students_count: students.length,
         assigned_ids: Array.from(assignedIds),
-        student_details: students.map(s => ({ id: s.id, name: s.name }))
+        student_details: students.map((s: FeeStudent) => ({ id: s.id, name: s.name }))
       })
       
       setAssignedStudentIds(assignedIds)
