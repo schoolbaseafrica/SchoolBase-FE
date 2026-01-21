@@ -25,24 +25,53 @@ import { useAcademicTermsForSession } from "../../class-management/_hooks/use-ac
 import { z } from "zod"
 
 // ---------------- Zod Schema ----------------
-const feeComponentSchema = z.object({
-  component_name: z.string().min(2, "Component name is required"),
-  description: z.string().optional(),
-  amount: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
-  session_id: z.string().uuid("Select a session"),
-  term_id: z.string().uuid("Select a term"),
-  class_ids: z.array(z.string().uuid()).min(0),
-})
+const feeComponentSchema = z
+  .object({
+    component_name: z.string().min(2, "Component name is required"),
+    description: z.string().optional(),
+    amount: z
+      .string()
+      .min(1, "Amount is required")
+      .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
+    period_type: z.enum(["TERM", "SESSION"], {
+      required_error: "Please select a fee period type",
+    }),
+    session_id: z.string().uuid().optional(),
+    term_id: z.string().uuid().optional(),
+    class_ids: z.array(z.string().uuid()).min(0),
+  })
+  .refine(
+    (data) => {
+      if (data.period_type === "TERM") {
+        return !!data.term_id
+      }
+      return true
+    },
+    {
+      message: "Term is required when period type is TERM",
+      path: ["term_id"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.period_type === "SESSION") {
+        return !!data.session_id
+      }
+      return true
+    },
+    {
+      message: "Session is required when period type is SESSION",
+      path: ["session_id"],
+    }
+  )
 
 type FeeComponentFormValues = {
   component_name: string
   description?: string
   amount: string
-  session_id: string
-  term_id: string
+  period_type: "TERM" | "SESSION"
+  session_id?: string
+  term_id?: string
   class_ids: string[]
 }
 
@@ -154,8 +183,9 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
       component_name: "",
       description: "",
       amount: "",
-      session_id: "",
-      term_id: "",
+      period_type: "TERM",
+      session_id: undefined,
+      term_id: undefined,
       class_ids: [],
     },
   })
@@ -169,6 +199,7 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
     reset,
   } = form
   const termId = useWatch({ control, name: "term_id" })
+  const sessionId = useWatch({ control, name: "session_id" })
   const createComponent = useCreateFeeComponent()
 
   // Sync selectedClassIds with RHF
@@ -176,12 +207,29 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
     setValue("class_ids", selectedClassIds)
   }, [selectedClassIds, setValue])
 
-  // Reset term when session changes
+  const periodType = useWatch({ control, name: "period_type" })
+
+  // Reset term/session when period type changes
   useEffect(() => {
-    if (selectedSession) {
-      setValue("term_id", "")
+    if (periodType === "TERM") {
+      setValue("session_id", undefined)
+      if (periodType === "TERM") {
+        // For TERM type, we use selectedSession just to filter terms, not to set session_id
+        // Reset term_id when period type changes to TERM
+        setValue("term_id", undefined)
+      }
+    } else {
+      setValue("term_id", undefined)
+      setSelectedSession("") // Clear the session selector state for TERM filtering
     }
-  }, [selectedSession, setValue])
+  }, [periodType, setValue])
+
+  // Reset term when session changes (for TERM period type)
+  useEffect(() => {
+    if (selectedSession && periodType === "TERM") {
+      setValue("term_id", undefined)
+    }
+  }, [selectedSession, periodType, setValue])
 
   const handleCancel = () => {
     reset()
@@ -191,24 +239,20 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
   }
 
   const onSubmit = async (values: FeeComponentFormValues) => {
-    // console.log("Submitting values:", values)
-    // try {
     await createComponent.mutateAsync({
       component_name: values.component_name,
       description: values.description ?? "",
       amount: Number(values.amount),
-      term_id: values.term_id,
+      period_type: values.period_type,
+      term_id: values.period_type === "TERM" ? values.term_id : undefined,
+      session_id: values.period_type === "SESSION" ? values.session_id : undefined,
       class_ids: values.class_ids || [], // Ensure it's always an array (empty for school-wide fees)
     })
     reset()
     setSelectedClassIds([])
     setSelectedSession("")
-    // toast.success("Fee component created successfully")
     onSuccess?.() // Close the drawer after success
     setModalOpen(true) // Show success modal
-    // } catch (error) {
-    //   toast.error("Failed to create fee component")
-    // }
   }
 
   useEffect(() => {
@@ -243,69 +287,130 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
           )}
         </div>
 
-        {/* Session */}
+        {/* Period Type */}
         <div className="space-y-1">
-          <Label>Academic Session</Label>
-          {loadingSessions ? (
-            <p className="text-sm text-gray-500">Loading sessions...</p>
-          ) : sessions?.data?.length ? (
-            <Select
-              value={selectedSession}
-              onValueChange={(value) => {
-                setSelectedSession(value)
-                setValue("session_id", value)
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.data.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-text-secondary text-sm">No sessions available</p>
-          )}
-          {errors.session_id && (
-            <p className="text-xs text-red-500">{errors.session_id.message}</p>
+          <Label>Fee Period Type</Label>
+          <Select
+            value={periodType || "TERM"}
+            onValueChange={(value: "TERM" | "SESSION") => {
+              setValue("period_type", value)
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select period type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TERM">Per Term</SelectItem>
+              <SelectItem value="SESSION">Per Session</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-gray-500">
+            {periodType === "TERM"
+              ? "Fee applies to a specific term"
+              : "Fee applies to the entire academic session"}
+          </p>
+          {errors.period_type && (
+            <p className="text-xs text-red-500">{errors.period_type.message}</p>
           )}
         </div>
 
-        {/* Term */}
-        <div className="space-y-1">
-          <Label>Term</Label>
-          {!selectedSession ? (
-            <p className="text-sm text-gray-500">Please select a session first</p>
-          ) : loadingTerms ? (
-            <p className="text-sm text-gray-500">Loading terms...</p>
-          ) : termsError ? (
-            <p className="text-sm text-red-500">Error loading terms</p>
-          ) : terms && terms.length > 0 ? (
-            <Select value={termId} onValueChange={(value) => setValue("term_id", value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select term" />
-              </SelectTrigger>
-              <SelectContent>
-                {terms.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-text-secondary text-sm">
-              No terms available for this session
-            </p>
-          )}
-          {errors.term_id && (
-            <p className="text-xs text-red-500">{errors.term_id.message}</p>
-          )}
-        </div>
+        {/* Session - Required for both TERM and SESSION (for term lookup) */}
+        {periodType === "TERM" && (
+          <div className="space-y-1">
+            <Label>Academic Session</Label>
+            {loadingSessions ? (
+              <p className="text-sm text-gray-500">Loading sessions...</p>
+            ) : sessions?.data?.length ? (
+              <Select
+                value={selectedSession}
+                onValueChange={(value) => {
+                  setSelectedSession(value)
+                  // Don't set session_id for TERM period type
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.data.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-text-secondary text-sm">No sessions available</p>
+            )}
+          </div>
+        )}
+
+        {/* Term - Only shown when period_type is TERM */}
+        {periodType === "TERM" && (
+          <div className="space-y-1">
+            <Label>Term</Label>
+            {!selectedSession ? (
+              <p className="text-sm text-gray-500">Please select a session first</p>
+            ) : loadingTerms ? (
+              <p className="text-sm text-gray-500">Loading terms...</p>
+            ) : termsError ? (
+              <p className="text-sm text-red-500">Error loading terms</p>
+            ) : terms && terms.length > 0 ? (
+              <Select value={termId} onValueChange={(value) => setValue("term_id", value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-text-secondary text-sm">
+                No terms available for this session
+              </p>
+            )}
+            {errors.term_id && (
+              <p className="text-xs text-red-500">{errors.term_id.message}</p>
+            )}
+          </div>
+        )}
+
+        {/* Session - Only shown when period_type is SESSION */}
+        {periodType === "SESSION" && (
+          <div className="space-y-1">
+            <Label>Academic Session</Label>
+            {loadingSessions ? (
+              <p className="text-sm text-gray-500">Loading sessions...</p>
+            ) : sessions?.data?.length ? (
+              <Select
+                value={sessionId || ""}
+                onValueChange={(value) => {
+                  setValue("session_id", value)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.data.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-text-secondary text-sm">No sessions available</p>
+            )}
+            {errors.session_id && (
+              <p className="text-xs text-red-500">{errors.session_id.message}</p>
+            )}
+          </div>
+        )}
 
         {/* Classes */}
         <div className="space-y-2">

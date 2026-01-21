@@ -7,11 +7,16 @@ export type CreateFeeComponentData = {
   component_name: string
   description?: string
   amount: number
-  term_id: string
+  period_type: "TERM" | "SESSION"
+  term_id?: string
+  session_id?: string
   class_ids: string[]
 }
 
-export type UpdateFeeComponentData = Partial<CreateFeeComponentData>
+export type UpdateFeeComponentData = Partial<CreateFeeComponentData> & {
+  period_type?: "TERM" | "SESSION"
+  session_id?: string
+}
 
 // export interface FeeComponent {
 //   id: string
@@ -37,9 +42,11 @@ export interface FeeComponent {
   component_name: string
   description: string
   amount: string // backend sends "16500.00" as STRING
+  period_type?: "TERM" | "SESSION"
   term_id?: string
+  session_id?: string
 
-  term: {
+  term?: {
     id: string
     name: string
     createdAt?: string
@@ -49,13 +56,21 @@ export interface FeeComponent {
     sessionId?: string
   }
 
+  academicSession?: {
+    id: string
+    name: string
+    academicYear?: string
+    startDate?: string
+    endDate?: string
+  }
+
   classes: { id: string; name?: string }[] | null
 
   status: "ACTIVE" | "INACTIVE" | string // backend uses uppercase
 
   createdAt: string // FIX camelCase
   updatedAt: string
-  createdBy: {
+  createdBy?: {
     id: string
     first_name: string
     last_name: string

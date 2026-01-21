@@ -22,8 +22,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
+import { Edit2, Copy } from "lucide-react"
 import { useDeactivateFee, useAactivateFee } from "../_hooks/use-fees"
 import type { FeeComponent } from "@/lib/fees-management"
+import { EditFeeDialog } from "./edit-fee-dialog"
+import { CopyFeeDialog } from "./copy-fee-dialog"
 
 interface FeeComponentTableProps {
   feeComponents: FeeComponent[]
@@ -35,6 +38,8 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
   const [openDrawer, setOpenDrawer] = useState(false)
   const [selectedFee, setSelectedFee] = useState<FeeComponent | null>(null)
   const [actionType, setActionType] = useState<ActionType>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false)
 
   const deactivateMutation = useDeactivateFee(selectedFee?.id || "")
   const activateMutation = useAactivateFee(selectedFee?.id || "")
@@ -166,9 +171,25 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
                 </div>
 
                 <div>
-                  <span className="font-medium text-gray-500">Term</span>
-                  <p className="mt-1 text-gray-900">{selectedFee.term?.name || "N/A"}</p>
+                  <span className="font-medium text-gray-500">Period Type</span>
+                  <p className="mt-1 text-gray-900">
+                    {selectedFee.period_type === "SESSION" ? "Per Session" : "Per Term"}
+                  </p>
                 </div>
+
+                {selectedFee.period_type === "TERM" && (
+                  <div>
+                    <span className="font-medium text-gray-500">Term</span>
+                    <p className="mt-1 text-gray-900">{selectedFee.term?.name || "N/A"}</p>
+                  </div>
+                )}
+
+                {selectedFee.period_type === "SESSION" && selectedFee.academicSession && (
+                  <div>
+                    <span className="font-medium text-gray-500">Session</span>
+                    <p className="mt-1 text-gray-900">{selectedFee.academicSession.name}</p>
+                  </div>
+                )}
 
                 <div>
                   <span className="font-medium text-gray-500">Created By</span>
@@ -208,32 +229,78 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
             )}
           </div>
 
-          <div className="mt-auto grid grid-cols-2 gap-2 border-t p-4">
-            <Button size="lg" variant="outline" onClick={() => setOpenDrawer(false)}>
-              Close
-            </Button>
+          <div className="mt-auto space-y-2 border-t p-4">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setEditDialogOpen(true)}
+                disabled={isPending}
+              >
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setCopyDialogOpen(true)}
+                disabled={isPending}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+            </div>
 
-            {isActive ? (
-              <Button
-                size="lg"
-                // variant="destructive"
-                onClick={() => openConfirmDialog("deactivate")}
-                disabled={isPending}
-              >
-                {deactivateMutation.isPending ? "Deactivating..." : "Deactivate"}
+            {/* Status Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button size="lg" variant="outline" onClick={() => setOpenDrawer(false)}>
+                Close
               </Button>
-            ) : (
-              <Button
-                size="lg"
-                onClick={() => openConfirmDialog("activate")}
-                disabled={isPending}
-              >
-                {activateMutation.isPending ? "Activating..." : "Activate"}
-              </Button>
-            )}
+
+              {isActive ? (
+                <Button
+                  size="lg"
+                  onClick={() => openConfirmDialog("deactivate")}
+                  disabled={isPending}
+                >
+                  {deactivateMutation.isPending ? "Deactivating..." : "Deactivate"}
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={() => openConfirmDialog("activate")}
+                  disabled={isPending}
+                >
+                  {activateMutation.isPending ? "Activating..." : "Activate"}
+                </Button>
+              )}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Edit Fee Dialog */}
+      <EditFeeDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        fee={selectedFee}
+        onSuccess={() => {
+          setOpenDrawer(false)
+          // Fee will be updated via query invalidation
+        }}
+      />
+
+      {/* Copy Fee Dialog */}
+      <CopyFeeDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        fee={selectedFee}
+        onSuccess={() => {
+          setOpenDrawer(false)
+          // Fee will be updated via query invalidation
+        }}
+      />
 
       {/* Single Confirmation Dialog */}
       <AlertDialog open={actionType !== null} onOpenChange={closeConfirmDialog}>
