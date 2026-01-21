@@ -33,9 +33,7 @@ const feeComponentSchema = z
       .string()
       .min(1, "Amount is required")
       .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
-    period_type: z.enum(["TERM", "SESSION"], {
-      required_error: "Please select a fee period type",
-    }),
+    period_type: z.enum(["TERM", "SESSION"]),
     session_id: z.string().uuid().optional(),
     term_id: z.string().uuid().optional(),
     class_ids: z.array(z.string().uuid()).min(0),
