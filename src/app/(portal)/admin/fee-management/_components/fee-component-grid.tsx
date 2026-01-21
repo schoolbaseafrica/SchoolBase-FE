@@ -15,11 +15,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Edit2, Copy } from "lucide-react"
+import { Edit2, Copy, Users } from "lucide-react"
 import { useDeactivateFee, useAactivateFee } from "../_hooks/use-fees"
 import type { FeeComponent } from "@/lib/fees-management"
 import { EditFeeDialog } from "./edit-fee-dialog"
 import { CopyFeeDialog } from "./copy-fee-dialog"
+import { AssignStudentsToFeeDialog } from "./assign-students-to-fee-dialog"
 // type FeeComponent = {
 //   id: string
 //   component_name: string
@@ -43,6 +44,7 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
   const [actionType, setActionType] = useState<ActionType>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [copyDialogOpen, setCopyDialogOpen] = useState(false)
+  const [assignStudentsDialogOpen, setAssignStudentsDialogOpen] = useState(false)
 
   const deactivateMutation = useDeactivateFee(selectedFee?.id || "")
   const activateMutation = useAactivateFee(selectedFee?.id || "")
@@ -249,7 +251,7 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
           {/* Footer */}
           <div className="mt-auto space-y-2 border-t p-4">
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 size="lg"
                 variant="outline"
@@ -267,6 +269,15 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Copy
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setAssignStudentsDialogOpen(true)}
+                disabled={isPending}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Assign
               </Button>
             </div>
 
@@ -316,6 +327,16 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
         fee={selectedFee}
         onSuccess={() => {
           setOpenDrawer(false)
+        }}
+      />
+
+      {/* Assign Students Dialog */}
+      <AssignStudentsToFeeDialog
+        open={assignStudentsDialogOpen}
+        onOpenChange={setAssignStudentsDialogOpen}
+        fee={selectedFee}
+        onSuccess={() => {
+          // Fee will be updated via query invalidation
         }}
       />
 

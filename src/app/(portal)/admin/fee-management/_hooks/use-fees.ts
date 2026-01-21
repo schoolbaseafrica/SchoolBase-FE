@@ -178,3 +178,51 @@ export const useAactivateFee = (id: string) => {
     },
   })
 }
+
+// ----------------------
+// ASSIGN STUDENTS TO FEE
+// ----------------------
+export const useAssignStudentsToFee = (feeId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (studentIds: string[]) => FeesAPI.assignStudents(feeId, studentIds),
+
+    onSuccess: (res) => {
+      const { assigned, already_assigned } = res.data
+      let message = `Successfully assigned fee to ${assigned} student(s).`
+      if (already_assigned > 0) {
+        message += ` ${already_assigned} student(s) were already assigned.`
+      }
+      toast.success(message)
+      queryClient.invalidateQueries({ queryKey: [...FEES_KEY, feeId] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
+    },
+
+    onError: (err) => {
+      toast.error(extractErrorMessage(err))
+    },
+  })
+}
+
+// ----------------------
+// UNASSIGN STUDENTS FROM FEE
+// ----------------------
+export const useUnassignStudentsFromFee = (feeId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (studentIds: string[]) => FeesAPI.unassignStudents(feeId, studentIds),
+
+    onSuccess: (res) => {
+      const { unassigned } = res.data
+      toast.success(`Successfully unassigned fee from ${unassigned} student(s).`)
+      queryClient.invalidateQueries({ queryKey: [...FEES_KEY, feeId] })
+      queryClient.invalidateQueries({ queryKey: FEES_KEY })
+    },
+
+    onError: (err) => {
+      toast.error(extractErrorMessage(err))
+    },
+  })
+}

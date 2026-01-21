@@ -172,4 +172,26 @@ export const FeesAPI = {
       },
       true
     ),
+
+  // Assign fee to students
+  assignStudents: (id: string, studentIds: string[]) =>
+    apiFetch<ResponsePack<{ assigned: number; already_assigned: number; failed: number }>>(
+      `/fees/${id}/assign-students`,
+      {
+        method: "POST",
+        data: { student_ids: studentIds },
+      },
+      true
+    ),
+
+  // Unassign fee from students
+  unassignStudents: (id: string, studentIds: string[]) =>
+    apiFetch<ResponsePack<{ unassigned: number; not_found: number }>>(
+      `/fees/${id}/unassign-students`,
+      {
+        method: "POST",
+        data: { student_ids: studentIds },
+      },
+      true
+    ),
 }
