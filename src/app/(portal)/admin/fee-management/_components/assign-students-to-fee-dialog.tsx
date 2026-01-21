@@ -85,12 +85,23 @@ export function AssignStudentsToFeeDialog({
         hasData: !!(response as any)?.data,
         dataType: typeof (response as any)?.data,
         dataIsArray: Array.isArray((response as any)?.data),
+        hasNestedData: !!(response as any)?.data?.data,
+        nestedDataType: typeof (response as any)?.data?.data,
+        nestedDataIsArray: Array.isArray((response as any)?.data?.data),
         dataLength: Array.isArray((response as any)?.data) ? (response as any).data.length : "not array",
+        nestedDataLength: Array.isArray((response as any)?.data?.data) ? (response as any).data.data.length : "not array",
         responseKeys: response ? Object.keys(response as any) : [],
+        dataKeys: (response as any)?.data ? Object.keys((response as any).data) : [],
       })
       
-      // Handle response structure: backend returns { message, data: [...] }
-      const students: FeeStudent[] = Array.isArray((response as any)?.data) ? (response as any).data : []
+      // Handle response structure: TransformInterceptor wraps it as { status_code, message, data: { data: [...] } }
+      // Check for nested data first (double-wrapped), then fall back to direct data
+      const responseData = (response as any)?.data
+      const students: FeeStudent[] = Array.isArray(responseData?.data) 
+        ? responseData.data 
+        : Array.isArray(responseData) 
+        ? responseData 
+        : []
       const assignedIds = new Set(students.map((s: FeeStudent) => s.id))
       
       console.log("[AssignStudentsDialog] Fetched assigned students:", {
