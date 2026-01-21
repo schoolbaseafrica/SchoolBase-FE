@@ -14,6 +14,7 @@ export interface StudentsState {
   filters: {
     search: string
     isActive: boolean | undefined
+    classId: string | undefined
     page: number
     limit: number
   }
@@ -34,6 +35,7 @@ export interface StudentsState {
 const DEFAULT_FILTERS = {
   search: "",
   isActive: true,
+  classId: undefined,
   page: 1,
   limit: 10,
 }

@@ -37,7 +37,7 @@ export interface GetStudentsParams {
   page?: number
   search?: string
   is_active?: boolean
-
+  class_id?: string
   limit?: number
   total?: number
 }

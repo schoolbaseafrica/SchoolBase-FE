@@ -1,7 +1,7 @@
 "use client"
 
 import { UsersView } from "@/components/users/users-view"
-import { useGetStudents } from "./_hooks/use-students"
+import { useGetStudents, useGetStudentsWithMeta } from "./_hooks/use-students"
 import {
   useStudentsStore,
   selectFilteredStudents,
@@ -10,30 +10,81 @@ import {
 import { useShallow } from "zustand/react/shallow"
 import { useMemo } from "react"
 import { BulkActionsMenu } from "./_components/bulk-actions-menu"
+import { ClassFilter } from "./_components/class-filter"
 
 export default function StudentsPage() {
-  const { isLoading: isQueryLoading, isError, error } = useGetStudents()
-
-  const { students, studentIds, filters } = useStudentsStore(
+  const { filters } = useStudentsStore(
     useShallow((state) => ({
-      students: state.students,
-      studentIds: state.studentIds,
       filters: state.filters,
     }))
   )
   const setFilters = useStudentsStore((state) => state.setFilters)
 
-  const filteredAll = useMemo(
-    () => selectFilteredStudents(students, studentIds, filters),
-    [students, studentIds, filters]
+  // Use server-side filtering when class_id is selected, otherwise use client-side filtering
+  const shouldUseServerFilter = !!filters.classId
+  
+  // Server-side filtered query
+  const {
+    data: serverData,
+    isLoading: isServerLoading,
+    isError: isServerError,
+    error: serverError,
+  } = useGetStudentsWithMeta(
+    shouldUseServerFilter
+      ? {
+          page: filters.page,
+          limit: filters.limit,
+          search: filters.search || undefined,
+          class_id: filters.classId || undefined,
+        }
+      : undefined
   )
 
-  const paginatedStudents = useMemo(
-    () => selectPaginatedStudents(filteredAll, filters.page, filters.limit),
-    [filteredAll, filters.page, filters.limit]
+  // Client-side filtered query (when no class filter)
+  const { isLoading: isClientLoading, isError: isClientError, error: clientError } = useGetStudents()
+
+  const { students, studentIds } = useStudentsStore(
+    useShallow((state) => ({
+      students: state.students,
+      studentIds: state.studentIds,
+    }))
   )
 
-  const totalPages = Math.ceil(filteredAll.length / filters.limit)
+  // Use server data when class filter is active, otherwise use client-side filtering
+  const filteredAll = useMemo(() => {
+    if (shouldUseServerFilter && serverData?.data) {
+      // Server-side filtering
+      let filtered = serverData.data
+
+      // Apply client-side status filter
+      if (filters.isActive !== undefined) {
+        filtered = filtered.filter((s) => s.is_active === filters.isActive)
+      }
+
+      return filtered
+    } else {
+      // Client-side filtering
+      return selectFilteredStudents(students, studentIds, filters)
+    }
+  }, [shouldUseServerFilter, serverData, students, studentIds, filters])
+
+  const paginatedStudents = useMemo(() => {
+    if (shouldUseServerFilter) {
+      // Server already paginated, return as-is
+      return filteredAll
+    } else {
+      // Client-side pagination
+      return selectPaginatedStudents(filteredAll, filters.page, filters.limit)
+    }
+  }, [shouldUseServerFilter, filteredAll, filters.page, filters.limit])
+
+  const totalPages = shouldUseServerFilter
+    ? serverData?.meta?.total_pages || 1
+    : Math.ceil(filteredAll.length / filters.limit)
+
+  const isLoading = shouldUseServerFilter ? isServerLoading : isClientLoading && studentIds.length === 0
+  const isError = shouldUseServerFilter ? isServerError : isClientError
+  const error = shouldUseServerFilter ? serverError : clientError
 
   const handlePageChange = (page: number) => {
     setFilters({ page })
@@ -50,6 +101,10 @@ export default function StudentsPage() {
     })
   }
 
+  const handleClassFilterChange = (classId: string | undefined) => {
+    setFilters({ classId, page: 1 })
+  }
+
   const currentStatusFilter =
     filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
@@ -59,8 +114,15 @@ export default function StudentsPage() {
         <BulkActionsMenu />
       </div>
 
+      <div className="mb-4">
+        <ClassFilter
+          value={filters.classId}
+          onValueChange={handleClassFilterChange}
+        />
+      </div>
+
       <UsersView
-        isLoading={isQueryLoading && studentIds.length === 0}
+        isLoading={isLoading}
         isError={isError}
         error={error?.message}
         users={paginatedStudents}
