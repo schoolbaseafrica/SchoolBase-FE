@@ -42,23 +42,11 @@ export default function TeacherTimetablePage() {
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-[#2d2d2d]">Timetable</h1>
-          <p className="text-sm text-[#666666]">
-            View schedules for your assigned classes
-          </p>
-        </div>
-        {/* Show "Open Classroom" button when a class is selected */}
-        {selectedClassId && (
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/teacher/classroom/${selectedClassId}`)}
-          >
-            <BookOpen className="mr-2 h-4 w-4" />
-            Open Classroom
-          </Button>
-        )}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-[#2d2d2d]">Timetable</h1>
+        <p className="text-sm text-[#666666]">
+          View schedules for your assigned classes
+        </p>
       </div>
 
       {/* Loading State */}
@@ -111,6 +99,17 @@ export default function TeacherTimetablePage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              {/* Show "Open Classroom" button when a class is selected */}
+              {selectedClassId && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/teacher/classroom/${selectedClassId}`)}
+                  className="w-full md:w-auto"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Open Classroom
+                </Button>
+              )}
             </div>
           ) : (
             <Alert>
