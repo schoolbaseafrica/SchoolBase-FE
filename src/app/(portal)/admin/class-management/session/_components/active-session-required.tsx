@@ -31,7 +31,10 @@ export default function ActiveSessionGuard({ children }: { children?: ReactNode 
     <>
       {children}
       <Dialog open={!isLoadingSession && !currentSession} onOpenChange={handleClose}>
-        <DialogContent className="z-[200] max-w-md border-4 border-orange-400 bg-white shadow-2xl ring-4 ring-orange-200">
+        <DialogContent 
+          className="z-[200] max-w-md border-4 border-orange-400 bg-white shadow-2xl ring-4 ring-orange-200"
+          aria-describedby="active-session-required-description"
+        >
           <DialogHeader>
             <div className="mx-auto mb-4">
               <TriangleAlertIcon className="h-20 w-20 text-orange-400" />
@@ -39,7 +42,10 @@ export default function ActiveSessionGuard({ children }: { children?: ReactNode 
             <DialogTitle className="text-center text-xl font-bold text-gray-900">
               No Active Session Found
             </DialogTitle>
-            <DialogDescription className="text-center text-base font-medium text-gray-800">
+            <DialogDescription 
+              id="active-session-required-description"
+              className="text-center text-base font-medium text-gray-800"
+            >
               You need to create an active academic session before you can create classes,
               assign subjects, or perform other academic operations. An active session
               (e.g., 2025/2026) is required to organize your academic activities.

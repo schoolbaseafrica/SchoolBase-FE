@@ -147,12 +147,15 @@ export default function AssignClassDialog({
         open={open && !showSuccessDialog && !showMoveConfirmationDialog}
         onOpenChange={setOpen}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+          aria-describedby="assign-class-description"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Assign Class to {studentName}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription id="assign-class-description" className="text-sm">
               Select a class to assign this student to
             </DialogDescription>
           </DialogHeader>

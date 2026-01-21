@@ -101,12 +101,15 @@ export default function AssignSubjectsDialog({
         open={open && !showSuccessDialog}
         onOpenChange={isPending ? () => {} : setOpen}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+          aria-describedby="assign-subjects-description"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Assign Subjects to {className}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription id="assign-subjects-description" className="text-sm">
               Select subjects to assign to this class
             </DialogDescription>
           </DialogHeader>

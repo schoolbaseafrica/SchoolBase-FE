@@ -226,14 +226,17 @@ export default function BulkAssignClassDialog({
   return (
     <>
       <Dialog open={open && !showSuccessDialog} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+          aria-describedby="bulk-assign-class-description"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               {currentStep === "students"
                 ? "Select Students to Assign"
                 : `Assign ${studentCount} ${studentCount === 1 ? "Student" : "Students"} to Class`}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription id="bulk-assign-class-description" className="text-sm">
               {currentStep === "students"
                 ? "Select the students you want to assign to a class"
                 : `Select a class to assign ${studentCount === 1 ? "this student" : "these students"} to`}
