@@ -140,10 +140,13 @@ export function ActivityLogsTable({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent 
+          className="max-w-2xl"
+          aria-describedby="activity-log-description"
+        >
           <DialogHeader>
             <DialogTitle>Activity Log Description</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="activity-log-description">
               Full description of the activity log entry
             </DialogDescription>
           </DialogHeader>

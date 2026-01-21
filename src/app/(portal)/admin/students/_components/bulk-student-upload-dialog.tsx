@@ -133,10 +133,13 @@ export default function BulkStudentUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent 
+        className="max-h-[90vh] max-w-2xl overflow-y-auto"
+        aria-describedby="bulk-upload-students-description"
+      >
         <DialogHeader>
           <DialogTitle>Bulk Upload Students</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="bulk-upload-students-description">
             Upload a CSV file to create multiple students at once.
             <br />
             <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Registration Number, Date of Birth, Gender, Home Address (optional), Password, Class (optional), Arm (optional)

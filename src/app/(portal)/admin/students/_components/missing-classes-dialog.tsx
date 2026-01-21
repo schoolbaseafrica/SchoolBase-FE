@@ -94,13 +94,16 @@ export function MissingClassesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent 
+        className="max-w-2xl"
+        aria-describedby="missing-classes-description"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
             Missing Classes Detected
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="missing-classes-description">
             The following classes referenced in your CSV do not exist. Select which
             classes you want to create before uploading students. Students assigned to
             unselected classes will be uploaded without class assignments.
