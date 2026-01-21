@@ -13,6 +13,7 @@ import { SuccessModal } from "@/components/dashboard/success-modal"
 import { toast } from "sonner"
 import { useActiveAcademicSessionFromList } from "../../class-management/session/_hooks/use-session"
 import ActiveSessionGuard from "../../class-management/session/_components/active-session-required"
+import { TeacherCombobox } from "./teacher-combobox"
 
 // Zod Schema
 const classFormSchema = z.object({
@@ -60,6 +61,9 @@ const AddClassForm = ({ onSubmit, isLoading, defaultValues }: AddClassFormProps)
       classTeacher: defaultValues?.classTeacher || "",
     },
   })
+
+  // Track selected teacher ID separately (we'll store the ID, but display name in form)
+  const [selectedTeacherId, setSelectedTeacherId] = React.useState<string | null>(null)
 
   // Watch the academicSession field to ensure it's always a string
   const academicSessionValue = watch("academicSession") || ""
@@ -184,17 +188,24 @@ const AddClassForm = ({ onSubmit, isLoading, defaultValues }: AddClassFormProps)
 
             {/* class teacher */}
             <div>
-              <div>
-                <Label htmlFor="classTeacher">
-                  Class Teacher{" "}
-                  <span className="ml-2 text-xs text-gray-500">Optional</span>
-                </Label>
-              </div>
-              <Input
-                id="classTeacher"
+              <Label htmlFor="classTeacher">
+                Class Teacher{" "}
+                <span className="ml-2 text-xs text-gray-500">Optional</span>
+              </Label>
+              <TeacherCombobox
+                value={selectedTeacherId || undefined}
+                onValueChange={(teacherId, teacherName) => {
+                  setSelectedTeacherId(teacherId)
+                  // Store teacher ID in the form field (which will be used for lookup)
+                  setValue("classTeacher", teacherId || "", { shouldValidate: false })
+                }}
+                placeholder="Search and select teacher..."
+              />
+              {/* Hidden input to maintain form value for validation */}
+              <input
+                type="hidden"
                 {...register("classTeacher")}
-                placeholder="Enter Teacher name"
-                type="text"
+                value={selectedTeacherId || ""}
               />
             </div>
           </section>

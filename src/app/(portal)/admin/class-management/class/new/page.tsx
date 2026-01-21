@@ -12,23 +12,13 @@ const AddClass = () => {
   const createNewClass = useCreateClass().mutateAsync
 
   const handleCreateClass = async (data: ClassFormData) => {
-    let teacher = null
-    if (data.classTeacher) {
-      try {
-        teacher = await findTeacherBySearch(data?.classTeacher)
-      } catch {
-        throw new Error("An error occurred while adding the teacher to the class.")
-      }
-    }
-
-    if (!teacher && data.classTeacher) {
-      throw new Error("The specified class teacher does not exist.")
-    }
+    // classTeacher now contains the teacher ID directly from the combobox
+    const teacherIds = data.classTeacher ? [data.classTeacher].filter(Boolean) as string[] : []
 
     await createNewClass({
       name: data.className,
       arm: data.arm,
-      teacherIds: [teacher?.id].filter(Boolean) as string[],
+      teacherIds,
     })
     router.push("/admin/class-management/class")
   }

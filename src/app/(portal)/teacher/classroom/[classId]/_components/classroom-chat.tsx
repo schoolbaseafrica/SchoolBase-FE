@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Mic, Square, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Send, Mic, Square, Loader2, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react"
 import { useClassroomMessages, useCreateMessage } from "../_hooks/use-classroom-messages"
 import { ClassroomMessage } from "@/lib/classroom-message"
 import { ClassroomMessageAPI } from "@/lib/classroom-message"
