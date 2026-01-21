@@ -293,7 +293,8 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
               >
                 {activateMutation.isPending ? "Activating..." : "Activate"}
               </Button>
-            )}
+              )}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
