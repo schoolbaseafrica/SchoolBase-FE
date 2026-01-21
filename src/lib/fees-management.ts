@@ -68,6 +68,8 @@ export interface FeeComponent {
 
   status: "ACTIVE" | "INACTIVE" | string // backend uses uppercase
 
+  is_assigned?: boolean // true if fee has been assigned to classes or students
+
   createdAt: string // FIX camelCase
   updatedAt: string
   createdBy?: {
