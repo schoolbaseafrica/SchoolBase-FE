@@ -15,6 +15,89 @@ const generatePassword = () => {
   return generateSecurePassword(12)
 }
 
+// Base form config without class field (used by both new and edit forms)
+export const baseStudentFormConfig: NewPersonFormConfig = {
+  fields: [
+    {
+      name: "first_name",
+      label: "First Name",
+      type: "text",
+      placeholder: "Enter first name",
+      required: true,
+    },
+    {
+      name: "last_name",
+      label: "Last Name",
+      type: "text",
+      placeholder: "Enter last name",
+      required: true,
+    },
+    {
+      name: "middle_name",
+      label: "Middle Name",
+      type: "text",
+      placeholder: "Enter middle name",
+    },
+    {
+      name: "registration_number",
+      label: "Registration Number (Optional)",
+      type: "text",
+      placeholder: "Enter custom ID or leave empty for auto-generation",
+      required: false,
+    },
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "Enter email address",
+      required: true,
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: "password-generate",
+      placeholder: "Enter or generate password",
+      required: true,
+      generateButton: {
+        text: "Generate",
+        onGenerate: generatePassword,
+      },
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Male", label: "Male" },
+        { value: "Female", label: "Female" },
+      ],
+    },
+    {
+      name: "date_of_birth",
+      label: "Date of Birth",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "phone",
+      label: "Phone Number",
+      type: "tel",
+      placeholder: "Enter phone number",
+      required: true,
+    },
+    {
+      name: "home_address",
+      label: "Home Address",
+      type: "text",
+      placeholder: "Enter home address",
+      required: true,
+    },
+  ],
+  submitText: "Save",
+  cancelText: "Cancel",
+}
+
 export default function NewStudentForm() {
   const router = useRouter()
   const createNewStudent = useCreateStudent().mutateAsync
@@ -35,82 +118,9 @@ export default function NewStudentForm() {
 
   // Create dynamic form config with class field
   const studentFormConfig: NewPersonFormConfig = useMemo(() => ({
+    ...baseStudentFormConfig,
     fields: [
-      {
-        name: "first_name",
-        label: "First Name",
-        type: "text",
-        placeholder: "Enter first name",
-        required: true,
-      },
-      {
-        name: "last_name",
-        label: "Last Name",
-        type: "text",
-        placeholder: "Enter last name",
-        required: true,
-      },
-      {
-        name: "middle_name",
-        label: "Middle Name",
-        type: "text",
-        placeholder: "Enter middle name",
-      },
-      {
-        name: "registration_number",
-        label: "Registration Number (Optional)",
-        type: "text",
-        placeholder: "Enter custom ID or leave empty for auto-generation",
-        required: false,
-      },
-      {
-        name: "email",
-        label: "Email Address",
-        type: "email",
-        placeholder: "Enter email address",
-        required: true,
-      },
-      {
-        name: "password",
-        label: "Password",
-        type: "password-generate",
-        placeholder: "Enter or generate password",
-        required: true,
-        generateButton: {
-          text: "Generate",
-          onGenerate: generatePassword,
-        },
-      },
-      {
-        name: "gender",
-        label: "Gender",
-        type: "select",
-        required: true,
-        options: [
-          { value: "Male", label: "Male" },
-          { value: "Female", label: "Female" },
-        ],
-      },
-      {
-        name: "date_of_birth",
-        label: "Date of Birth",
-        type: "date",
-        required: true,
-      },
-      {
-        name: "phone",
-        label: "Phone Number",
-        type: "tel",
-        placeholder: "Enter phone number",
-        required: true,
-      },
-      {
-        name: "home_address",
-        label: "Home Address",
-        type: "text",
-        placeholder: "Enter home address",
-        required: true,
-      },
+      ...baseStudentFormConfig.fields,
       {
         name: "class_id",
         label: "Class (Optional)",
@@ -123,8 +133,6 @@ export default function NewStudentForm() {
         ],
       },
     ],
-    submitText: "Save",
-    cancelText: "Cancel",
   }), [classOptions])
 
   async function handleCancel() {

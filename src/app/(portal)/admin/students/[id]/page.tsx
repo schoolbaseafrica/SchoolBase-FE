@@ -22,7 +22,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useGetStudent, useUpdateStudent } from "../_hooks/use-students"
 import { StudentsAPI } from "@/lib/students"
-import { studentFormConfig } from "../new/components/new-student-form"
+import { baseStudentFormConfig } from "../new/components/new-student-form"
 import { ItemLoader } from "../../_components/sub-loader"
 import AssignClassDialog from "../_components/assign-class-dialog"
 import { useGetClass } from "../../class-management/_hooks/use-classes"
@@ -219,7 +219,7 @@ export default function EditStudentPage() {
       readonly: true,
     },
     // Map through original fields and modify password field
-    ...studentFormConfig.fields.map((field) => {
+    ...baseStudentFormConfig.fields.map((field) => {
       if (field.name === "password") {
         return {
           ...field,
@@ -241,7 +241,7 @@ export default function EditStudentPage() {
   ]
 
   const editStudentFormConfig = {
-    ...studentFormConfig,
+    ...baseStudentFormConfig,
     fields: editStudentFormFields,
     submitText: "Update",
   }
