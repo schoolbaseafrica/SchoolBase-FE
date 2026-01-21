@@ -16,6 +16,7 @@ import { FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { StudentsAPI } from "@/lib/students"
+import { MissingClassesDialog } from "./missing-classes-dialog"
 
 interface BulkStudentUploadDialogProps {
   open: boolean
@@ -30,6 +31,11 @@ export default function BulkStudentUploadDialog({
 }: BulkStudentUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
+  const [showMissingClassesDialog, setShowMissingClassesDialog] = useState(false)
+  const [validationData, setValidationData] = useState<{
+    missing_classes: Array<{ name: string; arm?: string; student_count: number }>
+  } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
 
@@ -49,6 +55,31 @@ export default function BulkStudentUploadDialog({
       toast.error("Please select a CSV file")
       return
     }
+
+    // First, validate the CSV to check for missing classes
+    setIsValidating(true)
+    try {
+      const validationResponse = await StudentsAPI.validateBulkUpload(file)
+      const validation = validationResponse.data
+
+      // If there are missing classes, show the dialog
+      if (validation.missing_classes && validation.missing_classes.length > 0) {
+        setValidationData(validation)
+        setShowMissingClassesDialog(true)
+        setIsValidating(false)
+        return
+      }
+
+      // No missing classes, proceed with upload
+      await performUpload()
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to validate CSV")
+      setIsValidating(false)
+    }
+  }
+
+  const performUpload = async () => {
+    if (!file) return
 
     setIsLoading(true)
     try {
@@ -70,6 +101,7 @@ export default function BulkStudentUploadDialog({
       setTimeout(() => {
         setOpen(false)
         setFile(null)
+        setValidationData(null)
         if (fileInputRef.current) {
           fileInputRef.current.value = ""
         }
@@ -79,6 +111,16 @@ export default function BulkStudentUploadDialog({
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleClassesCreated = async () => {
+    // Classes have been created, now proceed with upload
+    await performUpload()
+  }
+
+  const handleSkipClasses = async () => {
+    // User chose to skip creating classes, proceed with upload anyway
+    await performUpload()
   }
 
   const handleClose = () => {
@@ -97,9 +139,9 @@ export default function BulkStudentUploadDialog({
           <DialogDescription>
             Upload a CSV file to create multiple students at once.
             <br />
-            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Registration Number, Date of Birth, Gender, Class
+            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Registration Number, Date of Birth, Gender, Home Address (optional), Password, Class (optional), Arm (optional)
             <br />
-            <strong>Note:</strong> All fields except Middle Name are required.
+            <strong>Note:</strong> All fields except Middle Name, Home Address, Class, and Arm are required. If Class is provided, students will be assigned to that class. If the class doesn't exist, you'll be prompted to create it.
           </DialogDescription>
         </DialogHeader>
 
@@ -147,12 +189,23 @@ export default function BulkStudentUploadDialog({
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={!file || isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Upload Students
+          <Button onClick={handleUpload} disabled={!file || isLoading || isValidating}>
+            {(isLoading || isValidating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isValidating ? "Validating..." : "Upload Students"}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Missing Classes Dialog */}
+      {validationData && (
+        <MissingClassesDialog
+          open={showMissingClassesDialog}
+          onOpenChange={setShowMissingClassesDialog}
+          missingClasses={validationData.missing_classes}
+          onClassesCreated={handleClassesCreated}
+          onSkip={handleSkipClasses}
+        />
+      )}
     </Dialog>
   )
 }

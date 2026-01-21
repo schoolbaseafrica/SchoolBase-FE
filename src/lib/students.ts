@@ -182,6 +182,35 @@ export const StudentsAPI = {
     )
   },
 
+  validateBulkUpload: (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    return apiFetch<
+      ResponsePack<{
+        total_students: number
+        students_with_valid_classes: number
+        students_without_classes: number
+        missing_classes: Array<{
+          name: string
+          arm?: string
+          student_count: number
+        }>
+        existing_classes: Array<{
+          name: string
+          arm?: string
+          student_count: number
+        }>
+      }>
+    >(
+      "/students/bulk-upload/validate",
+      {
+        method: "POST",
+        data: formData,
+      },
+      true
+    )
+  },
+
   bulkUpload: (file: File) => {
     const formData = new FormData()
     formData.append("file", file)
