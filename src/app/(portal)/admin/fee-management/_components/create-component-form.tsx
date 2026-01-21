@@ -34,7 +34,7 @@ const feeComponentSchema = z.object({
     .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
   session_id: z.string().uuid("Select a session"),
   term_id: z.string().uuid("Select a term"),
-  class_ids: z.array(z.string().uuid()).min(1, "Select at least one class"),
+  class_ids: z.array(z.string().uuid()).optional().default([]),
 })
 
 type FeeComponentFormValues = z.infer<typeof feeComponentSchema>
@@ -120,7 +120,7 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
       description: values.description ?? "",
       amount: Number(values.amount),
       term_id: values.term_id,
-      class_ids: values.class_ids,
+      class_ids: values.class_ids || [], // Ensure it's always an array (empty for school-wide fees)
     })
     reset()
     setSelectedClassIds([])
@@ -231,7 +231,13 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
 
         {/* Classes */}
         <div className="space-y-1">
-          <Label>Classes</Label>
+          <div className="flex items-center gap-2">
+            <Label>Classes</Label>
+            <span className="text-xs text-gray-500">(Optional)</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-2">
+            Leave empty for school-wide fees, or select specific classes. Individual student fees can be assigned later.
+          </p>
           {loadingClasses ? (
             <p className="text-sm text-gray-500">Loading classes...</p>
           ) : classes?.items?.length ? (
@@ -263,6 +269,11 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
           )}
           {errors.class_ids && (
             <p className="text-xs text-red-500">{errors.class_ids.message}</p>
+          )}
+          {selectedClassIds.length === 0 && (
+            <p className="text-xs text-blue-600 mt-1">
+              ℹ️ This fee will apply to all classes (school-wide)
+            </p>
           )}
         </div>
 
