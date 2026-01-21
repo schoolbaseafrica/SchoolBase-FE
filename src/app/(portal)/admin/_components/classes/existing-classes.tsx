@@ -72,8 +72,8 @@ const ExistingClasses = ({
   return (
     <article className="py-5">
       {/* Header with Search and Toggle */}
-      <div className="relative mb-4 flex items-center justify-between gap-3">
-        <div className="relative max-w-[250px] flex-1">
+      <div className="relative mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-[250px] sm:flex-1">
           <Search className="text-text-secondary absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             type="search"
@@ -84,36 +84,39 @@ const ExistingClasses = ({
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {onToggleArchived && (
             <Button
               variant="outline"
-              size="lg"
+              size="sm"
               onClick={onToggleArchived}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap text-xs sm:text-sm sm:h-10"
             >
               {showArchived ? (
                 <>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Show Active
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Show Active</span>
+                  <span className="sm:hidden">Active</span>
                 </>
               ) : (
                 <>
-                  <Archive className="mr-2 h-4 w-4" />
-                  Show Archived
+                  <Archive className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Show Archived</span>
+                  <span className="sm:hidden">Archived</span>
                 </>
               )}
             </Button>
           )}
 
           {classesData.length > 0 && !showArchived && (
-            <Button asChild size="lg" className="whitespace-nowrap">
+            <Button asChild size="sm" className="whitespace-nowrap text-xs sm:text-sm sm:h-10">
               <Link
                 href="/admin/class-management/class/new"
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5 sm:gap-2"
               >
-                <Plus className="h-4 w-4" />
-                Create Class
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Create Class</span>
+                <span className="sm:hidden">Create</span>
               </Link>
             </Button>
           )}

@@ -453,22 +453,23 @@ export function WhiteboardCanvas({
     <div ref={containerRef} className="flex h-full w-full flex-col">
       {/* Toolbar */}
       {!isReadOnly && (
-        <div className="flex flex-wrap items-center gap-2 border-b bg-gray-50 px-4 py-2">
+        <div className="flex flex-wrap items-center gap-1.5 border-b bg-gray-50 px-2 py-1.5 sm:gap-2 sm:px-4 sm:py-2">
           <Button
             variant={isPenToolActive ? "default" : "outline"}
             size="sm"
             onClick={() => setIsPenToolActive(!isPenToolActive)}
-            className="h-8"
+            className="h-7 text-xs sm:h-8 sm:text-sm"
           >
-            <Pen className="mr-2 h-3 w-3" />
-            Pen Tool
+            <Pen className="mr-1 h-3 w-3 sm:mr-2" />
+            <span className="hidden sm:inline">Pen Tool</span>
+            <span className="sm:hidden">Pen</span>
           </Button>
 
           {isPenToolActive && (
             <>
-              <div className="h-6 w-px bg-gray-300" />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="color" className="text-xs font-medium">
+              <div className="h-5 w-px bg-gray-300 sm:h-6" />
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="color" className="hidden text-xs font-medium sm:block">
                   Color:
                 </Label>
                 <Input
@@ -476,12 +477,12 @@ export function WhiteboardCanvas({
                   type="color"
                   value={strokeColor}
                   onChange={(e) => setStrokeColor(e.target.value)}
-                  className="h-8 w-16 cursor-pointer"
+                  className="h-7 w-12 cursor-pointer sm:h-8 sm:w-16"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label htmlFor="width" className="text-xs font-medium">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="width" className="hidden text-xs font-medium sm:block">
                   Width:
                 </Label>
                 <Input
@@ -491,18 +492,18 @@ export function WhiteboardCanvas({
                   max="20"
                   value={strokeWidth}
                   onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                  className="w-20"
+                  className="w-16 sm:w-20"
                 />
                 <span className="text-xs text-gray-600">{strokeWidth}px</span>
               </div>
 
-              <div className="h-6 w-px bg-gray-300" />
+              <div className="h-5 w-px bg-gray-300 sm:h-6" />
 
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleUndo}
-                className="h-8"
+                className="h-7 sm:h-8"
                 title="Undo last stroke (Ctrl+Z)"
               >
                 <Undo2 className="h-3 w-3" />
@@ -512,11 +513,12 @@ export function WhiteboardCanvas({
                 variant="outline"
                 size="sm"
                 onClick={handleClearDrawings}
-                className="h-8"
+                className="h-7 text-xs sm:h-8 sm:text-sm"
                 title="Clear all drawings"
               >
-                <X className="mr-2 h-3 w-3" />
-                Clear Drawings
+                <X className="mr-1 h-3 w-3 sm:mr-2" />
+                <span className="hidden sm:inline">Clear Drawings</span>
+                <span className="sm:hidden">Clear</span>
               </Button>
             </>
           )}
@@ -533,14 +535,15 @@ export function WhiteboardCanvas({
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="h-8"
+            className="h-7 text-xs sm:h-8 sm:text-sm"
           >
-            <ImageIcon className="mr-2 h-3 w-3" />
-            Upload Image
+            <ImageIcon className="mr-1 h-3 w-3 sm:mr-2" />
+            <span className="hidden sm:inline">Upload Image</span>
+            <span className="sm:hidden">Image</span>
           </Button>
 
           {showVideoInput ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Input
                 placeholder="Paste video URL"
                 value={videoUrl}
@@ -548,9 +551,9 @@ export function WhiteboardCanvas({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleAddVideo()
                 }}
-                className="h-8 w-48 text-xs"
+                className="h-7 w-32 text-xs sm:h-8 sm:w-48"
               />
-              <Button size="sm" onClick={handleAddVideo} className="h-8">
+              <Button size="sm" onClick={handleAddVideo} className="h-7 text-xs sm:h-8 sm:text-sm">
                 Add
               </Button>
               <Button
@@ -560,7 +563,7 @@ export function WhiteboardCanvas({
                   setShowVideoInput(false)
                   setVideoUrl("")
                 }}
-                className="h-8"
+                className="h-7 text-xs sm:h-8 sm:text-sm"
               >
                 Cancel
               </Button>
@@ -570,14 +573,15 @@ export function WhiteboardCanvas({
               variant="outline"
               size="sm"
               onClick={() => setShowVideoInput(true)}
-              className="h-8"
+              className="h-7 text-xs sm:h-8 sm:text-sm"
             >
-              <LinkIcon className="mr-2 h-3 w-3" />
-              Add Video Link
+              <LinkIcon className="mr-1 h-3 w-3 sm:mr-2" />
+              <span className="hidden sm:inline">Add Video Link</span>
+              <span className="sm:hidden">Video</span>
             </Button>
           )}
 
-          <div className="h-6 w-px bg-gray-300" />
+          <div className="h-5 w-px bg-gray-300 sm:h-6" />
 
           {!isReadOnly && onAddTextBox && (
             <>
@@ -585,21 +589,22 @@ export function WhiteboardCanvas({
                 variant="outline"
                 size="sm"
                 onClick={handleAddTextBox}
-                className="h-8"
+                className="h-7 text-xs sm:h-8 sm:text-sm"
               >
-                <Type className="mr-2 h-3 w-3" />
-                Add Text Box
+                <Type className="mr-1 h-3 w-3 sm:mr-2" />
+                <span className="hidden sm:inline">Add Text Box</span>
+                <span className="sm:hidden">Text</span>
               </Button>
-              <div className="h-6 w-px bg-gray-300" />
+              <div className="h-5 w-px bg-gray-300 sm:h-6" />
             </>
           )}
 
           {/* Text Box Style Controls - Only show when a text box is selected */}
           {selectedTextBox && !isReadOnly && onUpdateTextBox && (
             <>
-              <div className="h-6 w-px bg-gray-300" />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="text-size" className="text-xs font-medium">
+              <div className="h-5 w-px bg-gray-300 sm:h-6" />
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="text-size" className="hidden text-xs font-medium sm:block">
                   Size:
                 </Label>
                 <button
@@ -623,7 +628,7 @@ export function WhiteboardCanvas({
                     const newSize = parseInt(e.target.value) || 16
                     onUpdateTextBox(selectedTextBox.id, { fontSize: newSize })
                   }}
-                  className="h-8 w-16 text-center text-xs"
+                  className="h-7 w-12 text-center text-xs sm:h-8 sm:w-16"
                 />
                 <button
                   type="button"
@@ -637,8 +642,8 @@ export function WhiteboardCanvas({
                   +
                 </button>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="text-font" className="text-xs font-medium">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="text-font" className="hidden text-xs font-medium sm:block">
                   Font:
                 </Label>
                 <select
@@ -647,7 +652,7 @@ export function WhiteboardCanvas({
                   onChange={(e) => {
                     onUpdateTextBox(selectedTextBox.id, { fontFamily: e.target.value })
                   }}
-                  className="h-8 rounded border px-2 text-xs"
+                  className="h-7 rounded border px-1.5 text-xs sm:h-8 sm:px-2"
                 >
                   <option value="Arial">Arial</option>
                   <option value="Times New Roman">Times</option>
@@ -657,8 +662,8 @@ export function WhiteboardCanvas({
                   <option value="Comic Sans MS">Comic</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="text-weight" className="text-xs font-medium">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="text-weight" className="hidden text-xs font-medium sm:block">
                   Weight:
                 </Label>
                 <select
@@ -667,15 +672,15 @@ export function WhiteboardCanvas({
                   onChange={(e) => {
                     onUpdateTextBox(selectedTextBox.id, { fontWeight: e.target.value })
                   }}
-                  className="h-8 rounded border px-2 text-xs"
+                  className="h-7 rounded border px-1.5 text-xs sm:h-8 sm:px-2"
                 >
                   <option value="normal">Normal</option>
                   <option value="bold">Bold</option>
                   <option value="lighter">Light</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="text-color" className="text-xs font-medium">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Label htmlFor="text-color" className="hidden text-xs font-medium sm:block">
                   Color:
                 </Label>
                 <Input
@@ -685,7 +690,7 @@ export function WhiteboardCanvas({
                   onChange={(e) => {
                     onUpdateTextBox(selectedTextBox.id, { color: e.target.value })
                   }}
-                  className="h-8 w-16 cursor-pointer"
+                  className="h-7 w-12 cursor-pointer sm:h-8 sm:w-16"
                 />
               </div>
               <div className="h-6 w-px bg-gray-300" />

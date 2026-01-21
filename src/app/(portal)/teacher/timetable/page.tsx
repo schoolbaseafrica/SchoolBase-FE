@@ -104,10 +104,11 @@ export default function TeacherTimetablePage() {
                 <Button
                   variant="outline"
                   onClick={() => router.push(`/teacher/classroom/${selectedClassId}`)}
-                  className="w-full md:w-auto"
+                  className="h-9 w-full text-sm sm:h-10 sm:w-auto sm:text-base"
                 >
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Open Classroom
+                  <BookOpen className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Open Classroom</span>
+                  <span className="sm:hidden">Classroom</span>
                 </Button>
               )}
             </div>
