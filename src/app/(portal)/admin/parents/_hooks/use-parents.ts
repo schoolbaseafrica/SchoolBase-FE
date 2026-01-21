@@ -84,10 +84,20 @@ export function useCreateParent() {
 
   return useMutation({
     mutationFn: (data: CreateParentData) => ParentsAPI.create(data),
-    onSuccess: (newParent) => {
+    onSuccess: async (newParent) => {
+      // Update store instantly for optimistic UI
       addParent(newParent)
-      queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
-      queryClient.refetchQueries({ queryKey: PARENTS_KEY }) // Explicitly refetch
+      
+      // Invalidate and force refetch to ensure fresh data from server
+      await queryClient.invalidateQueries({ 
+        queryKey: PARENTS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: PARENTS_KEY,
+        type: "active"
+      })
+      
       toast.success("Parent created successfully")
     },
     onError: (error) => {
@@ -106,10 +116,24 @@ export function useUpdateParent(id: string) {
 
   return useMutation({
     mutationFn: (data: UpdateParentData) => ParentsAPI.update(id, data),
-    onSuccess: (updatedParent) => {
+    onSuccess: async (updatedParent) => {
+      // Update store instantly for optimistic UI
       updateParent(id, updatedParent)
-      queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
-      queryClient.invalidateQueries({ queryKey: [...PARENTS_KEY, id] })
+      
+      // Invalidate and force refetch to ensure fresh data
+      await queryClient.invalidateQueries({ 
+        queryKey: PARENTS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: [...PARENTS_KEY, id],
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: PARENTS_KEY,
+        type: "active"
+      })
+      
       toast.success("Parent updated successfully")
     },
     onError: (error) => {
@@ -133,13 +157,29 @@ export function useDeleteParent() {
       removeParent(id)
       await queryClient.cancelQueries({ queryKey: PARENTS_KEY })
     },
-    onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
+    onError: async (error) => {
+      // Refetch on error to restore correct state
+      await queryClient.invalidateQueries({ 
+        queryKey: PARENTS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: PARENTS_KEY,
+        type: "active"
+      })
       const message = extractErrorMessage(error)
       toast.error(message)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PARENTS_KEY })
+    onSuccess: async () => {
+      // Force refetch to ensure UI shows current state
+      await queryClient.invalidateQueries({ 
+        queryKey: PARENTS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: PARENTS_KEY,
+        type: "active"
+      })
       toast.success("Parent deleted successfully")
     },
   })

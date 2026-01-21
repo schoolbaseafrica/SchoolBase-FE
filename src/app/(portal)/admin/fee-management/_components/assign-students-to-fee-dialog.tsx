@@ -70,15 +70,19 @@ export function AssignStudentsToFeeDialog({
 
     setLoadingAssigned(true)
     try {
-      const response = await apiFetch<{ data: FeeStudent[] }>(
+      const response = await apiFetch<{ message: string; data: FeeStudent[] }>(
         `/fees/${fee.id}/students`,
         undefined,
         true
       )
-      const assignedIds = new Set(response.data.map((s) => s.id))
+      // Handle response structure: backend returns { message, data: [...] }
+      const students = Array.isArray(response.data) ? response.data : []
+      const assignedIds = new Set(students.map((s) => s.id))
       setAssignedStudentIds(assignedIds)
     } catch (error) {
       console.error("Failed to fetch assigned students:", error)
+      // Set empty set on error to prevent UI issues
+      setAssignedStudentIds(new Set())
     } finally {
       setLoadingAssigned(false)
     }
@@ -142,10 +146,18 @@ export function AssignStudentsToFeeDialog({
 
       // Clear selections
       setSelectedStudentIds(new Set())
+      
+      // Call onSuccess to refresh fee list in parent component
       onSuccess?.()
-      onOpenChange(false)
+      
+      // Don't close dialog immediately, let user see the updated state
+      // User can close manually or we can close after a short delay
+      setTimeout(() => {
+        onOpenChange(false)
+      }, 500)
     } catch (error) {
       console.error("Failed to update student assignments:", error)
+      // Don't close on error
     }
   }
 
@@ -153,12 +165,15 @@ export function AssignStudentsToFeeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent 
+        className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+        aria-describedby="assign-students-description"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Assign Students to Fee
           </DialogTitle>
-          <DialogDescription className="text-sm">
+          <DialogDescription id="assign-students-description" className="text-sm">
             Select or deselect students to assign or unassign them from "{fee?.component_name}".
             Already assigned students are shown at the top.
           </DialogDescription>

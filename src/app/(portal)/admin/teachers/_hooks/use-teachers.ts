@@ -142,12 +142,24 @@ export function useUpdateTeacher(id: string) {
 
   return useMutation({
     mutationFn: (data: UpdateTeacherData) => TeachersAPI.update(id, data),
-    onSuccess: (updatedTeacher) => {
-      // Update store instantly
+    onSuccess: async (updatedTeacher) => {
+      // Update store instantly for optimistic UI
       updateTeacher(id, updatedTeacher)
 
-      queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
-      queryClient.invalidateQueries({ queryKey: [...TEACHERS_KEY, id] })
+      // Invalidate and force refetch to ensure fresh data
+      await queryClient.invalidateQueries({ 
+        queryKey: TEACHERS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: [...TEACHERS_KEY, id],
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: TEACHERS_KEY,
+        type: "active"
+      })
+      
       toast.success("Teacher updated successfully")
     },
     onError: (error) => {
@@ -176,15 +188,31 @@ export function useDeleteTeacher() {
       await queryClient.cancelQueries({ queryKey: TEACHERS_KEY })
     },
 
-    onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
+    onError: async (error) => {
+      // Refetch on error to restore correct state
+      await queryClient.invalidateQueries({ 
+        queryKey: TEACHERS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: TEACHERS_KEY,
+        type: "active"
+      })
 
       const message = extractErrorMessage(error)
       toast.error(message)
     },
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TEACHERS_KEY })
+    onSuccess: async () => {
+      // Force refetch to ensure UI shows current state
+      await queryClient.invalidateQueries({ 
+        queryKey: TEACHERS_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: TEACHERS_KEY,
+        type: "active"
+      })
       toast.success("Teacher deleted successfully")
     },
   })

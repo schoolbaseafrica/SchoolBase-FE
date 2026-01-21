@@ -71,7 +71,7 @@ export const useCreateFee = () => {
   return useMutation({
     mutationFn: (data: CreateFeeComponentData) => FeesAPI.create(data),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       // Handle both response structures for backward compatibility
       const fee = res.data || (res as any).fee
       if (fee && fee.id) {
@@ -83,8 +83,18 @@ export const useCreateFee = () => {
       } else {
         console.warn("[useCreateFee] Invalid fee response structure:", res)
       }
+      
+      // Invalidate and force refetch to ensure fresh data from server
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success("Fee component created successfully")
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
@@ -103,7 +113,7 @@ export const useUpdateFee = (id: string) => {
   return useMutation({
     mutationFn: (data: UpdateFeeComponentData) => FeesAPI.update(id, data),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       // Handle both response structures for backward compatibility
       const fee = res.data || (res as any).fee
       if (fee && id) {
@@ -115,8 +125,22 @@ export const useUpdateFee = (id: string) => {
       } else {
         console.warn("[useUpdateFee] Invalid fee response structure:", res)
       }
+      
+      // Invalidate and force refetch to ensure fresh data
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: [...FEES_KEY, id],
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success("Fee component updated successfully")
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
@@ -135,10 +159,20 @@ export const useDeactivateFee = (id: string) => {
   return useMutation({
     mutationFn: (reason: string) => FeesAPI.deactivate(id, reason),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (res.data) updateFee(id, res.data)
+      
+      // Invalidate and force refetch to ensure fresh data
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success("Fee component deactivated successfully")
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
@@ -157,7 +191,7 @@ export const useAactivateFee = (id: string) => {
   return useMutation({
     mutationFn: (reason: string) => FeesAPI.activate(id, reason),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       // Handle both response structures for backward compatibility
       const fee = res.data || (res as any).fee
       if (fee && id) {
@@ -169,8 +203,18 @@ export const useAactivateFee = (id: string) => {
       } else {
         console.warn("[useAactivateFee] Invalid fee response structure:", res)
       }
+      
+      // Invalidate and force refetch to ensure fresh data
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success("Fee component activated successfully")
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
@@ -188,15 +232,28 @@ export const useAssignStudentsToFee = (feeId: string) => {
   return useMutation({
     mutationFn: (studentIds: string[]) => FeesAPI.assignStudents(feeId, studentIds),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       const { assigned, already_assigned } = res.data
       let message = `Successfully assigned fee to ${assigned} student(s).`
       if (already_assigned > 0) {
         message += ` ${already_assigned} student(s) were already assigned.`
       }
+      
+      // Invalidate and force refetch to ensure fresh data (including is_assigned status)
+      await queryClient.invalidateQueries({ 
+        queryKey: [...FEES_KEY, feeId],
+        refetchType: "active"
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success(message)
-      queryClient.invalidateQueries({ queryKey: [...FEES_KEY, feeId] })
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
@@ -214,11 +271,24 @@ export const useUnassignStudentsFromFee = (feeId: string) => {
   return useMutation({
     mutationFn: (studentIds: string[]) => FeesAPI.unassignStudents(feeId, studentIds),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       const { unassigned } = res.data
+      
+      // Invalidate and force refetch to ensure fresh data (including is_assigned status)
+      await queryClient.invalidateQueries({ 
+        queryKey: [...FEES_KEY, feeId],
+        refetchType: "active"
+      })
+      await queryClient.invalidateQueries({ 
+        queryKey: FEES_KEY,
+        refetchType: "active"
+      })
+      await queryClient.refetchQueries({ 
+        queryKey: FEES_KEY,
+        type: "active"
+      })
+      
       toast.success(`Successfully unassigned fee from ${unassigned} student(s).`)
-      queryClient.invalidateQueries({ queryKey: [...FEES_KEY, feeId] })
-      queryClient.invalidateQueries({ queryKey: FEES_KEY })
     },
 
     onError: (err) => {
