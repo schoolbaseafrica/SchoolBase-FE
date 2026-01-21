@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Mic, Square, Loader2 } from "lucide-react"
+import { Send, Mic, Square, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import { useClassroomMessages, useCreateMessage } from "../_hooks/use-classroom-messages"
 import { ClassroomMessage } from "@/lib/classroom-message"
 import { ClassroomMessageAPI } from "@/lib/classroom-message"
@@ -22,9 +22,18 @@ interface ClassroomChatProps {
   isReadOnly?: boolean
   senderType?: "teacher" | "student" // Optional - backend determines from token
   senderId?: string // Optional - backend determines from token
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
+  showCollapseButton?: boolean
 }
 
-export function ClassroomChat({ classId, isReadOnly = false }: ClassroomChatProps) {
+export function ClassroomChat({ 
+  classId, 
+  isReadOnly = false,
+  isCollapsed = false,
+  onToggleCollapse,
+  showCollapseButton = false,
+}: ClassroomChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [textInput, setTextInput] = useState("")
@@ -245,16 +254,47 @@ export function ClassroomChat({ classId, isReadOnly = false }: ClassroomChatProp
     return false
   }
 
+  if (isCollapsed && showCollapseButton) {
+    return (
+      <div className="flex h-full flex-col border-t md:border-t-0 md:border-l bg-white">
+        <div className="flex items-center justify-center py-3 border-b bg-gray-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+            className="h-8 w-8 p-0 hover:bg-gray-200"
+            title="Expand chat"
+          >
+            <MessageSquare className="h-4 w-4 text-gray-600" />
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-full flex-col border-l bg-white">
+    <div className="flex h-full flex-col border-t md:border-t-0 md:border-l bg-white rounded-lg md:shadow-sm">
       {/* Chat Header */}
-      <div className="border-b bg-gray-50 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-900">Class Chat</h2>
-        <p className="text-xs text-gray-500">Messages with students</p>
+      <div className="flex items-center justify-between border-b bg-gray-50 px-3 py-2.5 rounded-t-lg">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-gray-900 truncate">Class Chat</h2>
+          <p className="text-xs text-gray-500 truncate">Messages with students</p>
+        </div>
+        {showCollapseButton && onToggleCollapse && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleCollapse}
+            className="h-8 w-8 p-0 flex-shrink-0 ml-2"
+            title="Collapse chat"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="flex-1 space-y-4 overflow-y-auto p-3 md:p-4 pb-2 md:pb-4">
         {isLoading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -348,7 +388,7 @@ export function ClassroomChat({ classId, isReadOnly = false }: ClassroomChatProp
 
       {/* Input Area */}
       {!isReadOnly && (
-        <div className="border-t bg-white p-4">
+        <div className="border-t bg-white p-3 md:p-4 pt-2 md:pt-4 rounded-b-lg">
           {/* Recording indicator */}
           {isRecording && (
             <div className="mb-2 flex items-center justify-between rounded-lg bg-red-50 px-3 py-2">

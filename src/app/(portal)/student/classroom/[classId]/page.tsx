@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, MessageSquare, X } from "lucide-react"
 import {
   useWhiteboard,
   useUpdateWhiteboard,
@@ -28,6 +28,11 @@ export default function StudentClassroomPage() {
   const [videosData, setVideosData] = useState<Record<string, MediaPosition>>({})
   const [textBoxes, setTextBoxes] = useState<TextBoxData[]>([])
   const hasInitializedRef = useRef(false)
+
+  // Mobile chat sidebar state
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  // Desktop chat collapse state
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false)
 
   // Log whiteboard query state
   useEffect(() => {
@@ -146,10 +151,10 @@ export default function StudentClassroomPage() {
   if (error) {
     return (
       <div className="flex h-full w-full flex-col">
-        <div className="flex items-center justify-between border-b bg-white px-4 py-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+        <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="h-8 px-2 md:px-3">
+            <ArrowLeft className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Back</span>
           </Button>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -167,13 +172,30 @@ export default function StudentClassroomPage() {
   return (
     <div className="fixed inset-0 flex h-screen w-screen flex-col bg-white">
       {/* Minimal header with back button */}
-      <div className="flex items-center justify-between border-b bg-white px-4 py-2">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+      <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="h-8 px-2 md:px-3">
+          <ArrowLeft className="h-4 w-4 md:mr-2" />
+          <span className="hidden md:inline">Back</span>
         </Button>
-        <h1 className="text-sm font-medium text-gray-600">Virtual Classroom</h1>
-        <div className="w-16" /> {/* Spacer for centering */}
+        <h1 className="text-xs font-medium text-gray-600 md:text-sm">Virtual Classroom</h1>
+        {/* Chat toggle button - visible on mobile */}
+        <div className="flex md:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="h-8 w-8 p-0"
+            title={isChatOpen ? "Close chat" : "Open chat"}
+          >
+            {isChatOpen ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <MessageSquare className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        {/* Desktop spacer */}
+        <div className="hidden md:block w-16" />
       </div>
 
       {isLoading || !hasInitializedRef.current ? (
@@ -183,8 +205,8 @@ export default function StudentClassroomPage() {
         </div>
       ) : (
         <div className="relative flex flex-1 overflow-hidden">
-          {/* Whiteboard - takes up remaining space */}
-          <div className="flex-1 overflow-hidden">
+          {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
+          <div className={`flex-1 overflow-hidden ${isChatOpen ? 'hidden md:block' : ''}`}>
             <WhiteboardCanvas
               canvasState={canvasState}
               onSave={handleCanvasSave}
@@ -207,9 +229,15 @@ export default function StudentClassroomPage() {
               onClearAll={() => {}}
             />
           </div>
-          {/* Chat sidebar */}
-          <div className="w-80 flex-shrink-0">
-            <ClassroomChat classId={classId} isReadOnly={false} />
+          {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
+          <div className={`${isChatOpen ? 'block' : 'hidden'} md:block ${isChatOpen ? 'w-full' : ''} ${isChatCollapsed ? 'md:w-12' : 'md:w-80'} flex-shrink-0 absolute md:relative inset-0 md:inset-auto z-10 md:z-auto bg-white md:bg-transparent transition-all duration-300 md:py-2`}>
+            <ClassroomChat 
+              classId={classId} 
+              isReadOnly={false}
+              isCollapsed={isChatCollapsed}
+              onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
+              showCollapseButton={true}
+            />
           </div>
         </div>
       )}
