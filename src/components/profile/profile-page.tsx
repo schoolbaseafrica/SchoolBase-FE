@@ -35,27 +35,36 @@ export const ProfilePage = ({ profile, role }: ProfilePageProps) => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
-          <p className="text-muted-foreground">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Profile</h2>
+          <p className="text-sm text-muted-foreground sm:text-base">
             View and manage your profile information
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button variant="outline" size="lg" onClick={handleBackToDashboard}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleBackToDashboard}
+            className="w-full text-xs sm:w-auto sm:h-10 sm:text-sm"
+          >
             Back to Dashboard
           </Button>
-          <Button size="lg" onClick={handleEditProfile} className="gap-2">
-            <Edit className="h-4 w-4" />
+          <Button 
+            size="sm" 
+            onClick={handleEditProfile} 
+            className="w-full gap-2 text-xs sm:w-auto sm:h-10 sm:text-sm"
+          >
+            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Edit Profile
           </Button>
         </div>
       </div>
 
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="border-background h-32 w-32 border-4 shadow-lg">
@@ -86,10 +95,10 @@ export const ProfilePage = ({ profile, role }: ProfilePageProps) => {
             <div className="flex-1 space-y-6 md:pl-8">
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Personal Information</CardTitle>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-sm font-semibold sm:text-base">Personal Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 p-4 sm:p-6">
                     <div className="flex items-center gap-3">
                       <Mail className="text-muted-foreground h-4 w-4" />
                       <div>
@@ -127,10 +136,10 @@ export const ProfilePage = ({ profile, role }: ProfilePageProps) => {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Account Information</CardTitle>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-sm font-semibold sm:text-base">Account Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 p-4 sm:p-6">
                     <div>
                       <p className="text-muted-foreground text-sm">Account Status</p>
                       <Badge

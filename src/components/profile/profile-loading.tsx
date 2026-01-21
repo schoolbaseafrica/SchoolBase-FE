@@ -3,10 +3,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export const ProfileLoading = () => {
   return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-2 h-4 w-64" />
+    <div className="space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="space-y-1">
+        <Skeleton className="h-7 w-32 sm:h-8 sm:w-48" />
+        <Skeleton className="h-4 w-48 sm:w-64" />
       </div>
 
       <Card>
