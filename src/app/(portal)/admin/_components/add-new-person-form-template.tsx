@@ -264,7 +264,7 @@ export const NewPersonFormBuilder: React.FC<FormBuilderProps> = ({
         return (
           <div>
             <Select
-              value={formData[field.name] as string}
+              value={(formData[field.name] as string) || undefined}
               required={field.required}
               onValueChange={(value) => {
                 setFormData((prev) => ({ ...prev, [field.name]: value }))

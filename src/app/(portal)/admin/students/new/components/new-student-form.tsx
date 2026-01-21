@@ -128,7 +128,7 @@ export default function NewStudentForm() {
         required: false,
         placeholder: "Select a class",
         options: [
-          { value: "", label: "None (Unassigned)" },
+          { value: "__none__", label: "None (Unassigned)" },
           ...classOptions,
         ],
       },
@@ -152,7 +152,7 @@ export default function NewStudentForm() {
       phone: formData.phone as string,
       home_address: formData.home_address as string,
       is_active: true,
-      class_id: formData.class_id && (formData.class_id as string).trim() !== "" 
+      class_id: formData.class_id && (formData.class_id as string) !== "__none__" 
         ? (formData.class_id as string) 
         : undefined,
     }
