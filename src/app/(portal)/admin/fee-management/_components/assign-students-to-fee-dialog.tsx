@@ -76,14 +76,27 @@ export function AssignStudentsToFeeDialog({
         undefined,
         true
       )
+      
+      // Debug: Log full response structure
+      console.log("[AssignStudentsDialog] Raw API response:", {
+        fullResponse: response,
+        responseType: typeof response,
+        isArray: Array.isArray(response),
+        hasData: !!(response as any)?.data,
+        dataType: typeof (response as any)?.data,
+        dataIsArray: Array.isArray((response as any)?.data),
+        dataLength: Array.isArray((response as any)?.data) ? (response as any).data.length : "not array",
+        responseKeys: response ? Object.keys(response as any) : [],
+      })
+      
       // Handle response structure: backend returns { message, data: [...] }
-      const students = Array.isArray(response.data) ? response.data : []
+      const students = Array.isArray((response as any)?.data) ? (response as any).data : []
       const assignedIds = new Set(students.map((s) => s.id))
       
       console.log("[AssignStudentsDialog] Fetched assigned students:", {
         fee_id: fee.id,
         fee_name: fee.component_name,
-        response_data: response.data,
+        response_data: (response as any)?.data,
         students_count: students.length,
         assigned_ids: Array.from(assignedIds),
         student_details: students.map(s => ({ id: s.id, name: s.name }))
