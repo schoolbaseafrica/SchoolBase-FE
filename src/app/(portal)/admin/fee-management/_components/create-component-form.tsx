@@ -34,10 +34,17 @@ const feeComponentSchema = z.object({
     .refine((v) => Number(v) > 0, "Amount must be greater than 0"),
   session_id: z.string().uuid("Select a session"),
   term_id: z.string().uuid("Select a term"),
-  class_ids: z.array(z.string().uuid()).default([]),
+  class_ids: z.array(z.string().uuid()).min(0),
 })
 
-type FeeComponentFormValues = z.infer<typeof feeComponentSchema>
+type FeeComponentFormValues = {
+  component_name: string
+  description?: string
+  amount: string
+  session_id: string
+  term_id: string
+  class_ids: string[]
+}
 
 // Add onSuccess prop
 interface CreateComponentFormProps {

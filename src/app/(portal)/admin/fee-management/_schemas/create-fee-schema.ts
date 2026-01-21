@@ -12,9 +12,7 @@ export const createFeeComponentSchema = z.object({
 
   term_id: z.string().uuid("Invalid term selected"),
 
-  class_ids: z
-    .array(z.string().uuid("Invalid class ID"))
-    .default([]),
+  class_ids: z.array(z.string().uuid("Invalid class ID")),
 })
 
 export type CreateFeeComponentSchema = z.infer<typeof createFeeComponentSchema>
