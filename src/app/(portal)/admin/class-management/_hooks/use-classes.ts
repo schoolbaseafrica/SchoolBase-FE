@@ -46,6 +46,7 @@ export const useGetClassesInfo = (params?: {
     // select: (data) => data.data, // Already returned data in queryFn
     refetchOnWindowFocus: false,
     refetchOnMount: true, // Always refetch when component mounts to get fresh data after mutations
+    staleTime: 0, // Consider data stale immediately to allow refetching
     enabled: !isSuperAdmin, // Disable for super admin
   })
 

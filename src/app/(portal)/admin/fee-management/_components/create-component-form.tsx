@@ -22,6 +22,8 @@ import { useCreateFee as useCreateFeeComponent } from "../_hooks/use-fees"
 import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import { useAcademicSessions } from "../../class-management/session/_hooks/use-session"
 import { useAcademicTermsForSession } from "../../class-management/_hooks/use-academic-term"
+import { useQueryClient } from "@tanstack/react-query"
+import { CLASS_KEYS } from "../../class-management/_hooks/use-classes"
 import { z } from "zod"
 
 // ---------------- Zod Schema ----------------
@@ -76,13 +78,15 @@ type FeeComponentFormValues = {
 // Add onSuccess prop
 interface CreateComponentFormProps {
   onSuccess?: () => void
+  open?: boolean
 }
 
 // ---------------- Component ----------------
-export default function CreateComponentForm({ onSuccess }: CreateComponentFormProps) {
+export default function CreateComponentForm({ onSuccess, open }: CreateComponentFormProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<string>("")
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([])
+  const queryClient = useQueryClient()
 
   // Sessions
   const { data: sessions, isLoading: loadingSessions } = useAcademicSessions()
@@ -94,8 +98,17 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
     isError: termsError,
   } = useAcademicTermsForSession(selectedSession)
 
-  // Classes
+  // Classes - refetch when drawer opens to ensure fresh data
   const { data: classes, isLoading: loadingClasses } = useGetClassesInfo()
+
+  // Refetch classes when drawer opens to ensure fresh data
+  useEffect(() => {
+    if (open) {
+      // Invalidate and refetch classes to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: CLASS_KEYS.all, exact: false })
+      queryClient.refetchQueries({ queryKey: CLASS_KEYS.all, exact: false, type: "active" })
+    }
+  }, [open, queryClient])
 
   const toggleClass = (id: string, checked: boolean) => {
     if (checked) {

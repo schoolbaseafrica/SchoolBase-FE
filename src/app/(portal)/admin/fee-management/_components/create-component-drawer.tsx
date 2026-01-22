@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer"
 import CreateComponentForm from "./create-component-form"
 
 type Props = {
@@ -11,15 +11,18 @@ type Props = {
 const CreateComponentDrawer = ({ open, onOpenChange }: Props) => {
   return (
     <Drawer direction="right" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="flex max-h-screen flex-col">
+      <DrawerContent className="flex max-h-screen flex-col" aria-describedby="add-fee-description">
         <DrawerHeader className="shrink-0">
           <DrawerTitle className="border-b px-5 pb-5 text-2xl font-normal text-[#313131]">
             Add Fee
           </DrawerTitle>
+          <DrawerDescription id="add-fee-description" className="sr-only">
+            Create a new fee component and assign it to classes or students
+          </DrawerDescription>
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto px-4 pb-6">
-          <CreateComponentForm onSuccess={() => onOpenChange(false)} />
+          <CreateComponentForm onSuccess={() => onOpenChange(false)} open={open} />
         </div>
       </DrawerContent>
     </Drawer>
