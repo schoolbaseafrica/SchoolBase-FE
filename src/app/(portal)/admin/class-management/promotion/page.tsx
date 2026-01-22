@@ -120,7 +120,7 @@ export default function PromotionPage() {
   return (
     <div className="space-y-6 px-2 py-4 lg:px-4">
       <DashboardTitle
-        title="Promote Students"
+        heading="Promote Students"
         description="Move students from classes in one academic session to classes in the next. Configure arm mappings below."
       />
 
