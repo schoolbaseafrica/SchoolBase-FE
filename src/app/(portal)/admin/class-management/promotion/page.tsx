@@ -19,6 +19,8 @@ import { Plus, Trash2, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { ClassItem } from "@/lib/classes"
+import { PromotionPreviewDialog } from "./_components/promotion-preview-dialog"
+import type { PromotionPreviewPayload } from "@/lib/classes"
 
 type MappingRow = { sourceClassId: string; targetClassId: string }
 
@@ -36,6 +38,8 @@ export default function PromotionPage() {
   const [sourceSessionId, setSourceSessionId] = useState<string>("")
   const [targetSessionId, setTargetSessionId] = useState<string>("")
   const [mappings, setMappings] = useState<MappingRow[]>([])
+  const [previewData, setPreviewData] = useState<PromotionPreviewPayload | null>(null)
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
 
   const sessions = useMemo(() => sessionsData?.data ?? [], [sessionsData])
   const allClasses = useMemo(() => classesData?.items ?? [], [classesData])
@@ -111,13 +115,16 @@ export default function PromotionPage() {
     if (!canPreview) return
     try {
       const res = await previewMutation.mutateAsync(previewPayload)
-      const totalToPromote = res.mappings.reduce((s, m) => s + m.toPromote, 0)
-      const totalSkip = res.mappings.reduce((s, m) => s + m.alreadyInTarget, 0)
-      const errs = res.mappings.flatMap((m) => m.errors)
-      if (errs.length) {
-        toast.warning(`Preview: ${totalToPromote} to promote, ${totalSkip} to skip. Validation issues: ${errs.join("; ")}`)
+      // The mutation already extracts the preview data correctly
+      if (res && res.mappings) {
+        setPreviewData(res as PromotionPreviewPayload)
+        setPreviewDialogOpen(true)
       } else {
-        toast.success(`Preview: ${totalToPromote} students will be promoted, ${totalSkip} already in target (will skip).`)
+        // Fallback to toast if data structure is unexpected
+        const mappings = res.mappings || []
+        const totalToPromote = mappings.reduce((s: number, m: any) => s + (m.toPromote || 0), 0)
+        const totalSkip = mappings.reduce((s: number, m: any) => s + (m.alreadyInTarget || 0), 0)
+        toast.info(`Preview: ${totalToPromote} to promote, ${totalSkip} to skip`)
       }
     } catch {
       // Error toast handled in mutation
@@ -336,6 +343,15 @@ export default function PromotionPage() {
         </CardContent>
       </Card>
       </div>
+
+      {/* Preview Dialog */}
+      <PromotionPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        previewData={previewData}
+        sourceSessionName={sessions.find((s) => s.id === sourceSessionId)?.name}
+        targetSessionName={sessions.find((s) => s.id === targetSessionId)?.name}
+      />
     </div>
   )
 }
