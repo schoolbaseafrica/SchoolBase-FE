@@ -1,5 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ClassesAPI, CreateClassData, UpdateClassData } from "@/lib/classes"
+import {
+  ClassesAPI,
+  CreateClassData,
+  UpdateClassData,
+  PromotionPreviewPayload,
+  PromotionExecutePayload,
+} from "@/lib/classes"
 import { toast } from "sonner"
 // import { AxiosError } from "axios"
 import { extractErrorMessage } from "@/lib/error-handler"
@@ -250,6 +256,76 @@ export const useRemoveStudentFromClass = (classID: string) => {
       await qc.invalidateQueries({ queryKey: ["class_students", classID] })
       await qc.invalidateQueries({ queryKey: ["students"] })
       await qc.refetchQueries({ queryKey: ["class_students", classID] })
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err))
+    },
+  })
+}
+
+function extractPromotionPreview(res: unknown): PromotionPreviewPayload {
+  const r = res as any
+  const data = r?.data ?? r
+  return {
+    sourceSessionId: data.sourceSessionId ?? "",
+    targetSessionId: data.targetSessionId ?? "",
+    mappings: data.mappings ?? [],
+    errors: data.errors ?? [],
+  }
+}
+
+function extractPromotionExecute(res: unknown): PromotionExecutePayload {
+  const r = res as any
+  const data = r?.data ?? r
+  return {
+    promoted: data.promoted ?? 0,
+    skipped: data.skipped ?? 0,
+    failed: data.failed ?? 0,
+    details: data.details ?? [],
+  }
+}
+
+export const usePromotionPreview = () => {
+  return useMutation({
+    mutationFn: async (body: {
+      sourceSessionId: string
+      targetSessionId: string
+      armMappings: { sourceClassId: string; targetClassId: string }[]
+    }) => {
+      const res = await ClassesAPI.promotionPreview(body)
+      return extractPromotionPreview(res)
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err))
+    },
+  })
+}
+
+export const usePromotionExecute = () => {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (body: {
+      sourceSessionId: string
+      targetSessionId: string
+      armMappings: { sourceClassId: string; targetClassId: string }[]
+    }) => {
+      const res = await ClassesAPI.promotionExecute(body)
+      return extractPromotionExecute(res)
+    },
+    onSuccess: async (payload) => {
+      const { promoted, skipped, failed } = payload
+      const parts: string[] = []
+      if (promoted > 0) parts.push(`${promoted} promoted`)
+      if (skipped > 0) parts.push(`${skipped} skipped (already in target)`)
+      if (failed > 0) parts.push(`${failed} failed`)
+      toast.success(
+        parts.length ? `Promotion complete. ${parts.join(". ")}.` : "Promotion complete."
+      )
+      await qc.invalidateQueries({ queryKey: CLASS_KEYS.all })
+      await qc.invalidateQueries({ queryKey: ["class_students"] })
+      await qc.invalidateQueries({ queryKey: ["students"] })
+      await qc.refetchQueries({ queryKey: CLASS_KEYS.all, type: "active" })
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err))

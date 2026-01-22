@@ -191,6 +191,62 @@ export const ClassesAPI = {
   },
 
   count: () => apiFetch<ResponsePack<{ total: number }>>("/classes/count", {}, true),
+
+  /** Promotion: preview which students will be promoted per arm mapping */
+  promotionPreview: (body: {
+    sourceSessionId: string
+    targetSessionId: string
+    armMappings: { sourceClassId: string; targetClassId: string }[]
+  }) =>
+    apiFetch<{
+      message?: string
+      data?: PromotionPreviewPayload
+      sourceSessionId?: string
+      targetSessionId?: string
+      mappings?: PromotionMapping[]
+      errors?: string[]
+    }>("/classes/promotion/preview", { method: "POST", data: body }, true),
+
+  /** Promotion: execute promotion */
+  promotionExecute: (body: {
+    sourceSessionId: string
+    targetSessionId: string
+    armMappings: { sourceClassId: string; targetClassId: string }[]
+  }) =>
+    apiFetch<{
+      message?: string
+      data?: PromotionExecutePayload
+      promoted?: number
+      skipped?: number
+      failed?: number
+      details?: { sourceClassId: string; targetClassId: string; promoted: number; skipped: number; failed: number }[]
+    }>("/classes/promotion/execute", { method: "POST", data: body }, true),
+}
+
+export type PromotionMapping = {
+  sourceClassId: string
+  targetClassId: string
+  sourceClassName: string
+  targetClassName: string
+  toPromote: number
+  toPromoteStudentIds: string[]
+  alreadyInTarget: number
+  alreadyInTargetStudentIds: string[]
+  errors: string[]
+}
+
+export type PromotionPreviewPayload = {
+  sourceSessionId: string
+  targetSessionId: string
+  mappings: PromotionMapping[]
+  errors: string[]
+}
+
+export type PromotionExecutePayload = {
+  promoted: number
+  skipped: number
+  failed: number
+  details: { sourceClassId: string; targetClassId: string; promoted: number; skipped: number; failed: number }[]
 }
 
 export type ClassSubjectsResponse = {
