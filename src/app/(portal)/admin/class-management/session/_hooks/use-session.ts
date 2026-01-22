@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   AcademicSession,
@@ -68,7 +69,8 @@ export function useActiveAcademicSession() {
       return await AcademicSessionAPI.getActive()
     },
     refetchOnWindowFocus: false,
-    staleTime: 20 * 60 * 1000, // 20 minutes
+    staleTime: 0, // Always consider stale to allow immediate refetch after activation
+    refetchOnMount: true, // Always refetch when component mounts
     enabled: !isSuperAdmin, // Disable for super admin
     retry: (failureCount, error: any) => {
       // Don't retry if the result is null (no active session)
@@ -109,26 +111,29 @@ export function useActivateAcademicSession() {
       
       console.log("Queries invalidated, now refetching...") // Debug log
       
-      // Force refetch all active queries and wait for them to complete
-      const refetchResults = await Promise.all([
+      // Force refetch active session FIRST (most important - other components depend on this)
+      await queryClient.refetchQueries({ 
+        queryKey: ACTIVE_SESSION_KEY,
+      })
+      
+      // Then refetch sessions list
+      await queryClient.refetchQueries({ 
+        queryKey: ACADEMIC_SESSIONS_KEY,
+        exact: false,
+      })
+      
+      // Invalidate AND refetch queries that depend on active session (classes, terms, etc.)
+      // This ensures they refetch with the new active session immediately
+      await Promise.all([
         queryClient.refetchQueries({ 
-          queryKey: ACADEMIC_SESSIONS_KEY,
+          queryKey: ["classes"],
           exact: false,
         }),
         queryClient.refetchQueries({ 
-          queryKey: ACTIVE_SESSION_KEY,
-        })
+          queryKey: ["academic-terms"],
+          exact: false,
+        }),
       ])
-      
-      // Check what was refetched
-      const allQueries = queryClient.getQueriesData({ queryKey: ACADEMIC_SESSIONS_KEY, exact: false })
-      console.log("After refetch - all queries:", allQueries) // Debug log
-      allQueries.forEach(([key, value]: [any, any]) => {
-        if (value?.data) {
-          const session = value.data.find((s: AcademicSession) => s.id === id)
-          console.log(`Query ${key} - session ${id} status:`, session?.status) // Debug log
-        }
-      })
       
       console.log("Queries refetched successfully") // Debug log
     },
@@ -136,11 +141,13 @@ export function useActivateAcademicSession() {
 }
 
 export function useActiveAcademicSessionFromList() {
-  const { data, isLoading, isError } = useAcademicSessions()
+  const { data, isLoading, isError } = useAcademicSessions({ limit: 100 })
 
-  const active = data?.data.find(
-    (session) => session.isActive || session.status === "Active"
-  )
+  const active = useMemo(() => {
+    return data?.data.find(
+      (session) => session.isActive || session.status === "Active"
+    )
+  }, [data?.data])
 
   return {
     data: active,
