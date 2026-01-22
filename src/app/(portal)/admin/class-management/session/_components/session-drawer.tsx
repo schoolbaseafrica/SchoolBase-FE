@@ -39,13 +39,15 @@ export default function SessionDrawer({ open, onClose, session }: Props) {
   const handleActivate = async () => {
     if (!session) return
     try {
-      const result = await activateMutation.mutateAsync(session.id)
-      console.log("Activate result:", result) // Debug log
-      console.log("Session status in result:", result?.status) // Debug log
+      // Wait for mutation to complete (including refetch)
+      await activateMutation.mutateAsync(session.id)
+      console.log("Activate mutation completed") // Debug log
       
       toast.success(`Session "${session.name}" has been activated successfully.`)
-      // Close drawer - optimistic update should have already updated the UI
-      onClose()
+      // Close drawer after a brief delay to allow UI to update
+      setTimeout(() => {
+        onClose()
+      }, 200)
     } catch (error) {
       console.error("Activate error:", error) // Debug log
       toast.error(
