@@ -27,7 +27,17 @@ const SessionsPage = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "inactive" | "archived">("all")
 
-  const sessions = useMemo(() => data?.data ?? [], [data])
+  const sessions = useMemo(() => {
+    const sessionsList = data?.data ?? []
+    // Debug log to see what sessions we have
+    if (process.env.NODE_ENV === "development") {
+      console.log("SessionsPage - sessions data:", sessionsList)
+      sessionsList.forEach((s) => {
+        console.log(`Session ${s.id} (${s.name}): status = ${s.status}`)
+      })
+    }
+    return sessionsList
+  }, [data])
 
   const filteredSessions = useMemo(() => {
     let items = sessions

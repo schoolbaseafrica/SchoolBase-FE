@@ -110,7 +110,7 @@ export function useActivateAcademicSession() {
       console.log("Queries invalidated, now refetching...") // Debug log
       
       // Force refetch all active queries and wait for them to complete
-      await Promise.all([
+      const refetchResults = await Promise.all([
         queryClient.refetchQueries({ 
           queryKey: ACADEMIC_SESSIONS_KEY,
           exact: false,
@@ -119,6 +119,16 @@ export function useActivateAcademicSession() {
           queryKey: ACTIVE_SESSION_KEY,
         })
       ])
+      
+      // Check what was refetched
+      const allQueries = queryClient.getQueriesData({ queryKey: ACADEMIC_SESSIONS_KEY, exact: false })
+      console.log("After refetch - all queries:", allQueries) // Debug log
+      allQueries.forEach(([key, value]: [any, any]) => {
+        if (value?.data) {
+          const session = value.data.find((s: AcademicSession) => s.id === id)
+          console.log(`Query ${key} - session ${id} status:`, session?.status) // Debug log
+        }
+      })
       
       console.log("Queries refetched successfully") // Debug log
     },
