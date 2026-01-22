@@ -147,7 +147,15 @@ export function useActivateAcademicSession() {
           exact: false,
         }),
         queryClient.refetchQueries({ 
+          queryKey: ["admin", "results"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
           queryKey: ["student-results"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["grades", "submissions"],
           exact: false,
         }),
         queryClient.refetchQueries({ 
