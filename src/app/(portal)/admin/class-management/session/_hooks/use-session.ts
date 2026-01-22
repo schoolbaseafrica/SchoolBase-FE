@@ -122,7 +122,7 @@ export function useActivateAcademicSession() {
         exact: false,
       })
       
-      // Invalidate AND refetch queries that depend on active session (classes, terms, etc.)
+      // Invalidate AND refetch queries that depend on active session
       // This ensures they refetch with the new active session immediately
       await Promise.all([
         queryClient.refetchQueries({ 
@@ -131,6 +131,26 @@ export function useActivateAcademicSession() {
         }),
         queryClient.refetchQueries({ 
           queryKey: ["academic-terms"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["fees"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["fees-analytics"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["today-activities"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["dashboard"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["timetable"],
           exact: false,
         }),
       ])
