@@ -118,126 +118,149 @@ export default function PromotionPage() {
   }
 
   return (
-    <div className="space-y-6 px-2 py-4 lg:px-4">
+    <div className="mx-auto max-w-5xl space-y-6 px-2 py-4 lg:px-4">
       <DashboardTitle
         heading="Promote Students"
         description="Move students from classes in one academic session to classes in the next. Configure arm mappings below."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Sessions</CardTitle>
-          <CardDescription>Source = current/ending session; Target = next session.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
-          <div className="grid w-full max-w-xs gap-2">
-            <Label>Source session</Label>
-            <Select value={sourceSessionId} onValueChange={setSourceSessionId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select source session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid w-full max-w-xs gap-2">
-            <Label>Target session</Label>
-            <Select value={targetSessionId} onValueChange={setTargetSessionId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select target session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Sessions Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sessions</CardTitle>
+            <CardDescription>Select source and target academic sessions</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label>Source session</Label>
+              <Select value={sourceSessionId} onValueChange={setSourceSessionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select source session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Target session</Label>
+              <Select value={targetSessionId} onValueChange={setTargetSessionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Actions Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Actions</CardTitle>
+            <CardDescription>Preview first, then execute promotion</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button
+              onClick={handlePreview}
+              disabled={!canPreview || previewMutation.isPending}
+              className="w-full"
+            >
+              {previewMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Preview Promotion
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleExecute}
+              disabled={!canPreview || executeMutation.isPending}
+              className="w-full"
+            >
+              {executeMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Execute Promotion
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Arm Mappings Card - Full Width */}
       <Card>
         <CardHeader>
-          <CardTitle>Arm mappings</CardTitle>
-          <CardDescription>Map each source class to the target class students will move to.</CardDescription>
+          <CardTitle>Arm Mappings</CardTitle>
+          <CardDescription>Map each source class to the target class students will move to</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {mappings.map((row, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2">
-              <Select
-                value={row.sourceClassId}
-                onValueChange={(v) => updateMapping(i, "sourceClassId", v)}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Source class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {flatSourceClasses.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {classLabel(c, c.groupName)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-muted-foreground">→</span>
-              <Select
-                value={row.targetClassId}
-                onValueChange={(v) => updateMapping(i, "targetClassId", v)}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Target class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {flatTargetClasses.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {classLabel(c, c.groupName)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => removeMapping(i)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+          {mappings.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No mappings added yet. Click "Add mapping" to get started.
             </div>
-          ))}
-          <Button type="button" variant="outline" onClick={addMapping}>
+          ) : (
+            <div className="space-y-3">
+              {mappings.map((row, i) => (
+                <div
+                  key={i}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3"
+                >
+                  <Select
+                    value={row.sourceClassId}
+                    onValueChange={(v) => updateMapping(i, "sourceClassId", v)}
+                  >
+                    <SelectTrigger className="flex-1 min-w-[200px]">
+                      <SelectValue placeholder="Source class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {flatSourceClasses.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {classLabel(c, c.groupName)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-muted-foreground text-lg">→</span>
+                  <Select
+                    value={row.targetClassId}
+                    onValueChange={(v) => updateMapping(i, "targetClassId", v)}
+                  >
+                    <SelectTrigger className="flex-1 min-w-[200px]">
+                      <SelectValue placeholder="Target class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {flatTargetClasses.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {classLabel(c, c.groupName)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeMapping(i)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button type="button" variant="outline" onClick={addMapping} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
             Add mapping
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Actions</CardTitle>
-          <CardDescription>Preview first, then execute promotion.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-2">
-          <Button
-            onClick={handlePreview}
-            disabled={!canPreview || previewMutation.isPending}
-          >
-            {previewMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Preview
-          </Button>
-          <Button
-            variant="default"
-            onClick={handleExecute}
-            disabled={!canPreview || executeMutation.isPending}
-          >
-            {executeMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Execute promotion
           </Button>
         </CardContent>
       </Card>
