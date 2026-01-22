@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useCallback } from "react"
-import Cropper from "react-easy-crop"
+import Cropper, { Area } from "react-easy-crop"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
 import { ZoomIn, ZoomOut, RotateCw, Check, X } from "lucide-react"
-import { Area } from "react-easy-crop/types"
 
 interface ImageCropperProps {
   open: boolean
