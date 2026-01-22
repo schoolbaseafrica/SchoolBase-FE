@@ -25,6 +25,7 @@ export const useGetClassesInfo = (params?: {
   page?: number
   limit?: number
   includeArchived?: boolean
+  includeAllSessions?: boolean
 }) => {
   const isSuperAdmin = useIsSuperAdmin()
   const setClassItems = useClassesStore((state) => state.setClassItems)
@@ -32,7 +33,7 @@ export const useGetClassesInfo = (params?: {
   // const setError = useClassesStore((state) => state.setError)
 
   const query = useQuery({
-    queryKey: [...CLASS_KEYS.all, params?.includeArchived],
+    queryKey: [...CLASS_KEYS.all, params?.includeArchived, params?.includeAllSessions],
     queryFn: async () => {
       setLoading(true)
       try {

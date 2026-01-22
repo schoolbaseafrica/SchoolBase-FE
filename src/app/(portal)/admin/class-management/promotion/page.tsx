@@ -28,7 +28,8 @@ function classLabel(cls: { id: string; arm?: string }, name: string) {
 
 export default function PromotionPage() {
   const { data: sessionsData } = useAcademicSessions({ limit: 100 })
-  const { data: classesData } = useGetClassesInfo({ includeArchived: false })
+  // Use includeAllSessions=true to see classes from all sessions (needed for promotion)
+  const { data: classesData } = useGetClassesInfo({ includeArchived: false, includeAllSessions: true })
   const previewMutation = usePromotionPreview()
   const executeMutation = usePromotionExecute()
 

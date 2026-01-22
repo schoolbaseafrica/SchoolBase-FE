@@ -50,7 +50,7 @@ export interface GroupedClassResponse {
 }
 
 export const ClassesAPI = {
-  getAll: (params?: { page?: number; limit?: number; includeArchived?: boolean }) =>
+  getAll: (params?: { page?: number; limit?: number; includeArchived?: boolean; includeAllSessions?: boolean }) =>
     apiFetch<ResponsePack<GroupedClassResponse>>("/classes", { params }, true),
 
   create: (body: CreateClassData) =>
