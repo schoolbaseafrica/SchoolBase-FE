@@ -90,31 +90,89 @@ export function useActivateAcademicSession() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => AcademicSessionAPI.activate(id),
-    onSuccess: (_, id) => {
-      // Invalidate all queries that start with the base key (handles different page/limit params)
-      queryClient.invalidateQueries({ 
-        queryKey: ACADEMIC_SESSIONS_KEY,
-        exact: false, // Match all queries that start with this key
-        refetchType: "active" 
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: ["academic-session", id],
-        refetchType: "active" 
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: ACTIVE_SESSION_KEY,
-        refetchType: "active" 
-      })
-      // Explicitly refetch to ensure UI updates immediately
-      queryClient.refetchQueries({ 
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ACADEMIC_SESSIONS_KEY, exact: false })
+      
+      // Snapshot the previous value
+      const previousSessions = queryClient.getQueriesData({ queryKey: ACADEMIC_SESSIONS_KEY, exact: false })
+      
+      return { previousSessions }
+    },
+    onError: (err, id, context) => {
+      // Rollback on error
+      if (context?.previousSessions) {
+        context.previousSessions.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+    },
+    onSuccess: async (data, id) => {
+      console.log("Mutation onSuccess - data:", data) // Debug log
+      console.log("Mutation onSuccess - status:", data?.status) // Debug log
+      
+      // Optimistically update all session queries
+      queryClient.setQueriesData(
+        { queryKey: ACADEMIC_SESSIONS_KEY, exact: false },
+        (old: any) => {
+          if (!old) return old
+          // Handle paginated response structure: { data: [...], meta: {...} }
+          if (old.data && Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((s: AcademicSession) => {
+                // Activate the target session
+                if (s.id === id) {
+                  return { ...s, status: "Active" as const }
+                }
+                // Deactivate any other active sessions
+                if (s.status === "Active") {
+                  return { ...s, status: "Inactive" as const }
+                }
+                return s
+              }),
+            }
+          }
+          // Handle direct array response
+          if (Array.isArray(old)) {
+            return old.map((s: AcademicSession) => {
+              if (s.id === id) {
+                return { ...s, status: "Active" as const }
+              }
+              if (s.status === "Active") {
+                return { ...s, status: "Inactive" as const }
+              }
+              return s
+            })
+          }
+          return old
+        }
+      )
+      
+      // Invalidate and refetch to get fresh data from server
+      await queryClient.invalidateQueries({ 
         queryKey: ACADEMIC_SESSIONS_KEY,
         exact: false,
-        type: "active" 
       })
-      queryClient.refetchQueries({ 
+      await queryClient.invalidateQueries({ 
+        queryKey: ["academic-session", id],
+      })
+      await queryClient.invalidateQueries({ 
         queryKey: ACTIVE_SESSION_KEY,
-        type: "active" 
       })
+      
+      // Force refetch
+      await Promise.all([
+        queryClient.refetchQueries({ 
+          queryKey: ACADEMIC_SESSIONS_KEY,
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ACTIVE_SESSION_KEY,
+        })
+      ])
+      
+      console.log("Queries invalidated and refetched") // Debug log
     },
   })
 }

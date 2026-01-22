@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { X, Pencil, Power } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useActivateAcademicSession } from "../_hooks/use-session"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 type Props = {
@@ -24,6 +25,7 @@ type Props = {
 
 export default function SessionDrawer({ open, onClose, session }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const activateMutation = useActivateAcademicSession()
 
   if (!session) return null
@@ -39,11 +41,11 @@ export default function SessionDrawer({ open, onClose, session }: Props) {
     try {
       const result = await activateMutation.mutateAsync(session.id)
       console.log("Activate result:", result) // Debug log
+      console.log("Session status in result:", result?.status) // Debug log
+      
       toast.success(`Session "${session.name}" has been activated successfully.`)
-      // Wait a bit for queries to refetch, then close
-      setTimeout(() => {
-        onClose()
-      }, 500)
+      // Close drawer - optimistic update should have already updated the UI
+      onClose()
     } catch (error) {
       console.error("Activate error:", error) // Debug log
       toast.error(
