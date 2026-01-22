@@ -2,6 +2,7 @@ import { SettingsSidebar } from "./_components/settings-sidebar"
 import { NotificationSettings } from "./_components/notification-settings"
 import { LegalSettings } from "./_components/legal-settings"
 import { SchoolInfoSettings } from "./_components/school-info-settings"
+import { LandingPageSettings } from "./_components/landing-page-settings"
 
 interface PageProps {
   searchParams: Promise<{ tab?: string }>
@@ -20,6 +21,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
         <main className="min-w-0 flex-1">
           {activeTab === "school-info" && <SchoolInfoSettings />}
+          {activeTab === "landing-page" && <LandingPageSettings />}
           {activeTab === "notifications" && <NotificationSettings />}
           {activeTab === "legal" && <LegalSettings />}
         </main>

@@ -8,7 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
-import { Bell, Building2, ChevronDown, FileText } from "lucide-react"
+import { Bell, Building2, ChevronDown, FileText, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -24,6 +24,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
       id: "school-info",
       label: "School Information",
       icon: Building2,
+    },
+    {
+      id: "landing-page",
+      label: "Landing Page",
+      icon: ImageIcon,
     },
     {
       id: "notifications",
