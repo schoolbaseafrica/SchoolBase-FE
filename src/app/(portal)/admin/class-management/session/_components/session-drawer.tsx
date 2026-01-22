@@ -11,8 +11,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { AcademicSession } from "@/lib/academic-session"
 import { format } from "date-fns"
-import { X, Pencil } from "lucide-react"
+import { X, Pencil, Power } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useActivateAcademicSession } from "../_hooks/use-session"
+import { toast } from "sonner"
 
 type Props = {
   open: boolean
@@ -22,6 +24,7 @@ type Props = {
 
 export default function SessionDrawer({ open, onClose, session }: Props) {
   const router = useRouter()
+  const activateMutation = useActivateAcademicSession()
 
   if (!session) return null
 
@@ -30,6 +33,23 @@ export default function SessionDrawer({ open, onClose, session }: Props) {
   const goToEdit = () => {
     router.push(`/admin/class-management/session/create-session?id=${session.id}`)
   }
+
+  const handleActivate = async () => {
+    if (!session) return
+    try {
+      await activateMutation.mutateAsync(session.id)
+      toast.success(`Session "${session.name}" has been activated successfully.`)
+      onClose()
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to activate session. Please try again."
+      )
+    }
+  }
+
+  const canActivate = session.status === "Inactive"
 
   return (
     <Drawer open={open} onClose={onClose} direction="right">
@@ -105,7 +125,24 @@ export default function SessionDrawer({ open, onClose, session }: Props) {
 
         {/* Footer inside DrawerContent */}
         <DrawerFooter className="border-t bg-white">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {canActivate && (
+              <Button
+                size="lg"
+                variant="default"
+                onClick={handleActivate}
+                disabled={activateMutation.isPending}
+                className=""
+              >
+                {activateMutation.isPending ? (
+                  <>Activating...</>
+                ) : (
+                  <>
+                    <Power className="mr-1 h-4 w-4" /> Activate Session
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               size="lg"
               variant="outline"

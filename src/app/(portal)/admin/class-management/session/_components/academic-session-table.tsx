@@ -9,26 +9,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-// import { Edit, Eye, MoreVertical } from "lucide-react"
+import { Edit, Eye, MoreVertical, Power } from "lucide-react"
 import SessionDrawer from "./session-drawer"
 import { AcademicSession } from "@/lib/academic-session"
-// import { useRouter } from "next/navigation"
+import { useActivateAcademicSession } from "../_hooks/use-session"
+import { toast } from "sonner"
 
 type Props = {
   sessions: AcademicSession[]
 }
 
 const AcademicSessionTable = ({ sessions }: Props) => {
-  // const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selected, setSelected] = useState<AcademicSession | null>(null)
+  const activateMutation = useActivateAcademicSession()
 
   // VIEW session in drawer
   const viewSession = (session: AcademicSession) => {
@@ -36,10 +37,20 @@ const AcademicSessionTable = ({ sessions }: Props) => {
     setDrawerOpen(true)
   }
 
-  // EDIT session -> navigate to create/edit page with query param
-  // const editSession = (id: string) => {
-  //   router.push(`/admin/class-management/session/create-session?id=${id}`)
-  // }
+  // ACTIVATE session
+  const handleActivate = async (session: AcademicSession, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent row click
+    try {
+      await activateMutation.mutateAsync(session.id)
+      toast.success(`Session "${session.name}" has been activated successfully.`)
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to activate session. Please try again."
+      )
+    }
+  }
 
   return (
     <>
@@ -52,8 +63,7 @@ const AcademicSessionTable = ({ sessions }: Props) => {
               <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-center">Start Date</TableHead>
               <TableHead className="text-center">End Date</TableHead>
-              {/* <TableHead className="text-center">Created At</TableHead>
-              <TableHead className="text-right">Action</TableHead> */}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -81,14 +91,15 @@ const AcademicSessionTable = ({ sessions }: Props) => {
                 </TableCell>
                 <TableCell className="text-center">{item.startDate}</TableCell>
                 <TableCell className="text-center">{item.endDate}</TableCell>
-                {/* <TableCell className="text-center">
-                  {new Date(item.createdAt).toLocaleString()}
-                </TableCell> */}
-
-                {/* <TableCell className="pr-6 text-right">
+                <TableCell className="pr-6 text-right">
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <MoreVertical className="cursor-pointer text-gray-500" />
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-md p-1 hover:bg-gray-100"
+                      >
+                        <MoreVertical className="h-4 w-4 cursor-pointer text-gray-500" />
+                      </button>
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent align="end">
@@ -96,19 +107,21 @@ const AcademicSessionTable = ({ sessions }: Props) => {
                         className="flex items-center gap-2"
                         onClick={() => viewSession(item)}
                       >
-                        <Eye size={16} /> View
+                        <Eye size={16} /> View Details
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        disabled={item.status === "Archived"}
-                        className="flex items-center gap-2"
-                        onClick={() => editSession(item.id)}
-                      >
-                        <Edit size={16} /> Edit
-                      </DropdownMenuItem>
+                      {item.status === "Inactive" && (
+                        <DropdownMenuItem
+                          className="flex items-center gap-2"
+                          onClick={(e) => handleActivate(item, e)}
+                          disabled={activateMutation.isPending}
+                        >
+                          <Power size={16} /> Activate Session
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell> */}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

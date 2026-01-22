@@ -15,8 +15,9 @@ import {
 import { useAcademicSessions } from "../session/_hooks/use-session"
 import { useGetClassesInfo } from "../_hooks/use-classes"
 import { usePromotionPreview, usePromotionExecute } from "../_hooks/use-classes"
-import { Plus, Trash2, Loader2 } from "lucide-react"
+import { Plus, Trash2, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import Link from "next/link"
 import type { ClassItem } from "@/lib/classes"
 
 type MappingRow = { sourceClassId: string; targetClassId: string }
@@ -39,10 +40,12 @@ export default function PromotionPage() {
   const allClasses = useMemo(() => classesData?.items ?? [], [classesData])
 
   const sourceClasses = useMemo(() => {
+    if (!sourceSessionId) return []
     return allClasses.filter((g) => g.academicSession?.id === sourceSessionId)
   }, [allClasses, sourceSessionId])
 
   const targetClasses = useMemo(() => {
+    if (!targetSessionId) return []
     return allClasses.filter((g) => g.academicSession?.id === targetSessionId)
   }, [allClasses, targetSessionId])
 
@@ -59,12 +62,24 @@ export default function PromotionPage() {
   }, [targetClasses])
 
   const addMapping = () => {
-    const firstSource = flatSourceClasses[0]
-    const firstTarget = flatTargetClasses[0]
-    if (!firstSource || !firstTarget) {
-      toast.error("Select source and target sessions with at least one class each.")
+    if (!sourceSessionId || !targetSessionId) {
+      toast.error("Please select both source and target sessions first.")
       return
     }
+    if (sourceSessionId === targetSessionId) {
+      toast.error("Source and target sessions must be different.")
+      return
+    }
+    if (flatSourceClasses.length === 0) {
+      toast.error("No classes found in the source session. Please create classes first.")
+      return
+    }
+    if (flatTargetClasses.length === 0) {
+      toast.error("No classes found in the target session. Please create classes in the target session first.")
+      return
+    }
+    const firstSource = flatSourceClasses[0]
+    const firstTarget = flatTargetClasses[0]
     setMappings((prev) => [
       ...prev,
       { sourceClassId: firstSource.id, targetClassId: firstTarget.id },
@@ -134,33 +149,89 @@ export default function PromotionPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-2">
             <Label>Source session</Label>
-            <Select value={sourceSessionId} onValueChange={setSourceSessionId}>
+            <Select
+              value={sourceSessionId}
+              onValueChange={(value) => {
+                setSourceSessionId(value)
+                if (value === targetSessionId) {
+                  setTargetSessionId("")
+                  toast.warning("Source and target sessions must be different. Target session cleared.")
+                }
+                setMappings([]) // Clear mappings when source changes
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select source session" />
               </SelectTrigger>
               <SelectContent>
                 {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+                  <SelectItem key={s.id} value={s.id} disabled={s.id === targetSessionId}>
                     {s.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {sourceSessionId && flatSourceClasses.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No classes found in this session.
+              </p>
+            )}
+            {sourceSessionId && flatSourceClasses.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {flatSourceClasses.length} class{flatSourceClasses.length !== 1 ? "es" : ""} available
+              </p>
+            )}
           </div>
           <div className="grid gap-2">
             <Label>Target session</Label>
-            <Select value={targetSessionId} onValueChange={setTargetSessionId}>
+            <Select
+              value={targetSessionId}
+              onValueChange={(value) => {
+                setTargetSessionId(value)
+                if (value === sourceSessionId) {
+                  setSourceSessionId("")
+                  toast.warning("Source and target sessions must be different. Source session cleared.")
+                }
+                setMappings([]) // Clear mappings when target changes
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select target session" />
               </SelectTrigger>
               <SelectContent>
                 {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+                  <SelectItem key={s.id} value={s.id} disabled={s.id === sourceSessionId}>
                     {s.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {targetSessionId && flatTargetClasses.length === 0 && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-amber-900 mb-1">
+                      No classes found in target session
+                    </p>
+                    <p className="text-amber-700 mb-2">
+                      You need to create classes in the target session before promoting students.
+                    </p>
+                    <Link
+                      href="/admin/class-management/class/new"
+                      className="text-amber-700 hover:text-amber-900 underline font-medium"
+                    >
+                      Create classes →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+            {targetSessionId && flatTargetClasses.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {flatTargetClasses.length} class{flatTargetClasses.length !== 1 ? "es" : ""} available
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
