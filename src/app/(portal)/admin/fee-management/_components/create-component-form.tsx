@@ -97,11 +97,15 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
   // Classes
   const { data: classes, isLoading: loadingClasses } = useGetClassesInfo()
 
-  const toggleClass = (id: string) => {
-    const updated = selectedClassIds.includes(id)
-      ? selectedClassIds.filter((c) => c !== id)
-      : [...selectedClassIds, id]
-    setSelectedClassIds(updated)
+  const toggleClass = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClassIds((prev) => {
+        if (prev.includes(id)) return prev
+        return [...prev, id]
+      })
+    } else {
+      setSelectedClassIds((prev) => prev.filter((c) => c !== id))
+    }
   }
 
   // Get all class IDs for "Select All" functionality
@@ -150,7 +154,15 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedClassIds(allClassIds)
+      // Use functional update to ensure we get the latest allClassIds
+      setSelectedClassIds(() => {
+        if (!classes?.items) return []
+        return classes.items
+          .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
+          .flatMap((clsItem) =>
+            clsItem.classes.filter((cls) => cls?.id).map((cls) => cls.id)
+          )
+      })
     } else {
       setSelectedClassIds([])
     }
@@ -495,7 +507,7 @@ export default function CreateComponentForm({ onSuccess }: CreateComponentFormPr
                               <Checkbox
                                 id={cls.id}
                                 checked={selectedClassIds.includes(cls.id)}
-                                onCheckedChange={() => toggleClass(cls.id)}
+                                onCheckedChange={(checked) => toggleClass(cls.id, checked as boolean)}
                               />
                               <label
                                 htmlFor={cls.id}
