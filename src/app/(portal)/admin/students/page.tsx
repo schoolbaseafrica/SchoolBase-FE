@@ -20,27 +20,24 @@ export default function StudentsPage() {
   )
   const setFilters = useStudentsStore((state) => state.setFilters)
 
-  // Use server-side filtering when class_id is selected, otherwise use client-side filtering
-  const shouldUseServerFilter = !!filters.classId
-  
-  // Server-side filtered query
+  // Always use server-side filtering for consistent behavior and to include unassigned students
+  // When classId is undefined, we want all students (including unassigned)
+  // When a specific class is selected, fetch all students in that class (use high limit)
   const {
     data: serverData,
     isLoading: isServerLoading,
     isError: isServerError,
     error: serverError,
-  } = useGetStudentsWithMeta(
-    shouldUseServerFilter
-      ? {
-          page: filters.page,
-          limit: filters.limit,
-          search: filters.search || undefined,
-          class_id: filters.classId || undefined,
-        }
-      : undefined
-  )
+  } = useGetStudentsWithMeta({
+    page: filters.page,
+    // When a class is selected, fetch all students in that class (use high limit)
+    // When no class is selected, use normal pagination
+    limit: filters.classId ? 10000 : filters.limit,
+    search: filters.search || undefined,
+    class_id: filters.classId || undefined, // undefined means "all classes" including unassigned
+  })
 
-  // Client-side filtered query (when no class filter)
+  // Also fetch all students for client-side operations (bulk actions, etc.)
   const { isLoading: isClientLoading, isError: isClientError, error: clientError } = useGetStudents()
 
   const { students, studentIds } = useStudentsStore(
@@ -50,9 +47,9 @@ export default function StudentsPage() {
     }))
   )
 
-  // Use server data when class filter is active, otherwise use client-side filtering
+  // Use server data (always server-side filtering now)
   const filteredAll = useMemo(() => {
-    if (shouldUseServerFilter && serverData?.data) {
+    if (serverData?.data) {
       // Server-side filtering
       let filtered = serverData.data
 
@@ -63,28 +60,30 @@ export default function StudentsPage() {
 
       return filtered
     } else {
-      // Client-side filtering
+      // Fallback to client-side if server data not available
       return selectFilteredStudents(students, studentIds, filters)
     }
-  }, [shouldUseServerFilter, serverData, students, studentIds, filters])
+  }, [serverData, students, studentIds, filters])
 
+  // When a class is selected, show all students (no pagination)
+  // When no class is selected, use server pagination
   const paginatedStudents = useMemo(() => {
-    if (shouldUseServerFilter) {
-      // Server already paginated, return as-is
+    if (filters.classId) {
+      // Class filter active: show all students (already fetched with high limit)
       return filteredAll
     } else {
-      // Client-side pagination
-      return selectPaginatedStudents(filteredAll, filters.page, filters.limit)
+      // No class filter: use server pagination
+      return filteredAll
     }
-  }, [shouldUseServerFilter, filteredAll, filters.page, filters.limit])
+  }, [filteredAll, filters.classId])
 
-  const totalPages = shouldUseServerFilter
-    ? serverData?.meta?.total_pages || 1
-    : Math.ceil(filteredAll.length / filters.limit)
+  // When a class is selected, there's only 1 page (all students shown)
+  // When no class is selected, use server pagination
+  const totalPages = filters.classId ? 1 : (serverData?.meta?.total_pages || 1)
 
-  const isLoading = shouldUseServerFilter ? isServerLoading : isClientLoading && studentIds.length === 0
-  const isError = shouldUseServerFilter ? isServerError : isClientError
-  const error = shouldUseServerFilter ? serverError : clientError
+  const isLoading = isServerLoading
+  const isError = isServerError
+  const error = serverError
 
   const handlePageChange = (page: number) => {
     setFilters({ page })
