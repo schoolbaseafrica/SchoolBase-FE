@@ -123,82 +123,50 @@ export default function PromotionPage() {
         heading="Promote Students"
         description="Move students from classes in one academic session to classes in the next. Configure arm mappings below."
       />
+      <div className="md:grid md:grid-cols-2 md:gap-6 md:space-y-0 space-y-6">
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Sessions Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sessions</CardTitle>
-            <CardDescription>Select source and target academic sessions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label>Source session</Label>
-              <Select value={sourceSessionId} onValueChange={setSourceSessionId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sessions.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Target session</Label>
-              <Select value={targetSessionId} onValueChange={setTargetSessionId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sessions.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Actions Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Actions</CardTitle>
-            <CardDescription>Preview first, then execute promotion</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Button
-              onClick={handlePreview}
-              disabled={!canPreview || previewMutation.isPending}
-              className="w-full"
-            >
-              {previewMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Preview Promotion
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleExecute}
-              disabled={!canPreview || executeMutation.isPending}
-              className="w-full"
-            >
-              {executeMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Execute Promotion
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Sessions Card */}
+      <Card className="order-1 md:order-1">
+        <CardHeader>
+          <CardTitle>Sessions</CardTitle>
+          <CardDescription>Select source and target academic sessions</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2">
+            <Label>Source session</Label>
+            <Select value={sourceSessionId} onValueChange={setSourceSessionId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select source session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Target session</Label>
+            <Select value={targetSessionId} onValueChange={setTargetSessionId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select target session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Arm Mappings Card - Full Width */}
-      <Card>
+      <Card className="order-2 md:order-3 md:col-span-2">
         <CardHeader>
           <CardTitle>Arm Mappings</CardTitle>
           <CardDescription>Map each source class to the target class students will move to</CardDescription>
@@ -264,6 +232,38 @@ export default function PromotionPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Actions Card */}
+      <Card className="order-3 md:order-2">
+        <CardHeader>
+          <CardTitle>Actions</CardTitle>
+          <CardDescription>Preview first, then execute promotion</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <Button
+            onClick={handlePreview}
+            disabled={!canPreview || previewMutation.isPending}
+            className="w-full"
+          >
+            {previewMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Preview Promotion
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleExecute}
+            disabled={!canPreview || executeMutation.isPending}
+            className="w-full"
+          >
+            {executeMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Execute Promotion
+          </Button>
+        </CardContent>
+      </Card>
+      </div>
     </div>
   )
 }
