@@ -124,6 +124,7 @@ export function useActivateAcademicSession() {
       
       // Invalidate AND refetch queries that depend on active session
       // This ensures they refetch with the new active session immediately
+      // This affects ALL portals: admin, student, parent, teacher
       await Promise.all([
         queryClient.refetchQueries({ 
           queryKey: ["classes"],
@@ -142,11 +143,31 @@ export function useActivateAcademicSession() {
           exact: false,
         }),
         queryClient.refetchQueries({ 
+          queryKey: ["results"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["student-results"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
           queryKey: ["today-activities"],
           exact: false,
         }),
         queryClient.refetchQueries({ 
           queryKey: ["dashboard"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["student-dashboard"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["teacher-dashboard"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
+          queryKey: ["parent-dashboard"],
           exact: false,
         }),
         queryClient.refetchQueries({ 
