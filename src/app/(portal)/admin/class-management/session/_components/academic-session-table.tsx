@@ -41,9 +41,11 @@ const AcademicSessionTable = ({ sessions }: Props) => {
   const handleActivate = async (session: AcademicSession, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent row click
     try {
-      await activateMutation.mutateAsync(session.id)
+      const result = await activateMutation.mutateAsync(session.id)
+      console.log("Activate result:", result) // Debug log
       toast.success(`Session "${session.name}" has been activated successfully.`)
     } catch (error) {
+      console.error("Activate error:", error) // Debug log
       toast.error(
         error instanceof Error
           ? error.message

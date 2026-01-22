@@ -91,9 +91,30 @@ export function useActivateAcademicSession() {
   return useMutation({
     mutationFn: (id: string) => AcademicSessionAPI.activate(id),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ACADEMIC_SESSIONS_KEY })
-      queryClient.invalidateQueries({ queryKey: ["academic-session", id] })
-      queryClient.invalidateQueries({ queryKey: ACTIVE_SESSION_KEY })
+      // Invalidate all queries that start with the base key (handles different page/limit params)
+      queryClient.invalidateQueries({ 
+        queryKey: ACADEMIC_SESSIONS_KEY,
+        exact: false, // Match all queries that start with this key
+        refetchType: "active" 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ["academic-session", id],
+        refetchType: "active" 
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: ACTIVE_SESSION_KEY,
+        refetchType: "active" 
+      })
+      // Explicitly refetch to ensure UI updates immediately
+      queryClient.refetchQueries({ 
+        queryKey: ACADEMIC_SESSIONS_KEY,
+        exact: false,
+        type: "active" 
+      })
+      queryClient.refetchQueries({ 
+        queryKey: ACTIVE_SESSION_KEY,
+        type: "active" 
+      })
     },
   })
 }

@@ -37,10 +37,15 @@ export default function SessionDrawer({ open, onClose, session }: Props) {
   const handleActivate = async () => {
     if (!session) return
     try {
-      await activateMutation.mutateAsync(session.id)
+      const result = await activateMutation.mutateAsync(session.id)
+      console.log("Activate result:", result) // Debug log
       toast.success(`Session "${session.name}" has been activated successfully.`)
-      onClose()
+      // Wait a bit for queries to refetch, then close
+      setTimeout(() => {
+        onClose()
+      }, 500)
     } catch (error) {
+      console.error("Activate error:", error) // Debug log
       toast.error(
         error instanceof Error
           ? error.message

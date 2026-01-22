@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const SessionsPage = () => {
-  const { data, isLoading, isError, error, refetch } = useAcademicSessions()
+  const { data, isLoading, isError, error, refetch } = useAcademicSessions({ limit: 100 })
 
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "inactive" | "archived">("all")
