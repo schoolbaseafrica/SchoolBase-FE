@@ -19,11 +19,11 @@ const imageLayout = [
 ]
 
 // Default placeholder images to use when hero images fail to load
-// Using the Study Bridge default landing page image
+// Using the default landing page images from /public/landing
 const DEFAULT_HERO_IMAGES = [
-  "/assets/Hero-img (2).png",
-  "/assets/Hero-img (2).png",
-  "/assets/Hero-img (2).png",
+  "/landing/hero-1.jpeg",
+  "/landing/hero-2.jpeg",
+  "/landing/hero-3.jpeg",
 ]
 
 export function HeroSection() {
@@ -83,7 +83,7 @@ export function HeroSection() {
               priority={imageLayout[index]?.priority}
               className="object-cover transition-transform duration-500 hover:scale-105"
               onError={() => handleImageError(index)}
-              unoptimized={getImageSrc(image.src, index).startsWith("/assets")}
+              unoptimized={getImageSrc(image.src, index).startsWith("/landing/") || getImageSrc(image.src, index).startsWith("/assets/")}
             />
           </div>
         ))}

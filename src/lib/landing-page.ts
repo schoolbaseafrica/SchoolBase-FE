@@ -39,12 +39,12 @@ interface LandingPageConfigResponse {
 
 export const LandingPageAPI = {
   /**
-   * Get the current landing page configuration
+   * Get the current landing page configuration (public endpoint)
    */
   async getConfig(): Promise<LandingPageConfigResponse> {
     return apiFetch<LandingPageConfigResponse>("/school/landing-page", {
       method: "GET",
-    })
+    }, false) // false = don't use proxy, direct API call (public endpoint)
   },
 
   /**

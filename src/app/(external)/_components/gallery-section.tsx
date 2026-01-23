@@ -59,7 +59,7 @@ export function GallerySection() {
                   height={240}
                   className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                   onError={() => handleImageError(index)}
-                  unoptimized={getImageSrc(item.src, index).startsWith("/assets")}
+                  unoptimized={getImageSrc(item.src, index).startsWith("/landing/") || getImageSrc(item.src, index).startsWith("/assets/")}
                 />
                 <figcaption className="sr-only">{item.alt || "Gallery image"}</figcaption>
               </figure>
