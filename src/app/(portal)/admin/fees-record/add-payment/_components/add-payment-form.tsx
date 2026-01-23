@@ -102,7 +102,9 @@ const AddPaymentForm = () => {
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
-  const feeComponents = (activeFeesData?.data?.data || []).filter((f) => f != null)
+  const feeComponents = (activeFeesData?.data?.data || []).filter(
+    (f) => f != null && f.id && f.name && (f.amount !== undefined && f.amount !== null)
+  )
 
   // Fetch students for selected fee
   const { data: studentsData, isLoading: isStudentsLoading } =
@@ -306,13 +308,17 @@ const AddPaymentForm = () => {
                             No fees found
                           </div>
                         ) : (
-                          feeComponents
-                            .filter((component) => component && component.id && component.name)
-                            .map((component) => (
+                          feeComponents.map((component) => {
+                            // Double-check component is valid before rendering
+                            if (!component || !component.id || !component.name) {
+                              return null
+                            }
+                            return (
                               <SelectItem key={component.id} value={component.id}>
                                 {component.name} - {component.session || ""} ({component.term || ""})
                               </SelectItem>
-                            ))
+                            )
+                          }).filter(Boolean)
                         )}
                       </SelectContent>
                     </Select>
@@ -374,13 +380,17 @@ const AddPaymentForm = () => {
                             No students found for this fee
                           </div>
                         ) : (
-                          students
-                            .filter((student) => student && student.id && student.name)
-                            .map((student) => (
+                          students.map((student) => {
+                            // Double-check student is valid before rendering
+                            if (!student || !student.id || !student.name) {
+                              return null
+                            }
+                            return (
                               <SelectItem key={student.id} value={student.id}>
-                                {student.name || "Unknown Student"}
+                                {student.name}
                               </SelectItem>
-                            ))
+                            )
+                          }).filter(Boolean)
                         )}
                       </SelectContent>
                     </Select>
