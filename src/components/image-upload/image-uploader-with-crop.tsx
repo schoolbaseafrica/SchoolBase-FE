@@ -152,6 +152,7 @@ export function ImageUploaderWithCrop({
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            unoptimized={currentImageUrl.startsWith('/landing/') || currentImageUrl.startsWith('/assets/')}
           />
           <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
             <div className="flex gap-2">

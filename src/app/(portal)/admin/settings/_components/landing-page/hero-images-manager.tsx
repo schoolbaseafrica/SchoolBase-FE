@@ -16,11 +16,11 @@ interface HeroImagesManagerProps {
   disabled?: boolean
 }
 
-// Default hero images from /public/assets/landing
+// Default hero images from /public/landing
 const DEFAULT_HERO_IMAGES = [
-  "/assets/landing/hero-1.jpeg",
-  "/assets/landing/hero-2.jpeg",
-  "/assets/landing/hero-3.jpeg",
+  "/landing/hero-1.jpeg",
+  "/landing/hero-2.jpeg",
+  "/landing/hero-3.jpeg",
 ]
 
 export function HeroImagesManager({
