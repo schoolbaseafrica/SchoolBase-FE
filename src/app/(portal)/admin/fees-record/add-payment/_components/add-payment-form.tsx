@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { X, CloudUpload, AlertCircleIcon } from "lucide-react"
+import { X, CloudUpload, AlertCircleIcon, InfoIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/ui/form-field"
 import {
@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { useActiveFees, useCreatePayment, useFeeStudents } from "../_hooks/use-fees"
 import { useAcademicSessions } from "../../../class-management/session/_hooks/use-session"
@@ -22,12 +24,37 @@ import { PaymentSuccessModal } from "./payment-success-modal"
 import { useMemo } from "react"
 import { format } from "date-fns"
 
+// Common Nigerian banks list
+const NIGERIAN_BANKS = [
+  "Access Bank",
+  "First Bank of Nigeria",
+  "Guaranty Trust Bank (GTB)",
+  "United Bank for Africa (UBA)",
+  "Zenith Bank",
+  "Ecobank Nigeria",
+  "Fidelity Bank",
+  "First City Monument Bank (FCMB)",
+  "Union Bank of Nigeria",
+  "Stanbic IBTC Bank",
+  "Sterling Bank",
+  "Wema Bank",
+  "Polaris Bank",
+  "Providus Bank",
+  "Jaiz Bank",
+  "Heritage Bank",
+  "Keystone Bank",
+  "TajBank",
+  "Other",
+]
+
 const formSchema = z.object({
-  studentId: z.string().min(1, "Student is required"),
+  studentId: z.string().optional(),
   invoice: z.string().optional(),
-  feeComponent: z.string().min(1, "Fee component is required"),
+  feeComponent: z.string().optional(),
   amountPaid: z.string().min(1, "Amount paid is required"),
   paymentMethod: z.string().min(1, "Payment method is required"),
+  bankName: z.string().optional(),
+  description: z.string().optional(),
   receipt: z.any().optional(),
 })
 
@@ -51,6 +78,7 @@ const AddPaymentForm = () => {
     control,
     setValue,
     reset,
+    watch,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,10 +88,17 @@ const AddPaymentForm = () => {
       feeComponent: "",
       amountPaid: "",
       paymentMethod: "",
+      bankName: "",
+      description: "",
     },
   })
 
   const watchFeeComponent = useWatch({ control, name: "feeComponent" })
+  const watchPaymentMethod = useWatch({ control, name: "paymentMethod" })
+  const watchStudentId = useWatch({ control, name: "studentId" })
+  
+  // Determine if this is an unreconciled payment
+  const isUnreconciled = !watchFeeComponent || !watchStudentId
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
@@ -74,27 +109,30 @@ const AddPaymentForm = () => {
     useFeeStudents(watchFeeComponent)
   const students = studentsData?.data?.data || []
 
-  // Reset student selection when fee component changes
+  // Reset student selection when fee component changes (only if fee was cleared)
   React.useEffect(() => {
-    setValue("studentId", "")
+    if (!watchFeeComponent) {
+      setValue("studentId", "")
+    }
   }, [watchFeeComponent, setValue])
 
   // Fetch sessions for ID resolution
   const { data: sessionsData } = useAcademicSessions({ limit: 100 })
+  const activeSession = sessionsData?.data?.find((s) => s.is_active)
 
   // Derive selected fee and session
   const selectedFee = feeComponents.find((f) => f.id === watchFeeComponent)
 
   // Resolve Session ID immediately to fetch relevant terms
   const resolvedSessionId = useMemo(() => {
-    if (!selectedFee) return undefined
+    if (!selectedFee) return activeSession?.id
     if (selectedFee.session_id) return selectedFee.session_id
     if (selectedFee.session && sessionsData?.data) {
       const matched = sessionsData.data.find((s) => s.name === selectedFee.session)
       return matched?.id
     }
-    return undefined
-  }, [selectedFee, sessionsData])
+    return activeSession?.id
+  }, [selectedFee, sessionsData, activeSession])
 
   // Fetch terms for the specific session
   const { data: sessionTerms } = useAcademicTermsForSession(resolvedSessionId)
@@ -103,58 +141,74 @@ const AddPaymentForm = () => {
   const { mutate: createPayment, isPending: isSubmitting } = useCreatePayment()
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const selectedStudent = students.find((s) => s.id === values.studentId)
-
-    if (!selectedFee) {
-      toast.error("Invalid fee component selected")
-      return
-    }
+    const selectedStudent = values.studentId ? students.find((s) => s.id === values.studentId) : null
 
     if (!resolvedSessionId) {
-      toast.error("Could not resolve Session ID for this fee")
+      toast.error("Could not resolve Session ID. Please ensure an active session exists.")
       return
     }
 
-    // Resolve Term ID from session terms
-    let termId = selectedFee.term_id
-    if (!termId && selectedFee.term && sessionTerms) {
-      // Case-insensitive match
-      const matchedTerm = sessionTerms.find(
-        (t) => t.name.toLowerCase().trim() === selectedFee.term.toLowerCase().trim()
-      )
-      if (matchedTerm) termId = matchedTerm.id
-    }
+    // If fee is selected, validate and resolve term
+    let termId: string | undefined = undefined
+    if (values.feeComponent && selectedFee) {
+      termId = selectedFee.term_id
+      if (!termId && selectedFee.term && sessionTerms) {
+        const matchedTerm = sessionTerms.find(
+          (t) => t.name.toLowerCase().trim() === selectedFee.term.toLowerCase().trim()
+        )
+        if (matchedTerm) termId = matchedTerm.id
+      }
 
-    if (!termId) {
-      console.log("Failed to resolve Term ID. Fee Term:", selectedFee.term)
-      console.log("Available Session Terms:", sessionTerms)
-      toast.error("Could not resolve Term ID for this fee")
-      return
+      if (!termId) {
+        toast.error("Could not resolve Term ID for this fee")
+        return
+      }
     }
 
     // Construct FormData
     const formData = new FormData()
-    formData.append("student_id", values.studentId)
-    formData.append("fee_component_id", values.feeComponent)
+    
+    if (values.studentId) {
+      formData.append("student_id", values.studentId)
+    }
+    
+    if (values.feeComponent) {
+      formData.append("fee_component_id", values.feeComponent)
+    }
+    
     formData.append("amount_paid", values.amountPaid.replace(/[^0-9.]/g, ""))
     formData.append("payment_method", values.paymentMethod)
     formData.append("payment_date", new Date().toISOString())
     formData.append("session_id", resolvedSessionId)
-    formData.append("term_id", termId)
-
+    
+    if (termId) {
+      formData.append("term_id", termId)
+    }
+    
     if (values.invoice) formData.append("invoice_number", values.invoice)
+    if (values.bankName && values.paymentMethod === "bank_transfer") {
+      formData.append("bank_name", values.bankName)
+    }
+    if (values.description) {
+      formData.append("description", values.description)
+    }
     if (file) formData.append("receipt_file", file)
 
     createPayment(formData, {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        const isUnreconciledPayment = !values.studentId || !values.feeComponent
         setSuccessData({
-          studentName: selectedStudent?.name || "Unknown Student",
+          studentName: selectedStudent?.name || "Unassigned",
           amountPaid: values.amountPaid,
-          feeComponent: selectedFee.name,
-          transactionId: values.invoice || "N/A",
+          feeComponent: selectedFee?.name || "Unassigned",
+          transactionId: response?.data?.transaction_id || values.invoice || "N/A",
           date: format(new Date(), "dd MMM yyyy h:mm a"),
         })
         setShowSuccessModal(true)
+        
+        if (isUnreconciledPayment) {
+          toast.info("Payment recorded as unreconciled. You can assign it to a student/fee later.")
+        }
       },
     })
   }
@@ -198,11 +252,22 @@ const AddPaymentForm = () => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Info Alert for Unreconciled Payments */}
+        {isUnreconciled && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <InfoIcon className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>Unreconciled Payment Mode:</strong> You can record this payment without assigning a student or fee. 
+              You can assign it later when the details are available.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Fee Component - First because it drives Student selection */}
+          {/* Fee Component - Optional */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-900">
-              Fee <span className="text-red-600">*</span>
+              Fee <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
             <Controller
               control={control}
@@ -211,10 +276,11 @@ const AddPaymentForm = () => {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
                     <SelectValue
-                      placeholder={isActiveFeesLoading ? "Loading fees..." : "Select Fee"}
+                      placeholder={isActiveFeesLoading ? "Loading fees..." : "Select Fee (Optional)"}
                     />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">None (Unreconciled)</SelectItem>
                     {isActiveFeesLoading ? (
                       <div className="flex items-center justify-center p-4">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
@@ -241,10 +307,10 @@ const AddPaymentForm = () => {
             )}
           </div>
 
-          {/* Student Name - Dependent on Fee Component */}
+          {/* Student Name - Optional */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-900">
-              Student Name <span className="text-red-600">*</span>
+              Student Name <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
             <Controller
               control={control}
@@ -253,23 +319,28 @@ const AddPaymentForm = () => {
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  disabled={!watchFeeComponent}
+                  disabled={!!watchFeeComponent && !watchFeeComponent}
                 >
                   <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
                     <SelectValue
                       placeholder={
-                        isStudentsLoading ? "Loading students..." : "Select Student"
+                        watchFeeComponent && students.length === 0
+                          ? "No students for this fee"
+                          : isStudentsLoading
+                          ? "Loading students..."
+                          : "Select Student (Optional)"
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">None (Unreconciled)</SelectItem>
                     {isStudentsLoading ? (
                       <div className="flex items-center justify-center p-4">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
                       </div>
-                    ) : students.length === 0 ? (
+                    ) : students.length === 0 && watchFeeComponent ? (
                       <div className="p-2 text-center text-sm text-gray-500">
-                        No students found
+                        No students found for this fee
                       </div>
                     ) : (
                       students.map((student) => (
@@ -320,9 +391,11 @@ const AddPaymentForm = () => {
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                     <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -333,6 +406,51 @@ const AddPaymentForm = () => {
               </p>
             )}
           </div>
+
+          {/* Bank Name - Show only when payment method is bank_transfer */}
+          {watchPaymentMethod === "bank_transfer" && (
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-gray-900">
+                Bank Name <span className="text-gray-500 text-xs">(Recommended)</span>
+              </label>
+              <Controller
+                control={control}
+                name="bankName"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
+                      <SelectValue placeholder="Select Bank" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NIGERIAN_BANKS.map((bank) => (
+                        <SelectItem key={bank} value={bank}>
+                          {bank}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Description Field */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-900">
+            Description/Notes <span className="text-gray-500 text-xs">(Optional)</span>
+          </label>
+          <Textarea
+            {...register("description")}
+            placeholder="Add any notes or description about this payment..."
+            className="font-outfit min-h-[100px] w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none"
+            rows={4}
+          />
+          {errors.description && (
+            <p className="mt-1 flex items-center gap-2 text-sm text-red-500">
+              <AlertCircleIcon className="h-4 w-4" /> {errors.description.message}
+            </p>
+          )}
         </div>
 
         {/* File Upload */}
