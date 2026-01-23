@@ -104,17 +104,38 @@ const AddPaymentForm = () => {
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
   const feeComponents = useMemo(() => {
     const rawFees = activeFeesData?.data?.data || []
-    return rawFees.filter(
-      (f): f is NonNullable<typeof f> => 
-        f != null && 
-        typeof f === 'object' &&
-        'id' in f && 
-        f.id != null &&
-        'name' in f && 
-        f.name != null &&
-        'amount' in f &&
-        f.amount != null
+    console.log('[AddPaymentForm] Raw fees data:', rawFees)
+    console.log('[AddPaymentForm] Raw fees length:', rawFees.length)
+    
+    const filtered = rawFees.filter(
+      (f, index): f is NonNullable<typeof f> => {
+        if (f == null) {
+          console.warn(`[AddPaymentForm] Null fee at index ${index}`)
+          return false
+        }
+        if (typeof f !== 'object') {
+          console.warn(`[AddPaymentForm] Non-object fee at index ${index}:`, typeof f, f)
+          return false
+        }
+        if (!('id' in f) || f.id == null) {
+          console.warn(`[AddPaymentForm] Fee missing id at index ${index}:`, f)
+          return false
+        }
+        if (!('name' in f) || f.name == null) {
+          console.warn(`[AddPaymentForm] Fee missing name at index ${index}:`, f)
+          return false
+        }
+        if (!('amount' in f) || f.amount == null) {
+          console.warn(`[AddPaymentForm] Fee missing amount at index ${index}:`, f)
+          return false
+        }
+        return true
+      }
     )
+    
+    console.log('[AddPaymentForm] Filtered fees:', filtered)
+    console.log('[AddPaymentForm] Filtered fees length:', filtered.length)
+    return filtered
   }, [activeFeesData?.data?.data])
 
   // Fetch students for selected fee
@@ -122,15 +143,30 @@ const AddPaymentForm = () => {
     useFeeStudents(watchFeeComponent)
   const students = useMemo(() => {
     const rawStudents = studentsData?.data?.data || []
-    return rawStudents.filter(
-      (s): s is NonNullable<typeof s> =>
-        s != null &&
-        typeof s === 'object' &&
-        'id' in s &&
-        s.id != null &&
-        'name' in s &&
-        s.name != null
+    console.log('[AddPaymentForm] Raw students data:', rawStudents)
+    const filtered = rawStudents.filter(
+      (s, index): s is NonNullable<typeof s> => {
+        if (s == null) {
+          console.warn(`[AddPaymentForm] Null student at index ${index}`)
+          return false
+        }
+        if (typeof s !== 'object') {
+          console.warn(`[AddPaymentForm] Non-object student at index ${index}:`, typeof s, s)
+          return false
+        }
+        if (!('id' in s) || s.id == null) {
+          console.warn(`[AddPaymentForm] Student missing id at index ${index}:`, s)
+          return false
+        }
+        if (!('name' in s) || s.name == null) {
+          console.warn(`[AddPaymentForm] Student missing name at index ${index}:`, s)
+          return false
+        }
+        return true
+      }
     )
+    console.log('[AddPaymentForm] Filtered students:', filtered)
+    return filtered
   }, [studentsData?.data?.data])
 
   // Reset student selection when fee component changes (only if fee was cleared)
@@ -335,24 +371,43 @@ const AddPaymentForm = () => {
                           </div>
                         ) : (
                           feeComponents
-                            .filter((component) => {
+                            .filter((component, index) => {
                               // Strict validation before mapping
+                              if (component == null) {
+                                console.error(`[AddPaymentForm] Null component in map filter at index ${index}`)
+                                return false
+                              }
+                              if (typeof component !== 'object') {
+                                console.error(`[AddPaymentForm] Non-object component in map filter at index ${index}:`, typeof component, component)
+                                return false
+                              }
+                              if (!('id' in component) || component.id == null) {
+                                console.error(`[AddPaymentForm] Component missing id in map filter at index ${index}:`, component)
+                                return false
+                              }
+                              if (!('name' in component) || component.name == null) {
+                                console.error(`[AddPaymentForm] Component missing name in map filter at index ${index}:`, component)
+                                return false
+                              }
+                              if (!('amount' in component)) {
+                                console.warn(`[AddPaymentForm] Component missing amount property at index ${index}:`, component)
+                                // Don't filter out, just warn - amount might be optional for display
+                              }
+                              return true
+                            })
+                            .map((component, index) => {
+                              console.log(`[AddPaymentForm] Mapping component at index ${index}:`, component)
+                              if (!component || !component.id || !component.name) {
+                                console.error(`[AddPaymentForm] Invalid component in map at index ${index}:`, component)
+                                return null
+                              }
                               return (
-                                component != null &&
-                                typeof component === 'object' &&
-                                'id' in component &&
-                                component.id != null &&
-                                typeof component.id === 'string' &&
-                                'name' in component &&
-                                component.name != null &&
-                                typeof component.name === 'string'
+                                <SelectItem key={component.id} value={component.id}>
+                                  {component.name} - {component.session || ""} ({component.term || ""})
+                                </SelectItem>
                               )
                             })
-                            .map((component) => (
-                              <SelectItem key={component.id} value={component.id}>
-                                {component.name} - {component.session || ""} ({component.term || ""})
-                              </SelectItem>
-                            ))
+                            .filter(Boolean)
                         )}
                       </SelectContent>
                     </Select>
