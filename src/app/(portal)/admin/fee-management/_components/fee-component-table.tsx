@@ -325,12 +325,12 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
 
       {/* Single Confirmation Dialog */}
       <AlertDialog open={actionType !== null} onOpenChange={closeConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent aria-describedby="alert-dialog-description">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {actionType === "activate" ? "Activate" : "Deactivate"} Fee?
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription id="alert-dialog-description">
               {actionType === "activate"
                 ? "Are you sure you want to reactivate this fee? It will be available for use again."
                 : "Are you sure you want to deactivate this fee? It will no longer be available for use."}

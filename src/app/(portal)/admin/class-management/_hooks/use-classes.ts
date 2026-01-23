@@ -281,9 +281,10 @@ function extractPromotionExecute(res: unknown): PromotionExecutePayload {
   // Handle both wrapped { data: {...} } and direct response structures
   const data = r?.data ?? r
   
-  // If we have a status_code and it's not 200, this might be an error
-  if (r?.status_code && r.status_code !== 200) {
-    console.error("Promotion execute returned non-200 status:", r)
+  // Accept both 200 (OK) and 201 (Created) as success status codes
+  // 201 is commonly used for creation operations
+  if (r?.status_code && r.status_code !== 200 && r.status_code !== 201) {
+    console.error("Promotion execute returned error status:", r)
     throw new Error(r?.message || "Promotion execution failed")
   }
   
