@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { X, CloudUpload, AlertCircleIcon, InfoIcon } from "lucide-react"
+import { X, CloudUpload, AlertCircleIcon, InfoIcon, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/ui/form-field"
 import {
@@ -281,37 +281,53 @@ const AddPaymentForm = () => {
             <label className="mb-2 block text-sm font-semibold text-gray-900">
               Fee <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
-            <Controller
-              control={control}
-              name="feeComponent"
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
-                    <SelectValue
-                      placeholder={isActiveFeesLoading ? "Loading fees..." : "Select Fee (Optional)"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None (Unreconciled)</SelectItem>
-                    {isActiveFeesLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-                      </div>
-                    ) : feeComponents.length === 0 ? (
-                      <div className="p-2 text-center text-sm text-gray-500">
-                        No fees found
-                      </div>
-                    ) : (
-                      feeComponents.map((component) => (
-                        <SelectItem key={component.id} value={component.id}>
-                          {component.name} - {component.session} ({component.term})
-                        </SelectItem>
-                      ))
+            <div className="relative">
+              <Controller
+                control={control}
+                name="feeComponent"
+                render={({ field }) => (
+                  <>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value || undefined)} 
+                      value={field.value || undefined}
+                    >
+                      <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none pr-10">
+                        <SelectValue
+                          placeholder={isActiveFeesLoading ? "Loading fees..." : "Select Fee (Optional)"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isActiveFeesLoading ? (
+                          <div className="flex items-center justify-center p-4">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+                          </div>
+                        ) : feeComponents.length === 0 ? (
+                          <div className="p-2 text-center text-sm text-gray-500">
+                            No fees found
+                          </div>
+                        ) : (
+                          feeComponents.map((component) => (
+                            <SelectItem key={component.id} value={component.id}>
+                              {component.name} - {component.session} ({component.term})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {field.value && (
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(undefined)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                        aria-label="Clear fee selection"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
                     )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+                  </>
+                )}
+              />
+            </div>
             {errors.feeComponent && (
               <p className="mt-1 flex items-center gap-2 text-sm text-red-500">
                 <AlertCircleIcon className="h-4 w-4" /> {errors.feeComponent.message}
@@ -324,47 +340,61 @@ const AddPaymentForm = () => {
             <label className="mb-2 block text-sm font-semibold text-gray-900">
               Student Name <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
-            <Controller
-              control={control}
-              name="studentId"
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={!!watchFeeComponent && !watchFeeComponent}
-                >
-                  <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
-                    <SelectValue
-                      placeholder={
-                        watchFeeComponent && students.length === 0
-                          ? "No students for this fee"
-                          : isStudentsLoading
-                          ? "Loading students..."
-                          : "Select Student (Optional)"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None (Unreconciled)</SelectItem>
-                    {isStudentsLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-                      </div>
-                    ) : students.length === 0 && watchFeeComponent ? (
-                      <div className="p-2 text-center text-sm text-gray-500">
-                        No students found for this fee
-                      </div>
-                    ) : (
-                      students.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.name}
-                        </SelectItem>
-                      ))
+            <div className="relative">
+              <Controller
+                control={control}
+                name="studentId"
+                render={({ field }) => (
+                  <>
+                    <Select
+                      onValueChange={(value) => field.onChange(value || undefined)}
+                      value={field.value || undefined}
+                      disabled={!!watchFeeComponent && !watchFeeComponent}
+                    >
+                      <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none pr-10">
+                        <SelectValue
+                          placeholder={
+                            watchFeeComponent && students.length === 0
+                              ? "No students for this fee"
+                              : isStudentsLoading
+                              ? "Loading students..."
+                              : "Select Student (Optional)"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isStudentsLoading ? (
+                          <div className="flex items-center justify-center p-4">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+                          </div>
+                        ) : students.length === 0 && watchFeeComponent ? (
+                          <div className="p-2 text-center text-sm text-gray-500">
+                            No students found for this fee
+                          </div>
+                        ) : (
+                          students.map((student) => (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {field.value && (
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(undefined)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Clear student selection"
+                        disabled={!!watchFeeComponent && !watchFeeComponent}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
                     )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+                  </>
+                )}
+              />
+            </div>
             {errors.studentId && (
               <p className="mt-1 flex items-center gap-2 text-sm text-red-500">
                 <AlertCircleIcon className="h-4 w-4" /> {errors.studentId.message}
