@@ -23,28 +23,49 @@ export function LandingPageProvider({ children }: LandingPageProviderProps) {
 
         if (configData) {
           const config = configData as LandingPageConfig
-          const currentHero = useSchoolStore.getState().school.hero
+          const currentSchool = useSchoolStore.getState().school
 
-          // Update the school store with landing page config
-          updateSchool({
-            hero: {
-              ...currentHero,
-              images: (config.hero_images || []).map((img) => ({
-                src: img.url,
-                alt: img.alt || "Hero image",
-              })),
-            },
-            testimonials: (config.testimonials || []).map((t) => ({
+          // Filter out empty/invalid images before updating store
+          const heroImages = (config.hero_images || [])
+            .filter(img => img?.url && img.url.trim() !== "")
+            .map((img) => ({
+              src: img.url,
+              alt: img.alt || "Hero image",
+            }))
+
+          const galleryImages = (config.gallery_images || [])
+            .filter(img => img?.url && img.url.trim() !== "")
+            .map((img) => ({
+              src: img.url,
+              alt: img.alt || "Gallery image",
+            }))
+
+          const testimonials = (config.testimonials || [])
+            .filter(t => t?.quote && t.quote.trim() !== "" && t?.name && t.name.trim() !== "")
+            .map((t) => ({
               quote: t.quote,
               name: t.name,
               role: t.role,
               avatar: t.avatar,
-            })),
-            gallery: (config.gallery_images || []).map((img) => ({
-              src: img.url,
-              alt: img.alt || "Gallery image",
-            })),
-          })
+            }))
+
+          // Only update if we have at least some data
+          // If all arrays are empty, it likely means user hasn't configured yet, so keep defaults
+          // If at least one array has data, use API response (user has configured something)
+          const hasAnyData = heroImages.length > 0 || galleryImages.length > 0 || testimonials.length > 0
+          
+          if (hasAnyData) {
+            // User has configured something - use API data (even if some arrays are empty)
+            updateSchool({
+              hero: {
+                ...currentSchool.hero,
+                images: heroImages.length > 0 ? heroImages : currentSchool.hero.images,
+              },
+              testimonials: testimonials.length > 0 ? testimonials : currentSchool.testimonials,
+              gallery: galleryImages.length > 0 ? galleryImages : currentSchool.gallery,
+            })
+          }
+          // If hasAnyData is false, don't update - keep defaults (user hasn't configured yet)
         }
       } catch (error) {
         console.error("Failed to fetch landing page config:", error)

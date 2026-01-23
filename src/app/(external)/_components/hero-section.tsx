@@ -18,14 +18,6 @@ const imageLayout = [
   },
 ]
 
-// Default placeholder images to use when hero images fail to load
-// Using the default landing page images from /public/landing
-const DEFAULT_HERO_IMAGES = [
-  "/landing/hero-1.jpeg",
-  "/landing/hero-2.jpeg",
-  "/landing/hero-3.jpeg",
-]
-
 export function HeroSection() {
   const hero = useSchoolStore((state) => state.school.hero)
   const schoolName = useSchoolStore((state) => state.school.name)
@@ -36,21 +28,25 @@ export function HeroSection() {
     setImageErrors((prev) => ({ ...prev, [index]: true }))
   }
 
-  // Use default images if original fails to load or is missing
+  // Use images directly from store (which already includes defaults from defaultSchoolProfile)
+  // Filter out empty/invalid images, but keep the structure
+  const validImages = (hero.images || []).filter(img => img?.src && img.src.trim() !== "")
+  
+  // Take first 3 valid images from store (store already has defaults if no custom images)
+  const imagesToDisplay = validImages.slice(0, 3)
+  
+  // If we have fewer than 3 images, pad with the last image to maintain layout
+  while (imagesToDisplay.length < 3 && imagesToDisplay.length > 0) {
+    imagesToDisplay.push(imagesToDisplay[imagesToDisplay.length - 1])
+  }
+  
+  // Use image src if available and no error
   const getImageSrc = (imageSrc: string, index: number) => {
-    if (imageErrors[index] || !imageSrc) {
-      return DEFAULT_HERO_IMAGES[index] || DEFAULT_HERO_IMAGES[0]
+    if (imageErrors[index] || !imageSrc || imageSrc.trim() === "") {
+      return null
     }
     return imageSrc
   }
-
-  // Ensure we always have at least 3 images to display (use defaults if hero.images is empty)
-  const imagesToDisplay = hero.images && hero.images.length > 0
-    ? hero.images.slice(0, 3)
-    : DEFAULT_HERO_IMAGES.map((src, idx) => ({
-        src,
-        alt: `School image ${idx + 1}`,
-      }))
 
   return (
     <section
@@ -70,23 +66,30 @@ export function HeroSection() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-        {imagesToDisplay.map((image, index) => (
-          <div
-            key={image.src || index}
-            className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}
-          >
-            <Image
-              src={getImageSrc(image.src, index)}
-              alt={image.alt || "School image"}
-              fill
-              sizes="(max-width: 768px) 50vw, 40vw"
-              priority={imageLayout[index]?.priority}
-              className="object-cover transition-transform duration-500 hover:scale-105"
-              onError={() => handleImageError(index)}
-              unoptimized={getImageSrc(image.src, index).startsWith("/landing/") || getImageSrc(image.src, index).startsWith("/assets/")}
-            />
-          </div>
-        ))}
+        {imagesToDisplay.map((image, index) => {
+          const imageSrc = getImageSrc(image.src, index)
+          // Skip rendering if no valid image source
+          if (!imageSrc) {
+            return null
+          }
+          return (
+            <div
+              key={`${image.src}-${index}`}
+              className={`relative overflow-hidden rounded-2xl bg-gray-50 shadow-md ${imageLayout[index]?.className || ""}`}
+            >
+              <Image
+                src={imageSrc}
+                alt={image.alt || "School image"}
+                fill
+                sizes="(max-width: 768px) 50vw, 40vw"
+                priority={imageLayout[index]?.priority}
+                className="object-cover transition-transform duration-500 hover:scale-105"
+                onError={() => handleImageError(index)}
+                unoptimized={imageSrc.startsWith("/landing/") || imageSrc.startsWith("/assets/")}
+              />
+            </div>
+          )
+        })}
       </div>
     </section>
   )

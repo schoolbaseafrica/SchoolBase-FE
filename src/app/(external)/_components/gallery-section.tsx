@@ -25,13 +25,14 @@ export function GallerySection() {
     return imageSrc
   }
 
-  // If no gallery items, don't render the section
-  if (!gallery || gallery.length === 0) {
+  // Filter out empty/invalid gallery items
+  const validGallery = gallery?.filter(item => item?.src && item.src.trim() !== "") || []
+  
+  // If no valid gallery items, don't render the section
+  // (This is correct - if user has no gallery images, don't show empty section)
+  if (validGallery.length === 0) {
     return null
   }
-
-  // Gallery images are now local placeholders (no cache-busting needed)
-  const galleryToDisplay = gallery
 
   return (
     <section id="gallery" className="bg-gray-50 py-16">

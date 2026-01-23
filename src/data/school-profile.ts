@@ -108,15 +108,15 @@ export const defaultSchoolProfile: SchoolProfile = {
     ctaHref: "#contact",
     images: [
       {
-        src: "/assets/Hero-img (2).png",
+        src: "/landing/hero-1.jpeg",
         alt: "Students learning together",
       },
       {
-        src: "/assets/Hero-img (2).png",
+        src: "/landing/hero-2.jpeg",
         alt: "Collaborative classroom",
       },
       {
-        src: "/assets/Hero-img (2).png",
+        src: "/landing/hero-3.jpeg",
         alt: "School community",
       },
     ],
