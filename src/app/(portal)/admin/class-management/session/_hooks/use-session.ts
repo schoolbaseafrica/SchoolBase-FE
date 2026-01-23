@@ -142,6 +142,10 @@ export function useActivateAcademicSession() {
           queryKey: ["fees-analytics"],
           exact: false,
         }),
+        queryClient.invalidateQueries({ 
+          queryKey: ["fees-analytics"],
+          exact: false,
+        }),
         queryClient.refetchQueries({ 
           queryKey: ["fee-payments"],
           exact: false,

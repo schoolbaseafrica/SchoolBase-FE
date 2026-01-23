@@ -13,6 +13,8 @@ export const useFeesAnalytics = (params?: {
     queryKey: ["fees-analytics", params],
     queryFn: () => FeesAPI.getAnalytics(params),
     refetchOnWindowFocus: false,
+    staleTime: 0, // Always refetch to get latest session data
+    refetchOnMount: true,
     enabled: !isSuperAdmin, // Disable for super admin
   })
 }

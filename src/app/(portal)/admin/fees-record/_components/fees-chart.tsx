@@ -33,16 +33,21 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
 }
 
 import { useFeesAnalytics } from "../_hooks/use-fees-analytics"
+import { useActiveAcademicSession } from "../../class-management/session/_hooks/use-session"
 import { Skeleton } from "@/components/ui/skeleton"
 
 const FeesChart = () => {
   const currentYear = new Date().getFullYear()
   const [year, setYear] = React.useState(currentYear.toString())
+  const { data: activeSession } = useActiveAcademicSession()
 
   // Generate last 5 years
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString())
 
-  const { data, isLoading } = useFeesAnalytics({ year: parseInt(year) })
+  const { data, isLoading } = useFeesAnalytics({ 
+    year: parseInt(year),
+    session_id: activeSession?.id,
+  })
   const chartData =
     data?.data?.data?.monthly_payments.map((item) => ({
       name: item.month,

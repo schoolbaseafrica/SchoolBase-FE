@@ -278,7 +278,21 @@ function extractPromotionPreview(res: unknown): PromotionPreviewPayload {
 
 function extractPromotionExecute(res: unknown): PromotionExecutePayload {
   const r = res as any
+  // Handle both wrapped { data: {...} } and direct response structures
   const data = r?.data ?? r
+  
+  // If we have a status_code and it's not 200, this might be an error
+  if (r?.status_code && r.status_code !== 200) {
+    console.error("Promotion execute returned non-200 status:", r)
+    throw new Error(r?.message || "Promotion execution failed")
+  }
+  
+  // Verify we have actual data
+  if (!data || (data.promoted === undefined && data.skipped === undefined && data.failed === undefined)) {
+    console.error("Invalid promotion execute response:", res)
+    throw new Error("Invalid response from promotion execution")
+  }
+  
   return {
     promoted: data.promoted ?? 0,
     skipped: data.skipped ?? 0,
@@ -317,17 +331,33 @@ export const usePromotionExecute = () => {
     },
     onSuccess: async (payload) => {
       const { promoted, skipped, failed } = payload
+      
+      // Check if promotion actually happened
+      if (promoted === 0 && skipped === 0 && failed === 0) {
+        toast.warning("No students were promoted. Please check that source classes have students assigned.")
+        return
+      }
+      
       const parts: string[] = []
       if (promoted > 0) parts.push(`${promoted} promoted`)
       if (skipped > 0) parts.push(`${skipped} skipped (already in target)`)
       if (failed > 0) parts.push(`${failed} failed`)
-      toast.success(
-        parts.length ? `Promotion complete. ${parts.join(". ")}.` : "Promotion complete."
-      )
+      
+      if (promoted > 0) {
+        toast.success(`Promotion successful! ${parts.join(". ")}.`)
+      } else if (failed > 0) {
+        toast.error(`Promotion failed for ${failed} student${failed > 1 ? "s" : ""}. ${skipped > 0 ? `${skipped} were already in target.` : ""}`)
+      } else {
+        toast.info(`All students were already in target classes. ${skipped} skipped.`)
+      }
+      
+      // Invalidate and refetch queries to refresh UI
       await qc.invalidateQueries({ queryKey: CLASS_KEYS.all })
       await qc.invalidateQueries({ queryKey: ["class_students"] })
       await qc.invalidateQueries({ queryKey: ["students"] })
       await qc.refetchQueries({ queryKey: CLASS_KEYS.all, type: "active" })
+      await qc.refetchQueries({ queryKey: ["class_students"], type: "active" })
+      await qc.refetchQueries({ queryKey: ["students"], type: "active" })
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err))
