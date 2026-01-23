@@ -102,12 +102,12 @@ const AddPaymentForm = () => {
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
-  const feeComponents = activeFeesData?.data?.data || []
+  const feeComponents = (activeFeesData?.data?.data || []).filter((f) => f != null)
 
   // Fetch students for selected fee
   const { data: studentsData, isLoading: isStudentsLoading } =
     useFeeStudents(watchFeeComponent)
-  const students = studentsData?.data?.data || []
+  const students = (studentsData?.data?.data || []).filter((s) => s != null)
 
   // Reset student selection when fee component changes (only if fee was cleared)
   React.useEffect(() => {
@@ -121,7 +121,7 @@ const AddPaymentForm = () => {
   const activeSession = sessionsData?.data?.find((s) => s.isActive)
 
   // Derive selected fee and session
-  const selectedFee = feeComponents.find((f) => f.id === watchFeeComponent)
+  const selectedFee = feeComponents.find((f) => f && f.id === watchFeeComponent) || null
 
   // Resolve Session ID immediately to fetch relevant terms
   const resolvedSessionId = useMemo(() => {
@@ -306,11 +306,13 @@ const AddPaymentForm = () => {
                             No fees found
                           </div>
                         ) : (
-                          feeComponents.map((component) => (
-                            <SelectItem key={component.id} value={component.id}>
-                              {component.name} - {component.session} ({component.term})
-                            </SelectItem>
-                          ))
+                          feeComponents
+                            .filter((component) => component && component.id && component.name)
+                            .map((component) => (
+                              <SelectItem key={component.id} value={component.id}>
+                                {component.name} - {component.session || ""} ({component.term || ""})
+                              </SelectItem>
+                            ))
                         )}
                       </SelectContent>
                     </Select>
@@ -372,11 +374,13 @@ const AddPaymentForm = () => {
                             No students found for this fee
                           </div>
                         ) : (
-                          students.map((student) => (
-                            <SelectItem key={student.id} value={student.id}>
-                              {student.name}
-                            </SelectItem>
-                          ))
+                          students
+                            .filter((student) => student && student.id && student.name)
+                            .map((student) => (
+                              <SelectItem key={student.id} value={student.id}>
+                                {student.name || "Unknown Student"}
+                              </SelectItem>
+                            ))
                         )}
                       </SelectContent>
                     </Select>
