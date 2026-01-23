@@ -1,4 +1,11 @@
-import { apiFetch } from "./api/client"
+/**
+ * Landing page config API.
+ *
+ * Uses fetch to /api/proxy-auth/school/landing-page (same-origin) only.
+ * No NEXT_PUBLIC_API_BASE_URL or other hardcoded URLs. The proxy derives
+ * the backend from the request host (e.g. stpaul.schoolbase.africa → api.stpaul...),
+ * so one Docker image works for all schools in multi-school deployment.
+ */
 
 export interface HeroImage {
   id: string
@@ -37,29 +44,47 @@ interface LandingPageConfigResponse {
   }
 }
 
+const PROXY_PATH = "/api/proxy-auth/school/landing-page"
+
+async function proxyFetch<T>(
+  method: "GET" | "PATCH",
+  body?: object
+): Promise<T> {
+  const res = await fetch(PROXY_PATH, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include",
+    cache: "no-store",
+  })
+
+  const text = await res.text()
+  let data: T & { message?: string }
+  try {
+    data = (text ? JSON.parse(text) : {}) as T & { message?: string }
+  } catch {
+    throw new Error(res.ok ? "Invalid response" : text || "Server error. Please try again later.")
+  }
+
+  if (!res.ok) {
+    const msg =
+      (data && typeof (data as { message?: string }).message === "string")
+        ? (data as { message: string }).message
+        : "Server error. Please try again later."
+    throw new Error(msg)
+  }
+
+  return data as T
+}
+
 export const LandingPageAPI = {
-  /**
-   * Get the current landing page configuration (public endpoint)
-   */
   async getConfig(): Promise<LandingPageConfigResponse> {
-    return apiFetch<LandingPageConfigResponse>("/school/landing-page", {
-      method: "GET",
-    }, false) // false = don't use proxy, direct API call (public endpoint)
+    return proxyFetch<LandingPageConfigResponse>("GET")
   },
 
-  /**
-   * Update the landing page configuration
-   */
   async updateConfig(config: LandingPageConfig): Promise<LandingPageConfigResponse> {
-    return apiFetch<LandingPageConfigResponse>(
-      "/school/landing-page",
-      {
-        method: "PATCH",
-        data: {
-          landing_page_config: config,
-        },
-      },
-      true
-    )
+    return proxyFetch<LandingPageConfigResponse>("PATCH", {
+      landing_page_config: config,
+    })
   },
 }
