@@ -25,22 +25,50 @@ export function LandingPageProvider({ children }: LandingPageProviderProps) {
           const config = configData as LandingPageConfig
           const currentSchool = useSchoolStore.getState().school
 
-          // Filter out empty/invalid images before updating store
-          const heroImages = (config.hero_images || [])
+          // Get default hero images from store (these are the fallbacks)
+          const defaultHeroImages = currentSchool.hero.images || []
+          
+          // Merge custom hero images with defaults by order/index
+          // Custom images override defaults for specific slots, but defaults remain for other slots
+          const customHeroImages = (config.hero_images || [])
             .filter(img => img?.url && img.url.trim() !== "")
-            .map((img) => ({
-              src: img.url,
-              alt: img.alt || "Hero image",
-            }))
+          
+          // Create merged hero images array: use custom for slots that have custom, default for others
+          const mergedHeroImages = Array.from({ length: 3 }, (_, index) => {
+            const customImage = customHeroImages.find(img => img.order === index)
+            if (customImage) {
+              // Use custom image for this slot
+              return {
+                src: customImage.url,
+                alt: customImage.alt || `Hero image ${index + 1}`,
+              }
+            }
+            // Use default image for this slot (if available)
+            return defaultHeroImages[index] || {
+              src: `/landing/hero-${index + 1}.jpeg`,
+              alt: `Hero image ${index + 1}`,
+            }
+          })
 
-          const galleryImages = (config.gallery_images || [])
+          // For gallery: merge custom images with defaults (custom images are added, not replacing)
+          const defaultGalleryImages = currentSchool.gallery || []
+          const customGalleryImages = (config.gallery_images || [])
             .filter(img => img?.url && img.url.trim() !== "")
             .map((img) => ({
               src: img.url,
               alt: img.alt || "Gallery image",
             }))
+          
+          // Merge: custom images first, then defaults (avoid duplicates)
+          const defaultGalleryUrls = new Set(defaultGalleryImages.map(img => img.src))
+          const uniqueDefaultGallery = defaultGalleryImages.filter(img => 
+            !customGalleryImages.some(custom => custom.src === img.src)
+          )
+          const mergedGalleryImages = [...customGalleryImages, ...uniqueDefaultGallery]
 
-          const testimonials = (config.testimonials || [])
+          // For testimonials: use custom if available, otherwise keep defaults
+          const defaultTestimonials = currentSchool.testimonials || []
+          const customTestimonials = (config.testimonials || [])
             .filter(t => t?.quote && t.quote.trim() !== "" && t?.name && t.name.trim() !== "")
             .map((t) => ({
               quote: t.quote,
@@ -48,24 +76,19 @@ export function LandingPageProvider({ children }: LandingPageProviderProps) {
               role: t.role,
               avatar: t.avatar,
             }))
-
-          // Only update if we have at least some data
-          // If all arrays are empty, it likely means user hasn't configured yet, so keep defaults
-          // If at least one array has data, use API response (user has configured something)
-          const hasAnyData = heroImages.length > 0 || galleryImages.length > 0 || testimonials.length > 0
           
-          if (hasAnyData) {
-            // User has configured something - use API data (even if some arrays are empty)
-            updateSchool({
-              hero: {
-                ...currentSchool.hero,
-                images: heroImages.length > 0 ? heroImages : currentSchool.hero.images,
-              },
-              testimonials: testimonials.length > 0 ? testimonials : currentSchool.testimonials,
-              gallery: galleryImages.length > 0 ? galleryImages : currentSchool.gallery,
-            })
-          }
-          // If hasAnyData is false, don't update - keep defaults (user hasn't configured yet)
+          // Use custom testimonials if any exist, otherwise keep defaults
+          const mergedTestimonials = customTestimonials.length > 0 ? customTestimonials : defaultTestimonials
+
+          // Update store with merged data
+          updateSchool({
+            hero: {
+              ...currentSchool.hero,
+              images: mergedHeroImages,
+            },
+            testimonials: mergedTestimonials,
+            gallery: mergedGalleryImages,
+          })
         }
       } catch (error) {
         console.error("Failed to fetch landing page config:", error)

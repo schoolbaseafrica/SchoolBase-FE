@@ -28,16 +28,17 @@ export function HeroSection() {
     setImageErrors((prev) => ({ ...prev, [index]: true }))
   }
 
-  // Use images directly from store (which already includes defaults from defaultSchoolProfile)
-  // Filter out empty/invalid images, but keep the structure
-  const validImages = (hero.images || []).filter(img => img?.src && img.src.trim() !== "")
+  // Use images directly from store (which includes merged custom + defaults)
+  // The provider merges custom images with defaults, so we should always have 3 images
+  const imagesToDisplay = (hero.images || []).slice(0, 3)
   
-  // Take first 3 valid images from store (store already has defaults if no custom images)
-  const imagesToDisplay = validImages.slice(0, 3)
-  
-  // If we have fewer than 3 images, pad with the last image to maintain layout
-  while (imagesToDisplay.length < 3 && imagesToDisplay.length > 0) {
-    imagesToDisplay.push(imagesToDisplay[imagesToDisplay.length - 1])
+  // Ensure we have exactly 3 images (fallback to defaults if needed)
+  while (imagesToDisplay.length < 3) {
+    const defaultIndex = imagesToDisplay.length
+    imagesToDisplay.push({
+      src: `/landing/hero-${defaultIndex + 1}.jpeg`,
+      alt: `Hero image ${defaultIndex + 1}`,
+    })
   }
   
   // Use image src if available and no error
