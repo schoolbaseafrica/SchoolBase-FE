@@ -46,7 +46,7 @@ export function GallerySection() {
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {galleryToDisplay.map((item, index) => {
+          {validGallery.map((item, index) => {
             const key = `${item.src}-${index}`
             return (
               <figure
