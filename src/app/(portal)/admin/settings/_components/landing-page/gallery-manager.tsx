@@ -56,7 +56,7 @@ export function GalleryManager({
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 50vw, 25vw"
-                    unoptimized={image.url.startsWith('/landing/') || image.url.startsWith('/assets/')}
+                    unoptimized={image.url.startsWith('/landing/') || image.url.startsWith('/assets/') || image.url.startsWith('http://') || image.url.startsWith('https://')}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <Button

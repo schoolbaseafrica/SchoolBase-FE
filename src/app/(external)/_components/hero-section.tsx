@@ -85,7 +85,7 @@ export function HeroSection() {
                 priority={imageLayout[index]?.priority}
                 className="object-cover transition-transform duration-500 hover:scale-105"
                 onError={() => handleImageError(index)}
-                unoptimized={imageSrc.startsWith("/landing/") || imageSrc.startsWith("/assets/")}
+                unoptimized={imageSrc.startsWith("/landing/") || imageSrc.startsWith("/assets/") || imageSrc.startsWith("http://") || imageSrc.startsWith("https://")}
               />
             </div>
           )
