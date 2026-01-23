@@ -74,27 +74,33 @@ export function LandingPageSettings() {
 
   const handleHeroImageUpload = async (index: number, imageUrl: string) => {
     try {
-      const newHeroImages = [...(config.hero_images || [])]
-      if (newHeroImages[index]) {
-        newHeroImages[index] = { ...newHeroImages[index], url: imageUrl }
+      // Get existing hero images, ensuring we have an array
+      const existingHeroImages = [...(config.hero_images || [])]
+      
+      // Find or create the hero image for this index
+      let heroImage = existingHeroImages.find(img => img.order === index)
+      
+      if (heroImage) {
+        // Update existing image
+        heroImage.url = imageUrl
       } else {
-        newHeroImages[index] = { 
-          id: `hero-${index}-${Date.now()}`, 
-          url: imageUrl, 
-          alt: `Hero image ${index + 1}`, 
-          order: index 
+        // Create new image entry
+        heroImage = {
+          id: `hero-${index}-${Date.now()}`,
+          url: imageUrl,
+          alt: `Hero image ${index + 1}`,
+          order: index,
         }
+        existingHeroImages.push(heroImage)
       }
-      // Ensure we have exactly 3 slots
-      while (newHeroImages.length < 3) {
-        newHeroImages.push({ 
-          id: `hero-${newHeroImages.length}-${Date.now()}`, 
-          url: "", 
-          alt: `Hero image ${newHeroImages.length + 1}`, 
-          order: newHeroImages.length 
-        })
-      }
-      const updatedConfig = { ...config, hero_images: newHeroImages }
+      
+      // Filter out any images with empty URLs and sort by order
+      // Only send images with valid URLs to avoid validation errors
+      const validHeroImages = existingHeroImages
+        .filter(img => img?.url && img.url.trim() !== "")
+        .sort((a, b) => a.order - b.order)
+      
+      const updatedConfig = { ...config, hero_images: validHeroImages }
       await saveConfig(updatedConfig)
     } catch (error: any) {
       // Error already handled in saveConfig
