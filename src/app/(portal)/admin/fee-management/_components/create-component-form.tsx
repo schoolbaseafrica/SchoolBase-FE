@@ -16,6 +16,9 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Search, X } from "lucide-react"
 
 import { SuccessModal } from "@/components/dashboard/success-modal"
 import { useCreateFee as useCreateFeeComponent } from "../_hooks/use-fees"
@@ -86,6 +89,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<string>("")
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([])
+  const [classSearchQuery, setClassSearchQuery] = useState("")
   const queryClient = useQueryClient()
 
   // Sessions
@@ -436,131 +440,271 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
         )}
 
         {/* Classes */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label>Fee Assignment</Label>
-            <span className="text-xs text-gray-500">(Optional)</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Label className="text-base font-semibold">Fee Assignment</Label>
+              <span className="text-xs text-gray-500">(Optional)</span>
+            </div>
+            {selectedClassIds.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedClassIds.length} {selectedClassIds.length === 1 ? "class" : "classes"} selected
+              </Badge>
+            )}
           </div>
-          <p className="text-xs text-gray-500 mb-3">
-            Choose how this fee should be applied. Leave unselected to create an unassigned fee that can be assigned later to specific classes or students.
+          
+          <p className="text-xs text-gray-500">
+            Choose how this fee should be applied. Leave unselected to create an unassigned fee that can be assigned later.
           </p>
           
           {loadingClasses ? (
-            <p className="text-sm text-gray-500">Loading classes...</p>
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-gray-500">Loading classes...</p>
+            </div>
           ) : classes?.items?.length ? (
-            <div className="space-y-3">
-              {/* Select All Checkbox */}
-              <div className="flex items-center space-x-2 rounded-md border p-3 bg-gray-50/50">
-                <Checkbox
-                  id="select-all-classes"
-                  checked={isAllSelected}
-                  onCheckedChange={handleSelectAll}
-                  className={isPartiallySelected ? "data-[state=checked]:bg-amber-500" : ""}
-                />
-                <label
-                  htmlFor="select-all-classes"
-                  className="cursor-pointer text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            <div className="space-y-4">
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={isAllSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSelectAll(!isAllSelected)}
+                  className="text-xs"
                 >
-                  Apply to All Classes (School-wide)
-                </label>
-                {isAllSelected && (
-                  <span className="text-xs text-green-600 ml-2">✓ Selected</span>
+                  {isAllSelected ? "✓ All Selected" : "Select All Classes"}
+                </Button>
+                {selectedClassIds.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedClassIds([])
+                      setClassSearchQuery("")
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear Selection
+                  </Button>
                 )}
               </div>
 
-              {/* Stream Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Select entire streams (all arms):</Label>
-                <div className="grid max-h-32 grid-cols-2 gap-2 overflow-y-auto rounded-md border p-3 md:grid-cols-3">
-                  {classes.items
-                    .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
-                    .map((clsItem) => {
-                      const streamSelected = isStreamSelected(clsItem.name)
-                      const streamPartiallySelected = isStreamPartiallySelected(clsItem.name)
-                      const armCount = clsItem.classes.filter((cls) => cls?.id).length
-                      
-                      return (
-                        <div key={`stream-${clsItem.name}`} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`stream-${clsItem.name}`}
-                            checked={streamSelected}
-                            onCheckedChange={(checked) => handleSelectStream(clsItem.name, checked as boolean)}
-                            className={streamPartiallySelected ? "data-[state=checked]:bg-amber-500" : ""}
-                          />
-                          <label
-                            htmlFor={`stream-${clsItem.name}`}
-                            className="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {clsItem.name || "Unknown"}
-                            <span className="text-xs text-gray-500 ml-1">
-                              ({armCount} arm{armCount !== 1 ? "s" : ""})
-                            </span>
-                          </label>
-                        </div>
-                      )
-                    })}
-                </div>
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search classes by name or arm..."
+                  value={classSearchQuery}
+                  onChange={(e) => setClassSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+                {classSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setClassSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
-              {/* Individual Arm Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Or select specific arms:</Label>
-                <div className="grid max-h-48 grid-cols-1 gap-2 overflow-y-auto rounded-md border p-3 md:grid-cols-2">
-                  {classes.items
-                    .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
-                    .map((clsItem) => (
-                      <div key={`group-${clsItem.name}`} className="space-y-1">
-                        <div className="text-xs font-semibold text-gray-600 pb-1 border-b">
-                          {clsItem.name}
-                        </div>
-                        {clsItem.classes
-                          .filter((cls) => cls?.id)
-                          .map((cls) => (
-                            <div key={cls.id} className="flex items-center space-x-2 pl-2">
-                              <Checkbox
-                                id={cls.id}
-                                checked={selectedClassIds.includes(cls.id)}
-                                onCheckedChange={(checked) => toggleClass(cls.id, checked as boolean)}
-                              />
-                              <label
-                                htmlFor={cls.id}
-                                className="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {cls.arm || "Default"}
-                              </label>
-                            </div>
-                          ))}
-                      </div>
-                    ))}
+              {/* Selected Classes Summary */}
+              {selectedClassIds.length > 0 && !isAllSelected && (
+                <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <p className="text-xs font-medium text-green-800">Selected Classes:</p>
+                    <Badge variant="outline" className="text-xs bg-white">
+                      {selectedClassIds.length}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {classes.items
+                      .flatMap((item) => 
+                        item.classes
+                          .filter((cls) => selectedClassIds.includes(cls.id))
+                          .map((cls) => ({
+                            id: cls.id,
+                            label: `${item.name} ${cls.arm || ""}`.trim(),
+                            stream: item.name,
+                          }))
+                      )
+                      .slice(0, 20)
+                      .map((cls) => (
+                        <Badge
+                          key={cls.id}
+                          variant="secondary"
+                          className="text-xs cursor-pointer hover:bg-green-100"
+                          onClick={() => toggleClass(cls.id, false)}
+                        >
+                          {cls.label}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    {selectedClassIds.length > 20 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{selectedClassIds.length - 20} more
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Stream Selection - Quick Select */}
+              {!isAllSelected && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Quick Select by Stream:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {classes.items
+                      .filter((clsItem) => {
+                        if (!clsItem?.name || !clsItem?.classes?.length) return false
+                        if (classSearchQuery) {
+                          const query = classSearchQuery.toLowerCase()
+                          return clsItem.name.toLowerCase().includes(query) ||
+                            clsItem.classes.some((c) => c.arm?.toLowerCase().includes(query))
+                        }
+                        return true
+                      })
+                      .map((clsItem) => {
+                        const streamSelected = isStreamSelected(clsItem.name)
+                        const streamPartiallySelected = isStreamPartiallySelected(clsItem.name)
+                        const armCount = clsItem.classes.filter((cls) => cls?.id).length
+                        
+                        return (
+                          <Button
+                            key={`stream-btn-${clsItem.name}`}
+                            type="button"
+                            variant={streamSelected ? "default" : streamPartiallySelected ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => handleSelectStream(clsItem.name, !streamSelected)}
+                            className="text-xs"
+                          >
+                            {streamPartiallySelected && "• "}
+                            {clsItem.name}
+                            <span className="ml-1 text-xs opacity-75">
+                              ({armCount})
+                            </span>
+                          </Button>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Classes by Stream - Accordion */}
+              {!isAllSelected && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Select Individual Classes:</Label>
+                  <div className="rounded-lg border border-gray-200 bg-white">
+                    <Accordion type="multiple" className="w-full">
+                      {classes.items
+                        .filter((clsItem) => {
+                          if (!clsItem?.name || !clsItem?.classes?.length) return false
+                          if (classSearchQuery) {
+                            const query = classSearchQuery.toLowerCase()
+                            return clsItem.name.toLowerCase().includes(query) ||
+                              clsItem.classes.some((c) => c.arm?.toLowerCase().includes(query))
+                          }
+                          return true
+                        })
+                        .map((clsItem) => {
+                          const streamSelected = isStreamSelected(clsItem.name)
+                          const selectedCount = clsItem.classes.filter((cls) => 
+                            selectedClassIds.includes(cls.id)
+                          ).length
+                          const totalCount = clsItem.classes.filter((cls) => cls?.id).length
+                          
+                          return (
+                            <AccordionItem key={`accordion-${clsItem.name}`} value={clsItem.name} className="border-b last:border-b-0">
+                              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                <div className="flex items-center justify-between w-full pr-4">
+                                  <div className="flex items-center gap-3">
+                                    <Checkbox
+                                      checked={streamSelected}
+                                      onCheckedChange={(checked) => handleSelectStream(clsItem.name, checked as boolean)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="pointer-events-auto"
+                                    />
+                                    <span className="font-medium text-sm">{clsItem.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    {selectedCount > 0 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {selectedCount}/{totalCount}
+                                      </Badge>
+                                    )}
+                                    <span>{totalCount} {totalCount === 1 ? "arm" : "arms"}</span>
+                                  </div>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4 pb-3">
+                                <div className="grid grid-cols-2 gap-2 pt-2">
+                                  {clsItem.classes
+                                    .filter((cls) => {
+                                      if (!cls?.id) return false
+                                      if (classSearchQuery) {
+                                        const query = classSearchQuery.toLowerCase()
+                                        return cls.arm?.toLowerCase().includes(query)
+                                      }
+                                      return true
+                                    })
+                                    .map((cls) => {
+                                      const isSelected = selectedClassIds.includes(cls.id)
+                                      return (
+                                        <label
+                                          key={cls.id}
+                                          className={`flex items-center gap-2 rounded-md border p-2.5 cursor-pointer transition-all ${
+                                            isSelected
+                                              ? "border-green-500 bg-green-50"
+                                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                          }`}
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={(checked) => toggleClass(cls.id, checked as boolean)}
+                                          />
+                                          <span className="text-sm font-medium flex-1">
+                                            {cls.arm || "Default"}
+                                          </span>
+                                          {isSelected && (
+                                            <Badge variant="outline" className="text-xs bg-green-100 border-green-300">
+                                              ✓
+                                            </Badge>
+                                          )}
+                                        </label>
+                                      )
+                                    })}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          )
+                        })}
+                    </Accordion>
+                  </div>
+                </div>
+              )}
 
               {/* Status Messages */}
               {selectedClassIds.length === 0 && (
-                <div className="rounded-md border border-blue-200 bg-blue-50 p-2">
+                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
                   <p className="text-xs text-blue-700">
                     <span className="font-medium">Unassigned Fee:</span> This fee will be created without any class assignments. You can assign it to specific classes or students later.
                   </p>
                 </div>
               )}
               {isAllSelected && (
-                <div className="rounded-md border border-green-200 bg-green-50 p-2">
+                <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
                   <p className="text-xs text-green-700">
                     <span className="font-medium">School-wide Fee:</span> This fee will apply to all classes in the school.
                   </p>
                 </div>
               )}
-              {isPartiallySelected && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
-                  <p className="text-xs text-amber-700">
-                    <span className="font-medium">Partial Selection:</span> This fee will apply to {selectedClassIds.length} selected class{selectedClassIds.length > 1 ? "es" : ""} only.
-                  </p>
-                </div>
-              )}
             </div>
           ) : (
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-              <p className="text-sm text-gray-600">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm text-gray-600 text-center">
                 No classes available. This fee will be created as unassigned and can be assigned later.
               </p>
             </div>
