@@ -150,14 +150,26 @@ const FeeComponentGrid: React.FC<FeeComponentGridProps> = ({ feeComponents }) =>
                 </div>
               </div>
 
-              <div className="w-full">
+              <div className="flex w-full gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleViewClick(fee)}
-                  className="w-full"
+                  className="flex-1"
                 >
                   View Details
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => {
+                    setSelectedFee(fee)
+                    setEditDialogOpen(true)
+                  }}
+                  className="shrink-0"
+                  aria-label="Edit fee"
+                >
+                  <Edit2 className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>

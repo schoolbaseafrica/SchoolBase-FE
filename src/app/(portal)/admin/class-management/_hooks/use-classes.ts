@@ -309,8 +309,18 @@ export const usePromotionPreview = () => {
       targetSessionId: string
       armMappings: { sourceClassId: string; targetClassId: string }[]
     }) => {
+      console.log("[Promotion] Preview request:", body)
       const res = await ClassesAPI.promotionPreview(body)
-      return extractPromotionPreview(res)
+      const extracted = extractPromotionPreview(res)
+      console.log("[Promotion] Preview response:", {
+        raw: res,
+        extracted,
+        mappingsCount: extracted.mappings?.length ?? 0,
+        totalToPromote: extracted.mappings?.reduce((s, m) => s + (m.toPromote ?? 0), 0) ?? 0,
+        totalAlreadyInTarget: extracted.mappings?.reduce((s, m) => s + (m.alreadyInTarget ?? 0), 0) ?? 0,
+        errors: extracted.errors,
+      })
+      return extracted
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err))
@@ -327,8 +337,18 @@ export const usePromotionExecute = () => {
       targetSessionId: string
       armMappings: { sourceClassId: string; targetClassId: string }[]
     }) => {
+      console.log("[Promotion] Execute request:", body)
       const res = await ClassesAPI.promotionExecute(body)
-      return extractPromotionExecute(res)
+      const extracted = extractPromotionExecute(res)
+      console.log("[Promotion] Execute response:", {
+        raw: res,
+        extracted,
+        promoted: extracted.promoted,
+        skipped: extracted.skipped,
+        failed: extracted.failed,
+        details: extracted.details,
+      })
+      return extracted
     },
     onSuccess: async (payload) => {
       const { promoted, skipped, failed } = payload

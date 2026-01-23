@@ -109,6 +109,7 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
                 <TableHead className="px-4 py-2.5 text-center">Created By</TableHead>
                 <TableHead className="px-4 py-2.5 text-center">Amount</TableHead>
                 <TableHead className="px-4 py-2.5 text-center">Status</TableHead>
+                <TableHead className="px-4 py-2.5 text-center w-[60px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -144,6 +145,20 @@ const FeeComponentTable: React.FC<FeeComponentTableProps> = ({ feeComponents }) 
                     >
                       {fee.status}
                     </span>
+                  </TableCell>
+                  <TableCell className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        setSelectedFee(fee)
+                        setEditDialogOpen(true)
+                      }}
+                      aria-label="Edit fee"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

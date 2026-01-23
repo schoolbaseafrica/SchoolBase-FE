@@ -58,10 +58,10 @@ export const DeleteAccountSettings = () => {
                     Delete account
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent aria-describedby="settings-delete-account-description">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogDescription id="settings-delete-account-description">
                       This action cannot be undone. This will permanently delete your
                       account and remove your data from our servers.
                     </AlertDialogDescription>

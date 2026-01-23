@@ -32,7 +32,10 @@ export function PaymentSuccessModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95%] rounded-xl sm:max-w-[500px]">
+      <DialogContent
+        className="w-[95%] rounded-xl sm:max-w-[500px]"
+        aria-describedby="payment-success-description"
+      >
         <DialogHeader className="flex flex-col items-center space-y-4 pt-4">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
@@ -43,8 +46,8 @@ export function PaymentSuccessModal({
             <DialogTitle className="text-xl font-bold text-gray-900">
               Payment Recorded Successfully!
             </DialogTitle>
-            <DialogDescription className="mt-1 text-sm text-gray-500">
-              The student&apos;s fee record have been update
+            <DialogDescription id="payment-success-description" className="mt-1 text-sm text-gray-500">
+              The student&apos;s fee record have been updated.
             </DialogDescription>
           </div>
         </DialogHeader>

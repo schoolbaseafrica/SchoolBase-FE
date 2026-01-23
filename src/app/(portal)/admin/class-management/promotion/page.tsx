@@ -114,7 +114,9 @@ export default function PromotionPage() {
   const handlePreview = async () => {
     if (!canPreview) return
     try {
+      console.log("[Promotion] Preview payload:", previewPayload)
       const res = await previewMutation.mutateAsync(previewPayload)
+      console.log("[Promotion] Preview result (page):", res)
       // The mutation already extracts the preview data correctly
       if (res && res.mappings) {
         setPreviewData(res as PromotionPreviewPayload)
@@ -126,7 +128,8 @@ export default function PromotionPage() {
         const totalSkip = mappings.reduce((s: number, m: any) => s + (m.alreadyInTarget || 0), 0)
         toast.info(`Preview: ${totalToPromote} to promote, ${totalSkip} to skip`)
       }
-    } catch {
+    } catch (e) {
+      console.error("[Promotion] Preview error:", e)
       // Error toast handled in mutation
     }
   }
@@ -134,8 +137,11 @@ export default function PromotionPage() {
   const handleExecute = async () => {
     if (!canPreview) return
     try {
-      await executeMutation.mutateAsync(previewPayload)
-    } catch {
+      console.log("[Promotion] Execute payload:", previewPayload)
+      const res = await executeMutation.mutateAsync(previewPayload)
+      console.log("[Promotion] Execute result (page):", res)
+    } catch (e) {
+      console.error("[Promotion] Execute error:", e)
       // Error toast handled in mutation
     }
   }
