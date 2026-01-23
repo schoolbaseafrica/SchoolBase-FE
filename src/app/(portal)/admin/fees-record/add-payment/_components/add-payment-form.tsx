@@ -118,7 +118,7 @@ const AddPaymentForm = () => {
 
   // Fetch sessions for ID resolution
   const { data: sessionsData } = useAcademicSessions({ limit: 100 })
-  const activeSession = sessionsData?.data?.find((s) => s.is_active)
+  const activeSession = sessionsData?.data?.find((s) => s.isActive)
 
   // Derive selected fee and session
   const selectedFee = feeComponents.find((f) => f.id === watchFeeComponent)
@@ -197,11 +197,23 @@ const AddPaymentForm = () => {
     createPayment(formData, {
       onSuccess: (response) => {
         const isUnreconciledPayment = !values.studentId || !values.feeComponent
+        // The API returns { status_code, message, response: PaymentResponseDto }
+        // but the type says ResponsePack<null>, so we need to handle both cases
+        const responseData = response as unknown as {
+          response?: { transaction_id?: string }
+          data?: { transaction_id?: string }
+        }
+        const transactionId = 
+          responseData?.response?.transaction_id || 
+          responseData?.data?.transaction_id || 
+          values.invoice || 
+          "N/A"
+        
         setSuccessData({
           studentName: selectedStudent?.name || "Unassigned",
           amountPaid: values.amountPaid,
           feeComponent: selectedFee?.name || "Unassigned",
-          transactionId: response?.data?.transaction_id || values.invoice || "N/A",
+          transactionId,
           date: format(new Date(), "dd MMM yyyy h:mm a"),
         })
         setShowSuccessModal(true)

@@ -9,10 +9,10 @@ export const useActiveFees = () => {
   })
 }
 
-export const useFeeStudents = (feeId: string) => {
+export const useFeeStudents = (feeId: string | undefined) => {
   return useQuery({
     queryKey: ["fee-students", feeId],
-    queryFn: () => FeesAPI.getFeeStudents(feeId),
+    queryFn: () => FeesAPI.getFeeStudents(feeId!),
     enabled: !!feeId,
   })
 }
