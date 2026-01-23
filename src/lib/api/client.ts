@@ -8,8 +8,13 @@ const isInternalApiPath = (path: string): boolean => path.startsWith("/api/")
 const normalizeBackendPath = (path: string): string => {
   const trimmedBase = API_BASE_URL?.replace(/\/+$/, "") ?? ""
   const trimmedPath = path.replace(/^\/+/, "")
+  
+  // Add /api/v1 prefix if API_BASE_URL doesn't already include it
+  // Check if base URL ends with /api/v1 (with or without trailing slash)
+  const baseHasApiV1 = trimmedBase.match(/\/api\/v1\/?$/)
+  const apiPath = baseHasApiV1 ? trimmedPath : `api/v1/${trimmedPath}`
 
-  return `${trimmedBase}/${trimmedPath}`
+  return `${trimmedBase}/${apiPath}`
 }
 
 const resolveRequestUrl = (path: string, proxy?: boolean): string => {
