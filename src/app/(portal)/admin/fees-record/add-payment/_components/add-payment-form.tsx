@@ -102,14 +102,36 @@ const AddPaymentForm = () => {
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
-  const feeComponents = (activeFeesData?.data?.data || []).filter(
-    (f) => f != null && f.id && f.name && (f.amount !== undefined && f.amount !== null)
-  )
+  const feeComponents = useMemo(() => {
+    const rawFees = activeFeesData?.data?.data || []
+    return rawFees.filter(
+      (f): f is NonNullable<typeof f> => 
+        f != null && 
+        typeof f === 'object' &&
+        'id' in f && 
+        f.id != null &&
+        'name' in f && 
+        f.name != null &&
+        'amount' in f &&
+        f.amount != null
+    )
+  }, [activeFeesData?.data?.data])
 
   // Fetch students for selected fee
   const { data: studentsData, isLoading: isStudentsLoading } =
     useFeeStudents(watchFeeComponent)
-  const students = (studentsData?.data?.data || []).filter((s) => s != null)
+  const students = useMemo(() => {
+    const rawStudents = studentsData?.data?.data || []
+    return rawStudents.filter(
+      (s): s is NonNullable<typeof s> =>
+        s != null &&
+        typeof s === 'object' &&
+        'id' in s &&
+        s.id != null &&
+        'name' in s &&
+        s.name != null
+    )
+  }, [studentsData?.data?.data])
 
   // Reset student selection when fee component changes (only if fee was cleared)
   React.useEffect(() => {
@@ -307,18 +329,30 @@ const AddPaymentForm = () => {
                           <div className="p-2 text-center text-sm text-gray-500">
                             No fees found
                           </div>
+                        ) : feeComponents.length === 0 ? (
+                          <div className="p-2 text-center text-sm text-gray-500">
+                            No fees available
+                          </div>
                         ) : (
-                          feeComponents.map((component) => {
-                            // Double-check component is valid before rendering
-                            if (!component || !component.id || !component.name) {
-                              return null
-                            }
-                            return (
+                          feeComponents
+                            .filter((component) => {
+                              // Strict validation before mapping
+                              return (
+                                component != null &&
+                                typeof component === 'object' &&
+                                'id' in component &&
+                                component.id != null &&
+                                typeof component.id === 'string' &&
+                                'name' in component &&
+                                component.name != null &&
+                                typeof component.name === 'string'
+                              )
+                            })
+                            .map((component) => (
                               <SelectItem key={component.id} value={component.id}>
                                 {component.name} - {component.session || ""} ({component.term || ""})
                               </SelectItem>
-                            )
-                          }).filter(Boolean)
+                            ))
                         )}
                       </SelectContent>
                     </Select>
@@ -379,18 +413,30 @@ const AddPaymentForm = () => {
                           <div className="p-2 text-center text-sm text-gray-500">
                             No students found for this fee
                           </div>
+                        ) : students.length === 0 ? (
+                          <div className="p-2 text-center text-sm text-gray-500">
+                            No students available
+                          </div>
                         ) : (
-                          students.map((student) => {
-                            // Double-check student is valid before rendering
-                            if (!student || !student.id || !student.name) {
-                              return null
-                            }
-                            return (
+                          students
+                            .filter((student) => {
+                              // Strict validation before mapping
+                              return (
+                                student != null &&
+                                typeof student === 'object' &&
+                                'id' in student &&
+                                student.id != null &&
+                                typeof student.id === 'string' &&
+                                'name' in student &&
+                                student.name != null &&
+                                typeof student.name === 'string'
+                              )
+                            })
+                            .map((student) => (
                               <SelectItem key={student.id} value={student.id}>
                                 {student.name}
                               </SelectItem>
-                            )
-                          }).filter(Boolean)
+                            ))
                         )}
                       </SelectContent>
                     </Select>
