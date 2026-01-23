@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-// import { toast } from "sonner"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Search, X } from "lucide-react"
 
 import { SuccessModal } from "@/components/dashboard/success-modal"
+import { extractErrorMessage } from "@/lib/error-handler"
 import { useCreateFee as useCreateFeeComponent } from "../_hooks/use-fees"
 import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import { useAcademicSessions } from "../../class-management/session/_hooks/use-session"
@@ -307,36 +308,122 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   }
 
   const onSubmit = async (values: FeeComponentFormValues) => {
-    // Create the fee first
-    const feeResponse = await createComponent.mutateAsync({
-      component_name: values.component_name,
-      description: values.description ?? "",
-      amount: Number(values.amount),
-      period_type: values.period_type,
-      term_id: values.period_type === "TERM" ? values.term_id : undefined,
-      session_id: values.period_type === "SESSION" ? values.session_id : undefined,
-      class_ids: values.class_ids || [], // Ensure it's always an array (empty for school-wide fees)
-    })
+    try {
+      const hasStudentsToAssign = values.student_ids && values.student_ids.length > 0
+      
+      // Create the fee first
+      const feeResponse = await createComponent.mutateAsync({
+        component_name: values.component_name,
+        description: values.description ?? "",
+        amount: Number(values.amount),
+        period_type: values.period_type,
+        term_id: values.period_type === "TERM" ? values.term_id : undefined,
+        session_id: values.period_type === "SESSION" ? values.session_id : undefined,
+        class_ids: values.class_ids || [], // Ensure it's always an array (empty for school-wide fees)
+      })
 
-    // If students are selected, assign them to the fee
-    if (values.student_ids && values.student_ids.length > 0 && feeResponse?.data?.id) {
-      try {
-        await FeesAPI.assignStudents(feeResponse.data.id, values.student_ids)
-      } catch (error) {
-        console.error("Failed to assign students to fee:", error)
-        // Don't fail the whole operation, just log the error
-        // The fee was created successfully, students can be assigned later
+      const feeId = feeResponse?.data?.id
+      if (!feeId) {
+        console.error("Fee created but no ID returned:", feeResponse)
+        toast.error("Fee created but could not retrieve fee ID. Please refresh and check.")
+        return
       }
-    }
 
-    reset()
-    setSelectedClassIds([])
-    setSelectedStudentIds([])
-    setClassSearchQuery("")
-    setStudentSearchQuery("")
-    setSelectedSession("")
-    onSuccess?.() // Close the drawer after success
-    setModalOpen(true) // Show success modal
+      // If students are selected, assign them to the fee
+      if (hasStudentsToAssign) {
+        try {
+          console.log(`Assigning ${values.student_ids.length} students to fee ${feeId}`, {
+            feeId,
+            studentIds: values.student_ids,
+          })
+          
+          const assignmentResult = await FeesAPI.assignStudents(feeId, values.student_ids)
+          
+          console.log("Student assignment result:", assignmentResult)
+          
+          // Show success message with assignment details
+          if (assignmentResult?.data) {
+            const { assigned, already_assigned, failed } = assignmentResult.data
+            
+            // Invalidate the specific fee query to refresh it with new assignments
+            await queryClient.invalidateQueries({ 
+              queryKey: ["fees", feeId],
+              exact: false 
+            })
+            
+            if (assigned > 0) {
+              toast.success(
+                `Fee created and assigned to ${assigned} student${assigned > 1 ? "s" : ""}${
+                  already_assigned > 0 ? ` (${already_assigned} already assigned)` : ""
+                }${failed > 0 ? `. ${failed} failed` : ""}`,
+                { duration: 5000 }
+              )
+            } else if (already_assigned > 0) {
+              toast.info(
+                `Fee created. All ${already_assigned} student${already_assigned > 1 ? "s were" : " was"} already assigned.`,
+                { duration: 4000 }
+              )
+            } else if (failed > 0) {
+              toast.warning(
+                `Fee created but failed to assign to ${failed} student${failed > 1 ? "s" : ""}. Please try assigning manually.`,
+                { duration: 6000 }
+              )
+            } else {
+              toast.success("Fee created and students processed successfully")
+            }
+          } else {
+            // Response structure might be different, still show success
+            toast.success("Fee created and students assigned successfully")
+            // Invalidate to refresh
+            await queryClient.invalidateQueries({ 
+              queryKey: ["fees", feeId],
+              exact: false 
+            })
+          }
+        } catch (error: any) {
+          console.error("Failed to assign students to fee:", error)
+          console.error("Error details:", {
+            feeId,
+            studentIds: values.student_ids,
+            error: error?.response?.data || error?.message,
+          })
+          
+          // Show error but don't fail the whole operation
+          const errorMessage = extractErrorMessage(error)
+          toast.error(
+            `Fee created successfully, but student assignment failed: ${errorMessage}. You can assign students manually later.`,
+            { duration: 6000 }
+          )
+          
+          // Still invalidate to refresh the fee (even if assignment failed)
+          await queryClient.invalidateQueries({ 
+            queryKey: ["fees", feeId],
+            exact: false 
+          })
+        }
+      } else {
+        // No students to assign - the mutation already shows success toast
+        // Just invalidate queries to refresh
+        await queryClient.invalidateQueries({ queryKey: ["fees"], exact: false })
+      }
+
+      // Invalidate all fee-related queries to ensure UI is up to date
+      await queryClient.invalidateQueries({ queryKey: ["fees"], exact: false })
+      await queryClient.invalidateQueries({ queryKey: ["fee-payments"], exact: false })
+      
+      reset()
+      setSelectedClassIds([])
+      setSelectedStudentIds([])
+      setClassSearchQuery("")
+      setStudentSearchQuery("")
+      setSelectedSession("")
+      onSuccess?.() // Close the drawer after success
+      setModalOpen(true) // Show success modal
+    } catch (error) {
+      // Error creating fee - this is already handled by the mutation's onError
+      console.error("Error in fee creation form:", error)
+      // Don't reset form on error so user can fix and retry
+    }
   }
 
   useEffect(() => {
