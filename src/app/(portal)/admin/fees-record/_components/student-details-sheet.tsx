@@ -17,9 +17,9 @@ const StudentDetailsSheet = ({
   student,
 }: StudentDetailsSheetProps) => {
   const { data, isLoading, error } = useStudentFeeDetails({
-    studentId: student?.student_id,
-    termId: student?.term_id,
-    sessionId: student?.session_id,
+    studentId: student?.student_id ?? undefined,
+    termId: student?.term_id ?? undefined,
+    sessionId: student?.session_id ?? undefined,
   })
 
 
@@ -96,9 +96,9 @@ const StudentDetailsSheet = ({
             {student && (
               <div className="mt-4 rounded-lg border border-gray-200 p-4 text-left">
                 <p className="text-sm font-medium text-gray-900">Payment Information:</p>
-                <p className="text-xs text-gray-600">Student ID: {student.student_id}</p>
-                <p className="text-xs text-gray-600">Term ID: {student.term_id}</p>
-                <p className="text-xs text-gray-600">Session ID: {student.session_id}</p>
+                <p className="text-xs text-gray-600">Student ID: {student.student_id ?? "—"}</p>
+                <p className="text-xs text-gray-600">Term ID: {student.term_id ?? "—"}</p>
+                <p className="text-xs text-gray-600">Session ID: {student.session_id ?? "—"}</p>
               </div>
             )}
           </div>
