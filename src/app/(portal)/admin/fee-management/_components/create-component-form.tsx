@@ -25,8 +25,10 @@ import { useCreateFee as useCreateFeeComponent } from "../_hooks/use-fees"
 import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import { useAcademicSessions } from "../../class-management/session/_hooks/use-session"
 import { useAcademicTermsForSession } from "../../class-management/_hooks/use-academic-term"
+import { useGetStudentsWithMeta } from "../../students/_hooks/use-students"
 import { useQueryClient } from "@tanstack/react-query"
 import { CLASS_KEYS } from "../../class-management/_hooks/use-classes"
+import { FeesAPI } from "@/lib/fees-management"
 import { z } from "zod"
 
 // ---------------- Zod Schema ----------------
@@ -42,6 +44,7 @@ const feeComponentSchema = z
     session_id: z.string().uuid().optional(),
     term_id: z.string().uuid().optional(),
     class_ids: z.array(z.string().uuid()).min(0),
+    student_ids: z.array(z.string().uuid()).min(0),
   })
   .refine(
     (data) => {
@@ -72,10 +75,11 @@ type FeeComponentFormValues = {
   component_name: string
   description?: string
   amount: string
-  period_type: "TERM" | "SESSION"
-  session_id?: string
-  term_id?: string
-  class_ids: string[]
+    period_type: "TERM" | "SESSION"
+    session_id?: string
+    term_id?: string
+    class_ids: string[]
+    student_ids: string[]
 }
 
 // Add onSuccess prop
@@ -90,6 +94,9 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const [selectedSession, setSelectedSession] = useState<string>("")
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([])
   const [classSearchQuery, setClassSearchQuery] = useState("")
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
+  const [studentSearchQuery, setStudentSearchQuery] = useState("")
+  const [studentPage, setStudentPage] = useState(1)
   const queryClient = useQueryClient()
 
   // Sessions
@@ -105,12 +112,27 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   // Classes - refetch when drawer opens to ensure fresh data
   const { data: classes, isLoading: loadingClasses } = useGetClassesInfo()
 
+  // Students - fetch with pagination and search
+  const {
+    data: studentsData,
+    isLoading: loadingStudents,
+  } = useGetStudentsWithMeta({
+    page: studentPage,
+    search: studentSearchQuery,
+    limit: 100,
+  })
+
+  const students = studentsData?.data || []
+
   // Refetch classes when drawer opens to ensure fresh data
   useEffect(() => {
     if (open) {
       // Invalidate and refetch classes to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: CLASS_KEYS.all, exact: false })
       queryClient.refetchQueries({ queryKey: CLASS_KEYS.all, exact: false, type: "active" })
+      // Reset student page when drawer opens
+      setStudentPage(1)
+      setStudentSearchQuery("")
     }
   }, [open, queryClient])
 
@@ -122,6 +144,17 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
       })
     } else {
       setSelectedClassIds((prev) => prev.filter((c) => c !== id))
+    }
+  }
+
+  const toggleStudent = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStudentIds((prev) => {
+        if (prev.includes(id)) return prev
+        return [...prev, id]
+      })
+    } else {
+      setSelectedStudentIds((prev) => prev.filter((s) => s !== id))
     }
   }
 
@@ -214,6 +247,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
       session_id: undefined,
       term_id: undefined,
       class_ids: [],
+      student_ids: [],
     },
   })
 
@@ -229,10 +263,14 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const sessionId = useWatch({ control, name: "session_id" })
   const createComponent = useCreateFeeComponent()
 
-  // Sync selectedClassIds with RHF
+  // Sync selectedClassIds and selectedStudentIds with RHF
   useEffect(() => {
     setValue("class_ids", selectedClassIds)
   }, [selectedClassIds, setValue])
+
+  useEffect(() => {
+    setValue("student_ids", selectedStudentIds)
+  }, [selectedStudentIds, setValue])
 
   const periodType = useWatch({ control, name: "period_type" })
 
@@ -261,12 +299,16 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const handleCancel = () => {
     reset()
     setSelectedClassIds([])
+    setSelectedStudentIds([])
+    setClassSearchQuery("")
+    setStudentSearchQuery("")
     setSelectedSession("")
     onSuccess?.() // Close the drawer
   }
 
   const onSubmit = async (values: FeeComponentFormValues) => {
-    await createComponent.mutateAsync({
+    // Create the fee first
+    const feeResponse = await createComponent.mutateAsync({
       component_name: values.component_name,
       description: values.description ?? "",
       amount: Number(values.amount),
@@ -275,8 +317,23 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
       session_id: values.period_type === "SESSION" ? values.session_id : undefined,
       class_ids: values.class_ids || [], // Ensure it's always an array (empty for school-wide fees)
     })
+
+    // If students are selected, assign them to the fee
+    if (values.student_ids && values.student_ids.length > 0 && feeResponse?.data?.id) {
+      try {
+        await FeesAPI.assignStudents(feeResponse.data.id, values.student_ids)
+      } catch (error) {
+        console.error("Failed to assign students to fee:", error)
+        // Don't fail the whole operation, just log the error
+        // The fee was created successfully, students can be assigned later
+      }
+    }
+
     reset()
     setSelectedClassIds([])
+    setSelectedStudentIds([])
+    setClassSearchQuery("")
+    setStudentSearchQuery("")
     setSelectedSession("")
     onSuccess?.() // Close the drawer after success
     setModalOpen(true) // Show success modal
@@ -711,6 +768,213 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
           )}
           {errors.class_ids && (
             <p className="text-xs text-red-500">{errors.class_ids.message}</p>
+          )}
+        </div>
+
+        {/* Students Selection */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Label className="text-base font-semibold">Assign to Specific Students</Label>
+              <span className="text-xs text-gray-500">(Optional)</span>
+            </div>
+            {selectedStudentIds.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedStudentIds.length} {selectedStudentIds.length === 1 ? "student" : "students"} selected
+              </Badge>
+            )}
+          </div>
+          
+          <p className="text-xs text-gray-500">
+            Optionally assign this fee to specific students. This works alongside class assignments - students in selected classes will also get the fee.
+          </p>
+          
+          {loadingStudents ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-gray-500">Loading students...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Quick Actions */}
+              {students.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedStudentIds.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStudentIds([])
+                        setStudentSearchQuery("")
+                      }}
+                      className="text-xs text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Clear Selection
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search students by name or registration number..."
+                  value={studentSearchQuery}
+                  onChange={(e) => {
+                    setStudentSearchQuery(e.target.value)
+                    setStudentPage(1) // Reset to first page on search
+                  }}
+                  className="pl-9"
+                />
+                {studentSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudentSearchQuery("")
+                      setStudentPage(1)
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Selected Students Summary */}
+              {selectedStudentIds.length > 0 && (
+                <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <p className="text-xs font-medium text-green-800">Selected Students:</p>
+                    <Badge variant="outline" className="text-xs bg-white">
+                      {selectedStudentIds.length}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {students
+                      .filter((student) => selectedStudentIds.includes(student.id))
+                      .slice(0, 20)
+                      .map((student) => (
+                        <Badge
+                          key={student.id}
+                          variant="secondary"
+                          className="text-xs cursor-pointer hover:bg-green-100"
+                          onClick={() => toggleStudent(student.id, false)}
+                        >
+                          {student.first_name} {student.last_name}
+                          {student.registration_number && ` (${student.registration_number})`}
+                          <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    {selectedStudentIds.length > 20 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{selectedStudentIds.length - 20} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Students List */}
+              {students.length > 0 ? (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Select Students:</Label>
+                  <div className="rounded-lg border border-gray-200 bg-white max-h-64 overflow-y-auto">
+                    <div className="p-3 space-y-2">
+                      {students
+                        .filter((student) => {
+                          if (studentSearchQuery) {
+                            const query = studentSearchQuery.toLowerCase()
+                            const fullName = `${student.first_name} ${student.last_name}`.toLowerCase()
+                            const regNumber = student.registration_number?.toLowerCase() || ""
+                            return fullName.includes(query) || regNumber.includes(query)
+                          }
+                          return true
+                        })
+                        .map((student) => {
+                          const isSelected = selectedStudentIds.includes(student.id)
+                          return (
+                            <label
+                              key={student.id}
+                              className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-all ${
+                                isSelected
+                                  ? "border-green-500 bg-green-50"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => toggleStudent(student.id, checked as boolean)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">
+                                    {student.first_name} {student.last_name}
+                                  </span>
+                                  {student.registration_number && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {student.registration_number}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {student.class && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {student.class}
+                                  </p>
+                                )}
+                              </div>
+                              {isSelected && (
+                                <Badge variant="outline" className="text-xs bg-green-100 border-green-300 shrink-0">
+                                  ✓
+                                </Badge>
+                              )}
+                            </label>
+                          )
+                        })}
+                    </div>
+                    {/* Pagination */}
+                    {studentsData?.meta && studentsData.meta.total_pages > 1 && (
+                      <div className="flex items-center justify-between border-t p-3">
+                        <p className="text-xs text-gray-500">
+                          Page {studentPage} of {studentsData.meta.total_pages}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setStudentPage((p) => Math.max(1, p - 1))}
+                            disabled={studentPage === 1}
+                            className="text-xs"
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setStudentPage((p) => Math.min(studentsData.meta?.total_pages || 1, p + 1))}
+                            disabled={studentPage >= (studentsData.meta?.total_pages || 1)}
+                            className="text-xs"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-600 text-center">
+                    {studentSearchQuery
+                      ? "No students found matching your search."
+                      : "No students available."}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
