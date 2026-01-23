@@ -214,7 +214,7 @@ const FeesTable = ({
                   <div className="mb-4 flex flex-col">
                     <span className="text-xs text-gray-500">Fee</span>
                     <span className="mt-1 text-sm font-semibold text-gray-900">
-                      {payment.fee_component.component_name}
+                      {payment.fee_component?.component_name ?? "Unassigned"}
                     </span>
                   </div>
 
