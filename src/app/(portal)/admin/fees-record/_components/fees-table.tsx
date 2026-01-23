@@ -99,7 +99,9 @@ const FeesTable = ({
                 </TableRow>
               ) : (
                 data.map((payment) => {
-                  const amountDue = parseFloat(payment.fee_component.amount)
+                  const amountDue = payment.fee_component?.amount != null
+                    ? parseFloat(String(payment.fee_component.amount))
+                    : 0
                   const amountPaid = parseFloat(payment.amount_paid)
                   const balance = amountDue - amountPaid
 
@@ -112,7 +114,6 @@ const FeesTable = ({
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
                         <div className="flex items-center gap-3">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full bg-gray-100">
-                            {/* Avatar placeholder or image if available */}
                             <div className="flex h-full w-full items-center justify-center text-gray-500">
                               {payment.student?.first_name?.[0] || "?"}
                               {payment.student?.last_name?.[0] || ""}
@@ -122,29 +123,29 @@ const FeesTable = ({
                             <span className="font-medium text-gray-900">
                               {payment.student?.first_name && payment.student?.last_name
                                 ? `${payment.student.first_name} ${payment.student.last_name}`
-                                : "Unknown Student"}
+                                : "Unassigned"}
                             </span>
                             <span className="text-xs text-gray-500">
-                              ID: {payment.invoice_number}
+                              ID: {payment.invoice_number || "—"}
                             </span>
                           </div>
                         </div>
                       </TableCell>
 
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
-                        {payment.fee_component.component_name}
+                        {payment.fee_component?.component_name ?? "Unassigned"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
-                        ₦{amountDue.toLocaleString()}
+                        {amountDue > 0 ? `₦${amountDue.toLocaleString()}` : "—"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
                         ₦{amountPaid.toLocaleString()}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
-                        ₦{balance.toLocaleString()}
+                        {amountDue > 0 ? `₦${balance.toLocaleString()}` : "—"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353] capitalize">
-                        {payment.payment_method.replace("_", " ")}
+                        {payment.payment_method?.replace("_", " ") ?? "—"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
                         {new Date(payment.payment_date).toLocaleDateString()}
@@ -173,7 +174,9 @@ const FeesTable = ({
         {/* Mobile Card View */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:hidden">
           {data.map((payment) => {
-            const amountDue = parseFloat(payment.fee_component.amount)
+            const amountDue = payment.fee_component?.amount != null
+              ? parseFloat(String(payment.fee_component.amount))
+              : 0
             const amountPaid = parseFloat(payment.amount_paid)
             const balance = amountDue - amountPaid
 
@@ -188,10 +191,10 @@ const FeesTable = ({
                     <span className="font-medium text-gray-900">
                       {payment.student?.first_name && payment.student?.last_name
                         ? `${payment.student.first_name} ${payment.student.last_name}`
-                        : "Unknown Student"}
+                        : "Unassigned"}
                     </span>
                     <span className="text-xs text-gray-500">
-                      Inv: {payment.invoice_number}
+                      Inv: {payment.invoice_number || "—"}
                     </span>
                   </div>
                   <span
@@ -231,7 +234,7 @@ const FeesTable = ({
                     <div className="flex flex-col text-left min-[400px]:text-right">
                       <span className="text-xs text-gray-500">Balance</span>
                       <span className="mt-1 text-sm font-semibold text-red-500">
-                        ₦{balance.toLocaleString()}
+                        {amountDue > 0 ? `₦${balance.toLocaleString()}` : "—"}
                       </span>
                     </div>
                   </div>

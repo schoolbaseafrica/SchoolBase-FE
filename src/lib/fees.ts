@@ -55,29 +55,29 @@ export interface FeesAnalyticsResponse {
 
 export interface FeePayment {
   id: string
-  student_id: string
+  student_id: string | null
   student: {
     id: string
     first_name: string | null
     last_name: string | null
   } | null
-  fee_component_id: string
+  fee_component_id: string | null
   fee_component: {
     id: string
     component_name: string
     amount: string
-  }
+  } | null
   amount_paid: string
   payment_method: string
   payment_date: string
-  term_id: string
+  term_id: string | null
   term: {
     id: string
     name: string
-  }
+  } | null
   session_id: string
-  invoice_number: string
-  transaction_id: string
+  invoice_number: string | null
+  transaction_id: string | null
   receipt_url: string | null
   status: string
   createdAt: string

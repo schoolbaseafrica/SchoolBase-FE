@@ -51,9 +51,9 @@ const FeesRecord = () => {
     const rows = payments.map((payment) => [
       payment.student?.first_name && payment.student?.last_name
         ? `${payment.student.first_name} ${payment.student.last_name}`
-        : "Unknown Student",
-      payment.fee_component.component_name,
-      payment.fee_component.amount,
+        : "Unassigned",
+      payment.fee_component?.component_name ?? "Unassigned",
+      payment.fee_component?.amount ?? "",
       payment.amount_paid,
       payment.payment_method,
       payment.payment_date,
