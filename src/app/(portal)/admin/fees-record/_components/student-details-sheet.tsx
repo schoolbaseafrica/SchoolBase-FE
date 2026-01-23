@@ -1,9 +1,11 @@
-import React from "react"
+import React, { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { ArrowDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ArrowDown, Edit2 } from "lucide-react"
 import { FeePayment } from "@/lib/fees"
 import { useStudentFeeDetails } from "../_hooks/use-student-fee-details"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EditPaymentDialog } from "./edit-payment-dialog"
 
 interface StudentDetailsSheetProps {
   open: boolean
@@ -16,6 +18,9 @@ const StudentDetailsSheet = ({
   onOpenChange,
   student,
 }: StudentDetailsSheetProps) => {
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const isPending = !student?.student_id || !student?.fee_component_id
+
   const { data, isLoading, error } = useStudentFeeDetails({
     studentId: student?.student_id ?? undefined,
     termId: student?.term_id ?? undefined,
@@ -69,15 +74,73 @@ const StudentDetailsSheet = ({
   if (!student) return null
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto px-7 sm:max-w-[540px] xl:max-w-[30%]">
-        <SheetHeader className="mb-6 flex flex-row items-center justify-between space-y-0 border-b border-gray-100 pb-4">
-          <SheetTitle className="text-xl font-bold text-gray-900">
-            Students Fees Details
-          </SheetTitle>
-        </SheetHeader>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full overflow-y-auto px-7 sm:max-w-[540px] xl:max-w-[30%]">
+          <SheetHeader className="mb-6 flex flex-row items-center justify-between space-y-0 border-b border-gray-100 pb-4">
+            <SheetTitle className="text-xl font-bold text-gray-900">
+              {isPending ? "Payment Details" : "Students Fees Details"}
+            </SheetTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditDialogOpen(true)}
+              className="shrink-0"
+              aria-label="Edit payment"
+            >
+              <Edit2 className="h-4 w-4 mr-1" />
+              {isPending ? "Reconcile" : "Edit"}
+            </Button>
+          </SheetHeader>
 
-        {isLoading ? (
+          {isPending ? (
+            <div className="space-y-6 pb-10">
+              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+                <p className="text-sm font-medium text-amber-800">Pending / Unassigned</p>
+                <p className="text-xs text-amber-700 mt-1">
+                  This payment is not yet linked to a student or fee. Use <strong>Reconcile</strong> to assign it.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount paid</span>
+                  <span className="font-semibold">₦{Number(student.amount_paid).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Date</span>
+                  <span>{new Date(student.payment_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Method</span>
+                  <span className="capitalize">{(student.payment_method ?? "").replace("_", " ")}</span>
+                </div>
+                {student.bank_name && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Bank</span>
+                    <span>{student.bank_name}</span>
+                  </div>
+                )}
+                {student.transaction_id && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Transaction ID</span>
+                    <span className="font-mono text-xs break-all">{student.transaction_id}</span>
+                  </div>
+                )}
+                {student.invoice_number && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Invoice</span>
+                    <span>{student.invoice_number}</span>
+                  </div>
+                )}
+                {student.description && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Notes</p>
+                    <p className="text-sm text-gray-900">{student.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : isLoading ? (
           <div className="space-y-8">
             <div className="flex gap-4">
               <Skeleton className="h-20 w-20 rounded-full" />
@@ -238,8 +301,16 @@ const StudentDetailsSheet = ({
             No details found.
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <EditPaymentDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        payment={student}
+        onSuccess={() => onOpenChange(false)}
+      />
+    </>
   )
 }
 

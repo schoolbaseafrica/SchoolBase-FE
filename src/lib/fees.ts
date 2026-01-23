@@ -79,9 +79,19 @@ export interface FeePayment {
   invoice_number: string | null
   transaction_id: string | null
   receipt_url: string | null
+  bank_name: string | null
+  description: string | null
   status: string
   createdAt: string
   updatedAt: string
+}
+
+export interface UpdatePaymentPayload {
+  student_id?: string | null
+  fee_component_id?: string | null
+  term_id?: string | null
+  bank_name?: string | null
+  description?: string | null
 }
 
 export interface FeePaymentsResponse {
@@ -155,6 +165,16 @@ export const FeesAPI = {
       {
         method: "GET",
         params,
+      },
+      true
+    ),
+
+  updatePayment: (id: string, data: UpdatePaymentPayload) =>
+    apiFetch<ResponsePack<FeePayment>>(
+      `/fee-payments/${id}`,
+      {
+        method: "PATCH",
+        data,
       },
       true
     ),
