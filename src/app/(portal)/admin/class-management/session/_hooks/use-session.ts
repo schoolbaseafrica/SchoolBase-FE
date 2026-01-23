@@ -143,6 +143,10 @@ export function useActivateAcademicSession() {
           exact: false,
         }),
         queryClient.refetchQueries({ 
+          queryKey: ["fee-payments"],
+          exact: false,
+        }),
+        queryClient.refetchQueries({ 
           queryKey: ["results"],
           exact: false,
         }),

@@ -6,5 +6,7 @@ export const useFeePayments = (params?: FeePaymentParams) => {
     queryKey: ["fee-payments", params],
     queryFn: () => FeesAPI.getPayments(params),
     refetchOnWindowFocus: false,
+    staleTime: 0, // Always refetch to get latest session data
+    refetchOnMount: true,
   })
 }

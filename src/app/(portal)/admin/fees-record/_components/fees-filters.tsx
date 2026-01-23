@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAcademicSessions } from "../../class-management/session/_hooks/use-session"
+import { useAcademicSessions, useActiveAcademicSession } from "../../class-management/session/_hooks/use-session"
 import { useAcademicTermsForSession } from "../../class-management/_hooks/use-academic-term"
 import { useDebounce } from "@/hooks/use-debounce"
 import { FeePaymentParams } from "@/lib/fees"
@@ -21,7 +21,9 @@ interface FeesFiltersProps {
 
 const FeesFilters = ({ onFilterChange }: FeesFiltersProps) => {
   const [search, setSearch] = useState("")
-  const [sessionId, setSessionId] = useState("all")
+  const { data: activeSession } = useActiveAcademicSession()
+  // Default to active session instead of "all"
+  const [sessionId, setSessionId] = useState<string>("")
   const [termId, setTermId] = useState("all")
   const [status, setStatus] = useState("all")
   const [method, setMethod] = useState("all")
@@ -29,6 +31,13 @@ const FeesFilters = ({ onFilterChange }: FeesFiltersProps) => {
   const debouncedSearch = useDebounce(search, 500)
 
   const { data: sessionsData } = useAcademicSessions({ limit: 100 })
+
+  // Set default session to active session when it loads
+  useEffect(() => {
+    if (activeSession?.id && !sessionId) {
+      setSessionId(activeSession.id)
+    }
+  }, [activeSession?.id, sessionId])
   // Get terms for the selected session (or empty array if "all" selected)
   const { data: termsData } = useAcademicTermsForSession(
     sessionId !== "all" ? sessionId : undefined
@@ -44,13 +53,19 @@ const FeesFilters = ({ onFilterChange }: FeesFiltersProps) => {
   useEffect(() => {
     const filters: Partial<FeePaymentParams> = {}
     if (debouncedSearch) filters.search = debouncedSearch
-    if (sessionId && sessionId !== "all") filters.session_id = sessionId
+    // Always include session_id if we have one (default to active session)
+    if (sessionId && sessionId !== "all") {
+      filters.session_id = sessionId
+    } else if (activeSession?.id) {
+      // Fallback to active session if sessionId is "all" or empty
+      filters.session_id = activeSession.id
+    }
     if (termId && termId !== "all") filters.term_id = termId
     if (status && status !== "all") filters.status = status
     if (method && method !== "all") filters.payment_method = method
 
     onFilterChange(filters)
-  }, [debouncedSearch, sessionId, termId, status, method, onFilterChange])
+  }, [debouncedSearch, sessionId, termId, status, method, activeSession?.id, onFilterChange])
 
   return (
     <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
