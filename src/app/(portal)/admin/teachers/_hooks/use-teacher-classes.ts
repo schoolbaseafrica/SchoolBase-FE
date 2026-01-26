@@ -18,14 +18,24 @@ export interface TeacherClass {
 
 function parseClassesResponse(res: unknown): TeacherClass[] {
   if (Array.isArray(res)) return res
-  if (res && typeof res === "object" && "data" in res) {
-    const d = (res as { data?: unknown }).data
-    if (Array.isArray(d)) return d
-    if (d && typeof d === "object" && "data" in (d as object)) {
-      const inner = (d as { data?: unknown }).data
-      if (Array.isArray(inner)) return inner
-    }
-  }
+  if (!res || typeof res !== "object") return []
+
+  const o = res as Record<string, unknown>
+
+  // Top-level payload (e.g. { payload: [...] })
+  if (Array.isArray(o.payload)) return o.payload as TeacherClass[]
+
+  if (!("data" in o)) return []
+  const d = o.data
+  if (Array.isArray(d)) return d as TeacherClass[]
+  if (!d || typeof d !== "object") return []
+
+  const inner = d as Record<string, unknown>
+  // Nested data.data
+  if (Array.isArray(inner.data)) return inner.data as TeacherClass[]
+  // Nested data.payload (paginated envelope: { data: { payload: [...], paginationMeta } })
+  if (Array.isArray(inner.payload)) return inner.payload as TeacherClass[]
+
   return []
 }
 
