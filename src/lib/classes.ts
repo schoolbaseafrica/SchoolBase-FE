@@ -90,6 +90,20 @@ export const ClassesAPI = {
       true
     ),
 
+  unassignTeacherFromClass: (
+    teacherId: string,
+    classId: string,
+    sessionId?: string
+  ) =>
+    apiFetch<ResponsePack<{ message: string }>>(
+      `/classes/teachers/${teacherId}/classes/${classId}`,
+      {
+        method: "DELETE",
+        params: sessionId ? { session_id: sessionId } : undefined,
+      },
+      true
+    ),
+
   getClassesByTeacher: (teacherId: string, sessionId?: string) =>
     apiFetch<
       ResponsePack<
