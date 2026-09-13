@@ -44,6 +44,7 @@ export async function GET() {
         tagline: process.env.SCHOOL_TAGLINE || process.env.NEXT_PUBLIC_SCHOOL_TAGLINE,
       },
       apiUrl:
+        process.env.API_PUBLIC_URL ||
         process.env.API_URL ||
         process.env.NEXT_PUBLIC_API_BASE_URL ||
         process.env.NEXT_PUBLIC_API_URL,

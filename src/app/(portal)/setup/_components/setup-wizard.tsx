@@ -53,11 +53,7 @@ export default function SchoolSetupWizard() {
   useEffect(() => {
     async function loadExistingSchoolData() {
       try {
-        // Use NEXT_PUBLIC_API_BASE_URL (without /api/v1) or fallback
-        let baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3008"
-        // Normalize: remove trailing slashes and /api/v1 if present
-        baseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-        const response = await fetch(`${baseUrl}/api/v1/school`, {
+        const response = await fetch("/api/proxy-auth/school", {
           method: "GET",
           cache: "no-store",
           headers: {

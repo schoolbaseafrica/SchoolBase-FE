@@ -14,15 +14,10 @@ const getBackendBaseUrl = (req: Request): string => {
   const hostname = req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
   const protocol = req.headers.get("x-forwarded-proto") || url.protocol.replace(":", "")
   
-  console.log("[_proxy] Request hostname:", hostname, "protocol:", protocol)
-  console.log("[_proxy] API_BASE_URL env:", process.env.API_BASE_URL || "not set")
-  console.log("[_proxy] NEXT_PUBLIC_API_BASE_URL env:", process.env.NEXT_PUBLIC_API_BASE_URL || "not set")
-  
   // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
   // This is set in docker-compose.yml for each school
   if (process.env.API_BASE_URL) {
     const apiBaseUrl = process.env.API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-    console.log("[_proxy] Using runtime API_BASE_URL:", apiBaseUrl)
     return apiBaseUrl
   }
   
@@ -35,35 +30,29 @@ const getBackendBaseUrl = (req: Request): string => {
     if (hostname.startsWith("api.")) {
       // Already an API domain, use as-is
       const backendUrl = `${protocol}://${hostname}`
-      console.log("[_proxy] Hostname already starts with 'api.', using as-is:", backendUrl)
       return backendUrl
     }
     
     // Prepend 'api.' to the hostname
     const backendHostname = `api.${hostname}`
     const backendUrl = `${protocol}://${backendHostname}`
-    console.log("[_proxy] Constructed backend URL from hostname:", backendUrl)
     return backendUrl
   }
   
   // Priority 3: Runtime NEXT_PUBLIC_API_BASE_URL (might be baked at build time, less reliable)
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-    console.log("[_proxy] WARNING: Using NEXT_PUBLIC_API_BASE_URL (may be from build time):", apiBaseUrl)
     return apiBaseUrl
   }
   
   // Fallback for localhost or single-domain setups
   const fallbackUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
-  console.log("[_proxy] Using fallback backend URL (localhost):", fallbackUrl)
   return fallbackUrl
 }
 
 const buildBackendUrl = (req: Request, path: string): string => {
   const baseUrl = getBackendBaseUrl(req)
-  const url = `${baseUrl}/${path.replace(/^\/+/, "")}`
-  console.log("[_proxy] Built backend URL:", url)
-  return url
+  return `${baseUrl}/${path.replace(/^\/+/, "")}`
 }
 
 const extractAccessTokenFromSetCookie = (
@@ -71,7 +60,6 @@ const extractAccessTokenFromSetCookie = (
 ): string | null => {
   if (!setCookieHeader) return null
   const match = setCookieHeader.match(/access_token=([^;]+)/)
-  console.log("[_proxy] Extracted access token from set-cookie:", match ? match[1] : null)
   return match ? match[1] : null
 }
 
@@ -82,13 +70,6 @@ const forwardRequest = async (
   body: string | ArrayBuffer | FormData | undefined,
   headers: Headers
 ): Promise<Response> => {
-  console.log(`[proxy] Forwarding request: ${method} ${backendUrl}`)
-  console.log("[proxy] Headers:", Object.fromEntries(headers.entries()))
-  if (body && typeof body === "string")
-    console.log("[proxy] Body (string):", body.substring(0, 100))
-  if (body && body instanceof ArrayBuffer)
-    console.log("[proxy] Body (ArrayBuffer):", body.byteLength, "bytes")
-
   try {
     const res = await fetch(backendUrl, {
       method,
@@ -97,23 +78,12 @@ const forwardRequest = async (
       cache: "no-store",
       redirect: "manual",
     })
-    console.log(`[proxy] Backend response status: ${res.status}`)
-    
-    // For error responses, log the response body for debugging
     if (res.status >= 400) {
-      const responseClone = res.clone() // Clone to avoid consuming the stream
-      try {
-        const errorText = await responseClone.text()
-        console.error(`[proxy] Backend error response (${res.status}):`, {
-          status: res.status,
-          statusText: res.statusText,
-          contentType: res.headers.get("content-type"),
-          body: errorText.substring(0, 1000), // First 1000 chars
-          url: backendUrl,
-        })
-      } catch (textError) {
-        console.error("[proxy] Could not read error response body:", textError)
-      }
+      console.error("[proxy] Backend request failed", {
+        method,
+        status: res.status,
+        url: backendUrl,
+      })
     }
     
     return res
@@ -129,11 +99,9 @@ const attemptRefresh = async (req: Request): Promise<{
   newAccessToken: string | null
   refreshResponse: Response | null
 }> => {
-  console.log("[proxy] Attempting token refresh...")
   const refreshUrl = buildBackendUrl(req, "api/v1/auth/refresh")
   const cookieStore = await getCookies()
   const refreshToken = cookieStore.get("refresh_token")?.value
-  console.log("[proxy] Found refresh token:", refreshToken ? true : false)
 
   if (!refreshToken) return { ok: false, newAccessToken: null, refreshResponse: null }
 
@@ -143,7 +111,6 @@ const attemptRefresh = async (req: Request): Promise<{
       headers: { cookie: `refresh_token=${refreshToken}` },
       cache: "no-store",
     })
-    console.log(`[proxy] Refresh response status: ${res.status}`)
     if (!res.ok) return { ok: false, newAccessToken: null, refreshResponse: res }
 
     const setCookieHeader = res.headers.get("set-cookie")
@@ -157,7 +124,6 @@ const attemptRefresh = async (req: Request): Promise<{
 
 /* MAIN PROXY */
 export const proxyAuthRequest = async (req: Request, pathname: string) => {
-  console.log("[proxy] Starting proxy for path:", pathname)
   try {
     const backendUrl = buildBackendUrl(req, pathname)
 
@@ -170,11 +136,9 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     let rawBody: string | ArrayBuffer | undefined
     if (isMultipart) {
       rawBody = await req.arrayBuffer()
-      console.log("[proxy] Request body (multipart) length:", rawBody.byteLength)
     } else {
       const textBody = await req.text()
       rawBody = textBody.length > 0 ? textBody : undefined
-      console.log("[proxy] Request body (text) length:", textBody.length)
     }
 
     const headers = new Headers()
@@ -210,47 +174,19 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
 
     const cookieStore = await getCookies()
     const accessToken = cookieStore.get("access_token")?.value
-    console.log("[proxy] Current access token present:", accessToken ? true : false)
     if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`)
 
     let backendRes = await forwardRequest(backendUrl, req.method, rawBody, headers)
 
     if (backendRes.status === 401) {
-      console.log("[proxy] Received 401, attempting refresh...")
       const refresh = await attemptRefresh(req)
       if (refresh.ok && refresh.newAccessToken) {
-        console.log(
-          "[proxy] Refresh successful, retrying original request with new access token..."
-        )
         headers.set("Authorization", `Bearer ${refresh.newAccessToken}`)
         backendRes = await forwardRequest(backendUrl, req.method, rawBody, headers)
-      } else {
-        console.log("[proxy] Refresh failed or no new token")
       }
     }
 
     const responseText = await backendRes.text()
-    
-    // Log error responses for debugging upload issues
-    if (backendRes.status >= 400) {
-      let parsedBody = responseText
-      try {
-        const jsonBody = JSON.parse(responseText)
-        parsedBody = JSON.stringify(jsonBody, null, 2)
-      } catch {
-        // Not JSON, keep as string
-      }
-      
-      console.error("[proxy] Error response:", {
-        status: backendRes.status,
-        statusText: backendRes.statusText,
-        contentType: backendRes.headers.get("content-type"),
-        body: parsedBody.substring(0, 1000), // First 1000 chars
-        bodyLength: responseText.length,
-        url: backendUrl,
-        isMultipart: isMultipart,
-      })
-    }
     
     const nextRes = new NextResponse(responseText || null, {
       status: backendRes.status,
@@ -262,15 +198,12 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
 
     const setCookieHeader = backendRes.headers.get("set-cookie")
     if (setCookieHeader) {
-      console.log("[proxy] Propagating set-cookie headers")
       const cookies = splitCookiesString(setCookieHeader)
       cookies.forEach((cookie) => {
-        console.log("[proxy] Set cookie:", cookie)
         nextRes.headers.append("set-cookie", cookie)
       })
     }
 
-    console.log("[proxy] Returning response with status:", backendRes.status)
     return nextRes
   } catch (err) {
     console.error("[proxy] Proxy error caught:", err)

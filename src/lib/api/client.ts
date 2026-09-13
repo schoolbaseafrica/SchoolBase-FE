@@ -75,7 +75,7 @@ const navigateTo = (path: string) => {
 export async function apiFetch<TResponse>(
   path: string,
   config: AxiosRequestConfig = {},
-  proxy?: boolean
+  proxy = true
 ): Promise<TResponse> {
   const headers = { ...(config.headers || {}) }
 
