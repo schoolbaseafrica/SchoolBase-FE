@@ -3,7 +3,6 @@
 import { create } from "zustand"
 import { defaultSchoolProfile, type SchoolProfile } from "@/data/school-profile"
 import {
-  loadConfigFromEnv,
   loadConfigFromAPI,
   buildSchoolProfileFromRuntimeConfig,
 } from "@/lib/config-loader"
@@ -24,6 +23,34 @@ type SchoolState = {
 const initialState = {
   school: defaultSchoolProfile,
   isConfigLoading: true,
+}
+
+const CONFIG_CACHE_PREFIX = "schoolbase:runtime-config:v1"
+
+function cacheKey(): string {
+  return `${CONFIG_CACHE_PREFIX}:${window.location.hostname.toLowerCase()}`
+}
+
+function saveConfigForCurrentHost(config: RuntimeConfig): void {
+  try {
+    window.localStorage.setItem(
+      cacheKey(),
+      JSON.stringify({ config, savedAt: new Date().toISOString() })
+    )
+  } catch {
+    // Storage can be unavailable in private browsing or restricted contexts.
+  }
+}
+
+function loadConfigForCurrentHost(): RuntimeConfig | null {
+  try {
+    const raw = window.localStorage.getItem(cacheKey())
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { config?: RuntimeConfig }
+    return parsed.config ?? null
+  } catch {
+    return null
+  }
 }
 
 export const useSchoolStore = create<SchoolState>((set, get) => ({
@@ -58,40 +85,43 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
     set({ isConfigLoading: true, configError: null })
 
     try {
-      // Strategy 1: Check environment variables first (synchronous, fast)
-      const envConfig = loadConfigFromEnv()
-      if (envConfig?.school) {
-        const schoolProfile = buildSchoolProfileFromRuntimeConfig(envConfig.school)
-        if (schoolProfile) {
-          set({ school: schoolProfile, isConfigLoading: false })
-          return
-        }
-      }
-
-      // Strategy 2: Try backend API (single source of truth from database)
-      // Backend stores school config in database, this is the authoritative source
+      // The runtime endpoints belong to this container and hostname. Browser
+      // build-time values are intentionally ignored because the same image is
+      // shared by multiple schools.
       const apiConfig = await loadConfigFromAPI()
 
       if (apiConfig?.school) {
         const schoolProfile = buildSchoolProfileFromRuntimeConfig(apiConfig.school)
         if (schoolProfile) {
+          saveConfigForCurrentHost(apiConfig)
           set({ school: schoolProfile, isConfigLoading: false })
           return
         }
       }
 
-      // No valid config found (missing required fields or unavailable), use defaults
-      set({ school: defaultSchoolProfile, isConfigLoading: false })
+      // A cached config is scoped to the exact hostname, preventing one
+      // school's branding from appearing on another school's domain.
+      const cachedConfig = loadConfigForCurrentHost()
+      const cachedProfile = buildSchoolProfileFromRuntimeConfig(
+        cachedConfig?.school ?? null
+      )
+      if (cachedProfile) {
+        set({ school: cachedProfile, isConfigLoading: false })
+        return
+      }
+
+      set({
+        configError: "School configuration is temporarily unavailable",
+        isConfigLoading: false,
+      })
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load configuration"
       console.error("Error loading school config:", error)
       set({
         configError: errorMessage,
-        school: defaultSchoolProfile,
         isConfigLoading: false,
       })
-      // On error, use defaults (backward compatible)
     }
   },
 }))

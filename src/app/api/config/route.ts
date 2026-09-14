@@ -24,7 +24,8 @@ export async function GET() {
           process.env.SCHOOL_FAVICON_URL || process.env.NEXT_PUBLIC_SCHOOL_FAVICON_URL,
         primaryColor:
           process.env.SCHOOL_PRIMARY_COLOR ||
-          process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR,
+          process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR ||
+          "#c7363f",
         primaryHover:
           process.env.SCHOOL_PRIMARY_HOVER ||
           process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_HOVER,
@@ -54,7 +55,7 @@ export async function GET() {
     // Remove undefined values
     const cleanedConfig = {
       school: Object.fromEntries(
-        Object.entries(config.school).filter(([_, value]) => value !== undefined)
+        Object.entries(config.school).filter(([, value]) => value !== undefined)
       ),
       apiUrl: config.apiUrl,
       environment: config.environment,

@@ -110,17 +110,17 @@ export function buildSchoolProfileFromRuntimeConfig(
   // Build brand palette from runtime config only (no fallbacks, already validated above)
   const primaryColor = runtimeConfig.primaryColor
   const primaryHover = runtimeConfig.primaryHover || darkenColor(primaryColor, 0.1)
-  
+
   // Secondary color (if provided)
   const secondaryColor = runtimeConfig.secondaryColor
   const secondaryHover = secondaryColor ? darkenColor(secondaryColor, 0.1) : undefined
-  
+
   // Accent color (if provided, otherwise use primary)
   const accentColor = runtimeConfig.accentColor || primaryColor
-  const accentHover = runtimeConfig.accentColor 
+  const accentHover = runtimeConfig.accentColor
     ? darkenColor(runtimeConfig.accentColor, 0.1)
     : primaryHover
-  
+
   // Tint color: lightened version of accent color (or primary if no accent)
   const tintColor = lightenColor(accentColor, 0.9)
 
@@ -143,7 +143,7 @@ export function buildSchoolProfileFromRuntimeConfig(
   // while overriding with backend-provided values where available
   // IMPORTANT: Images and gallery are ALWAYS preserved from defaults - schools cannot change these
   const logoFull = runtimeConfig.logoUrl || defaultSchoolProfile.logo.full
-  
+
   return {
     ...defaultSchoolProfile, // Start with all defaults (images, gallery, testimonials, etc.)
     name: runtimeConfig.name,
@@ -153,8 +153,12 @@ export function buildSchoolProfileFromRuntimeConfig(
       runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
     logo: {
       full: logoFull,
-      mark: runtimeConfig.logoMark || runtimeConfig.logoUrl || defaultSchoolProfile.logo.mark,
-      favicon: runtimeConfig.faviconUrl || runtimeConfig.logoUrl || defaultSchoolProfile.logo.favicon,
+      mark:
+        runtimeConfig.logoMark || runtimeConfig.logoUrl || defaultSchoolProfile.logo.mark,
+      favicon:
+        runtimeConfig.faviconUrl ||
+        runtimeConfig.logoUrl ||
+        defaultSchoolProfile.logo.favicon,
     },
     brand: brandPalette,
     hero: {
@@ -244,9 +248,9 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             // Pattern: if frontend is at stpaul.schoolbase.africa, backend is at api.stpaul.schoolbase.africa
             const protocol = window.location.protocol
             const hostname = window.location.hostname
-            
+
             let backendHostname: string
-            
+
             if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
               // Check if hostname already starts with 'api.'
               if (hostname.startsWith("api.")) {
@@ -261,10 +265,10 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
               // Single domain (localhost) - use as-is with port
               backendHostname = hostname
             }
-            
+
             const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
             // Ensure proper path concatenation - add leading slash if missing
-            logoUrl = logoUrl.startsWith("/") 
+            logoUrl = logoUrl.startsWith("/")
               ? `${backendOrigin}${logoUrl}`
               : `${backendOrigin}/${logoUrl}`
           } else {
@@ -318,8 +322,25 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
       return null
     } catch {
       clearTimeout(timeoutId)
-      // Network errors are expected (backend not available, etc.)
-      // Silently fail - will use defaults
+      // The school API may be temporarily unavailable while the frontend is
+      // still healthy. Use a fresh signal for the container's runtime env
+      // endpoint so one aborted request cannot suppress the tenant fallback.
+      const fallbackController = new AbortController()
+      const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 3000)
+      try {
+        const fallbackResponse = await fetch("/api/config", {
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          signal: fallbackController.signal,
+        })
+        if (fallbackResponse.ok) {
+          return (await fallbackResponse.json()) as RuntimeConfig
+        }
+      } catch {
+        // The caller can still recover the last valid config for this host.
+      } finally {
+        clearTimeout(fallbackTimeoutId)
+      }
       return null
     }
   } catch {

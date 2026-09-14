@@ -28,13 +28,11 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
         currentState.loadConfig()
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty deps array - we only want to run once on mount
 
-  // Log error but don't block UI (backward compatible)
   useEffect(() => {
     if (configError) {
-      console.warn("Config loading error (using defaults):", configError)
+      console.warn("Config loading error:", configError)
     }
   }, [configError])
 
@@ -49,6 +47,29 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
           <p className="text-gray-600">Loading school configuration...</p>
         </div>
       </div>
+    )
+  }
+
+  if (configError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            SchoolBase is temporarily unavailable
+          </h1>
+          <p className="mt-3 text-gray-600">
+            We could not load this school&apos;s information. Your school and its data are
+            safe. Please check your connection and try again.
+          </p>
+          <button
+            type="button"
+            className="mt-6 rounded-md bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800"
+            onClick={() => useSchoolStore.getState().loadConfig(true)}
+          >
+            Try again
+          </button>
+        </div>
+      </main>
     )
   }
 

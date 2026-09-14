@@ -18,7 +18,7 @@ const outfit = Outfit({
 
 // Use default for viewport (will be updated by BrandThemeUpdater at runtime)
 export const viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
@@ -28,14 +28,14 @@ export const viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://borjigin.emerj.net/"),
   title: {
-    default: defaultSchoolProfile.name,
-    template: `%s | ${defaultSchoolProfile.name}`,
+    default: "SchoolBase",
+    template: "%s | SchoolBase",
   },
-  description: defaultSchoolProfile.description,
-  applicationName: defaultSchoolProfile.shortName,
+  description: "School management portal",
+  applicationName: "SchoolBase",
   manifest: "/manifest.json",
   keywords: [
-    defaultSchoolProfile.name,
+    "SchoolBase",
     "school portal",
     "education management",
     "attendance",
@@ -48,13 +48,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: defaultSchoolProfile.name,
+    title: "SchoolBase",
   },
   openGraph: {
-    title: defaultSchoolProfile.name,
-    description: defaultSchoolProfile.description,
+    title: "SchoolBase",
+    description: "School management portal",
     url: "https://borjigin.emerj.net/",
-    siteName: defaultSchoolProfile.name,
+    siteName: "SchoolBase",
     locale: "en_US",
     type: "website",
     images: [
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
         url: defaultSchoolProfile.logo.full,
         width: 400,
         height: 400,
-        alt: `${defaultSchoolProfile.name} logo`,
+        alt: "SchoolBase logo",
       },
     ],
   },
