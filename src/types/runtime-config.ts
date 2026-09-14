@@ -1,4 +1,9 @@
-import type { SchoolProfile, BrandPalette } from "@/data/school-profile"
+import type {
+  SchoolProfile,
+  BrandPalette,
+  MarketingSiteConfig,
+  WebsiteLayout,
+} from "@/data/school-profile"
 
 /**
  * Runtime configuration that can be loaded from environment variables or API
@@ -19,6 +24,8 @@ export interface RuntimeSchoolConfig {
   supportAddress?: string
   description?: string
   tagline?: string
+  websiteLayout?: WebsiteLayout
+  marketingSiteConfig?: MarketingSiteConfig | null
 }
 
 /**

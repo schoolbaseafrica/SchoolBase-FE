@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic"
  *
  * Flow:
  * 1. Check backend API for school installation status (database is source of truth)
- * 2. If school exists and installation_completed === true → redirect to /landing
+ * 2. If installation is complete → use that school's saved website layout
  * 3. If school exists but installation_completed === false → redirect to /setup
  * 4. If no school exists (404) → redirect to /setup
- * 5. If backend unavailable → redirect to /setup (assume setup needed)
+ * 5. If backend is unavailable → show a neutral availability page
  *
  * Note: ENV vars (NEXT_PUBLIC_SCHOOL_NAME, etc.) are ONLY used for frontend configuration
  * (branding, theming), NOT for determining installation status. Installation status
@@ -24,12 +24,13 @@ export default async function RootPage() {
   try {
     // Construct backend URL dynamically from headers (multi-school support)
     const headersList = await headers()
-    const hostname = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost"
+    const hostname =
+      headersList.get("x-forwarded-host") || headersList.get("host") || "localhost"
     const protocol = headersList.get("x-forwarded-proto") || "https"
-    
+
     // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
     let baseUrl = process.env.API_BASE_URL
-    
+
     // Priority 2: Construct from request hostname
     if (!baseUrl) {
       if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
@@ -45,12 +46,12 @@ export default async function RootPage() {
         baseUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
       }
     }
-    
+
     // Priority 3: Fallback to baked-in NEXT_PUBLIC_API_BASE_URL (least reliable for multi-school)
     if (!baseUrl) {
       baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3008"
     }
-    
+
     // Normalize: remove trailing slashes and /api/v1 if present
     const normalizedBaseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
     const response = await fetch(`${normalizedBaseUrl}/api/v1/school`, {
@@ -76,8 +77,9 @@ export default async function RootPage() {
 
       // Check installation_completed flag (database is source of truth)
       if (data?.installation_completed === true) {
-        // Installation complete - redirect to landing page (public school website)
-        redirect("/landing")
+        const useMultiPageWebsite =
+          data?.website_layout === "multi_page" || data?.use_marketing_site === true
+        redirect(useMultiPageWebsite ? "/site" : "/landing")
       } else {
         // School exists but installation not complete - go to setup
         console.log(
@@ -89,19 +91,27 @@ export default async function RootPage() {
     } else if (response.status === 404 || response.status === 409) {
       // School doesn't exist (404) or conflict (409) - redirect to setup
       // 409 means no school found (backend uses ConflictException for SCHOOL_NOT_FOUND)
-      console.log("[RootPage] School not found (status:", response.status, "), redirecting to setup")
+      console.log(
+        "[RootPage] School not found (status:",
+        response.status,
+        "), redirecting to setup"
+      )
       redirect("/setup")
     } else {
-      // Other error - assume setup needed
-      redirect("/setup")
+      redirect("/unavailable")
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Don't log redirect errors - they're expected Next.js behavior
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      typeof error.digest === "string" &&
+      error.digest.startsWith("NEXT_REDIRECT")
+    ) {
       throw error // Re-throw redirect errors so Next.js can handle them
     }
-    // Network error or backend not available - assume setup needed
-    console.warn("Could not check installation status, redirecting to setup:", error)
-    redirect("/setup")
+    console.warn("Could not check installation status:", error)
+    redirect("/unavailable")
   }
 }

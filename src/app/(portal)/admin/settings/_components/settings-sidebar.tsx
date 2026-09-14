@@ -27,7 +27,7 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
     },
     {
       id: "landing-page",
-      label: "Landing Page",
+      label: "Public Website",
       icon: ImageIcon,
     },
     {

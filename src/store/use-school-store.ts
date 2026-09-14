@@ -91,9 +91,14 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
       const apiConfig = await loadConfigFromAPI()
 
       if (apiConfig?.school) {
-        const schoolProfile = buildSchoolProfileFromRuntimeConfig(apiConfig.school)
+        const cachedConfig = loadConfigForCurrentHost()
+        const effectiveSchool = apiConfig.school.websiteLayout
+          ? apiConfig.school
+          : { ...cachedConfig?.school, ...apiConfig.school }
+        const effectiveConfig = { ...apiConfig, school: effectiveSchool }
+        const schoolProfile = buildSchoolProfileFromRuntimeConfig(effectiveSchool)
         if (schoolProfile) {
-          saveConfigForCurrentHost(apiConfig)
+          saveConfigForCurrentHost(effectiveConfig)
           set({ school: schoolProfile, isConfigLoading: false })
           return
         }

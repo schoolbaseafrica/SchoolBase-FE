@@ -151,6 +151,8 @@ export function buildSchoolProfileFromRuntimeConfig(
     tagline: runtimeConfig.tagline || `${runtimeConfig.name} - Excellence in Education`,
     description:
       runtimeConfig.description || `${runtimeConfig.name} provides quality education.`,
+    websiteLayout: runtimeConfig.websiteLayout || "one_page",
+    marketingSiteConfig: runtimeConfig.marketingSiteConfig ?? null,
     logo: {
       full: logoFull,
       mark:
@@ -292,6 +294,10 @@ export async function loadConfigFromAPI(apiUrl?: string): Promise<RuntimeConfig 
             supportEmail: backendData.email,
             supportPhone: backendData.phone,
             supportAddress: backendData.address,
+            websiteLayout:
+              backendData.website_layout ||
+              (backendData.use_marketing_site ? "multi_page" : "one_page"),
+            marketingSiteConfig: backendData.marketing_site_config ?? null,
           },
           apiUrl: apiUrl || getEnv("NEXT_PUBLIC_API_BASE_URL"),
           environment:

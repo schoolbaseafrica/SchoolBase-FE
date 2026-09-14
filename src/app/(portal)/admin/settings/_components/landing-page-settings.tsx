@@ -1,7 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ImageUploaderWithCrop } from "@/components/image-upload/image-uploader-with-crop"
@@ -10,7 +16,12 @@ import { GalleryManager } from "./landing-page/gallery-manager"
 import { HeroImagesManager } from "./landing-page/hero-images-manager"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { LandingPageAPI, type LandingPageConfig, type Testimonial } from "@/lib/landing-page"
+import {
+  LandingPageAPI,
+  type LandingPageConfig,
+  type Testimonial,
+} from "@/lib/landing-page"
+import { WebsiteLayoutSettings } from "./website-layout-settings"
 
 export function LandingPageSettings() {
   const [isLoading, setIsLoading] = useState(true)
@@ -76,10 +87,10 @@ export function LandingPageSettings() {
     try {
       // Get existing hero images, ensuring we have an array
       const existingHeroImages = [...(config.hero_images || [])]
-      
+
       // Find or create the hero image for this index
-      let heroImage = existingHeroImages.find(img => img.order === index)
-      
+      let heroImage = existingHeroImages.find((img) => img.order === index)
+
       if (heroImage) {
         // Update existing image
         heroImage.url = imageUrl
@@ -93,13 +104,13 @@ export function LandingPageSettings() {
         }
         existingHeroImages.push(heroImage)
       }
-      
+
       // Filter out any images with empty URLs and sort by order
       // Only send images with valid URLs to avoid validation errors
       const validHeroImages = existingHeroImages
-        .filter(img => img?.url && img.url.trim() !== "")
+        .filter((img) => img?.url && img.url.trim() !== "")
         .sort((a, b) => a.order - b.order)
-      
+
       const updatedConfig = { ...config, hero_images: validHeroImages }
       await saveConfig(updatedConfig)
     } catch (error: any) {
@@ -154,7 +165,10 @@ export function LandingPageSettings() {
     }
   }
 
-  const handleTestimonialUpdate = async (testimonialId: string, updates: Partial<Testimonial>) => {
+  const handleTestimonialUpdate = async (
+    testimonialId: string,
+    updates: Partial<Testimonial>
+  ) => {
     try {
       const updatedConfig = {
         ...config,
@@ -182,7 +196,7 @@ export function LandingPageSettings() {
 
   if (isLoading && config.hero_images.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     )
@@ -191,24 +205,27 @@ export function LandingPageSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Landing Page Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your landing page images and testimonials. Images can be cropped and resized before upload.
+        <h1 className="text-2xl font-bold text-gray-900">Public website</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Choose your website layout and manage the images and stories visitors see.
         </p>
       </div>
 
       <Separator />
+
+      <WebsiteLayoutSettings />
 
       {/* Hero Images Section */}
       <Card>
         <CardHeader>
           <CardTitle>Hero Images</CardTitle>
           <CardDescription>
-            Upload up to 3 hero images for your landing page. Recommended: 16:9 aspect ratio, minimum 1200x675px
+            Upload up to 3 hero images for your landing page. Recommended: 16:9 aspect
+            ratio, minimum 1200x675px
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <HeroImagesManager
+          <HeroImagesManager
             images={config.hero_images || []}
             onImageUpload={(index, url) => handleHeroImageUpload(index, url)}
             disabled={isSaving}
@@ -221,7 +238,8 @@ export function LandingPageSettings() {
         <CardHeader>
           <CardTitle>Gallery Images</CardTitle>
           <CardDescription>
-            Add images to your gallery section. Recommended: 1:1 (square) or 4:3 aspect ratio, minimum 800x800px
+            Add images to your gallery section. Recommended: 1:1 (square) or 4:3 aspect
+            ratio, minimum 800x800px
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -239,7 +257,8 @@ export function LandingPageSettings() {
         <CardHeader>
           <CardTitle>Testimonials</CardTitle>
           <CardDescription>
-            Manage testimonials displayed on your landing page. Each testimonial includes a quote, name, role, and avatar.
+            Manage testimonials displayed on your landing page. Each testimonial includes
+            a quote, name, role, and avatar.
           </CardDescription>
         </CardHeader>
         <CardContent>

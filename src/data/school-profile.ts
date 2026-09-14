@@ -38,7 +38,42 @@ export type GalleryItem = {
   alt: string
 }
 
+export type WebsiteLayout = "one_page" | "multi_page"
+
+export type MarketingSiteConfig = {
+  hiddenPages?: string[]
+  home?: {
+    heroImageUrl?: string
+    aboutImageUrl?: string
+    facilitiesImageUrl?: string
+    facilitiesImageUrls?: string[]
+    facilities?: { title?: string; description?: string }[]
+  }
+  about?: { bannerImageUrl?: string }
+  academics?: {
+    bannerImageUrl?: string
+    programs?: {
+      title?: string
+      description?: string
+      imageUrl?: string
+      image_url?: string
+    }[]
+  }
+  facilities?: { bannerImageUrl?: string; imageUrls?: string[] }
+  gallery?: {
+    subtitle?: string
+    items?: { title?: string; description?: string; imageUrl?: string }[]
+  }
+  news?: {
+    bannerImageUrl?: string
+    items?: { id?: string; title?: string; date?: string; content?: string }[]
+  }
+  contact?: { bannerImageUrl?: string; joinUsImageUrl?: string }
+}
+
 export type SchoolProfile = {
+  websiteLayout: WebsiteLayout
+  marketingSiteConfig?: MarketingSiteConfig | null
   name: string
   shortName: string
   tagline: string
@@ -76,6 +111,8 @@ export type SchoolProfile = {
 }
 
 export const defaultSchoolProfile: SchoolProfile = {
+  websiteLayout: "one_page",
+  marketingSiteConfig: null,
   name: "Study Bridge School",
   shortName: "Study Bridge",
   tagline: "Where learning meets technology powered by Study Bridge",
