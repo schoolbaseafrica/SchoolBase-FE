@@ -5,7 +5,6 @@ const BUILD_HASH =
   `v${new Date().toISOString().split("T")[0].replace(/-/g, "")}`
 
 const STATIC_CACHE = `school-base-static-${BUILD_HASH}`
-const API_CACHE = `school-base-api-${BUILD_HASH}`
 const IMAGE_CACHE = `school-base-img-${BUILD_HASH}`
 const OFFLINE_URL = "/offline.html"
 const MAX_IMAGE_ENTRIES = 60
@@ -36,7 +35,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys()
       await Promise.all(
         keys.map((key) => {
-          if (![STATIC_CACHE, API_CACHE, IMAGE_CACHE].includes(key)) {
+          if (![STATIC_CACHE, IMAGE_CACHE].includes(key)) {
             return caches.delete(key)
           }
         })
@@ -105,24 +104,10 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  // API requests: stale-while-revalidate
+  // API responses can contain user- and tenant-specific data. Always let the
+  // browser fetch them from the network instead of placing them in a shared
+  // service-worker cache.
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(API_CACHE)
-        const cached = await cache.match(request)
-        const networkPromise = fetch(request)
-          .then((resp) => {
-            // Only cache successful API responses and only for GET requests
-            if (resp && resp.status === 200 && request.method === "GET") {
-              cache.put(request, resp.clone())
-            }
-            return resp
-          })
-          .catch(() => undefined)
-        return cached || (await networkPromise) || new Response(null, { status: 504 })
-      })()
-    )
     return
   }
 

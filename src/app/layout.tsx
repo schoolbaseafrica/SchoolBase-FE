@@ -9,6 +9,7 @@ import { defaultSchoolProfile } from "@/data/school-profile"
 import { BrandThemeUpdater } from "@/components/brand-theme-updater"
 import { PageTitleFaviconUpdater } from "@/components/page-title-favicon-updater"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -99,6 +100,7 @@ export default function RootLayout({
           <ConfigProvider>
             <BrandThemeUpdater />
             <PageTitleFaviconUpdater />
+            <ServiceWorkerRegistration />
             <div className="min-h-screen">{children}</div>
             <Toaster position="bottom-right" richColors />
           </ConfigProvider>
