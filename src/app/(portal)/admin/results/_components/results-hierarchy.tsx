@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BookOpen,
   ChevronRight,
+  ClipboardList,
   GraduationCap,
   Users,
 } from "lucide-react"
@@ -31,6 +32,10 @@ function streamLabel(submission: GradeSubmission) {
   return submission.class?.stream?.trim() || submission.class?.name?.trim() || "Other"
 }
 
+function subjectLabel(submission: GradeSubmission) {
+  return submission.subject?.name?.trim() || "Unassigned subject"
+}
+
 function groupBy(
   submissions: GradeSubmission[],
   getId: (submission: GradeSubmission) => string,
@@ -52,7 +57,7 @@ function GroupCard({
   onOpen,
 }: {
   group: SubmissionGroup
-  level: "stream" | "class"
+  level: "stream" | "class" | "subject"
   onOpen: () => void
 }) {
   const pending = group.submissions.filter((item) => item.status === "submitted").length
@@ -63,6 +68,9 @@ function GroupCard({
   )
   const classes = new Set(
     group.submissions.map((item) => item.class?.id || item.class_id)
+  )
+  const teachers = new Set(
+    group.submissions.map((item) => item.teacher?.id || item.teacher_id)
   )
   const students = Math.max(
     0,
@@ -75,7 +83,7 @@ function GroupCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-              {level === "stream" ? "Stream" : "Class"}
+              {level === "stream" ? "Stream" : level === "class" ? "Class" : "Subject"}
             </p>
             <CardTitle className="mt-1 text-lg">{group.label}</CardTitle>
           </div>
@@ -90,10 +98,18 @@ function GroupCard({
           </div>
           <div>
             <p className="text-lg font-semibold text-gray-900">
-              {level === "stream" ? classes.size : subjects.size}
+              {level === "stream"
+                ? classes.size
+                : level === "class"
+                  ? subjects.size
+                  : teachers.size}
             </p>
             <p className="text-xs text-gray-500">
-              {level === "stream" ? "Classes" : "Subjects"}
+              {level === "stream"
+                ? "Classes"
+                : level === "class"
+                  ? "Subjects"
+                  : "Teachers"}
             </p>
           </div>
           <div>
@@ -114,7 +130,12 @@ function GroupCard({
           )}
         </div>
         <Button type="button" variant="outline" className="w-full" onClick={onOpen}>
-          View {level === "stream" ? "classes" : "submissions"}
+          View{" "}
+          {level === "stream"
+            ? "classes"
+            : level === "class"
+              ? "subjects"
+              : "submissions"}
           <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </CardContent>
@@ -133,6 +154,7 @@ export function ResultsHierarchy({
 }) {
   const [selectedStream, setSelectedStream] = useState<string | null>(null)
   const [selectedClass, setSelectedClass] = useState<string | null>(null)
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null)
 
   const streams = useMemo(
     () => groupBy(submissions, (item) => streamLabel(item), streamLabel),
@@ -149,6 +171,16 @@ export function ResultsHierarchy({
     [stream]
   )
   const selectedClassGroup = classes.find((item) => item.id === selectedClass)
+  const subjects = useMemo(
+    () =>
+      groupBy(
+        selectedClassGroup?.submissions || [],
+        (item) => item.subject?.id || item.subject_id || subjectLabel(item),
+        subjectLabel
+      ),
+    [selectedClassGroup]
+  )
+  const selectedSubjectGroup = subjects.find((item) => item.id === selectedSubject)
 
   if (isLoading) return <SubmissionsGrid submissions={[]} isLoading />
 
@@ -168,10 +200,40 @@ export function ResultsHierarchy({
     return <SubmissionsGrid submissions={[]} isLoading={false} />
   }
 
+  if (stream && selectedClassGroup && selectedSubjectGroup) {
+    return (
+      <div className="space-y-5">
+        <Button type="button" variant="ghost" onClick={() => setSelectedSubject(null)}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to {selectedClassGroup.label}
+        </Button>
+        <div className="flex items-center gap-3">
+          <ClipboardList className="h-6 w-6 text-gray-500" />
+          <div>
+            <h2 className="text-xl font-semibold">{selectedSubjectGroup.label}</h2>
+            <p className="text-sm text-gray-500">
+              Review submissions by teacher and term.
+            </p>
+          </div>
+        </div>
+        <SubmissionsGrid
+          submissions={selectedSubjectGroup.submissions}
+          isLoading={false}
+        />
+      </div>
+    )
+  }
+
   if (stream && selectedClassGroup) {
     return (
       <div className="space-y-5">
-        <Button type="button" variant="ghost" onClick={() => setSelectedClass(null)}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setSelectedClass(null)
+            setSelectedSubject(null)
+          }}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to {stream.label}
         </Button>
         <div className="flex items-center gap-3">
@@ -179,11 +241,20 @@ export function ResultsHierarchy({
           <div>
             <h2 className="text-xl font-semibold">{selectedClassGroup.label}</h2>
             <p className="text-sm text-gray-500">
-              Review submissions by subject and teacher.
+              Choose a subject to inspect teacher and term submissions.
             </p>
           </div>
         </div>
-        <SubmissionsGrid submissions={selectedClassGroup.submissions} isLoading={false} />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {subjects.map((group) => (
+            <GroupCard
+              key={group.id}
+              group={group}
+              level="subject"
+              onOpen={() => setSelectedSubject(group.id)}
+            />
+          ))}
+        </div>
       </div>
     )
   }
@@ -197,6 +268,7 @@ export function ResultsHierarchy({
           onClick={() => {
             setSelectedStream(null)
             setSelectedClass(null)
+            setSelectedSubject(null)
           }}
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to streams
@@ -216,7 +288,10 @@ export function ResultsHierarchy({
               key={group.id}
               group={group}
               level="class"
-              onOpen={() => setSelectedClass(group.id)}
+              onOpen={() => {
+                setSelectedClass(group.id)
+                setSelectedSubject(null)
+              }}
             />
           ))}
         </div>
@@ -241,7 +316,11 @@ export function ResultsHierarchy({
             key={group.id}
             group={group}
             level="stream"
-            onOpen={() => setSelectedStream(group.id)}
+            onOpen={() => {
+              setSelectedStream(group.id)
+              setSelectedClass(null)
+              setSelectedSubject(null)
+            }}
           />
         ))}
       </div>
