@@ -129,10 +129,12 @@ const LoginForm = () => {
     queryClient.clear()
 
     try {
-      // Normalize email to lowercase before sending
+      // Email addresses are case-insensitive. Student IDs keep their original format.
       const normalizedFormData = {
         ...formData,
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.includes("@")
+          ? formData.email.trim().toLowerCase()
+          : formData.email.trim(),
       }
       const res = await loginUsingEmail(normalizedFormData)
 
@@ -200,17 +202,18 @@ const LoginForm = () => {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Login identifier */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-900">
-                Email Address
+                Email address or student ID
               </label>
               <div className="mt-2">
                 <Input
-                  type="email"
+                  type="text"
                   name="email"
                   id="email"
-                  placeholder="admin@school.edu"
+                  placeholder="admin@school.edu or your student ID"
+                  autoComplete="username"
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -245,7 +248,7 @@ const LoginForm = () => {
                   onBlur={handleBlur}
                   disabled={isLoading}
                   aria-invalid={touched.password && Boolean(errors.password)}
-                  className={`w-full pr-10 border-2 ${
+                  className={`w-full border-2 pr-10 ${
                     errors.password && touched.password
                       ? "border-red-500 bg-red-50"
                       : "border-gray-400"
@@ -255,7 +258,7 @@ const LoginForm = () => {
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   disabled={isLoading}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 hover:text-gray-800 disabled:cursor-not-allowed transition-colors"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 transition-colors hover:text-gray-800 disabled:cursor-not-allowed"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (

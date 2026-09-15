@@ -58,6 +58,7 @@ export interface GradeSubmission {
     id: string
     name: string
     arm: string
+    stream?: string
   }
   subject_id: string
   subject?: {

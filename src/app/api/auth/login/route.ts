@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       status: 200,
     })
 
-    const SECURE = false // so i fit comot am while testing
+    const SECURE = process.env.NODE_ENV === "production"
 
     // Clear previous authentication cookies before setting new ones
     // This ensures no conflicts when logging in as a different user

@@ -8,7 +8,11 @@ export default function AdminResultsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
-  const { data: submissions = [], isLoading } = useGetAdminSubmissions({
+  const {
+    data: submissions = [],
+    isLoading,
+    isError,
+  } = useGetAdminSubmissions({
     status: statusFilter === "all" ? undefined : statusFilter,
   })
   const { data: stats, refetch: refetchStats } = useGetSubmissionStats()
@@ -19,9 +23,12 @@ export default function AdminResultsPage() {
 
     const searchLower = searchQuery.toLowerCase()
     return (
-      submission.teacher_id?.toLowerCase().includes(searchLower) ||
-      submission.class_id?.toLowerCase().includes(searchLower) ||
-      submission.subject_id?.toLowerCase().includes(searchLower)
+      submission.teacher?.name?.toLowerCase().includes(searchLower) ||
+      submission.class?.name?.toLowerCase().includes(searchLower) ||
+      submission.class?.arm?.toLowerCase().includes(searchLower) ||
+      submission.class?.stream?.toLowerCase().includes(searchLower) ||
+      submission.subject?.name?.toLowerCase().includes(searchLower) ||
+      submission.term?.name?.toLowerCase().includes(searchLower)
     )
   })
 
@@ -48,6 +55,7 @@ export default function AdminResultsPage() {
           onSearchChange={setSearchQuery}
           onStatusFilterChange={setStatusFilter}
           isLoading={isLoading}
+          isError={isError}
         />
       </div>
     </div>

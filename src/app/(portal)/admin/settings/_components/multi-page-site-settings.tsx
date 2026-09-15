@@ -1,10 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { ReactNode } from "react"
 import { ExternalLink, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { ImageUploaderWithCrop } from "@/components/image-upload/image-uploader-with-crop"
 import { Button } from "@/components/ui/button"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import {
   Card,
   CardContent,
@@ -42,8 +49,9 @@ const sections: { key: Section; label: string }[] = [
   { key: "contact", label: "Contact" },
 ]
 
-const optionalPages = sections.filter(
-  (section) => !["pages", "home"].includes(section.key)
+const websitePages = sections.filter(
+  (section): section is { key: Exclude<Section, "pages">; label: string } =>
+    section.key !== "pages"
 )
 
 function validateConfig(
@@ -124,9 +132,13 @@ function ImageField({
         currentImageUrl={value}
         onImageUploaded={(url) => onChange(url)}
         aspectRatio={aspectRatio}
-        maxFileSizeMB={5}
+        minDimensions={
+          aspectRatio > 1.5 ? { width: 1200, height: 675 } : { width: 800, height: 600 }
+        }
+        maxFileSizeMB={2}
         disabled={disabled}
         label={`Upload ${label.toLowerCase()}`}
+        description={description}
       />
     </div>
   )
@@ -154,6 +166,20 @@ function TextField({
       ) : (
         <Input value={value || ""} onChange={(event) => onChange(event.target.value)} />
       )}
+    </div>
+  )
+}
+
+function PageTextPanel({ children }: { children: ReactNode }) {
+  return (
+    <div className="space-y-5 rounded-xl border bg-gray-50/50 p-5">
+      <div>
+        <h3 className="font-semibold text-gray-900">Page text</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Leave a field empty to keep the current default wording.
+        </p>
+      </div>
+      {children}
     </div>
   )
 }
@@ -314,21 +340,41 @@ export function MultiPageSiteSettings() {
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              {optionalPages.map((page) => {
+              {websitePages.map((page) => {
+                const isHome = page.key === "home"
                 const visible = !(config.hiddenPages || []).includes(page.key)
                 return (
-                  <div
-                    key={page.key}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <Label htmlFor={`page-${page.key}`} className="font-medium">
-                      {page.label}
-                    </Label>
-                    <Switch
-                      id={`page-${page.key}`}
-                      checked={visible}
-                      onCheckedChange={(checked) => setPageVisible(page.key, checked)}
-                    />
+                  <div key={page.key} className="space-y-3 rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor={`page-${page.key}`} className="font-medium">
+                        {page.label}
+                      </Label>
+                      <Switch
+                        id={`page-${page.key}`}
+                        checked={isHome || visible}
+                        disabled={isHome}
+                        onCheckedChange={(checked) => setPageVisible(page.key, checked)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`navigation-label-${page.key}`}>
+                        Navigation label
+                      </Label>
+                      <Input
+                        id={`navigation-label-${page.key}`}
+                        placeholder={page.label}
+                        value={config.navigationLabels?.[page.key] || ""}
+                        onChange={(event) =>
+                          change({
+                            ...config,
+                            navigationLabels: {
+                              ...config.navigationLabels,
+                              [page.key]: event.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 )
               })}
@@ -338,6 +384,77 @@ export function MultiPageSiteSettings() {
 
         {activeSection === "home" && (
           <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Hero eyebrow"
+                  value={home.heroEyebrow}
+                  onChange={(heroEyebrow) =>
+                    change({ ...config, home: { ...home, heroEyebrow } })
+                  }
+                />
+                <TextField
+                  label="Hero heading"
+                  value={home.heroHeading}
+                  onChange={(heroHeading) =>
+                    change({ ...config, home: { ...home, heroHeading } })
+                  }
+                />
+                <div className="md:col-span-2">
+                  <TextField
+                    label="Hero introduction"
+                    value={home.heroBody}
+                    multiline
+                    onChange={(heroBody) =>
+                      change({ ...config, home: { ...home, heroBody } })
+                    }
+                  />
+                </div>
+                <TextField
+                  label="Hero button label"
+                  value={home.heroCtaLabel}
+                  onChange={(heroCtaLabel) =>
+                    change({ ...config, home: { ...home, heroCtaLabel } })
+                  }
+                />
+                <TextField
+                  label="About eyebrow"
+                  value={home.aboutEyebrow}
+                  onChange={(aboutEyebrow) =>
+                    change({ ...config, home: { ...home, aboutEyebrow } })
+                  }
+                />
+                <TextField
+                  label="About heading"
+                  value={home.aboutHeading}
+                  onChange={(aboutHeading) =>
+                    change({ ...config, home: { ...home, aboutHeading } })
+                  }
+                />
+                <TextField
+                  label="About introduction"
+                  value={home.aboutBody}
+                  multiline
+                  onChange={(aboutBody) =>
+                    change({ ...config, home: { ...home, aboutBody } })
+                  }
+                />
+                <TextField
+                  label="Facilities eyebrow"
+                  value={home.facilitiesEyebrow}
+                  onChange={(facilitiesEyebrow) =>
+                    change({ ...config, home: { ...home, facilitiesEyebrow } })
+                  }
+                />
+                <TextField
+                  label="Facilities heading"
+                  value={home.facilitiesHeading}
+                  onChange={(facilitiesHeading) =>
+                    change({ ...config, home: { ...home, facilitiesHeading } })
+                  }
+                />
+              </div>
+            </PageTextPanel>
             <div className="grid gap-6 lg:grid-cols-3">
               <ImageField
                 label="Hero image"
@@ -394,94 +511,187 @@ export function MultiPageSiteSettings() {
                   <Plus className="mr-2 h-4 w-4" /> Add highlight
                 </Button>
               </div>
-              <div className="space-y-4">
+              <Accordion type="multiple" className="space-y-3">
                 {(home.facilities || []).map((item, index) => (
-                  <div
+                  <AccordionItem
                     key={index}
-                    className="grid gap-4 rounded-lg border p-4 lg:grid-cols-[1fr_1fr_1.2fr_auto]"
+                    value={`home-facility-${index}`}
+                    className="rounded-lg border px-4"
                   >
-                    <TextField
-                      label="Title"
-                      value={item.title}
-                      onChange={(title) => {
-                        const items = [...(home.facilities || [])]
-                        items[index] = { ...item, title }
-                        change({ ...config, home: { ...home, facilities: items } })
-                      }}
-                    />
-                    <TextField
-                      label="Description"
-                      value={item.description}
-                      multiline
-                      onChange={(description) => {
-                        const items = [...(home.facilities || [])]
-                        items[index] = { ...item, description }
-                        change({ ...config, home: { ...home, facilities: items } })
-                      }}
-                    />
-                    <ImageField
-                      label="Image"
-                      description="Optional card image."
-                      value={home.facilitiesImageUrls?.[index]}
-                      disabled={isSaving}
-                      aspectRatio={4 / 3}
-                      onChange={(url) => {
-                        const images = [...(home.facilitiesImageUrls || [])]
-                        while (images.length <= index) images.push("")
-                        images[index] = url
-                        change({
-                          ...config,
-                          home: {
-                            ...home,
-                            facilitiesImageUrls: images,
-                          },
-                        })
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="self-start text-red-600"
-                      aria-label={`Remove facility highlight ${index + 1}`}
-                      onClick={() =>
-                        change({
-                          ...config,
-                          home: {
-                            ...home,
-                            facilities: (home.facilities || []).filter(
-                              (_, itemIndex) => itemIndex !== index
-                            ),
-                            facilitiesImageUrls: (home.facilitiesImageUrls || []).filter(
-                              (_, imageIndex) => imageIndex !== index
-                            ),
-                          },
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    <AccordionTrigger>
+                      {item.title?.trim() || `Untitled highlight ${index + 1}`}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-5 pt-2 lg:grid-cols-2">
+                        <div className="space-y-5">
+                          <TextField
+                            label="Title"
+                            value={item.title}
+                            onChange={(title) => {
+                              const items = [...(home.facilities || [])]
+                              items[index] = { ...item, title }
+                              change({ ...config, home: { ...home, facilities: items } })
+                            }}
+                          />
+                          <TextField
+                            label="Description"
+                            value={item.description}
+                            multiline
+                            onChange={(description) => {
+                              const items = [...(home.facilities || [])]
+                              items[index] = { ...item, description }
+                              change({ ...config, home: { ...home, facilities: items } })
+                            }}
+                          />
+                        </div>
+                        <ImageField
+                          label="Image"
+                          description="Optional card image."
+                          value={home.facilitiesImageUrls?.[index]}
+                          disabled={isSaving}
+                          aspectRatio={4 / 3}
+                          onChange={(url) => {
+                            const images = [...(home.facilitiesImageUrls || [])]
+                            while (images.length <= index) images.push("")
+                            images[index] = url
+                            change({
+                              ...config,
+                              home: { ...home, facilitiesImageUrls: images },
+                            })
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-4 text-red-600"
+                        onClick={() =>
+                          change({
+                            ...config,
+                            home: {
+                              ...home,
+                              facilities: (home.facilities || []).filter(
+                                (_, i) => i !== index
+                              ),
+                              facilitiesImageUrls: (
+                                home.facilitiesImageUrls || []
+                              ).filter((_, i) => i !== index),
+                            },
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove highlight
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
             </div>
           </div>
         )}
 
         {activeSection === "about" && (
-          <ImageField
-            label="About banner"
-            description="Wide image at the top of About."
-            value={about.bannerImageUrl}
-            disabled={isSaving}
-            onChange={(bannerImageUrl) =>
-              change({ ...config, about: { ...about, bannerImageUrl } })
-            }
-          />
+          <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={about.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, about: { ...about, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={about.heading}
+                  onChange={(heading) =>
+                    change({ ...config, about: { ...about, heading } })
+                  }
+                />
+                <TextField
+                  label="Introduction"
+                  value={about.body}
+                  multiline
+                  onChange={(body) => change({ ...config, about: { ...about, body } })}
+                />
+                <TextField
+                  label="Additional information"
+                  value={about.secondaryBody}
+                  multiline
+                  onChange={(secondaryBody) =>
+                    change({ ...config, about: { ...about, secondaryBody } })
+                  }
+                />
+                <TextField
+                  label="Highlight heading"
+                  value={about.highlightTitle}
+                  onChange={(highlightTitle) =>
+                    change({ ...config, about: { ...about, highlightTitle } })
+                  }
+                />
+                <TextField
+                  label="Highlight text"
+                  value={about.highlightBody}
+                  multiline
+                  onChange={(highlightBody) =>
+                    change({ ...config, about: { ...about, highlightBody } })
+                  }
+                />
+                <TextField
+                  label="Contact button label"
+                  value={about.ctaLabel}
+                  onChange={(ctaLabel) =>
+                    change({ ...config, about: { ...about, ctaLabel } })
+                  }
+                />
+              </div>
+            </PageTextPanel>
+            <ImageField
+              label="About banner"
+              description="Wide image at the top of About."
+              value={about.bannerImageUrl}
+              disabled={isSaving}
+              onChange={(bannerImageUrl) =>
+                change({ ...config, about: { ...about, bannerImageUrl } })
+              }
+            />
+          </div>
         )}
 
         {activeSection === "academics" && (
           <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={academics.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, academics: { ...academics, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={academics.heading}
+                  onChange={(heading) =>
+                    change({ ...config, academics: { ...academics, heading } })
+                  }
+                />
+                <div className="md:col-span-2">
+                  <TextField
+                    label="Introduction"
+                    value={academics.introduction}
+                    multiline
+                    onChange={(introduction) =>
+                      change({
+                        ...config,
+                        academics: { ...academics, introduction },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </PageTextPanel>
             <ImageField
               label="Academics banner"
               description="Wide image at the top of Academics."
@@ -514,72 +724,117 @@ export function MultiPageSiteSettings() {
                   <Plus className="mr-2 h-4 w-4" /> Add program
                 </Button>
               </div>
-              <div className="space-y-4">
+              <Accordion type="multiple" className="space-y-3">
                 {(academics.programs || []).map((program, index) => (
-                  <div
+                  <AccordionItem
                     key={index}
-                    className="grid gap-4 rounded-lg border p-4 lg:grid-cols-[1fr_1fr_1.2fr_auto]"
+                    value={`program-${index}`}
+                    className="rounded-lg border px-4"
                   >
-                    <TextField
-                      label="Program name"
-                      value={program.title}
-                      onChange={(title) => {
-                        const programs = [...(academics.programs || [])]
-                        programs[index] = { ...program, title }
-                        change({ ...config, academics: { ...academics, programs } })
-                      }}
-                    />
-                    <TextField
-                      label="Description"
-                      value={program.description}
-                      multiline
-                      onChange={(description) => {
-                        const programs = [...(academics.programs || [])]
-                        programs[index] = { ...program, description }
-                        change({ ...config, academics: { ...academics, programs } })
-                      }}
-                    />
-                    <ImageField
-                      label="Program image"
-                      description="Shown above the program."
-                      value={program.imageUrl || program.image_url}
-                      disabled={isSaving}
-                      aspectRatio={4 / 3}
-                      onChange={(imageUrl) => {
-                        const programs = [...(academics.programs || [])]
-                        programs[index] = { ...program, imageUrl, image_url: undefined }
-                        change({ ...config, academics: { ...academics, programs } })
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="self-start text-red-600"
-                      aria-label={`Remove academic program ${index + 1}`}
-                      onClick={() =>
-                        change({
-                          ...config,
-                          academics: {
-                            ...academics,
-                            programs: (academics.programs || []).filter(
-                              (_, itemIndex) => itemIndex !== index
-                            ),
-                          },
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    <AccordionTrigger>
+                      {program.title?.trim() || `Untitled program ${index + 1}`}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-5 pt-2 lg:grid-cols-2">
+                        <div className="space-y-5">
+                          <TextField
+                            label="Program name"
+                            value={program.title}
+                            onChange={(title) => {
+                              const programs = [...(academics.programs || [])]
+                              programs[index] = { ...program, title }
+                              change({ ...config, academics: { ...academics, programs } })
+                            }}
+                          />
+                          <TextField
+                            label="Description"
+                            value={program.description}
+                            multiline
+                            onChange={(description) => {
+                              const programs = [...(academics.programs || [])]
+                              programs[index] = { ...program, description }
+                              change({ ...config, academics: { ...academics, programs } })
+                            }}
+                          />
+                        </div>
+                        <ImageField
+                          label="Program image"
+                          description="Shown above the program."
+                          value={program.imageUrl || program.image_url}
+                          disabled={isSaving}
+                          aspectRatio={4 / 3}
+                          onChange={(imageUrl) => {
+                            const programs = [...(academics.programs || [])]
+                            programs[index] = {
+                              ...program,
+                              imageUrl,
+                              image_url: undefined,
+                            }
+                            change({ ...config, academics: { ...academics, programs } })
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-4 text-red-600"
+                        aria-label={`Remove academic program ${index + 1}`}
+                        onClick={() =>
+                          change({
+                            ...config,
+                            academics: {
+                              ...academics,
+                              programs: (academics.programs || []).filter(
+                                (_, itemIndex) => itemIndex !== index
+                              ),
+                            },
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove program
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
             </div>
           </div>
         )}
 
         {activeSection === "facilities" && (
           <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={facilities.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, facilities: { ...facilities, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={facilities.heading}
+                  onChange={(heading) =>
+                    change({ ...config, facilities: { ...facilities, heading } })
+                  }
+                />
+                <div className="md:col-span-2">
+                  <TextField
+                    label="Introduction"
+                    value={facilities.introduction}
+                    multiline
+                    onChange={(introduction) =>
+                      change({
+                        ...config,
+                        facilities: { ...facilities, introduction },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </PageTextPanel>
             <ImageField
               label="Facilities banner"
               description="Wide image at the top of Facilities."
@@ -652,14 +907,34 @@ export function MultiPageSiteSettings() {
 
         {activeSection === "gallery" && (
           <div className="space-y-6">
-            <TextField
-              label="Gallery introduction"
-              value={gallery.subtitle}
-              multiline
-              onChange={(subtitle) =>
-                change({ ...config, gallery: { ...gallery, subtitle } })
-              }
-            />
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={gallery.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, gallery: { ...gallery, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={gallery.heading}
+                  onChange={(heading) =>
+                    change({ ...config, gallery: { ...gallery, heading } })
+                  }
+                />
+                <div className="md:col-span-2">
+                  <TextField
+                    label="Introduction"
+                    value={gallery.subtitle}
+                    multiline
+                    onChange={(subtitle) =>
+                      change({ ...config, gallery: { ...gallery, subtitle } })
+                    }
+                  />
+                </div>
+              </div>
+            </PageTextPanel>
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Gallery items</h3>
               <Button
@@ -682,71 +957,99 @@ export function MultiPageSiteSettings() {
                 <Plus className="mr-2 h-4 w-4" /> Add item
               </Button>
             </div>
-            <div className="space-y-4">
+            <Accordion type="multiple" className="space-y-3">
               {(gallery.items || []).map((item, index) => (
-                <div
+                <AccordionItem
                   key={index}
-                  className="grid gap-4 rounded-lg border p-4 lg:grid-cols-[1fr_1fr_1.2fr_auto]"
+                  value={`gallery-${index}`}
+                  className="rounded-lg border px-4"
                 >
-                  <TextField
-                    label="Title"
-                    value={item.title}
-                    onChange={(title) => {
-                      const items = [...(gallery.items || [])]
-                      items[index] = { ...item, title }
-                      change({ ...config, gallery: { ...gallery, items } })
-                    }}
-                  />
-                  <TextField
-                    label="Description"
-                    value={item.description}
-                    multiline
-                    onChange={(description) => {
-                      const items = [...(gallery.items || [])]
-                      items[index] = { ...item, description }
-                      change({ ...config, gallery: { ...gallery, items } })
-                    }}
-                  />
-                  <ImageField
-                    label="Gallery image"
-                    description="Image for this gallery item."
-                    value={item.imageUrl}
-                    disabled={isSaving}
-                    aspectRatio={4 / 3}
-                    onChange={(imageUrl) => {
-                      const items = [...(gallery.items || [])]
-                      items[index] = { ...item, imageUrl }
-                      change({ ...config, gallery: { ...gallery, items } })
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="self-start text-red-600"
-                    aria-label={`Remove gallery item ${index + 1}`}
-                    onClick={() =>
-                      change({
-                        ...config,
-                        gallery: {
-                          ...gallery,
-                          items: (gallery.items || []).filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        },
-                      })
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                  <AccordionTrigger>
+                    {item.title?.trim() || `Untitled gallery item ${index + 1}`}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid gap-5 pt-2 lg:grid-cols-2">
+                      <div className="space-y-5">
+                        <TextField
+                          label="Title"
+                          value={item.title}
+                          onChange={(title) => {
+                            const items = [...(gallery.items || [])]
+                            items[index] = { ...item, title }
+                            change({ ...config, gallery: { ...gallery, items } })
+                          }}
+                        />
+                        <TextField
+                          label="Description"
+                          value={item.description}
+                          multiline
+                          onChange={(description) => {
+                            const items = [...(gallery.items || [])]
+                            items[index] = { ...item, description }
+                            change({ ...config, gallery: { ...gallery, items } })
+                          }}
+                        />
+                      </div>
+                      <ImageField
+                        label="Gallery image"
+                        description="Image for this gallery item."
+                        value={item.imageUrl}
+                        disabled={isSaving}
+                        aspectRatio={4 / 3}
+                        onChange={(imageUrl) => {
+                          const items = [...(gallery.items || [])]
+                          items[index] = { ...item, imageUrl }
+                          change({ ...config, gallery: { ...gallery, items } })
+                        }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-4 text-red-600"
+                      aria-label={`Remove gallery item ${index + 1}`}
+                      onClick={() =>
+                        change({
+                          ...config,
+                          gallery: {
+                            ...gallery,
+                            items: (gallery.items || []).filter(
+                              (_, itemIndex) => itemIndex !== index
+                            ),
+                          },
+                        })
+                      }
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Remove item
+                    </Button>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </div>
         )}
 
         {activeSection === "news" && (
           <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={news.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, news: { ...news, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={news.heading}
+                  onChange={(heading) =>
+                    change({ ...config, news: { ...news, heading } })
+                  }
+                />
+              </div>
+            </PageTextPanel>
             <ImageField
               label="News banner"
               description="Wide image at the top of News."
@@ -778,90 +1081,128 @@ export function MultiPageSiteSettings() {
                 <Plus className="mr-2 h-4 w-4" /> Add post
               </Button>
             </div>
-            <div className="space-y-4">
+            <Accordion type="multiple" className="space-y-3">
               {(news.items || []).map((item, index) => (
-                <div
+                <AccordionItem
                   key={item.id || index}
-                  className="grid gap-4 rounded-lg border p-4 md:grid-cols-2"
+                  value={item.id || `news-${index}`}
+                  className="rounded-lg border px-4"
                 >
-                  <TextField
-                    label="Title"
-                    value={item.title}
-                    onChange={(title) => {
-                      const items = [...(news.items || [])]
-                      items[index] = { ...item, title }
-                      change({ ...config, news: { ...news, items } })
-                    }}
-                  />
-                  <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={item.date || ""}
-                      onChange={(event) => {
-                        const items = [...(news.items || [])]
-                        items[index] = { ...item, date: event.target.value }
-                        change({ ...config, news: { ...news, items } })
-                      }}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <TextField
-                      label="Content"
-                      value={item.content}
-                      multiline
-                      onChange={(content) => {
-                        const items = [...(news.items || [])]
-                        items[index] = { ...item, content }
-                        change({ ...config, news: { ...news, items } })
-                      }}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="w-fit"
-                    onClick={() =>
-                      change({
-                        ...config,
-                        news: {
-                          ...news,
-                          items: (news.items || []).filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        },
-                      })
-                    }
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Remove post
-                  </Button>
-                </div>
+                  <AccordionTrigger>
+                    {item.title?.trim() || `Untitled post ${index + 1}`}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid gap-4 pt-2 md:grid-cols-2">
+                      <TextField
+                        label="Title"
+                        value={item.title}
+                        onChange={(title) => {
+                          const items = [...(news.items || [])]
+                          items[index] = { ...item, title }
+                          change({ ...config, news: { ...news, items } })
+                        }}
+                      />
+                      <div className="space-y-2">
+                        <Label>Date</Label>
+                        <Input
+                          type="date"
+                          value={item.date || ""}
+                          onChange={(event) => {
+                            const items = [...(news.items || [])]
+                            items[index] = { ...item, date: event.target.value }
+                            change({ ...config, news: { ...news, items } })
+                          }}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <TextField
+                          label="Content"
+                          value={item.content}
+                          multiline
+                          onChange={(content) => {
+                            const items = [...(news.items || [])]
+                            items[index] = { ...item, content }
+                            change({ ...config, news: { ...news, items } })
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="w-fit"
+                        onClick={() =>
+                          change({
+                            ...config,
+                            news: {
+                              ...news,
+                              items: (news.items || []).filter(
+                                (_, itemIndex) => itemIndex !== index
+                              ),
+                            },
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove post
+                      </Button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </div>
         )}
 
         {activeSection === "contact" && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ImageField
-              label="Contact banner"
-              description="Wide image at the top of Contact."
-              value={contact.bannerImageUrl}
-              disabled={isSaving}
-              onChange={(bannerImageUrl) =>
-                change({ ...config, contact: { ...contact, bannerImageUrl } })
-              }
-            />
-            <ImageField
-              label="Admissions image"
-              description="Image beside the school contact details."
-              value={contact.joinUsImageUrl}
-              disabled={isSaving}
-              onChange={(joinUsImageUrl) =>
-                change({ ...config, contact: { ...contact, joinUsImageUrl } })
-              }
-            />
+          <div className="space-y-8">
+            <PageTextPanel>
+              <div className="grid gap-5 md:grid-cols-2">
+                <TextField
+                  label="Banner title"
+                  value={contact.pageTitle}
+                  onChange={(pageTitle) =>
+                    change({ ...config, contact: { ...contact, pageTitle } })
+                  }
+                />
+                <TextField
+                  label="Page heading"
+                  value={contact.heading}
+                  onChange={(heading) =>
+                    change({ ...config, contact: { ...contact, heading } })
+                  }
+                />
+                <div className="md:col-span-2">
+                  <TextField
+                    label="Introduction"
+                    value={contact.introduction}
+                    multiline
+                    onChange={(introduction) =>
+                      change({ ...config, contact: { ...contact, introduction } })
+                    }
+                  />
+                </div>
+              </div>
+            </PageTextPanel>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <ImageField
+                label="Contact banner"
+                description="Wide image at the top of Contact."
+                value={contact.bannerImageUrl}
+                disabled={isSaving}
+                onChange={(bannerImageUrl) =>
+                  change({ ...config, contact: { ...contact, bannerImageUrl } })
+                }
+              />
+              <ImageField
+                label="Admissions image"
+                description="Image beside the school contact details."
+                value={contact.joinUsImageUrl}
+                disabled={isSaving}
+                onChange={(joinUsImageUrl) =>
+                  change({ ...config, contact: { ...contact, joinUsImageUrl } })
+                }
+              />
+            </div>
           </div>
         )}
       </CardContent>

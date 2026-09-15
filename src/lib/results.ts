@@ -88,6 +88,7 @@ interface PaginatedSubmissionsResponse {
       id: string
       name: string
       arm: string
+      stream?: string
     }
     subject: {
       id: string
@@ -227,6 +228,7 @@ const transformBackendSubmission = (backendSubmission: {
     id: string
     name: string
     arm: string
+    stream?: string
   }
   subject: {
     id: string
@@ -287,6 +289,7 @@ const transformBackendSubmission = (backendSubmission: {
       id: backendSubmission.class.id,
       name: backendSubmission.class.name,
       arm: backendSubmission.class.arm,
+      stream: backendSubmission.class.stream,
     },
     subject_id: backendSubmission.subject.id,
     subject: {
@@ -318,6 +321,7 @@ const transformBackendSubmission = (backendSubmission: {
       } satisfies Grade
     }),
     status: status,
+    student_count: backendSubmission.student_count,
     submitted_at: backendSubmission.submitted_at || undefined,
     reviewed_at: backendSubmission.reviewed_at || undefined,
     rejection_reason: backendSubmission.rejection_reason || undefined,
@@ -767,27 +771,40 @@ export const ResultsAPI = {
   },
 
   // Admin: Get all submissions with filters
-  getAdminSubmissions: (params?: { status?: string }): Promise<GradeSubmission[]> => {
+  getAdminSubmissions: async (params?: {
+    status?: string
+  }): Promise<GradeSubmission[]> => {
     const queryParams = new URLSearchParams()
 
-    if (params?.status) queryParams.append("status", params.status)
+    if (params?.status) {
+      const backendStatus = params.status === "pending" ? "SUBMITTED" : params.status
+      queryParams.set("status", backendStatus.toUpperCase())
+    }
+    queryParams.set("limit", "100")
 
-    return apiFetch<ResponsePack<PaginatedSubmissionsResponse>>(
-      `/grades/submissions?${queryParams.toString()}`,
-      {},
-      true
-    )
-      .then((response) => {
+    try {
+      const submissions: GradeSubmission[] = []
+      let page = 1
+      let hasNext = true
+
+      while (hasNext) {
+        queryParams.set("page", String(page))
+        const response = await apiFetch<ResponsePack<PaginatedSubmissionsResponse>>(
+          `/grades/submissions?${queryParams.toString()}`,
+          {},
+          true
+        )
         const paginatedData = extractData(response)
-        const backendSubmissions = paginatedData.items || []
+        submissions.push(...(paginatedData.items || []).map(transformBackendSubmission))
+        hasNext = Boolean(paginatedData.meta?.has_next)
+        page += 1
+      }
 
-        const submissions = backendSubmissions.map(transformBackendSubmission)
-        return submissions
-      })
-      .catch((error) => {
-        console.error("Error fetching admin submissions:", error)
-        return []
-      })
+      return submissions
+    } catch (error) {
+      console.error("Error fetching admin submissions:", error)
+      throw error
+    }
   },
 
   // Admin: Approve submission

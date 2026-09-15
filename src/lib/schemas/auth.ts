@@ -10,7 +10,7 @@ export const emailSchema = z
   .transform((value) => value.toLowerCase())
 
 export const loginSchema = z.object({
-  email: emailSchema,
+  email: z.string().trim().min(1, "Email or student ID is required"),
   password: z.string().min(1, "You need to enter a password"),
 })
 

@@ -53,12 +53,11 @@ export function SubmissionCard({ submission }: SubmissionCardProps) {
     submission.teacher_id ||
     "Unknown Teacher"
 
-  const className =
-    getNestedProperty<string>(submission.class, "name") ||
-    (getNestedProperty<string>(submission.class, "arm")
-      ? `${getNestedProperty<string>(submission.class, "name") || ""} ${getNestedProperty<string>(submission.class, "arm") || ""}`.trim()
-      : submission.class_id) ||
-    "Unknown Class"
+  const classBaseName = getNestedProperty<string>(submission.class, "name")
+  const classArm = getNestedProperty<string>(submission.class, "arm")
+  const className = classBaseName
+    ? `${classBaseName}${classArm ? ` ${classArm}` : ""}`
+    : submission.class_id || "Unknown Class"
 
   const subjectName =
     getNestedProperty<string>(submission.subject, "name") ||

@@ -51,10 +51,10 @@ function SiteImage({
   )
 }
 
-function SiteHeader({ hiddenPages = [] }: { hiddenPages?: string[] }) {
+function SiteHeader({ config }: { config: MarketingSiteConfig }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const visiblePages = pages.filter((page) => !hiddenPages.includes(page.key))
+  const visiblePages = pages.filter((page) => !config.hiddenPages?.includes(page.key))
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
       <div className="container flex h-20 items-center justify-between">
@@ -71,7 +71,7 @@ function SiteHeader({ hiddenPages = [] }: { hiddenPages?: string[] }) {
                 pathname === page.href ? "text-accent" : "text-gray-600"
               )}
             >
-              {page.label}
+              {config.navigationLabels?.[page.key]?.trim() || page.label}
             </Link>
           ))}
         </nav>
@@ -109,7 +109,7 @@ function SiteHeader({ hiddenPages = [] }: { hiddenPages?: string[] }) {
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-3 py-3 text-lg font-medium hover:bg-gray-50"
               >
-                {page.label}
+                {config.navigationLabels?.[page.key]?.trim() || page.label}
               </Link>
             ))}
           </nav>
@@ -188,24 +188,32 @@ function HomePage({ config }: { config: MarketingSiteConfig }) {
         <div className="absolute inset-0 -z-10 bg-gray-950/60" />
         <div className="container py-24 text-white">
           <p className="mb-4 font-semibold tracking-[0.2em] text-white/80 uppercase">
-            Welcome to
+            {config.home?.heroEyebrow || "Welcome to"}
           </p>
-          <h1 className="max-w-4xl text-5xl font-bold md:text-7xl">{school.name}</h1>
+          <h1 className="max-w-4xl text-5xl font-bold md:text-7xl">
+            {config.home?.heroHeading || school.name}
+          </h1>
           <p className="mt-6 max-w-2xl text-lg text-white/85 md:text-xl">
-            {school.description}
+            {config.home?.heroBody || school.description}
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/site/contact">Contact the school</Link>
+            <Link href="/site/contact">
+              {config.home?.heroCtaLabel || "Contact the school"}
+            </Link>
           </Button>
         </div>
       </section>
       <section className="container grid items-center gap-10 py-20 lg:grid-cols-2">
         <div>
-          <p className="text-accent font-semibold">Our school</p>
+          <p className="text-accent font-semibold">
+            {config.home?.aboutEyebrow || "Our school"}
+          </p>
           <h2 className="mt-2 text-3xl font-bold md:text-4xl">
-            Learning, character, and opportunity
+            {config.home?.aboutHeading || "Learning, character, and opportunity"}
           </h2>
-          <p className="mt-5 leading-7 text-gray-600">{school.description}</p>
+          <p className="mt-5 leading-7 text-gray-600">
+            {config.home?.aboutBody || school.description}
+          </p>
           <Button asChild variant="outline" className="mt-6">
             <Link href="/site/about">Learn about us</Link>
           </Button>
@@ -219,8 +227,12 @@ function HomePage({ config }: { config: MarketingSiteConfig }) {
       </section>
       <section className="bg-gray-50 py-20">
         <div className="container">
-          <p className="text-accent font-semibold">What we offer</p>
-          <h2 className="mt-2 text-3xl font-bold">A place for every learner to grow</h2>
+          <p className="text-accent font-semibold">
+            {config.home?.facilitiesEyebrow || "What we offer"}
+          </p>
+          <h2 className="mt-2 text-3xl font-bold">
+            {config.home?.facilitiesHeading || "A place for every learner to grow"}
+          </h2>
           {config.home?.facilitiesImageUrl && (
             <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-96">
               <SiteImage
@@ -262,23 +274,32 @@ function AboutPage({ config }: { config: MarketingSiteConfig }) {
   const school = useSchoolStore((state) => state.school)
   return (
     <>
-      <PageHero title={`About ${school.name}`} image={config.about?.bannerImageUrl} />
+      <PageHero
+        title={config.about?.pageTitle || `About ${school.name}`}
+        image={config.about?.bannerImageUrl}
+      />
       <section className="container grid gap-10 py-20 lg:grid-cols-[1.4fr_1fr]">
         <div>
-          <h2 className="text-3xl font-bold">Our school community</h2>
+          <h2 className="text-3xl font-bold">
+            {config.about?.heading || "Our school community"}
+          </h2>
           <p className="mt-5 leading-8 whitespace-pre-line text-gray-600">
-            {school.description}
+            {config.about?.body || school.description}
           </p>
           <p className="mt-5 leading-8 text-gray-600">
-            We work with families, teachers, and students to create a safe and ambitious
-            environment where every learner can make progress.
+            {config.about?.secondaryBody ||
+              "We work with families, teachers, and students to create a safe and ambitious environment where every learner can make progress."}
           </p>
         </div>
         <aside className="bg-accent/10 rounded-2xl p-8">
-          <h3 className="text-xl font-semibold">At a glance</h3>
-          <p className="mt-4 text-gray-700">{school.tagline}</p>
+          <h3 className="text-xl font-semibold">
+            {config.about?.highlightTitle || "At a glance"}
+          </h3>
+          <p className="mt-4 text-gray-700">
+            {config.about?.highlightBody || school.tagline}
+          </p>
           <Button asChild className="mt-6">
-            <Link href="/site/contact">Speak with us</Link>
+            <Link href="/site/contact">{config.about?.ctaLabel || "Speak with us"}</Link>
           </Button>
         </aside>
       </section>
@@ -293,12 +314,18 @@ function AcademicsPage({ config }: { config: MarketingSiteConfig }) {
     : school.programs
   return (
     <>
-      <PageHero title="Academics" image={config.academics?.bannerImageUrl} />
+      <PageHero
+        title={config.academics?.pageTitle || "Academics"}
+        image={config.academics?.bannerImageUrl}
+      />
       <section className="container py-20">
         <div className="max-w-2xl">
-          <h2 className="text-3xl font-bold">Programs built around learners</h2>
+          <h2 className="text-3xl font-bold">
+            {config.academics?.heading || "Programs built around learners"}
+          </h2>
           <p className="mt-4 text-gray-600">
-            Explore the learning programs available at {school.name}.
+            {config.academics?.introduction ||
+              `Explore the learning programs available at ${school.name}.`}
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -335,11 +362,17 @@ function FacilitiesPage({ config }: { config: MarketingSiteConfig }) {
     : school.gallery.map((item) => item.src)
   return (
     <>
-      <PageHero title="Facilities" image={config.facilities?.bannerImageUrl} />
+      <PageHero
+        title={config.facilities?.pageTitle || "Facilities"}
+        image={config.facilities?.bannerImageUrl}
+      />
       <section className="container py-20">
-        <h2 className="text-3xl font-bold">Spaces designed for learning</h2>
+        <h2 className="text-3xl font-bold">
+          {config.facilities?.heading || "Spaces designed for learning"}
+        </h2>
         <p className="mt-4 max-w-2xl text-gray-600">
-          Take a look at the spaces that support daily learning and school life.
+          {config.facilities?.introduction ||
+            "Take a look at the spaces that support daily learning and school life."}
         </p>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image, index) => (
@@ -367,9 +400,11 @@ function GalleryPage({ config }: { config: MarketingSiteConfig }) {
       }))
   return (
     <>
-      <PageHero title="Gallery" />
+      <PageHero title={config.gallery?.pageTitle || "Gallery"} />
       <section className="container py-20">
-        <h2 className="text-3xl font-bold">Life at {school.name}</h2>
+        <h2 className="text-3xl font-bold">
+          {config.gallery?.heading || `Life at ${school.name}`}
+        </h2>
         {config.gallery?.subtitle && (
           <p className="mt-4 text-gray-600">{config.gallery.subtitle}</p>
         )}
@@ -402,9 +437,12 @@ function NewsPage({ config }: { config: MarketingSiteConfig }) {
   const items = config.news?.items || []
   return (
     <>
-      <PageHero title="School news" image={config.news?.bannerImageUrl} />
+      <PageHero
+        title={config.news?.pageTitle || "School news"}
+        image={config.news?.bannerImageUrl}
+      />
       <section className="container py-20">
-        <h2 className="text-3xl font-bold">Latest updates</h2>
+        <h2 className="text-3xl font-bold">{config.news?.heading || "Latest updates"}</h2>
         {items.length ? (
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {items.map((item, index) => (
@@ -431,12 +469,18 @@ function ContactPage({ config }: { config: MarketingSiteConfig }) {
   const school = useSchoolStore((state) => state.school)
   return (
     <>
-      <PageHero title="Contact us" image={config.contact?.bannerImageUrl} />
+      <PageHero
+        title={config.contact?.pageTitle || "Contact us"}
+        image={config.contact?.bannerImageUrl}
+      />
       <section className="container grid gap-10 py-20 lg:grid-cols-2">
         <div>
-          <h2 className="text-3xl font-bold">We would be happy to hear from you</h2>
+          <h2 className="text-3xl font-bold">
+            {config.contact?.heading || "We would be happy to hear from you"}
+          </h2>
           <p className="mt-4 text-gray-600">
-            Contact the school for admissions, visits, and general enquiries.
+            {config.contact?.introduction ||
+              "Contact the school for admissions, visits, and general enquiries."}
           </p>
           <div className="mt-8 space-y-5">
             <a
@@ -488,7 +532,7 @@ export function MarketingSitePage({ page }: { page: MarketingPage }) {
     )
   return (
     <div className="min-h-screen bg-white text-gray-950">
-      <SiteHeader hiddenPages={config.hiddenPages} />
+      <SiteHeader config={config} />
       <main>{content}</main>
       <SiteFooter />
     </div>

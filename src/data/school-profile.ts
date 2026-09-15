@@ -42,15 +42,42 @@ export type WebsiteLayout = "one_page" | "multi_page"
 
 export type MarketingSiteConfig = {
   hiddenPages?: string[]
+  navigationLabels?: Partial<
+    Record<
+      "home" | "about" | "academics" | "facilities" | "gallery" | "news" | "contact",
+      string
+    >
+  >
   home?: {
+    heroEyebrow?: string
+    heroHeading?: string
+    heroBody?: string
+    heroCtaLabel?: string
+    aboutEyebrow?: string
+    aboutHeading?: string
+    aboutBody?: string
+    facilitiesEyebrow?: string
+    facilitiesHeading?: string
     heroImageUrl?: string
     aboutImageUrl?: string
     facilitiesImageUrl?: string
     facilitiesImageUrls?: string[]
     facilities?: { title?: string; description?: string }[]
   }
-  about?: { bannerImageUrl?: string }
+  about?: {
+    pageTitle?: string
+    heading?: string
+    body?: string
+    secondaryBody?: string
+    highlightTitle?: string
+    highlightBody?: string
+    ctaLabel?: string
+    bannerImageUrl?: string
+  }
   academics?: {
+    pageTitle?: string
+    heading?: string
+    introduction?: string
     bannerImageUrl?: string
     programs?: {
       title?: string
@@ -59,16 +86,32 @@ export type MarketingSiteConfig = {
       image_url?: string
     }[]
   }
-  facilities?: { bannerImageUrl?: string; imageUrls?: string[] }
+  facilities?: {
+    pageTitle?: string
+    heading?: string
+    introduction?: string
+    bannerImageUrl?: string
+    imageUrls?: string[]
+  }
   gallery?: {
+    pageTitle?: string
+    heading?: string
     subtitle?: string
     items?: { title?: string; description?: string; imageUrl?: string }[]
   }
   news?: {
+    pageTitle?: string
+    heading?: string
     bannerImageUrl?: string
     items?: { id?: string; title?: string; date?: string; content?: string }[]
   }
-  contact?: { bannerImageUrl?: string; joinUsImageUrl?: string }
+  contact?: {
+    pageTitle?: string
+    heading?: string
+    introduction?: string
+    bannerImageUrl?: string
+    joinUsImageUrl?: string
+  }
 }
 
 export type SchoolProfile = {

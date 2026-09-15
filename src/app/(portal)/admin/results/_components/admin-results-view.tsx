@@ -3,7 +3,7 @@
 import { GradeSubmission } from "@/types/result"
 import { SearchSection } from "./search-section"
 import { StatsCards } from "./stats-cards"
-import { SubmissionsGrid } from "./submissions-grid"
+import { ResultsHierarchy } from "./results-hierarchy"
 
 interface AdminResultsViewProps {
   submissions: GradeSubmission[]
@@ -18,6 +18,7 @@ interface AdminResultsViewProps {
   onSearchChange: (query: string) => void
   onStatusFilterChange: (status: string) => void
   isLoading: boolean
+  isError?: boolean
 }
 
 export function AdminResultsView({
@@ -28,6 +29,7 @@ export function AdminResultsView({
   onSearchChange,
   onStatusFilterChange,
   isLoading,
+  isError,
 }: AdminResultsViewProps) {
   return (
     <div className="space-y-6">
@@ -42,8 +44,11 @@ export function AdminResultsView({
       {/* Stats Cards */}
       {stats && <StatsCards stats={stats} />}
 
-      {/* Submissions Grid */}
-      <SubmissionsGrid submissions={submissions} isLoading={isLoading} />
+      <ResultsHierarchy
+        submissions={submissions}
+        isLoading={isLoading}
+        isError={isError}
+      />
     </div>
   )
 }

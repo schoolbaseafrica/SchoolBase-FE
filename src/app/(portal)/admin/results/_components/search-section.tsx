@@ -39,7 +39,7 @@ export function SearchSection({
       <div className="relative flex-1">
         <Search className="text-muted-foreground absolute top-1/2 left-4 size-4 -translate-y-1/2" />
         <Input
-          placeholder="Search submissions..."
+          placeholder="Search stream, class, subject, or teacher..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-11"
