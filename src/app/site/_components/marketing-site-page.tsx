@@ -176,6 +176,7 @@ function HomePage({ config }: { config: MarketingSiteConfig }) {
   const facilities = config.home?.facilities?.length
     ? config.home.facilities
     : school.programs.slice(0, 3)
+  const facilityImages = config.home?.facilitiesImageUrls || []
   return (
     <>
       <section className="relative isolate flex min-h-[70vh] items-center overflow-hidden bg-gray-900">
@@ -220,14 +221,34 @@ function HomePage({ config }: { config: MarketingSiteConfig }) {
         <div className="container">
           <p className="text-accent font-semibold">What we offer</p>
           <h2 className="mt-2 text-3xl font-bold">A place for every learner to grow</h2>
+          {config.home?.facilitiesImageUrl && (
+            <div className="relative mt-8 h-72 overflow-hidden rounded-2xl md:h-96">
+              <SiteImage
+                src={config.home.facilitiesImageUrl}
+                alt={`${school.name} facilities`}
+              />
+            </div>
+          )}
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {facilities.map((item, index) => (
               <article
                 key={`${item.title}-${index}`}
-                className="rounded-xl border bg-white p-6"
+                className="overflow-hidden rounded-xl border bg-white"
               >
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-gray-600">{item.description}</p>
+                {facilityImages[index] && (
+                  <div className="relative h-48">
+                    <SiteImage
+                      src={facilityImages[index]}
+                      alt={item.title || `Facility ${index + 1}`}
+                    />
+                  </div>
+                )}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-gray-600">
+                    {item.description}
+                  </p>
+                </div>
               </article>
             ))}
           </div>

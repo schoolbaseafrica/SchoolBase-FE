@@ -8,9 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ImageUploaderWithCrop } from "@/components/image-upload/image-uploader-with-crop"
 import { TestimonialEditor } from "./landing-page/testimonial-editor"
 import { GalleryManager } from "./landing-page/gallery-manager"
 import { HeroImagesManager } from "./landing-page/hero-images-manager"
@@ -22,8 +20,11 @@ import {
   type Testimonial,
 } from "@/lib/landing-page"
 import { WebsiteLayoutSettings } from "./website-layout-settings"
+import { MultiPageSiteSettings } from "./multi-page-site-settings"
+import { useSchoolStore } from "@/store/use-school-store"
 
 export function LandingPageSettings() {
+  const websiteLayout = useSchoolStore((state) => state.school.websiteLayout)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [config, setConfig] = useState<LandingPageConfig>({
@@ -51,9 +52,13 @@ export function LandingPageSettings() {
           testimonials: [],
         })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to fetch landing page config:", error)
-      toast.error(error?.message || "Failed to load landing page configuration")
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to load landing page configuration"
+      )
       // Initialize with empty config on error - defaults will be used
       setConfig({
         hero_images: [],
@@ -74,9 +79,13 @@ export function LandingPageSettings() {
         setConfig(configData as LandingPageConfig)
         toast.success("Landing page configuration saved successfully")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to save landing page config:", error)
-      toast.error(error?.message || "Failed to save landing page configuration")
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save landing page configuration"
+      )
       throw error
     } finally {
       setIsSaving(false)
@@ -113,7 +122,7 @@ export function LandingPageSettings() {
 
       const updatedConfig = { ...config, hero_images: validHeroImages }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
@@ -131,7 +140,7 @@ export function LandingPageSettings() {
         gallery_images: [...(config.gallery_images || []), newImage],
       }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
@@ -143,7 +152,7 @@ export function LandingPageSettings() {
         gallery_images: (config.gallery_images || []).filter((img) => img.id !== imageId),
       }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
@@ -160,7 +169,7 @@ export function LandingPageSettings() {
         testimonials: [...(config.testimonials || []), newTestimonial],
       }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
@@ -177,7 +186,7 @@ export function LandingPageSettings() {
         ),
       }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
@@ -189,12 +198,12 @@ export function LandingPageSettings() {
         testimonials: (config.testimonials || []).filter((t) => t.id !== testimonialId),
       }
       await saveConfig(updatedConfig)
-    } catch (error: any) {
+    } catch {
       // Error already handled in saveConfig
     }
   }
 
-  if (isLoading && config.hero_images.length === 0) {
+  if (websiteLayout === "one_page" && isLoading && config.hero_images.length === 0) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -215,62 +224,73 @@ export function LandingPageSettings() {
 
       <WebsiteLayoutSettings />
 
-      {/* Hero Images Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Hero Images</CardTitle>
-          <CardDescription>
-            Upload up to 3 hero images for your landing page. Recommended: 16:9 aspect
-            ratio, minimum 1200x675px
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <HeroImagesManager
-            images={config.hero_images || []}
-            onImageUpload={(index, url) => handleHeroImageUpload(index, url)}
-            disabled={isSaving}
-          />
-        </CardContent>
-      </Card>
+      <div hidden={websiteLayout !== "multi_page"}>
+        <MultiPageSiteSettings />
+      </div>
+      <div hidden={websiteLayout !== "one_page"} className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">One-page content</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Changes in this section are saved as you add, update, or remove an item.
+          </p>
+        </div>
 
-      {/* Gallery Images Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Gallery Images</CardTitle>
-          <CardDescription>
-            Add images to your gallery section. Recommended: 1:1 (square) or 4:3 aspect
-            ratio, minimum 800x800px
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <GalleryManager
-            images={config.gallery_images || []}
-            onImageAdd={handleGalleryImageAdd}
-            onImageRemove={handleGalleryImageRemove}
-            disabled={isSaving}
-          />
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Hero Images</CardTitle>
+            <CardDescription>
+              Upload up to 3 hero images for your landing page. Recommended: 16:9 aspect
+              ratio, minimum 1200x675px
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HeroImagesManager
+              images={config.hero_images || []}
+              onImageUpload={(index, url) => handleHeroImageUpload(index, url)}
+              disabled={isSaving}
+            />
+          </CardContent>
+        </Card>
 
-      {/* Testimonials Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Testimonials</CardTitle>
-          <CardDescription>
-            Manage testimonials displayed on your landing page. Each testimonial includes
-            a quote, name, role, and avatar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TestimonialEditor
-            testimonials={config.testimonials || []}
-            onAdd={handleTestimonialAdd}
-            onUpdate={handleTestimonialUpdate}
-            onRemove={handleTestimonialRemove}
-            disabled={isSaving}
-          />
-        </CardContent>
-      </Card>
+        {/* Gallery Images Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Gallery Images</CardTitle>
+            <CardDescription>
+              Add images to your gallery section. Recommended: 1:1 (square) or 4:3 aspect
+              ratio, minimum 800x800px
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GalleryManager
+              images={config.gallery_images || []}
+              onImageAdd={handleGalleryImageAdd}
+              onImageRemove={handleGalleryImageRemove}
+              disabled={isSaving}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Testimonials Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Testimonials</CardTitle>
+            <CardDescription>
+              Manage testimonials displayed on your landing page. Each testimonial
+              includes a quote, name, role, and avatar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TestimonialEditor
+              testimonials={config.testimonials || []}
+              onAdd={handleTestimonialAdd}
+              onUpdate={handleTestimonialUpdate}
+              onRemove={handleTestimonialRemove}
+              disabled={isSaving}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
