@@ -13,6 +13,7 @@ import {
   Calendar,
   School,
   History,
+  ClipboardCheck,
 } from "lucide-react"
 import { PiMoneyWavyBold } from "react-icons/pi"
 import { FaRegUser } from "react-icons/fa6"
@@ -67,6 +68,7 @@ const mainItems = [
     ],
   },
   { title: "Results", url: "/admin/results", icon: Calendar },
+  { title: "Examinations", url: "/admin/cbt", icon: ClipboardCheck },
   { title: "Admins", url: "/admin/admins", icon: Users },
   { title: "Teachers", url: "/admin/teachers", icon: Users },
   { title: "Students", url: "/admin/students", icon: GraduationCap },

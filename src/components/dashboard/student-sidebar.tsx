@@ -9,6 +9,7 @@ import {
   FileBadge,
   SettingsIcon,
   DollarSign,
+  ClipboardCheck,
 } from "lucide-react"
 
 import {
@@ -32,6 +33,7 @@ const items = [
   { title: "Dashboard", url: "/student", icon: LayoutGrid, exactMatch: true },
   { title: "Results", url: "/student/results", icon: FileBadge },
   { title: "Timetable", url: "/student/timetable", icon: CalendarDays },
+  { title: "Examinations", url: "/student/cbt", icon: ClipboardCheck },
   { title: "Attendance", url: "/student/attendance", icon: GraduationCap },
   { title: "Fees", url: "/student/fee-management", icon: DollarSign },
 ]
