@@ -8,12 +8,14 @@ const TodayActivityGrid = ({
   highlightedIndex,
   showAll,
   search,
+  sessionId,
 }: {
   highlightedIndex: number | null
   showAll: boolean
   search?: string
+  sessionId?: string
 }) => {
-  const { data, isLoading } = useTodayActivities()
+  const { data, isLoading } = useTodayActivities(sessionId)
   if (isLoading)
     return <p className="py-10 text-center lg:hidden">Loading activities...</p>
 

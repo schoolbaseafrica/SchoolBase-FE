@@ -92,17 +92,17 @@ export function useCreateStudent() {
     onSuccess: async (newStudent) => {
       // Update store instantly for optimistic UI
       addStudent(newStudent)
-      
+
       // Invalidate and force refetch to ensure fresh data from server
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: STUDENTS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: STUDENTS_KEY,
-        type: "active"
+        type: "active",
       })
-      
+
       toast.success("Student created successfully")
     },
     onError: (error) => {
@@ -124,21 +124,21 @@ export function useUpdateStudent(id: string) {
     onSuccess: async (updatedStudent) => {
       // Update store instantly for optimistic UI
       updateStudent(id, updatedStudent)
-      
+
       // Invalidate and force refetch to ensure fresh data
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: STUDENTS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: [...STUDENTS_KEY, id],
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: STUDENTS_KEY,
-        type: "active"
+        type: "active",
       })
-      
+
       toast.success("Student updated successfully")
     },
     onError: (error) => {
@@ -164,26 +164,26 @@ export function useDeleteStudent() {
     },
     onError: async (error) => {
       // Refetch on error to restore correct state
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: STUDENTS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: STUDENTS_KEY,
-        type: "active"
+        type: "active",
       })
       const message = extractErrorMessage(error)
       toast.error(message)
     },
     onSuccess: async () => {
       // Force refetch to ensure UI shows current state
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: STUDENTS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: STUDENTS_KEY,
-        type: "active"
+        type: "active",
       })
       toast.success("Student deleted successfully")
     },
@@ -195,7 +195,7 @@ export function useDeleteStudent() {
 // --------------------------
 export function useStudentsCount() {
   const isSuperAdmin = useIsSuperAdmin()
-  
+
   return useQuery({
     queryKey: ["students_count"],
     queryFn: async () => {
@@ -209,13 +209,17 @@ export function useStudentsCount() {
 // ----------------------------
 // STUDENT GROWTH REPORT
 // --------------------------
-export function useStudentGrowthReport(academic_year?: string) {
+export function useStudentGrowthReport(params?: {
+  session_id: string
+  term_id?: string
+  interval: "month" | "term"
+}) {
   const isSuperAdmin = useIsSuperAdmin()
-  
+
   return useQuery({
-    queryKey: ["student_growth_report", academic_year],
-    queryFn: () => StudentsAPI.getStudentGrowthReport(academic_year),
+    queryKey: ["student_growth_report", params],
+    queryFn: () => StudentsAPI.getStudentGrowthReport(params!),
     select: (data) => data.data,
-    enabled: !isSuperAdmin && !!academic_year && academic_year.trim() !== "", // Disable for super admin and only fetch when academic_year is provided
+    enabled: !isSuperAdmin && !!params?.session_id,
   })
 }

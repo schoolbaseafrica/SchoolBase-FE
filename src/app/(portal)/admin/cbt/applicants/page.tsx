@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { Search, UserCheck, Users } from "lucide-react"
+import { CircleCheck, Clock3, Search, UserCheck, Users } from "lucide-react"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 
@@ -9,24 +9,41 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { CbtAPI } from "@/lib/cbt"
 
 export default function CbtApplicantsPage() {
   const [search, setSearch] = useState("")
+  const [status, setStatus] = useState("all")
   const applicants = useQuery({
     queryKey: ["cbt", "applicants"],
     queryFn: CbtAPI.listApplicants,
   })
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase()
-    if (!needle) return applicants.data ?? []
-    return (applicants.data ?? []).filter(
-      (item) =>
+    return (applicants.data ?? []).filter((item) => {
+      const matchesSearch =
+        !needle ||
         item.fullName.toLowerCase().includes(needle) ||
         item.email.toLowerCase().includes(needle) ||
-        item.intakeName.toLowerCase().includes(needle)
-    )
-  }, [applicants.data, search])
+        item.intakeName.toLowerCase().includes(needle) ||
+        item.latestExamName?.toLowerCase().includes(needle)
+      const applicantStatus = item.admittedAt
+        ? "admitted"
+        : item.hasPassed
+          ? "passed"
+          : item.attemptCount > item.completedAttemptCount
+            ? "in_progress"
+            : "awaiting_pass"
+      return matchesSearch && (status === "all" || status === applicantStatus)
+    })
+  }, [applicants.data, search, status])
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -38,13 +55,37 @@ export default function CbtApplicantsPage() {
             Review external exam candidates and their latest assessment progress.
           </p>
         </header>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-4 p-5">
               <Users className="h-8 w-8 text-[var(--primary)]" />
               <div>
                 <p className="text-sm text-slate-500">Applicants</p>
                 <p className="text-2xl font-semibold">{applicants.data?.length ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <CircleCheck className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-slate-500">Passed</p>
+                <p className="text-2xl font-semibold">
+                  {applicants.data?.filter((item) => item.hasPassed).length ?? 0}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <Clock3 className="h-8 w-8 text-amber-600" />
+              <div>
+                <p className="text-sm text-slate-500">In progress</p>
+                <p className="text-2xl font-semibold">
+                  {applicants.data?.filter(
+                    (item) => item.attemptCount > item.completedAttemptCount
+                  ).length ?? 0}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -63,19 +104,40 @@ export default function CbtApplicantsPage() {
         <Card>
           <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Candidate records</CardTitle>
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search name, email or intake"
-                className="pl-9"
-              />
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All applicants</SelectItem>
+                  <SelectItem value="passed">Passed</SelectItem>
+                  <SelectItem value="in_progress">In progress</SelectItem>
+                  <SelectItem value="awaiting_pass">Awaiting pass</SelectItem>
+                  <SelectItem value="admitted">Admitted</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute top-2.5 left-3 h-4 w-4 text-slate-400" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search name, email, exam or intake"
+                  className="pl-9"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {applicants.isLoading ? (
               <Skeleton className="h-48" />
+            ) : applicants.isError ? (
+              <div className="py-12 text-center text-sm text-red-600">
+                Applicant records could not be loaded.
+                <button className="ml-2 underline" onClick={() => applicants.refetch()}>
+                  Try again
+                </button>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -100,12 +162,23 @@ export default function CbtApplicantsPage() {
                           </Link>
                           <p className="text-xs text-slate-500">{item.email}</p>
                         </td>
-                        <td>{item.intakeName}</td>
+                        <td>
+                          <p>{item.latestExamName ?? "No attempt yet"}</p>
+                          <p className="text-xs text-slate-500">{item.intakeName}</p>
+                        </td>
                         <td>{item.attemptCount}</td>
-                        <td>{item.bestScore ?? "—"}</td>
+                        <td>
+                          {item.bestPercentage === null ? "—" : `${item.bestPercentage}%`}
+                        </td>
                         <td>
                           <Badge variant={item.admittedAt ? "default" : "secondary"}>
-                            {item.admittedAt ? "Admitted" : "Applicant"}
+                            {item.admittedAt
+                              ? "Admitted"
+                              : item.hasPassed
+                                ? "Passed"
+                                : item.attemptCount > item.completedAttemptCount
+                                  ? "In progress"
+                                  : "Awaiting pass"}
                           </Badge>
                         </td>
                       </tr>

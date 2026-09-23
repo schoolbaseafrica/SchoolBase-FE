@@ -10,10 +10,13 @@ import { useClassesStore, selectClassItems } from "@/store/classes-store"
 import { useShallow } from "zustand/react/shallow"
 import { Button } from "@/components/ui/button"
 import { Archive, RotateCcw } from "lucide-react"
+import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
 // import { useMemo } from "react"
 
 const ClassesPageContent = () => {
   const [showArchived, setShowArchived] = useState(false)
+  const period = useAdminAcademicPeriod()
+  const isCurrentSession = period.sessionId === period.activeSession?.id
 
   // 1. Fetch - include archived if toggle is on
   // Use high limit to ensure all class arms are loaded (avoid pagination issues)
@@ -26,6 +29,7 @@ const ClassesPageContent = () => {
     includeArchived: showArchived,
     limit: 1000, // Get all classes/arms at once to avoid missing arms due to pagination
     page: 1,
+    session_id: period.sessionId,
   })
 
   // 2. Store selection
@@ -84,8 +88,12 @@ const ClassesPageContent = () => {
                 ? "There are no archived classes."
                 : "Add Classes to make the session active."
             }
-            buttonText={showArchived ? undefined : "Add Classes"}
-            buttonHref={showArchived ? undefined : "/admin/class-management/class/new"}
+            buttonText={showArchived || !isCurrentSession ? undefined : "Add Classes"}
+            buttonHref={
+              showArchived || !isCurrentSession
+                ? undefined
+                : "/admin/class-management/class/new"
+            }
           />
         </>
       ) : (
@@ -94,6 +102,7 @@ const ClassesPageContent = () => {
           classesData={classes}
           showArchived={showArchived}
           onToggleArchived={() => setShowArchived(!showArchived)}
+          isCurrentSession={isCurrentSession}
         />
       )}
     </>

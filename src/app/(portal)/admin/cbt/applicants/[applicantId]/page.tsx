@@ -21,9 +21,18 @@ export default function ApplicantDetailPage() {
   })
   const admit = useMutation({
     mutationFn: () => CbtAPI.admitApplicant(applicantId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cbt", "applicant", applicantId] })
-      toast.success("Applicant approved and student onboarding started")
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cbt", "applicant", applicantId] }),
+        queryClient.invalidateQueries({ queryKey: ["cbt", "applicants"] }),
+      ])
+      toast.success(
+        result.outcome === "linked_existing_student"
+          ? "Applicant linked to the existing student profile"
+          : result.outcome === "student_profile_exists"
+            ? "Applicant already has a student profile"
+            : "Applicant approved and student access invitation sent"
+      )
     },
     onError: (error: Error) =>
       toast.error(error.message || "Applicant could not be admitted"),
@@ -34,10 +43,20 @@ export default function ApplicantDetailPage() {
         <Skeleton className="h-96" />
       </div>
     )
+  if (applicant.isError)
+    return (
+      <div className="p-8 text-center text-sm text-red-600">
+        Applicant details could not be loaded.
+        <button className="ml-2 underline" onClick={() => applicant.refetch()}>
+          Try again
+        </button>
+      </div>
+    )
   if (!applicant.data) return <div className="p-8">Applicant not found.</div>
   const passed = applicant.data.attempts.some(
     (attempt) =>
       attempt.status === "submitted" &&
+      !attempt.manualGradingRequired &&
       attempt.percentage !== null &&
       attempt.exam.passMarkPercent !== null &&
       attempt.percentage >= attempt.exam.passMarkPercent
@@ -81,7 +100,7 @@ export default function ApplicantDetailPage() {
                 onClick={() => admit.mutate()}
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Approve and create student access
+                Approve and start student onboarding
               </Button>
             )}
             {!passed && !applicant.data.admittedAt && (
@@ -118,6 +137,13 @@ export default function ApplicantDetailPage() {
               </CardContent>
             </Card>
           ))}
+          {applicant.data.attempts.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center text-sm text-slate-500">
+                This applicant has not started an external examination.
+              </CardContent>
+            </Card>
+          )}
         </section>
       </div>
     </main>

@@ -76,16 +76,16 @@ interface ResponsePack<T> {
 // --------------------
 
 export const DashboardAPI = {
-  resolve: () =>
+  resolve: (params?: { session_id?: string }) =>
     apiFetch<ResponsePack<ResolvedDashboardData>>(
       "/dashboard/resolve",
-      { method: "GET" },
+      { method: "GET", params },
       true
     ),
-  getTodayActivities: () =>
+  getTodayActivities: (params?: { session_id?: string }) =>
     apiFetch<ResponsePack<TodayActivitiesData>>(
       "/dashboard/admin/today-activities",
-      { method: "GET" },
+      { method: "GET", params },
       true
     ),
 }

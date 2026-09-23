@@ -1,83 +1,55 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { GraduationCap } from "lucide-react"
-import { ReuseableBarChart } from "./bar-chart" // adjust path
 import { TypedChartConfig } from "@/types/chart"
 import { useStudentGrowthReport } from "../../students/_hooks/use-students"
-import { useAcademicSessions } from "../../class-management/session/_hooks/use-session"
+import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
+import { ReuseableBarChart } from "./bar-chart"
 
-// -------------------
-// Chart Configuration
-// -------------------
-const studentConfig: TypedChartConfig<"new" | "boys" | "girls"> = {
-  new: { label: "New Students", color: "#1EBE6F" },
-  boys: { label: "Boys", color: "#D64545" },
-  girls: { label: "Girls", color: "#F4A300" },
+const studentConfig: TypedChartConfig<"newStudents" | "totalStudents"> = {
+  newStudents: { label: "New enrollments", color: "#1EBE6F" },
+  totalStudents: { label: "Total enrolled", color: "#D64545" },
 }
 
-// -------------------
-// Component
-// -------------------
 export default function StudentGrowthChart() {
-  const { data: sessionsData, isLoading: isLoadingSessions } = useAcademicSessions()
-  const [selectedYear, setSelectedYear] = useState<string>("")
+  const period = useAdminAcademicPeriod()
+  const [interval, setInterval] = useState<"month" | "term">("month")
+  const { data, isLoading } = useStudentGrowthReport(
+    period.sessionId
+      ? { session_id: period.sessionId, term_id: period.termId, interval }
+      : undefined
+  )
 
-  // Sort sessions: active first
-  const sortedSessions = useMemo(() => {
-    if (!sessionsData?.data) return []
-    return [...sessionsData.data].sort(
-      (a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0)
-    )
-  }, [sessionsData])
-
-  // Safe initial state
-  useEffect(() => {
-    if (!selectedYear && sortedSessions.length) {
-      setSelectedYear(sortedSessions[0].name)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedSessions])
-
-  // useEffect(() => {
-  //   if (!selectedYear && sortedSessions.length) {
-  //     queueMicrotask(() => {
-  //       setSelectedYear(sortedSessions[0].name)
-  //     })
-  //   }
-  // }, [sortedSessions, selectedYear])
-
-  const { data, isLoading: isLoadingGrowth } = useStudentGrowthReport(selectedYear)
-
-  const chartData = useMemo(() => {
-    if (!data?.report) return []
-    return data.report.map((item) => ({
-      class: item.class_name,
-      new: item.new_students,
-      boys: item.boys,
-      girls: item.girls,
-    }))
-  }, [data])
-
-  const handleYearChange = (value: string) => setSelectedYear(value)
+  const chartData = useMemo(
+    () =>
+      data?.report.map((item) => ({
+        period: item.label,
+        newStudents: item.new_students,
+        totalStudents: item.cumulative_students,
+      })) ?? [],
+    [data]
+  )
 
   return (
     <ReuseableBarChart
-      title="Student Growth"
+      title="Enrollment Growth"
       icon={GraduationCap}
       data={chartData}
-      xKey="class"
-      bars={["new", "boys", "girls"]}
+      xKey="period"
+      bars={["newStudents", "totalStudents"]}
       config={studentConfig}
-      dropdown={sortedSessions.map((s) => ({ label: s.name, value: s.name }))}
-      onDropdownChange={handleYearChange}
-      isLoading={isLoadingGrowth || isLoadingSessions}
-      footer={[
-        { label: "New Students", color: "#1EBE6F" },
-        { label: "Boys", color: "#D64545" },
-        { label: "Girls", color: "#F4A300" },
+      dropdown={[
+        { label: "Monthly", value: "month" },
+        { label: "By term", value: "term" },
       ]}
-      emptyText="No student growth data for the selected year."
+      onDropdownChange={(value) => setInterval(value as "month" | "term")}
+      isLoading={isLoading || period.isLoading}
+      footer={[
+        { label: "New enrollments", color: "#1EBE6F" },
+        { label: "Total enrolled", color: "#D64545" },
+      ]}
+      emptyText="No enrollments were recorded in this period."
     />
   )
 }

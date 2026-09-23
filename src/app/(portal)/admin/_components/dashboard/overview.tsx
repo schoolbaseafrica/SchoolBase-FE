@@ -15,7 +15,6 @@ import {
   Search,
   Users,
 } from "lucide-react"
-import NotePad from "../../../../../../public/svgs/note-pad"
 import { useTodayActivities } from "../../_hooks/today-activity"
 import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
 import FeesReportChart from "./fees-report-chart"
@@ -24,27 +23,29 @@ import { useDashboardStore } from "@/store/dashboard-store"
 import { useShallow } from "zustand/react/shallow"
 // Import the Activity type
 import { DashboardAPI, type Activity as DashboardActivity } from "@/lib/dashboard"
-import { useActiveAcademicSession } from "../../class-management/session/_hooks/use-session"
-import { useActiveAcademicTerm } from "../../class-management/_hooks/use-academic-term"
+import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
+import { AcademicPeriodSelector } from "../academic-period-selector"
 
 const Overview = () => {
+  const period = useAdminAcademicPeriod()
   const { data: resolvedDashboard, isLoading: summaryLoading } = useQuery({
-    queryKey: ["dashboard", "active-period-summary"],
-    queryFn: () => DashboardAPI.resolve(),
+    queryKey: ["dashboard", "period-summary", period.sessionId],
+    queryFn: () => DashboardAPI.resolve({ session_id: period.sessionId }),
+    enabled: !!period.sessionId,
   })
-  const { data: activeSession } = useActiveAcademicSession()
-  const { data: activeTerm } = useActiveAcademicTerm()
   const metadata = resolvedDashboard?.data?.metadata
   const teacherTotal = metadata?.total_teachers ?? 0
   const studentTotal = metadata?.total_students ?? 0
+  const parentTotal = metadata?.total_parents ?? 0
   // Fetch just count for classes
   const { data: classesData, isLoading: classLoading } = useGetClassesInfo({
     limit: 1,
     page: 1,
+    session_id: period.sessionId,
   })
 
   // Sync activities to store
-  const { isLoading: activitiesLoading } = useTodayActivities()
+  const { isLoading: activitiesLoading } = useTodayActivities(period.sessionId)
 
   // Read activities from store
   const { todayActivities } = useDashboardStore(
@@ -98,7 +99,8 @@ const Overview = () => {
   const formattedStudents = summaryLoading ? "..." : formatNumber(studentTotal)
   const formattedClass = classLoading ? "..." : formatNumber(classTotal)
 
-  const isLoading = summaryLoading || classLoading || activitiesLoading
+  const isLoading =
+    summaryLoading || classLoading || activitiesLoading || period.isLoading
 
   const dashboardStats: StatItem[] = useMemo(
     () => [
@@ -114,7 +116,12 @@ const Overview = () => {
         percentage: 10,
         icon: Users,
       },
-      { name: "Today's Attendance", quantity: 0, percentage: 10, icon: NotePad },
+      {
+        name: "Total Parents",
+        quantity: formatNumber(parentTotal),
+        percentage: 10,
+        icon: Users,
+      },
       {
         name: "Total Classes",
         quantity: classLoading ? "..." : formattedClass,
@@ -122,24 +129,16 @@ const Overview = () => {
         icon: Book,
       },
     ],
-    [classLoading, formattedTeachers, formattedStudents, formattedClass]
+    [classLoading, formattedTeachers, formattedStudents, formattedClass, parentTotal]
   )
 
   return (
     <div className="bg-[#FAFAFA] px-4 pt-4 sm:px-6 sm:pt-6">
       <DashboardTitle
         heading="Dashboard"
-        description="Welcome back! Here is an overview of your active academic period"
+        description="Review school activity and performance for one consistent academic period"
       />
-
-      <div className="mt-3 mb-5 flex flex-wrap gap-2 text-sm">
-        <span className="rounded-full border bg-white px-3 py-1 font-medium">
-          Session: {activeSession?.name ?? "No active session"}
-        </span>
-        <span className="rounded-full border bg-white px-3 py-1 font-medium">
-          Term: {activeTerm?.name ?? "No active term"}
-        </span>
-      </div>
+      <AcademicPeriodSelector />
 
       <StatCard stats={dashboardStats} isLoading={isLoading} />
 
@@ -204,6 +203,7 @@ const Overview = () => {
           search={searchTerm}
           highlightedIndex={highlightedIndex}
           showAll={showAll}
+          sessionId={period.sessionId}
         />
       </section>
     </div>

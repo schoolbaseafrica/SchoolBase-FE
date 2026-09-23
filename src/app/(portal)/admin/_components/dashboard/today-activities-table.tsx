@@ -16,12 +16,14 @@ const TodayActivities = ({
   highlightedIndex,
   showAll,
   search,
+  sessionId,
 }: {
   highlightedIndex: number | null
   showAll: boolean
   search?: string
+  sessionId?: string
 }) => {
-  const { data, isLoading } = useTodayActivities()
+  const { data, isLoading } = useTodayActivities(sessionId)
   // console.log("activity", data)
   if (isLoading) {
     return (

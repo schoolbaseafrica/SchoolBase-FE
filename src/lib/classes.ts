@@ -50,8 +50,13 @@ export interface GroupedClassResponse {
 }
 
 export const ClassesAPI = {
-  getAll: (params?: { page?: number; limit?: number; includeArchived?: boolean; includeAllSessions?: boolean }) =>
-    apiFetch<ResponsePack<GroupedClassResponse>>("/classes", { params }, true),
+  getAll: (params?: {
+    page?: number
+    limit?: number
+    includeArchived?: boolean
+    includeAllSessions?: boolean
+    session_id?: string
+  }) => apiFetch<ResponsePack<GroupedClassResponse>>("/classes", { params }, true),
 
   create: (body: CreateClassData) =>
     apiFetch<ResponsePack<ClassItem>>("/classes", { method: "POST", data: body }, true),
@@ -90,11 +95,7 @@ export const ClassesAPI = {
       true
     ),
 
-  unassignTeacherFromClass: (
-    teacherId: string,
-    classId: string,
-    sessionId?: string
-  ) =>
+  unassignTeacherFromClass: (teacherId: string, classId: string, sessionId?: string) =>
     apiFetch<ResponsePack<{ message: string }>>(
       `/classes/teachers/${teacherId}/classes/${classId}`,
       {
@@ -233,7 +234,13 @@ export const ClassesAPI = {
       promoted?: number
       skipped?: number
       failed?: number
-      details?: { sourceClassId: string; targetClassId: string; promoted: number; skipped: number; failed: number }[]
+      details?: {
+        sourceClassId: string
+        targetClassId: string
+        promoted: number
+        skipped: number
+        failed: number
+      }[]
     }>("/classes/promotion/execute", { method: "POST", data: body }, true),
 }
 
@@ -260,7 +267,13 @@ export type PromotionExecutePayload = {
   promoted: number
   skipped: number
   failed: number
-  details: { sourceClassId: string; targetClassId: string; promoted: number; skipped: number; failed: number }[]
+  details: {
+    sourceClassId: string
+    targetClassId: string
+    promoted: number
+    skipped: number
+    failed: number
+  }[]
 }
 
 export type ClassSubjectsResponse = {

@@ -107,7 +107,10 @@ export interface CbtApplicantSummary {
   studentId: string | null
   intakeName: string
   attemptCount: number
-  bestScore: number | null
+  completedAttemptCount: number
+  bestPercentage: number | null
+  hasPassed: boolean
+  latestExamName: string | null
 }
 
 export interface CbtApplicantDetail extends CbtApplicantSummary {
@@ -118,6 +121,7 @@ export interface CbtApplicantDetail extends CbtApplicantSummary {
     score: number | null
     totalMarks: number
     percentage: number | null
+    manualGradingRequired: boolean
     startedAt: string
     submittedAt: string | null
     exam: CbtExamSummary
@@ -128,6 +132,10 @@ export interface PublicCbtSession {
   accessToken: string
   candidate: { fullName: string; email: string }
   attempt: CbtAttempt
+}
+
+export interface CbtAdmissionResult {
+  outcome: "student_profile_exists" | "linked_existing_student" | "student_invite_sent"
 }
 
 type ApiEnvelope<T> = { data: T; message?: string; status_code?: number }
@@ -193,7 +201,10 @@ export const CbtAPI = {
       `/cbt/applicants/${applicantId}`
     ).then(unwrap),
   admitApplicant: (applicantId: string) =>
-    apiFetch(`/cbt/applicants/${applicantId}/admit`, { method: "POST" }),
+    apiFetch<ApiEnvelope<CbtAdmissionResult> | CbtAdmissionResult>(
+      `/cbt/applicants/${applicantId}/admit`,
+      { method: "POST" }
+    ).then(unwrap),
 
   getExam: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(`/cbt/exams/${examId}`).then(

@@ -34,12 +34,14 @@ interface ExistingClassesProps {
   classesData: ClassItem[]
   showArchived?: boolean
   onToggleArchived?: () => void
+  isCurrentSession?: boolean
 }
 
 const ExistingClasses = ({
   classesData,
   showArchived = false,
   onToggleArchived,
+  isCurrentSession = true,
 }: ExistingClassesProps) => {
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
@@ -90,7 +92,7 @@ const ExistingClasses = ({
               variant="outline"
               size="sm"
               onClick={onToggleArchived}
-              className="whitespace-nowrap text-xs sm:text-sm sm:h-10"
+              className="text-xs whitespace-nowrap sm:h-10 sm:text-sm"
             >
               {showArchived ? (
                 <>
@@ -108,8 +110,12 @@ const ExistingClasses = ({
             </Button>
           )}
 
-          {classesData.length > 0 && !showArchived && (
-            <Button asChild size="sm" className="whitespace-nowrap text-xs sm:text-sm sm:h-10">
+          {classesData.length > 0 && !showArchived && isCurrentSession && (
+            <Button
+              asChild
+              size="sm"
+              className="text-xs whitespace-nowrap sm:h-10 sm:text-sm"
+            >
               <Link
                 href="/admin/class-management/class/new"
                 className="flex items-center gap-1.5 sm:gap-2"
@@ -187,7 +193,8 @@ const ExistingClasses = ({
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
-                              {classItem.name}{arm.arm ? ` ${arm.arm}` : ""}
+                              {classItem.name}
+                              {arm.arm ? ` ${arm.arm}` : ""}
                             </p>
                           </div>
 
@@ -223,7 +230,7 @@ const ExistingClasses = ({
                                   </Link>
                                 </DropdownMenuItem>
 
-                                {!showArchived && (
+                                {!showArchived && isCurrentSession && (
                                   <DropdownMenuItem
                                     onClick={() => handleEdit(arm.id)}
                                     className="flex items-center gap-2"
@@ -232,7 +239,7 @@ const ExistingClasses = ({
                                   </DropdownMenuItem>
                                 )}
 
-                                {showArchived ? (
+                                {showArchived && isCurrentSession ? (
                                   <DropdownMenuItem
                                     onClick={() => handleConfirmReactivate(arm.id)}
                                     className="flex items-center gap-2 text-green-600"
@@ -240,7 +247,7 @@ const ExistingClasses = ({
                                     <RotateCcw className="size-4" />
                                     Reactivate
                                   </DropdownMenuItem>
-                                ) : (
+                                ) : isCurrentSession ? (
                                   <DropdownMenuItem
                                     onClick={() => handleConfirmDelete(arm.id)}
                                     className="flex items-center gap-2 text-red-600"
@@ -248,7 +255,7 @@ const ExistingClasses = ({
                                     <Trash2 className="size-4" />
                                     Delete / Archive
                                   </DropdownMenuItem>
-                                )}
+                                ) : null}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}

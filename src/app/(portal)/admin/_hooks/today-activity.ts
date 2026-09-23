@@ -6,24 +6,24 @@ import { useDashboardStore } from "@/store/dashboard-store"
 import { useEffect } from "react"
 import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
-export const useTodayActivities = () => {
+export const useTodayActivities = (sessionId?: string) => {
   const isSuperAdmin = useIsSuperAdmin()
   const setActivities = useDashboardStore((state) => state.setTodayActivities)
   const setLoading = useDashboardStore((state) => state.setLoading)
   // const setError = useDashboardStore((state) => state.setError)
 
   const query = useQuery({
-    queryKey: ["today-activities"],
+    queryKey: ["today-activities", sessionId],
     queryFn: async () => {
       setLoading(true)
       try {
-        const res = await DashboardAPI.getTodayActivities()
+        const res = await DashboardAPI.getTodayActivities({ session_id: sessionId })
         return res.data
       } finally {
         setLoading(false)
       }
     },
-    enabled: !isSuperAdmin, // Disable for super admin
+    enabled: !isSuperAdmin && !!sessionId,
   })
 
   useEffect(() => {

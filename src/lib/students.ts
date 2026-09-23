@@ -58,21 +58,29 @@ export interface StudentsListResponse {
 }
 
 export interface StudentGrowthReport {
+  session_id: string
   academic_year: string
+  term_id?: string
+  interval: "month" | "term"
   report: {
-    class_name: string
+    label: string
+    start_date: string
+    end_date: string
     new_students: number
-    boys: number
-    girls: number
+    cumulative_students: number
   }[]
 }
 
 export const StudentsAPI = {
-  getStudentGrowthReport: (academic_year?: string) =>
+  getStudentGrowthReport: (params: {
+    session_id: string
+    term_id?: string
+    interval: "month" | "term"
+  }) =>
     apiFetch<ResponsePack<StudentGrowthReport>>(
       "/students/student-growth-report",
       {
-        params: academic_year && academic_year.trim() ? { academic_year } : undefined,
+        params,
       },
       true
     ),

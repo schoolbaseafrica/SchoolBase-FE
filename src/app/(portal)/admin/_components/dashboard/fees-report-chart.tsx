@@ -8,6 +8,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Banknote } from "lucide-react"
 import { useFeesAnalytics } from "../../fees-record/_hooks/use-fees-analytics"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
 
 // ✅ REQUIRED: ChartContainer config
 const chartConfig = {
@@ -16,7 +17,11 @@ const chartConfig = {
 }
 
 const FeesReportChart = () => {
-  const { data: analyticsData, isLoading } = useFeesAnalytics()
+  const period = useAdminAcademicPeriod()
+  const { data: analyticsData, isLoading } = useFeesAnalytics({
+    session_id: period.sessionId,
+    term_id: period.termId,
+  })
   const totals = analyticsData?.data?.data?.totals
 
   // Use real data from API, fallback to 0 if not available
