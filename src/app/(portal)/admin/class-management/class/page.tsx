@@ -1,6 +1,6 @@
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import ClassesPageContent from "../../_components/classes/classes-page-content"
-import { AcademicPeriodSelector } from "../../_components/academic-period-selector"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 const ClassesPage = () => {
   return (
@@ -8,7 +8,7 @@ const ClassesPage = () => {
       {/* empty state */}
       <div className="p-5">
         <DashboardTitle heading="Classes" description="View, manage, or create classes" />
-        <AcademicPeriodSelector sessionOnly />
+        <AcademicPeriodSelector scope="admin-classes" sessionOnly />
 
         <ClassesPageContent />
       </div>

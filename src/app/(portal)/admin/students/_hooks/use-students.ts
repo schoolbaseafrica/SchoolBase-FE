@@ -20,16 +20,16 @@ const STUDENTS_KEY = ["students"]
 // ----------------------------
 // 🔍 GET ALL STUDENTS
 // ----------------------------
-export function useGetStudents() {
+export function useGetStudents(params?: GetStudentsParams) {
   const setStudents = useStudentsStore((state) => state.setStudents)
   const setLoading = useStudentsStore((state) => state.setLoading)
 
   const query = useQuery({
-    queryKey: STUDENTS_KEY, // Ignoring params for store sync
+    queryKey: [...STUDENTS_KEY, "store", params],
     queryFn: async () => {
       setLoading(true)
       try {
-        const res = await StudentsAPI.getAll({ limit: 1000 })
+        const res = await StudentsAPI.getAll({ ...params, limit: 1000 })
         const students = res.data
         return students
       } finally {

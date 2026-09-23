@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,16 +17,28 @@ import { ChevronDown } from "lucide-react"
 import { useGetClassesInfo } from "../class-management/_hooks/use-classes"
 import TimetableGrid from "./_components/timetable-grid"
 import CreateScheduleModal from "./_components/create-schedule-modal"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function TimetablePage() {
+  const period = useAcademicPeriod("admin-timetable")
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // Use the hook that syncs with store
-  const { data: classesData, isLoading: isLoadingClasses } = useGetClassesInfo()
+  const { data: classesData, isLoading: isLoadingClasses } = useGetClassesInfo({
+    session_id: period.sessionId,
+  })
 
   // Group classes by name
-  const classGroups = classesData?.items || []
+  const classGroups = useMemo(() => classesData?.items ?? [], [classesData?.items])
+  const classIds = useMemo(
+    () => classGroups.flatMap((group) => group.classes.map((item) => item.id)),
+    [classGroups]
+  )
+
+  const effectiveClassId =
+    selectedClassId && classIds.includes(selectedClassId) ? selectedClassId : null
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
@@ -36,6 +48,7 @@ export default function TimetablePage() {
           <p className="text-sm text-[#666666]">Here you can schedule and edit classes</p>
         </div>
       </div>
+      <AcademicPeriodSelector scope="admin-timetable" sessionOnly />
 
       <div className="flex max-w-7xl flex-col gap-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -52,14 +65,14 @@ export default function TimetablePage() {
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
                       <span>Loading classes...</span>
                     </div>
-                  ) : selectedClassId ? (
+                  ) : effectiveClassId ? (
                     classGroups
                       .flatMap((g) => g.classes)
-                      .find((c) => c.id === selectedClassId)?.arm ? (
-                      `${classGroups.find((g) => g.classes.some((c) => c.id === selectedClassId))?.name} ${classGroups.flatMap((g) => g.classes).find((c) => c.id === selectedClassId)?.arm}`
+                      .find((c) => c.id === effectiveClassId)?.arm ? (
+                      `${classGroups.find((g) => g.classes.some((c) => c.id === effectiveClassId))?.name} ${classGroups.flatMap((g) => g.classes).find((c) => c.id === effectiveClassId)?.arm}`
                     ) : (
                       classGroups.find((g) =>
-                        g.classes.some((c) => c.id === selectedClassId)
+                        g.classes.some((c) => c.id === effectiveClassId)
                       )?.name
                     )
                   ) : (
@@ -111,8 +124,8 @@ export default function TimetablePage() {
           </Button>
         </div>
 
-        {selectedClassId ? (
-          <TimetableGrid classId={selectedClassId} />
+        {effectiveClassId ? (
+          <TimetableGrid classId={effectiveClassId} />
         ) : (
           <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500">
             Please select a class to view its timetable
@@ -123,7 +136,7 @@ export default function TimetablePage() {
       <CreateScheduleModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        selectedClassId={selectedClassId}
+        selectedClassId={effectiveClassId}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import { Loader2, AlertCircle, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { format } from "date-fns"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 interface Student {
   student_id: string
@@ -33,6 +35,7 @@ interface Student {
 }
 
 export default function TeacherStudentsPage() {
+  const period = useAcademicPeriod("teacher-students")
   const [selectedClassId, setSelectedClassId] = useState<string>("")
 
   // Fetch assigned classes
@@ -40,7 +43,15 @@ export default function TeacherStudentsPage() {
     data: assignedClasses,
     isLoading: classesLoading,
     error: classesError,
-  } = useGetTeacherAssignedClasses()
+  } = useGetTeacherAssignedClasses(period.sessionId)
+
+  const classesArray = useMemo(
+    () => (Array.isArray(assignedClasses) ? assignedClasses : []),
+    [assignedClasses]
+  )
+  const effectiveClassId = classesArray.some((item) => item.id === selectedClassId)
+    ? selectedClassId
+    : ""
 
   // Fetch students for selected class
   const {
@@ -48,18 +59,16 @@ export default function TeacherStudentsPage() {
     isLoading: studentsLoading,
     error: studentsError,
   } = useQuery({
-    queryKey: ["class-students", selectedClassId],
-    queryFn: () => ClassesAPI.getStudentsForClass(selectedClassId),
-    enabled: !!selectedClassId,
+    queryKey: ["class-students", effectiveClassId, period.sessionId],
+    queryFn: () => ClassesAPI.getStudentsForClass(effectiveClassId, period.sessionId),
+    enabled: !!effectiveClassId && !!period.sessionId,
     select: (data) => data.data || [],
   })
 
   const students: Student[] = studentsData || []
   const isLoading = classesLoading
 
-  // Ensure assignedClasses is an array
-  const classesArray = Array.isArray(assignedClasses) ? assignedClasses : []
-  const selectedClass = classesArray.find((cls) => cls.id === selectedClassId)
+  const selectedClass = classesArray.find((cls) => cls.id === effectiveClassId)
 
   return (
     <div className="px-5 pt-10">
@@ -67,6 +76,7 @@ export default function TeacherStudentsPage() {
         heading="Students"
         description="View students in your assigned classes"
       />
+      <AcademicPeriodSelector scope="teacher-students" sessionOnly />
 
       {/* Loading State */}
       {isLoading && (
@@ -115,7 +125,7 @@ export default function TeacherStudentsPage() {
           </div>
 
           {/* Students List */}
-          {selectedClassId && (
+          {effectiveClassId && (
             <div className="rounded-lg border bg-white">
               <div className="border-b p-4">
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -143,7 +153,7 @@ export default function TeacherStudentsPage() {
                   <Users className="mb-4 h-12 w-12 text-gray-300" />
                   <p className="text-lg font-medium">No students found</p>
                   <p className="text-sm">
-                    This class doesn't have any students assigned yet.
+                    This class doesn&apos;t have any students assigned yet.
                   </p>
                 </div>
               ) : (
@@ -188,7 +198,7 @@ export default function TeacherStudentsPage() {
           )}
 
           {/* Empty State - No class selected */}
-          {!selectedClassId && !classesLoading && (
+          {!effectiveClassId && !classesLoading && (
             <div className="rounded-lg border border-dashed bg-gray-50 py-12 text-center">
               <Users className="mx-auto h-12 w-12 text-gray-300" />
               <p className="mt-4 text-lg font-medium text-gray-500">

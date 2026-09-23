@@ -11,16 +11,25 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CbtAPI } from "@/lib/cbt"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function ApplicantDetailPage() {
   const { applicantId } = useParams<{ applicantId: string }>()
+  const period = useAcademicPeriod("admin-cbt-applicants")
+  const periodParams = {
+    sessionId: period.sessionId,
+    termId: period.termId,
+    scope: period.isWholeSession ? ("session" as const) : ("term" as const),
+  }
   const queryClient = useQueryClient()
   const applicant = useQuery({
-    queryKey: ["cbt", "applicant", applicantId],
-    queryFn: () => CbtAPI.getApplicant(applicantId),
+    queryKey: ["cbt", "applicant", applicantId, periodParams],
+    queryFn: () => CbtAPI.getApplicant(applicantId, periodParams),
+    enabled: !!applicantId && !!period.sessionId,
   })
   const admit = useMutation({
-    mutationFn: () => CbtAPI.admitApplicant(applicantId),
+    mutationFn: () => CbtAPI.admitApplicant(applicantId, periodParams),
     onSuccess: async (result) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["cbt", "applicant", applicantId] }),
@@ -71,6 +80,7 @@ export default function ApplicantDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Applicants
         </Link>
+        <AcademicPeriodSelector scope="admin-cbt-applicants" />
         <Card>
           <CardHeader className="flex-row items-start justify-between">
             <div>

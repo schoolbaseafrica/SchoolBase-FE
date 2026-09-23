@@ -7,6 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarDays } from "lucide-react"
 import { format } from "date-fns"
+import { useState } from "react"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { Input } from "@/components/ui/input"
 
 interface MonthlyAttendanceResponse {
   message: string
@@ -30,7 +34,19 @@ interface MonthlyAttendanceResponse {
 }
 
 export default function StudentAttendancePage() {
+  const period = useAcademicPeriod("student-attendance")
+  const [monthSelection, setMonthSelection] = useState<{
+    sessionId?: string
+    value: string
+  }>({ value: new Date().toISOString().slice(0, 7) })
   const { studentId } = useStudentAuth()
+  const defaultMonth =
+    period.session && period.session.id !== period.activeSession?.id
+      ? period.session.startDate.slice(0, 7)
+      : new Date().toISOString().slice(0, 7)
+  const selectedMonth =
+    monthSelection.sessionId === period.sessionId ? monthSelection.value : defaultMonth
+  const [year, month] = selectedMonth.split("-").map(Number)
 
   // Get monthly attendance using student-specific endpoint
   const {
@@ -38,20 +54,23 @@ export default function StudentAttendancePage() {
     isLoading,
     error: attendanceError,
   } = useQuery<MonthlyAttendanceResponse>({
-    queryKey: ["student-attendance", studentId],
+    queryKey: ["student-attendance", studentId, period.sessionId, year, month],
     queryFn: async () => {
       if (!studentId) throw new Error("Student ID is required")
       console.log("[StudentAttendancePage] Fetching attendance for studentId:", studentId)
       const response = await apiFetch<{ data: MonthlyAttendanceResponse }>(
         `/attendance/daily/student/${studentId}/monthly`,
-        { method: "GET" },
+        {
+          method: "GET",
+          params: { session_id: period.sessionId, year, month },
+        },
         true
       )
       console.log("[StudentAttendancePage] Attendance response:", response)
       console.log("[StudentAttendancePage] Unwrapped data:", response.data)
       return response.data
     },
-    enabled: !!studentId,
+    enabled: !!studentId && !!period.sessionId && !!year && !!month,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
@@ -96,6 +115,20 @@ export default function StudentAttendancePage() {
         <h1 className="text-2xl font-semibold">Attendance</h1>
         <p className="text-gray-600">View your attendance records</p>
       </div>
+      <AcademicPeriodSelector scope="student-attendance" sessionOnly />
+      <label className="mb-6 grid max-w-xs gap-1 text-sm font-medium">
+        Month
+        <Input
+          type="month"
+          value={selectedMonth}
+          onChange={(event) =>
+            setMonthSelection({
+              sessionId: period.sessionId,
+              value: event.target.value,
+            })
+          }
+        />
+      </label>
 
       {isLoading ? (
         <div className="space-y-4">

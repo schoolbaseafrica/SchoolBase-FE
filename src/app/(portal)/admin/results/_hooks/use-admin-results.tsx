@@ -6,7 +6,13 @@ import { toast } from "sonner"
 
 const ADMIN_RESULTS_KEY = ["admin", "results"]
 
-export function useGetAdminSubmissions(params?: { status?: string }) {
+type SubmissionPeriod = {
+  status?: string
+  term_id?: string
+  academic_session_id?: string
+}
+
+export function useGetAdminSubmissions(params?: SubmissionPeriod) {
   return useQuery({
     queryKey: [...ADMIN_RESULTS_KEY, "submissions", params],
     queryFn: () => ResultsAPI.getAdminSubmissions(params),
@@ -14,11 +20,11 @@ export function useGetAdminSubmissions(params?: { status?: string }) {
   })
 }
 
-export function useGetSubmissionStats() {
+export function useGetSubmissionStats(params?: Omit<SubmissionPeriod, "status">) {
   return useQuery({
-    queryKey: [...ADMIN_RESULTS_KEY, "stats"],
+    queryKey: [...ADMIN_RESULTS_KEY, "stats", params],
     queryFn: async () => {
-      const submissions = await ResultsAPI.getAdminSubmissions()
+      const submissions = await ResultsAPI.getAdminSubmissions(params)
 
       const total = submissions.length
       const pending = submissions.filter((s) => s.status === "submitted").length

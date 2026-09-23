@@ -24,21 +24,31 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { CbtAPI, CbtExamType, CbtProctoringMode } from "@/lib/cbt"
 import { ClassesAPI } from "@/lib/classes"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export function CbtManagement({ examType }: { examType: CbtExamType }) {
   const external = examType === "entrance"
+  const scope = external ? "admin-cbt-external" : "admin-cbt-internal"
+  const period = useAcademicPeriod(scope)
+  const periodParams = {
+    sessionId: period.sessionId,
+    termId: period.termId,
+    scope: period.isWholeSession ? ("session" as const) : ("term" as const),
+  }
   const router = useRouter()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const exams = useQuery({
-    queryKey: ["cbt", "manage", "exams", examType],
-    queryFn: () => CbtAPI.listExams(examType),
+    queryKey: ["cbt", "manage", "exams", examType, periodParams],
+    queryFn: () => CbtAPI.listExams(examType, periodParams),
+    enabled: !!period.sessionId,
   })
   const classes = useQuery({
-    queryKey: ["classes", "cbt-builder"],
-    queryFn: () => ClassesAPI.getAll({ limit: 100 }),
-    enabled: !external,
+    queryKey: ["classes", "cbt-builder", period.sessionId],
+    queryFn: () => ClassesAPI.getAll({ limit: 100, session_id: period.sessionId }),
+    enabled: !external && !!period.sessionId,
   })
   const classOptions = useMemo(
     () =>
@@ -76,6 +86,8 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
       shuffleOptions: true,
       showResultImmediately: false,
       examType,
+      sessionId: period.sessionId,
+      termId: period.termId,
       proctoringMode: String(form.get("proctoringMode")) as CbtProctoringMode,
     })
   }
@@ -218,7 +230,11 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={create.isPending || (!external && !selectedClasses.length)}
+                  disabled={
+                    create.isPending ||
+                    !period.sessionId ||
+                    (!external && !selectedClasses.length)
+                  }
                 >
                   Create draft
                 </Button>
@@ -226,6 +242,7 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
             </DialogContent>
           </Dialog>
         </header>
+        <AcademicPeriodSelector scope={scope} />
 
         {exams.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

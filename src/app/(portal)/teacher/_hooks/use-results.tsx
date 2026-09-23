@@ -8,10 +8,10 @@ import { useAuthUser } from "@/hooks/use-auth-user"
 
 const RESULTS_KEY = ["results"]
 
-export function useGetClasses() {
+export function useGetClasses(sessionId?: string) {
   return useQuery({
-    queryKey: [...RESULTS_KEY, "classes"],
-    queryFn: () => ResultsAPI.getClasses(),
+    queryKey: [...RESULTS_KEY, "classes", sessionId],
+    queryFn: () => ResultsAPI.getClasses(sessionId),
     staleTime: 1000 * 60 * 5,
     retry: 2,
   })
@@ -59,10 +59,10 @@ export function useGetTeacherSubjects(classId?: string) {
   })
 }
 
-export function useGetTerms() {
+export function useGetTerms(sessionId?: string) {
   return useQuery({
-    queryKey: [...RESULTS_KEY, "terms"],
-    queryFn: () => ResultsAPI.getTerms(),
+    queryKey: [...RESULTS_KEY, "terms", sessionId],
+    queryFn: () => ResultsAPI.getTerms(sessionId),
     staleTime: 1000 * 60 * 5,
     retry: 2,
   })

@@ -22,8 +22,6 @@ import { useRouter } from "next/navigation"
 
 interface ClassTeacherViewProps {
   assignedClasses: TeacherAssignedClass[]
-  selectedSessionId?: string
-  onSessionChange: (sessionId: string | undefined) => void
 }
 
 const ClassTeacherView: React.FC<ClassTeacherViewProps> = ({

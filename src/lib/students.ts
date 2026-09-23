@@ -41,6 +41,7 @@ export interface GetStudentsParams {
   class_id?: string
   limit?: number
   total?: number
+  session_id?: string
 }
 
 export interface StudentsListResponse {

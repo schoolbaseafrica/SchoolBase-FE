@@ -138,6 +138,12 @@ export interface CbtAdmissionResult {
   outcome: "student_profile_exists" | "linked_existing_student" | "student_invite_sent"
 }
 
+export interface CbtPeriodParams {
+  sessionId?: string
+  termId?: string
+  scope?: "term" | "session"
+}
+
 type ApiEnvelope<T> = { data: T; message?: string; status_code?: number }
 
 function unwrap<T>(response: ApiEnvelope<T> | T): T {
@@ -148,10 +154,10 @@ function unwrap<T>(response: ApiEnvelope<T> | T): T {
 }
 
 export const CbtAPI = {
-  listStudentExams: () =>
-    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/cbt/student/exams").then(
-      unwrap
-    ),
+  listStudentExams: (period?: CbtPeriodParams) =>
+    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/cbt/student/exams", {
+      params: period,
+    }).then(unwrap),
 
   startAttempt: (examId: string) =>
     apiFetch<ApiEnvelope<CbtAttempt> | CbtAttempt>(
@@ -187,23 +193,25 @@ export const CbtAPI = {
       data: { eventType },
     }),
 
-  listExams: (examType?: CbtExamType) =>
-    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>(
-      `/cbt/exams${examType ? `?examType=${examType}` : ""}`
-    ).then(unwrap),
+  listExams: (examType?: CbtExamType, period?: CbtPeriodParams) =>
+    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/cbt/exams", {
+      params: { examType, ...period },
+    }).then(unwrap),
 
-  listApplicants: () =>
+  listApplicants: (period?: CbtPeriodParams) =>
     apiFetch<ApiEnvelope<CbtApplicantSummary[]> | CbtApplicantSummary[]>(
-      "/cbt/applicants"
+      "/cbt/applicants",
+      { params: period }
     ).then(unwrap),
-  getApplicant: (applicantId: string) =>
+  getApplicant: (applicantId: string, period?: CbtPeriodParams) =>
     apiFetch<ApiEnvelope<CbtApplicantDetail> | CbtApplicantDetail>(
-      `/cbt/applicants/${applicantId}`
+      `/cbt/applicants/${applicantId}`,
+      { params: period }
     ).then(unwrap),
-  admitApplicant: (applicantId: string) =>
+  admitApplicant: (applicantId: string, period?: CbtPeriodParams) =>
     apiFetch<ApiEnvelope<CbtAdmissionResult> | CbtAdmissionResult>(
       `/cbt/applicants/${applicantId}/admit`,
-      { method: "POST" }
+      { method: "POST", params: period }
     ).then(unwrap),
 
   getExam: (examId: string) =>

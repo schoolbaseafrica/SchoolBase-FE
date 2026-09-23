@@ -104,12 +104,25 @@ export const ParentStudents = {
     return response.data
   },
 
-  getMonthlyAttendance: async (registrationNumber: string) => {
+  getMonthlyAttendance: async (
+    registrationNumber: string,
+    sessionId?: string,
+    year?: number,
+    month?: number
+  ) => {
     const response = await apiFetch<
       MonthlyAttendanceResponse | { message: string; data: MonthlyAttendanceResponse }
     >(
-      `/attendance/daily/student/parent?registration_number=${registrationNumber}`,
-      { method: "GET" },
+      `/attendance/daily/student/parent`,
+      {
+        method: "GET",
+        params: {
+          registration_number: registrationNumber,
+          session_id: sessionId,
+          year,
+          month,
+        },
+      },
       true
     )
     // Handle wrapped response (backend returns { message, data: {...} })

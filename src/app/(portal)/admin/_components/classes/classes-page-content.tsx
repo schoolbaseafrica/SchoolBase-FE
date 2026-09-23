@@ -10,12 +10,12 @@ import { useClassesStore, selectClassItems } from "@/store/classes-store"
 import { useShallow } from "zustand/react/shallow"
 import { Button } from "@/components/ui/button"
 import { Archive, RotateCcw } from "lucide-react"
-import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
 // import { useMemo } from "react"
 
 const ClassesPageContent = () => {
   const [showArchived, setShowArchived] = useState(false)
-  const period = useAdminAcademicPeriod()
+  const period = useAcademicPeriod("admin-classes")
   const isCurrentSession = period.sessionId === period.activeSession?.id
 
   // 1. Fetch - include archived if toggle is on

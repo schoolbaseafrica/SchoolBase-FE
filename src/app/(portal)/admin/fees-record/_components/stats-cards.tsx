@@ -33,13 +33,12 @@ const StatCard = ({
 }
 
 import { useFeesAnalytics } from "../_hooks/use-fees-analytics"
-import { useActiveAcademicSession } from "../../class-management/session/_hooks/use-session"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const StatsCards = () => {
-  const { data: activeSession } = useActiveAcademicSession()
+const StatsCards = ({ sessionId, termId }: { sessionId?: string; termId?: string }) => {
   const { data, isLoading } = useFeesAnalytics({
-    session_id: activeSession?.id,
+    session_id: sessionId,
+    term_id: termId,
   })
   const analytics = data?.data?.data
 

@@ -503,10 +503,10 @@ export const getActiveTerm = (): Promise<{
 // Main ResultsAPI object
 export const ResultsAPI = {
   // Get classes for teacher
-  getClasses: (): Promise<Class[]> => {
+  getClasses: (sessionId?: string): Promise<Class[]> => {
     return apiFetch<ResponsePack<ClassWithSession[]>>(
       "/classes/teacher/assigned",
-      {},
+      { params: sessionId ? { session_id: sessionId } : undefined },
       true
     )
       .then((response) => {
@@ -561,7 +561,23 @@ export const ResultsAPI = {
       })
   },
   // Get active term
-  getTerms: (): Promise<Term[]> => {
+  getTerms: (sessionId?: string): Promise<Term[]> => {
+    if (sessionId) {
+      return apiFetch<ResponsePack<ActiveTermResponse[]>>(
+        `/academic-term/session/${sessionId}`,
+        {},
+        true
+      ).then((response) =>
+        extractData(response).map((term) => ({
+          id: term.id,
+          name: term.name,
+          start_date: term.startDate,
+          end_date: term.endDate,
+          status: term.status,
+          is_active: term.isCurrent,
+        }))
+      )
+    }
     return apiFetch<ResponsePack<ActiveTermResponse>>("/academic-term/active", {}, true)
       .then((response) => {
         const termData = extractData(response)
@@ -773,6 +789,8 @@ export const ResultsAPI = {
   // Admin: Get all submissions with filters
   getAdminSubmissions: async (params?: {
     status?: string
+    term_id?: string
+    academic_session_id?: string
   }): Promise<GradeSubmission[]> => {
     const queryParams = new URLSearchParams()
 
@@ -780,6 +798,9 @@ export const ResultsAPI = {
       const backendStatus = params.status === "pending" ? "SUBMITTED" : params.status
       queryParams.set("status", backendStatus.toUpperCase())
     }
+    if (params?.term_id) queryParams.set("term_id", params.term_id)
+    if (params?.academic_session_id)
+      queryParams.set("academic_session_id", params.academic_session_id)
     queryParams.set("limit", "100")
 
     try {

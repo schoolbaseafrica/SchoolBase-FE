@@ -13,6 +13,8 @@ import TeacherWelcome from "./_components/teacher-welcome"
 import { useTeacherDashboard } from "./_hooks/use-teacher-dashboard"
 import { TeacherAttendanceAPI } from "@/lib/teacher-attendance"
 import { useQuery } from "@tanstack/react-query"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -82,6 +84,7 @@ const getSubjectImage = (subject: string): string => {
 
 export default function TeachersPage() {
   const router = useRouter()
+  const period = useAcademicPeriod("teacher-dashboard")
 
   // Fetch today's classes from dashboard API
   const {
@@ -93,8 +96,8 @@ export default function TeachersPage() {
 
   // Fetch all assigned classes for stats
   const { data: assignedClasses, isLoading: isLoadingAssignedClasses } = useQuery({
-    queryKey: ["teacher-assigned-classes"],
-    queryFn: () => TeacherAttendanceAPI.getAssignedClasses(),
+    queryKey: ["teacher-assigned-classes", period.sessionId],
+    queryFn: () => TeacherAttendanceAPI.getAssignedClasses(period.sessionId),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -247,6 +250,7 @@ export default function TeachersPage() {
     <section className="min-h-screen bg-[#FAFAFA] px-4 py-10 text-[#2D2D2D] sm:px-8">
       <div className="mx-auto flex w-full max-w-[1112px] flex-col gap-8 pb-16">
         <TeacherWelcome />
+        <AcademicPeriodSelector scope="teacher-dashboard" sessionOnly />
         <StatCard stats={stats} />
 
         {/* Today’s Classes */}
@@ -265,7 +269,7 @@ export default function TeachersPage() {
           {classesError ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-12 text-center">
               <p className="mb-2 text-lg font-semibold text-red-600">
-                Failed to load today's classes
+                Failed to load today&apos;s classes
               </p>
               <p className="mb-4 text-sm text-red-500">
                 {classesError instanceof Error

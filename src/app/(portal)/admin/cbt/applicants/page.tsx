@@ -17,13 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CbtAPI } from "@/lib/cbt"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function CbtApplicantsPage() {
+  const period = useAcademicPeriod("admin-cbt-applicants")
+  const periodParams = {
+    sessionId: period.sessionId,
+    termId: period.termId,
+    scope: period.isWholeSession ? ("session" as const) : ("term" as const),
+  }
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState("all")
   const applicants = useQuery({
-    queryKey: ["cbt", "applicants"],
-    queryFn: CbtAPI.listApplicants,
+    queryKey: ["cbt", "applicants", periodParams],
+    queryFn: () => CbtAPI.listApplicants(periodParams),
+    enabled: !!period.sessionId,
   })
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase()
@@ -55,6 +64,7 @@ export default function CbtApplicantsPage() {
             Review external exam candidates and their latest assessment progress.
           </p>
         </header>
+        <AcademicPeriodSelector scope="admin-cbt-applicants" />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-4 p-5">

@@ -4,50 +4,25 @@ import { useParentStudents } from "../_components/student-provider"
 import { StudentSelector } from "../_components/student-selector"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DollarSign, ArrowDown, CheckCircle2, XCircle, Clock } from "lucide-react"
-import {
-  useGetStudentProfile,
-  useGetStudentFeeDetails,
-} from "../_hooks/use-parent-students"
+import { DollarSign, ArrowDown, Clock } from "lucide-react"
+import { useGetStudentFeeDetails } from "../_hooks/use-parent-students"
 import type { StudentFeeDetailsResponse } from "@/lib/fees"
 import { EmptyState } from "@/components/results/empty-state"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function ParentFeeManagementPage() {
+  const period = useAcademicPeriod("parent-fees")
   const { selectedStudent } = useParentStudents()
-  const { data: studentProfile, isLoading: isLoadingProfile } = useGetStudentProfile(
-    selectedStudent?.id
-  )
-
-  // Try to get sessionId from student profile first (hook will fallback to active session if null)
-  const sessionId = studentProfile?.academic_details?.id
-
-  // Debug logging
-  if (studentProfile && !sessionId) {
-    console.warn(
-      "[ParentFeeManagement] Student profile has no academic_details, will use active session fallback:",
-      {
-        studentId: selectedStudent?.id,
-        academicDetails: studentProfile?.academic_details,
-      }
-    )
-  }
+  const sessionId = period.sessionId
 
   const {
     data: feeDetails,
     isLoading: isLoadingFees,
     error: feeDetailsError,
-  } = useGetStudentFeeDetails(selectedStudent?.id, sessionId)
-
-  // Log fee details errors
-  if (feeDetailsError) {
-    console.error("[ParentFeeManagement] Fee details error:", feeDetailsError)
-  }
-
-  // Determine if we have session information available
-  // The hook will fetch active session as fallback, so we'll wait for that before showing "No Session"
-  const waitingForSessionFallback = !sessionId && !feeDetailsError && isLoadingFees
+  } = useGetStudentFeeDetails(selectedStudent?.id, sessionId, period.termId)
 
   if (!selectedStudent) {
     return (
@@ -56,6 +31,7 @@ export default function ParentFeeManagementPage() {
           <h1 className="text-2xl font-semibold">Fee Management</h1>
           <p className="text-gray-600">View and manage your child&apos;s school fees</p>
         </div>
+        <AcademicPeriodSelector scope="parent-fees" allowWholeSession={false} />
         <Card>
           <CardContent className="flex h-[400px] items-center justify-center">
             <div className="text-center">
@@ -67,77 +43,8 @@ export default function ParentFeeManagementPage() {
     )
   }
 
-  const isLoading = isLoadingProfile || isLoadingFees
-
-  // Extract details from response - use the same pattern as student portal
-  // The hook returns ResponsePack<StudentFeeDetailsResponse>, so we need to access .data.data like student page does
-  // Handle potential double-wrapping: ResponsePack<ResponsePack<StudentFeeDetailsResponse>> or ResponsePack<StudentFeeDetailsResponse>
-  const details: StudentFeeDetailsResponse | undefined =
-    (feeDetails as any)?.data?.data || feeDetails?.data || feeDetails
-
-  // Comprehensive logging for debugging
-  console.log("[ParentFeeManagement] Full state:", {
-    selectedStudentId: selectedStudent?.id,
-    sessionId,
-    isLoadingProfile,
-    isLoadingFees,
-    hasFeeDetails: !!feeDetails,
-    feeDetailsType: typeof feeDetails,
-    feeDetailsKeys: feeDetails ? Object.keys(feeDetails) : [],
-    feeDetailsStructure: feeDetails
-      ? {
-          status_code: (feeDetails as any)?.status_code,
-          message: (feeDetails as any)?.message,
-          hasData: !!(feeDetails as any)?.data,
-          dataType: typeof (feeDetails as any)?.data,
-          dataKeys: (feeDetails as any)?.data
-            ? Object.keys((feeDetails as any).data)
-            : [],
-          dataHasData: !!(feeDetails as any)?.data?.data,
-          dataDataKeys: (feeDetails as any)?.data?.data
-            ? Object.keys((feeDetails as any).data.data)
-            : [],
-          // Log the actual data structure for inspection
-          dataValue: (feeDetails as any)?.data
-            ? JSON.parse(JSON.stringify((feeDetails as any).data))
-            : null,
-        }
-      : null,
-    hasDetails: !!details,
-    detailsType: typeof details,
-    detailsKeys: details ? Object.keys(details) : [],
-    detailsStructure: details
-      ? {
-          hasStudentInfo: !!details.student_info,
-          studentInfo: details.student_info
-            ? JSON.parse(JSON.stringify(details.student_info))
-            : null,
-          hasFeeBreakdown: !!details.fee_breakdown,
-          feeBreakdownLength: details.fee_breakdown?.length || 0,
-          feeBreakdown: details.fee_breakdown
-            ? JSON.parse(JSON.stringify(details.fee_breakdown))
-            : null,
-          hasPaymentHistory: !!details.payment_history,
-          paymentHistoryLength: details.payment_history?.length || 0,
-          paymentHistory: details.payment_history
-            ? JSON.parse(JSON.stringify(details.payment_history))
-            : null,
-        }
-      : null,
-    extractionMethod: feeDetails
-      ? {
-          triedDataData: !!(feeDetails as any)?.data?.data,
-          triedData: !!(feeDetails as any)?.data,
-          triedDirect: !!feeDetails,
-          finalSource: (feeDetails as any)?.data?.data
-            ? "data.data"
-            : (feeDetails as any)?.data
-              ? "data"
-              : "direct",
-        }
-      : null,
-    feeDetailsError,
-  })
+  const isLoading = period.isLoading || isLoadingFees
+  const details: StudentFeeDetailsResponse | undefined = feeDetails?.data
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -148,6 +55,7 @@ export default function ParentFeeManagementPage() {
         </div>
         <StudentSelector />
       </div>
+      <AcademicPeriodSelector scope="parent-fees" allowWholeSession={false} />
 
       {isLoading ? (
         <div className="space-y-6">
@@ -173,7 +81,7 @@ export default function ParentFeeManagementPage() {
             </CardContent>
           </Card>
         </div>
-      ) : !waitingForSessionFallback && !sessionId && feeDetailsError ? (
+      ) : !sessionId && feeDetailsError ? (
         <EmptyState
           title="No Active Session"
           description="This student is not enrolled in an active academic session. Please contact the administrator."

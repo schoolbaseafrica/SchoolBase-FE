@@ -23,11 +23,11 @@ import { useDashboardStore } from "@/store/dashboard-store"
 import { useShallow } from "zustand/react/shallow"
 // Import the Activity type
 import { DashboardAPI, type Activity as DashboardActivity } from "@/lib/dashboard"
-import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
-import { AcademicPeriodSelector } from "../academic-period-selector"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 const Overview = () => {
-  const period = useAdminAcademicPeriod()
+  const period = useAcademicPeriod("admin-dashboard")
   const { data: resolvedDashboard, isLoading: summaryLoading } = useQuery({
     queryKey: ["dashboard", "period-summary", period.sessionId],
     queryFn: () => DashboardAPI.resolve({ session_id: period.sessionId }),
@@ -138,7 +138,7 @@ const Overview = () => {
         heading="Dashboard"
         description="Review school activity and performance for one consistent academic period"
       />
-      <AcademicPeriodSelector />
+      <AcademicPeriodSelector scope="admin-dashboard" />
 
       <StatCard stats={dashboardStats} isLoading={isLoading} />
 

@@ -28,16 +28,14 @@ export function useGetActiveTerm() {
 }
 
 // Get student results for active term
-export function useGetStudentResults(studentId?: string) {
-  const { data: activeTerm } = useGetActiveTerm()
-
+export function useGetStudentResults(studentId?: string, termId?: string) {
   return useQuery({
-    queryKey: [...STUDENT_RESULTS_KEY, "student-results", studentId, activeTerm?.id],
+    queryKey: [...STUDENT_RESULTS_KEY, "student-results", studentId, termId],
     queryFn: () => {
       if (!studentId) throw new Error("Student ID is required")
-      return getStudentResults(studentId, activeTerm?.id)
+      return getStudentResults(studentId, termId)
     },
-    enabled: !!studentId && !!activeTerm?.id,
+    enabled: !!studentId && !!termId,
     staleTime: 1000 * 60 * 5,
     retry: 1,
     select: (results: StudentResultResponse[]) => {

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import ManualCheckInCard from "./_components/manual-checkin-card"
 import ClassTeacherView from "./_components/class-teacher-view"
@@ -10,18 +10,18 @@ import {
   useGetTeacherAssignedClasses,
   useGetTodayCheckInStatus,
 } from "./_hooks/use-teacher-attendance"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 const TeacherAttendance = () => {
-  const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>(
-    undefined
-  )
+  const period = useAcademicPeriod("teacher-attendance")
 
   // Fetch assigned classes
   const {
     data: assignedClasses,
     isLoading: classesLoading,
     error: classesError,
-  } = useGetTeacherAssignedClasses(selectedSessionId)
+  } = useGetTeacherAssignedClasses(period.sessionId)
 
   // Fetch today's check-in status
   const { data: checkInStatus, isLoading: statusLoading } = useGetTodayCheckInStatus()
@@ -36,6 +36,7 @@ const TeacherAttendance = () => {
         heading="Attendance"
         description="Manage your attendance and view your assigned classes"
       />
+      <AcademicPeriodSelector scope="teacher-attendance" sessionOnly />
 
       {/* Loading State */}
       {isLoading && (
@@ -75,13 +76,7 @@ const TeacherAttendance = () => {
           <ManualCheckInCard hasCheckedIn={hasCheckedIn} />
 
           {/* Class Teacher View - Only if assigned as class teacher */}
-          {isClassTeacher && (
-            <ClassTeacherView
-              assignedClasses={assignedClasses}
-              selectedSessionId={selectedSessionId}
-              onSessionChange={setSelectedSessionId}
-            />
-          )}
+          {isClassTeacher && <ClassTeacherView assignedClasses={assignedClasses} />}
 
           {/* No Classes Message */}
           {!isClassTeacher && !hasCheckedIn && (

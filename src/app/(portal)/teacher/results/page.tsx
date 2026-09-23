@@ -16,6 +16,8 @@ import { SkeletonLoader } from "../_components/ui/skeleton-loader"
 import { Button } from "@/components/ui/button"
 import { Home, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 interface Class {
   id: string
@@ -30,6 +32,7 @@ const getStoredValue = (key: string): string => {
 }
 
 export default function TeacherResultsPage() {
+  const period = useAcademicPeriod("teacher-results")
   const { data: teacher, isLoading: isLoadingAuth } = useAuthUser()
 
   // Initialize state from localStorage directly in useState
@@ -39,22 +42,20 @@ export default function TeacherResultsPage() {
   const [selectedSubject, setSelectedSubject] = useState<string>(() =>
     getStoredValue("results_selectedSubject")
   )
-  const [selectedTerm, setSelectedTerm] = useState<string>(() =>
-    getStoredValue("results_selectedTerm")
-  )
+  const selectedTerm = period.termId ?? ""
 
   const {
     data: classes = [],
     isLoading: isLoadingClasses,
     error: classesError,
-  } = useGetClasses()
+  } = useGetClasses(period.sessionId)
 
   const { data: subjects = [], isLoading: isLoadingSubjects } = useGetSubjects(
     selectedClass,
     teacher?.teacher_id
   )
 
-  const { data: terms = [], isLoading: isLoadingTerms } = useGetTerms()
+  const { data: terms = [], isLoading: isLoadingTerms } = useGetTerms(period.sessionId)
 
   const { data: students = [], isLoading: isLoadingStudents } = useGetStudents(
     selectedClass,
@@ -75,7 +76,6 @@ export default function TeacherResultsPage() {
 
     // Reset subject and term when class changes
     setSelectedSubject("")
-    setSelectedTerm("")
 
     if (typeof window !== "undefined") {
       localStorage.setItem("results_selectedSubject", "")
@@ -93,7 +93,7 @@ export default function TeacherResultsPage() {
 
   // Handle term change with persistence
   const handleTermChange = (termId: string) => {
-    setSelectedTerm(termId)
+    period.setTerm(termId)
     if (typeof window !== "undefined") {
       localStorage.setItem("results_selectedTerm", termId)
     }
@@ -127,7 +127,6 @@ export default function TeacherResultsPage() {
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-red-500" />
         </div>
-
         {/* <div className="min-h-screen bg-gray-50 p-4 md:p-6">
           <div className="mx-auto max-w-7xl"><SkeletonLoader /></div>
         </div> */}
@@ -213,6 +212,7 @@ export default function TeacherResultsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Result Management</h1>
           <p className="text-gray-600">Enter and manage student results</p>
         </div>
+        <AcademicPeriodSelector scope="teacher-results" allowWholeSession={false} />
 
         <TeacherResultsView
           classes={classes}

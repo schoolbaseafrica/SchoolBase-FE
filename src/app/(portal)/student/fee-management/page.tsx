@@ -8,30 +8,20 @@ import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { useGetStudentFeeDetails } from "../_hooks/use-student-fees"
 import { useStudentAuth } from "@/hooks/use-auth-user"
-import { useQuery } from "@tanstack/react-query"
-import { getActiveTerm } from "@/lib/results"
 import type { StudentFeeDetailsResponse } from "@/lib/fees"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function StudentFeeManagementPage() {
   const { studentId } = useStudentAuth()
-
-  // Get active term
-  const { data: activeTerm, isLoading: isLoadingTerm } = useQuery({
-    queryKey: ["active-term"],
-    queryFn: () => getActiveTerm(),
-    staleTime: 1000 * 60 * 5,
-  })
+  const period = useAcademicPeriod("student-fees")
 
   // Session ID will be fetched automatically from student profile
   const {
     data: feeDetails,
     isLoading: isLoadingFees,
     error: feeError,
-  } = useGetStudentFeeDetails(
-    studentId,
-    activeTerm?.id,
-    undefined // sessionId will be fetched from student profile automatically
-  )
+  } = useGetStudentFeeDetails(studentId, period.termId, period.sessionId)
 
   // Log errors for debugging
   if (feeError) {
@@ -56,17 +46,13 @@ export default function StudentFeeManagementPage() {
     )
   }
 
-  const isLoading = isLoadingTerm || isLoadingFees
-  // The hook returns ResponsePack<StudentFeeDetailsResponse>, so we need to access .data.data like parent page does
-  // Handle potential double-wrapping: ResponsePack<ResponsePack<StudentFeeDetailsResponse>> or ResponsePack<StudentFeeDetailsResponse>
-  const details: StudentFeeDetailsResponse | undefined =
-    (feeDetails as any)?.data?.data || feeDetails?.data || feeDetails
+  const isLoading = period.isLoading || isLoadingFees
+  const details: StudentFeeDetailsResponse | undefined = feeDetails?.data
 
   // Debug logging to see the actual response structure and hook state
   console.log("Student Fee Management State:", {
     studentId,
-    activeTermId: activeTerm?.id,
-    isLoadingTerm,
+    activeTermId: period.termId,
     isLoadingFees,
     feeError,
     feeDetails: feeDetails
@@ -95,6 +81,7 @@ export default function StudentFeeManagementPage() {
         <h1 className="text-2xl font-semibold">Fee Management</h1>
         <p className="text-gray-600">View your school fees and payment history</p>
       </div>
+      <AcademicPeriodSelector scope="student-fees" allowWholeSession={false} />
 
       {isLoading ? (
         <div className="space-y-6">
@@ -120,7 +107,7 @@ export default function StudentFeeManagementPage() {
             </CardContent>
           </Card>
         </div>
-      ) : !activeTerm?.id ? (
+      ) : !period.termId ? (
         <EmptyState
           title="No Active Term"
           description="There is no active academic term at this time. Please contact the administrator."

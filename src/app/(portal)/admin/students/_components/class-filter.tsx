@@ -15,22 +15,24 @@ import { useGetClassesInfo } from "@/app/(portal)/admin/class-management/_hooks/
 
 interface ClassFilterProps {
   value?: string
+  sessionId?: string
   onValueChange: (value: string | undefined) => void
 }
 
-export function ClassFilter({ value, onValueChange }: ClassFilterProps) {
+export function ClassFilter({ value, sessionId, onValueChange }: ClassFilterProps) {
   const [open, setOpen] = useState(false)
-  
+
   const { data: classesInfo, isLoading } = useGetClassesInfo({
     includeArchived: false,
     limit: 1000,
     page: 1,
+    session_id: sessionId,
   })
 
   // Flatten the grouped classes structure
   const allClasses = useMemo(() => {
     if (!classesInfo?.items) return []
-    
+
     return classesInfo.items.flatMap((group) =>
       group.classes.map((cls) => ({
         id: cls.id,
@@ -47,21 +49,19 @@ export function ClassFilter({ value, onValueChange }: ClassFilterProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+      <GraduationCap className="text-muted-foreground h-4 w-4" />
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="h-9 justify-between min-w-[200px]"
+            className="h-9 min-w-[200px] justify-between"
             disabled={isLoading}
           >
-            <span className="truncate">
-              {selectedClassName || "All Classes"}
-            </span>
+            <span className="truncate">{selectedClassName || "All Classes"}</span>
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 max-h-[300px] overflow-y-auto">
+        <DropdownMenuContent align="start" className="max-h-[300px] w-56 overflow-y-auto">
           <DropdownMenuRadioGroup
             value={value || "all"}
             onValueChange={(newValue) => {
@@ -80,11 +80,11 @@ export function ClassFilter({ value, onValueChange }: ClassFilterProps) {
             </DropdownMenuRadioItem>
             <DropdownMenuSeparator />
             {isLoading ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              <div className="text-muted-foreground px-2 py-1.5 text-sm">
                 Loading classes...
               </div>
             ) : allClasses.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              <div className="text-muted-foreground px-2 py-1.5 text-sm">
                 No classes found
               </div>
             ) : (

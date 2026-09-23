@@ -11,14 +11,19 @@ import FeesFilters from "./_components/fees-filters"
 import FeesTable from "./_components/fees-table"
 import { useFeePayments } from "./_hooks/use-fee-payments"
 import { FeePaymentParams } from "@/lib/fees"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 const FeesRecord = () => {
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<Partial<FeePaymentParams>>({})
+  const period = useAcademicPeriod("admin-fee-records")
 
   const { data: paymentsData, isLoading } = useFeePayments({
     page,
     limit: 10,
+    session_id: period.sessionId,
+    term_id: period.termId,
     ...filters,
   })
 
@@ -93,7 +98,7 @@ const FeesRecord = () => {
             <Button
               variant="outline"
               size="lg"
-              className="whitespace-nowrap border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600"
+              className="border-red-100 bg-red-50 whitespace-nowrap text-red-500 hover:bg-red-100 hover:text-red-600"
               onClick={handleExport}
               disabled={!payments.length}
             >
@@ -101,19 +106,23 @@ const FeesRecord = () => {
               Export Records
             </Button>
             <Link href="/admin/fees-record/add-payment">
-              <Button size="lg" className="whitespace-nowrap bg-[#DA3743] hover:bg-[#DA3743]/90">
+              <Button
+                size="lg"
+                className="bg-[#DA3743] whitespace-nowrap hover:bg-[#DA3743]/90"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Payment
               </Button>
             </Link>
           </div>
         </div>
+        <AcademicPeriodSelector scope="admin-fee-records" />
 
         {/* Stats Cards */}
-        <StatsCards />
+        <StatsCards sessionId={period.sessionId} termId={period.termId} />
 
         {/* Chart */}
-        <FeesChart />
+        <FeesChart sessionId={period.sessionId} termId={period.termId} />
 
         {/* Filters and Table */}
         <div className="space-y-6">

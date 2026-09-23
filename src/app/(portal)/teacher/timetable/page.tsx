@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,28 +14,30 @@ import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-a
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function TeacherTimetablePage() {
   const router = useRouter()
+  const period = useAcademicPeriod("teacher-timetable")
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
 
   const {
     data: assignedClasses,
     isLoading: isLoadingClasses,
     error: classesError,
-  } = useGetTeacherAssignedClasses()
+  } = useGetTeacherAssignedClasses(period.sessionId)
 
   // Ensure assignedClasses is an array
-  const classesArray = Array.isArray(assignedClasses) ? assignedClasses : []
+  const classesArray = useMemo(
+    () => (Array.isArray(assignedClasses) ? assignedClasses : []),
+    [assignedClasses]
+  )
+  const effectiveClassId = classesArray.some((item) => item.id === selectedClassId)
+    ? selectedClassId
+    : null
 
-  // Auto-select first class if available
-  useEffect(() => {
-    if (classesArray.length > 0 && !selectedClassId) {
-      setSelectedClassId(classesArray[0].id)
-    }
-  }, [classesArray, selectedClassId])
-
-  const selectedClass = classesArray.find((cls) => cls.id === selectedClassId)
+  const selectedClass = classesArray.find((cls) => cls.id === effectiveClassId)
   const classDisplayName = selectedClass
     ? `${selectedClass.name}${selectedClass.arm ? ` ${selectedClass.arm}` : ""}`
     : "Select Class"
@@ -44,10 +46,10 @@ export default function TeacherTimetablePage() {
     <div className="flex h-full flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-[#2d2d2d]">Timetable</h1>
-        <p className="text-sm text-[#666666]">
-          View schedules for your assigned classes
-        </p>
+        <p className="text-sm text-[#666666]">View schedules for your assigned classes</p>
       </div>
+
+      <AcademicPeriodSelector scope="teacher-timetable" sessionOnly />
 
       {/* Loading State */}
       {isLoadingClasses && (
@@ -100,10 +102,10 @@ export default function TeacherTimetablePage() {
                 </DropdownMenu>
               </div>
               {/* Show "Open Classroom" button when a class is selected */}
-              {selectedClassId && (
+              {effectiveClassId && (
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/teacher/classroom/${selectedClassId}`)}
+                  onClick={() => router.push(`/teacher/classroom/${effectiveClassId}`)}
                   className="h-9 w-full text-sm sm:h-10 sm:w-auto sm:text-base"
                 >
                   <BookOpen className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
@@ -122,8 +124,8 @@ export default function TeacherTimetablePage() {
           )}
 
           {/* Timetable Grid */}
-          {selectedClassId ? (
-            <TimetableGrid classId={selectedClassId} readonly={true} />
+          {effectiveClassId ? (
+            <TimetableGrid classId={effectiveClassId} readonly={true} />
           ) : classesArray.length > 0 ? (
             <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500">
               Please select a class to view its timetable

@@ -1,18 +1,23 @@
 "use client"
 
 import { useMemo } from "react"
-import { useAdminAcademicPeriodStore } from "@/store/admin-academic-period-store"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 import {
   useAcademicSessions,
   useActiveAcademicSession,
-} from "../class-management/session/_hooks/use-session"
+} from "@/app/(portal)/admin/class-management/session/_hooks/use-session"
 import {
   useAcademicTermsForSession,
   useActiveAcademicTerm,
-} from "../class-management/_hooks/use-academic-term"
+} from "@/app/(portal)/admin/class-management/_hooks/use-academic-term"
 
-export function useAdminAcademicPeriod() {
-  const { sessionId, termId, setPeriod, setTermId, reset } = useAdminAcademicPeriodStore()
+export function useAcademicPeriod(scope: string) {
+  const selection = useAcademicPeriodStore((state) => state.selections[scope])
+  const setPeriod = useAcademicPeriodStore((state) => state.setPeriod)
+  const setTermId = useAcademicPeriodStore((state) => state.setTermId)
+  const reset = useAcademicPeriodStore((state) => state.reset)
+  const sessionId = selection?.sessionId ?? null
+  const termId = selection?.termId ?? null
   const sessionsQuery = useAcademicSessions({ limit: 100 })
   const activeSessionQuery = useActiveAcademicSession()
   const activeTermQuery = useActiveAcademicTerm()
@@ -57,9 +62,9 @@ export function useAdminAcademicPeriod() {
         activeTermQuery.data?.sessionId === nextSessionId
           ? activeTermQuery.data.id
           : "all"
-      setPeriod(nextSessionId, nextActiveTerm)
+      setPeriod(scope, nextSessionId, nextActiveTerm)
     },
-    setTerm: setTermId,
-    reset,
+    setTerm: (nextTermId: string) => setTermId(scope, nextTermId),
+    reset: () => reset(scope),
   }
 }

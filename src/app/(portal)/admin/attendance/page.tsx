@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import AttendanceTable from "./_components/attendance-table"
 import AttendanceGrid from "./_components/attendance-grid"
@@ -19,9 +19,13 @@ import { useGetClassesInfo } from "../class-management/_hooks/use-classes"
 import { useAttendanceStore } from "@/store/attendance-store"
 import { useShallow } from "zustand/react/shallow"
 import type { ClassItem } from "@/lib/classes"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 const Attendance = () => {
+  const period = useAcademicPeriod("admin-attendance")
   const today = new Date().toISOString().split("T")[0]
+  const [selectedDate, setSelectedDate] = useState(today)
 
   // Local UI state for filters (search is fast enough locally)
   const [search, setSearch] = useState("")
@@ -32,6 +36,7 @@ const Attendance = () => {
     includeArchived: false,
     limit: 1000, // Get a large number to ensure all classes are loaded
     page: 1,
+    session_id: period.sessionId,
   })
 
   // Flatten class structure
@@ -47,21 +52,14 @@ const Attendance = () => {
 
   // Compute the initial class
   const initialClassId = useMemo(() => {
-    if (!selectedClassId && classes.length > 0) {
+    if (classes.length > 0 && !classes.some((item) => item.id === selectedClassId)) {
       return classes[0].id
     }
-    return selectedClassId
+    return classes.length ? selectedClassId : ""
   }, [classes, selectedClassId])
 
-  // Ensure state always aligns with computed initial class (using useEffect to avoid render loop)
-  useEffect(() => {
-    if (selectedClassId !== initialClassId) {
-      setSelectedClassId(initialClassId)
-    }
-  }, [initialClassId, selectedClassId])
-
   // 1. Fetch attendance (Syncs to store)
-  const { isLoading: queryLoading } = useDailyAttendance(initialClassId, today)
+  const { isLoading: queryLoading } = useDailyAttendance(initialClassId, selectedDate)
 
   // 2. Select from store
   const { students, summary } = useAttendanceStore(
@@ -108,9 +106,9 @@ const Attendance = () => {
       },
       class_id: initialClassId,
       class_name: className,
-      date: today,
+      date: selectedDate,
     }),
-    [students, summary, initialClassId, className, today]
+    [students, summary, initialClassId, className, selectedDate]
   )
 
   return (
@@ -119,6 +117,15 @@ const Attendance = () => {
         heading="Attendance"
         description="View and manage the attendance of all students here"
       />
+      <AcademicPeriodSelector scope="admin-attendance" sessionOnly />
+      <label className="mt-4 grid max-w-xs gap-1 text-sm font-medium">
+        Attendance date
+        <Input
+          type="date"
+          value={selectedDate}
+          onChange={(event) => setSelectedDate(event.target.value)}
+        />
+      </label>
 
       {/* Search + Class dropdown */}
       <div className="mt-5 flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

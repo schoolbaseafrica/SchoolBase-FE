@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react"
 import { AdminResultsView } from "./_components/admin-results-view"
 import { useGetAdminSubmissions, useGetSubmissionStats } from "./_hooks/use-admin-results"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function AdminResultsPage() {
+  const period = useAcademicPeriod("admin-results")
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
@@ -14,8 +17,13 @@ export default function AdminResultsPage() {
     isError,
   } = useGetAdminSubmissions({
     status: statusFilter === "all" ? undefined : statusFilter,
+    term_id: period.termId,
+    academic_session_id: period.sessionId,
   })
-  const { data: stats, refetch: refetchStats } = useGetSubmissionStats()
+  const { data: stats, refetch: refetchStats } = useGetSubmissionStats({
+    term_id: period.termId,
+    academic_session_id: period.sessionId,
+  })
 
   // Filter submissions by search query
   const filteredSubmissions = submissions.filter((submission) => {
@@ -46,6 +54,7 @@ export default function AdminResultsPage() {
             Review and manage grade submissions from teachers
           </p>
         </div>
+        <AcademicPeriodSelector scope="admin-results" />
 
         <AdminResultsView
           submissions={filteredSubmissions}

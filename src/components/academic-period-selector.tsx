@@ -9,14 +9,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAdminAcademicPeriod } from "../_hooks/use-admin-academic-period"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
 
 export function AcademicPeriodSelector({
+  scope,
   sessionOnly = false,
+  allowWholeSession = true,
 }: {
+  scope: string
   sessionOnly?: boolean
+  allowWholeSession?: boolean
 }) {
-  const period = useAdminAcademicPeriod()
+  const period = useAcademicPeriod(scope)
 
   return (
     <div className="my-4 flex flex-wrap items-end gap-3 rounded-xl border bg-white p-3 shadow-sm">
@@ -56,7 +60,7 @@ export function AcademicPeriodSelector({
               <SelectValue placeholder="Select term" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Whole session</SelectItem>
+              {allowWholeSession && <SelectItem value="all">Whole session</SelectItem>}
               {period.terms.map((term) => (
                 <SelectItem key={term.id} value={term.id}>
                   {term.name}

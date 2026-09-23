@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { GraduationCap } from "lucide-react"
 import { TypedChartConfig } from "@/types/chart"
 import { useStudentGrowthReport } from "../../students/_hooks/use-students"
-import { useAdminAcademicPeriod } from "../../_hooks/use-admin-academic-period"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { ReuseableBarChart } from "./bar-chart"
 
 const studentConfig: TypedChartConfig<"newStudents" | "totalStudents"> = {
@@ -13,7 +13,7 @@ const studentConfig: TypedChartConfig<"newStudents" | "totalStudents"> = {
 }
 
 export default function StudentGrowthChart() {
-  const period = useAdminAcademicPeriod()
+  const period = useAcademicPeriod("admin-dashboard")
   const [interval, setInterval] = useState<"month" | "term">("month")
   const { data, isLoading } = useStudentGrowthReport(
     period.sessionId

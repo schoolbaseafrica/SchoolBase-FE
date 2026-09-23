@@ -2,17 +2,16 @@
 
 import { UsersView } from "@/components/users/users-view"
 import { useGetStudents, useGetStudentsWithMeta } from "./_hooks/use-students"
-import {
-  useStudentsStore,
-  selectFilteredStudents,
-  selectPaginatedStudents,
-} from "@/store/students-store"
+import { useStudentsStore, selectFilteredStudents } from "@/store/students-store"
 import { useShallow } from "zustand/react/shallow"
 import { useMemo } from "react"
 import { BulkActionsMenu } from "./_components/bulk-actions-menu"
 import { ClassFilter } from "./_components/class-filter"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function StudentsPage() {
+  const period = useAcademicPeriod("admin-students")
   const { filters } = useStudentsStore(
     useShallow((state) => ({
       filters: state.filters,
@@ -35,10 +34,11 @@ export default function StudentsPage() {
     limit: filters.classId ? 10000 : filters.limit,
     search: filters.search || undefined,
     class_id: filters.classId || undefined, // undefined means "all classes" including unassigned
+    session_id: period.sessionId,
   })
 
   // Also fetch all students for client-side operations (bulk actions, etc.)
-  const { isLoading: isClientLoading, isError: isClientError, error: clientError } = useGetStudents()
+  useGetStudents({ session_id: period.sessionId })
 
   const { students, studentIds } = useStudentsStore(
     useShallow((state) => ({
@@ -79,7 +79,7 @@ export default function StudentsPage() {
 
   // When a class is selected, there's only 1 page (all students shown)
   // When no class is selected, use server pagination
-  const totalPages = filters.classId ? 1 : (serverData?.meta?.total_pages || 1)
+  const totalPages = filters.classId ? 1 : serverData?.meta?.total_pages || 1
 
   const isLoading = isServerLoading
   const isError = isServerError
@@ -112,10 +112,12 @@ export default function StudentsPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <BulkActionsMenu />
       </div>
+      <AcademicPeriodSelector scope="admin-students" sessionOnly />
 
       <div className="mb-4">
         <ClassFilter
           value={filters.classId}
+          sessionId={period.sessionId}
           onValueChange={handleClassFilterChange}
         />
       </div>

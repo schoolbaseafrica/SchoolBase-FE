@@ -3,11 +3,14 @@
 import { ParentResultsView } from "./_components/parent-results-view"
 import { ResultsContainer } from "@/components/results/results-container"
 import { useParentAuth } from "@/hooks/use-auth-user"
-import { useGetActiveTerm, useGetStudentResults } from "./_hooks/use-parent-results"
+import { useGetStudentResults } from "./_hooks/use-parent-results"
 import { StudentSelector } from "../_components/student-selector"
 import { useParentStudents } from "../_components/student-provider"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 export default function ParentResultsPage() {
+  const period = useAcademicPeriod("parent-results")
   // Use the student provider for consistent student selection across all parent pages
   const { selectedStudent, studentID, students } = useParentStudents()
 
@@ -15,39 +18,31 @@ export default function ParentResultsPage() {
   const { isParent, isLoading: isLoadingAuth, error: authError } = useParentAuth()
 
   // Get active term
-  const {
-    data: activeTerm,
-    isLoading: isLoadingTerm,
-    error: termError,
-    refetch: refetchTerm,
-  } = useGetActiveTerm()
-
   // Get student results for selected student
   const {
     data: results = [],
     isLoading: isLoadingResults,
     error: resultsError,
     refetch: refetchResults,
-  } = useGetStudentResults(studentID)
+  } = useGetStudentResults(studentID, period.termId)
 
-  const isLoading = isLoadingAuth || isLoadingTerm || isLoadingResults
-  const error = authError || termError || resultsError
+  const isLoading = isLoadingAuth || period.isLoading || isLoadingResults
+  const error = authError || resultsError
 
   // Transform term data
-  const transformedTerm = activeTerm
+  const transformedTerm = period.term
     ? {
-        id: activeTerm.id,
-        name: activeTerm.name,
-        start_date: activeTerm.startDate,
-        end_date: activeTerm.endDate,
-        status: activeTerm.status,
-        is_active: activeTerm.isCurrent,
+        id: period.term.id,
+        name: period.term.name,
+        start_date: period.term.startDate,
+        end_date: period.term.endDate,
+        status: period.term.status,
+        is_active: period.term.isActive,
       }
     : undefined
 
   const handleRetry = () => {
     if (authError) window.location.reload()
-    else if (termError) refetchTerm()
     else if (resultsError) refetchResults()
   }
 
@@ -73,46 +68,51 @@ export default function ParentResultsPage() {
   }
 
   return (
-    <ResultsContainer
-      title="Children's Results"
-      subtitle="View and download your children's academic results"
-      isLoading={isLoading}
-      error={error}
-      isEmpty={studentsArray.length === 0}
-      emptyTitle="No Children Linked"
-      emptyDescription="No students are linked to your parent account. Please contact your school administrator."
-      onRetry={handleRetry}
-    >
-      {studentsArray.length > 0 ? (
-        <div>
-          {/* Student Selection */}
-          {studentsArray.length > 1 && (
-            <div className="mb-6 flex items-center gap-4">
-              <h2 className="text-lg font-semibold">Select Child:</h2>
-              <StudentSelector className="w-auto min-w-[200px]" />
-            </div>
-          )}
-
-          {/* Parent Results View */}
-          {selectedStudent ? (
-            <ParentResultsView
-              selectedStudent={{
-                ...selectedStudent,
-                registration_number: selectedStudent.registration_number || "",
-              }}
-              activeTerm={transformedTerm}
-              results={results}
-              isLoading={isLoading}
-            />
-          ) : (
-            <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
-              <div className="text-center">
-                <p className="text-gray-500">Please select a student to view results</p>
+    <>
+      <div className="px-4 md:px-6">
+        <AcademicPeriodSelector scope="parent-results" allowWholeSession={false} />
+      </div>
+      <ResultsContainer
+        title="Children's Results"
+        subtitle="View and download your children's academic results"
+        isLoading={isLoading}
+        error={error}
+        isEmpty={studentsArray.length === 0}
+        emptyTitle="No Children Linked"
+        emptyDescription="No students are linked to your parent account. Please contact your school administrator."
+        onRetry={handleRetry}
+      >
+        {studentsArray.length > 0 ? (
+          <div>
+            {/* Student Selection */}
+            {studentsArray.length > 1 && (
+              <div className="mb-6 flex items-center gap-4">
+                <h2 className="text-lg font-semibold">Select Child:</h2>
+                <StudentSelector className="w-auto min-w-[200px]" />
               </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </ResultsContainer>
+            )}
+
+            {/* Parent Results View */}
+            {selectedStudent ? (
+              <ParentResultsView
+                selectedStudent={{
+                  ...selectedStudent,
+                  registration_number: selectedStudent.registration_number || "",
+                }}
+                activeTerm={transformedTerm}
+                results={results}
+                isLoading={isLoading}
+              />
+            ) : (
+              <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                <div className="text-center">
+                  <p className="text-gray-500">Please select a student to view results</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </ResultsContainer>
+    </>
   )
 }

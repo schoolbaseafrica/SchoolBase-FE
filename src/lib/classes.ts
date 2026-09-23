@@ -176,10 +176,10 @@ export const ClassesAPI = {
       true
     ),
 
-  getStudentsForClass: (classId: string) =>
+  getStudentsForClass: (classId: string, sessionId?: string) =>
     apiFetch<ResponsePack<StudentsForClass[]>>(
       `/classes/${classId}/students`,
-      { method: "GET" },
+      { method: "GET", params: sessionId ? { session_id: sessionId } : undefined },
       true
     ),
 

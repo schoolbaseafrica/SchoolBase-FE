@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CbtAPI, CbtExamSummary } from "@/lib/cbt"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 
 function availability(exam: CbtExamSummary) {
   if (exam.availableTo) return `Closes ${format(new Date(exam.availableTo), "PPp")}`
@@ -19,10 +21,17 @@ function availability(exam: CbtExamSummary) {
 }
 
 export default function StudentCbtPage() {
+  const period = useAcademicPeriod("student-cbt")
+  const periodParams = {
+    sessionId: period.sessionId,
+    termId: period.termId,
+    scope: period.isWholeSession ? ("session" as const) : ("term" as const),
+  }
   const router = useRouter()
   const exams = useQuery({
-    queryKey: ["cbt", "student", "exams"],
-    queryFn: CbtAPI.listStudentExams,
+    queryKey: ["cbt", "student", "exams", periodParams],
+    queryFn: () => CbtAPI.listStudentExams(periodParams),
+    enabled: !!period.sessionId,
   })
   const start = useMutation({
     mutationFn: CbtAPI.startAttempt,
@@ -47,6 +56,7 @@ export default function StudentCbtPage() {
             will not erase your work.
           </p>
         </header>
+        <AcademicPeriodSelector scope="student-cbt" />
 
         {exams.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
