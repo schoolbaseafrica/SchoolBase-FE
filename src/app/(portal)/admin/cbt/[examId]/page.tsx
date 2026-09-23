@@ -2,7 +2,16 @@
 
 import { FormEvent, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, CheckCircle2, FileQuestion, Plus, Send } from "lucide-react"
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  FileQuestion,
+  Layers3,
+  Plus,
+  Save,
+  Send,
+} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
@@ -36,6 +45,10 @@ export default function CbtExamBuilderPage() {
   const { examId } = useParams<{ examId: string }>()
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [sectionDialogOpen, setSectionDialogOpen] = useState(false)
+  const [bankOpen, setBankOpen] = useState(false)
+  const [bankSearch, setBankSearch] = useState("")
+  const [bankSectionId, setBankSectionId] = useState("")
   const [type, setType] = useState<CbtQuestionType>("mcq")
   const [optionsText, setOptionsText] = useState("")
   const [correctAnswer, setCorrectAnswer] = useState("")
@@ -47,6 +60,11 @@ export default function CbtExamBuilderPage() {
     queryKey: ["cbt", "manage", "exam", examId, "attempts"],
     queryFn: () => CbtAPI.getExamAttempts(examId),
     enabled: exam.data?.status === "published",
+  })
+  const questionBank = useQuery({
+    queryKey: ["cbt", "question-bank", bankSearch],
+    queryFn: () => CbtAPI.listQuestionBank(bankSearch),
+    enabled: bankOpen,
   })
   const optionLines = useMemo(
     () =>
@@ -69,6 +87,36 @@ export default function CbtExamBuilderPage() {
       toast.success("Question added")
     },
     onError: (error: Error) => toast.error(error.message || "Could not add question"),
+  })
+  const createSection = useMutation({
+    mutationFn: (data: Record<string, unknown>) => CbtAPI.createSection(examId, data),
+    onSuccess: () => {
+      refresh()
+      setSectionDialogOpen(false)
+      toast.success("Section added")
+    },
+    onError: (error: Error) => toast.error(error.message || "Could not add section"),
+  })
+  const saveToBank = useMutation({
+    mutationFn: (questionId: string) => CbtAPI.saveQuestionToBank(questionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["cbt", "question-bank"] })
+      toast.success("Question saved to the bank")
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Could not save question to the bank"),
+  })
+  const importQuestion = useMutation({
+    mutationFn: (questionId: string) =>
+      CbtAPI.importBankQuestion(examId, questionId, {
+        sectionId: bankSectionId || undefined,
+        sortOrder: exam.data?.questions?.length ?? 0,
+      }),
+    onSuccess: () => {
+      refresh()
+      toast.success("Question copied into this examination")
+    },
+    onError: (error: Error) => toast.error(error.message || "Could not import question"),
   })
   const publish = useMutation({
     mutationFn: () => CbtAPI.publishExam(examId),
@@ -105,6 +153,7 @@ export default function CbtExamBuilderPage() {
       difficulty: String(form.get("difficulty") || "medium"),
       options: needsOptions ? options : undefined,
       correctAnswer: type === "essay" ? undefined : answer,
+      sectionId: String(form.get("sectionId") || "") || undefined,
       sortOrder: exam.data?.questions?.length ?? 0,
     })
   }
@@ -192,6 +241,40 @@ export default function CbtExamBuilderPage() {
           </div>
         </header>
 
+        {!!exam.data.sections?.length && (
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {exam.data.sections
+              .slice()
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((section) => {
+                const count =
+                  exam.data.questions?.filter(
+                    (question) => question.sectionId === section.id
+                  ).length ?? 0
+                return (
+                  <Card key={section.id} className="rounded-xl">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{section.title}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {count} question{count === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                        <Layers3 className="h-4 w-4 text-slate-400" />
+                      </div>
+                      {section.instructions && (
+                        <p className="mt-3 text-sm text-slate-600">
+                          {section.instructions}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+          </section>
+        )}
+
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -201,179 +284,314 @@ export default function CbtExamBuilderPage() {
               </p>
             </div>
             {isDraft && (
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Plus className="mr-2 h-4 w-4" /> Add question
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Add a question</DialogTitle>
-                    <DialogDescription>
-                      Answer keys are never included in the student examination response.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form className="space-y-5" onSubmit={submitQuestion}>
-                    <div className="space-y-2">
-                      <Label htmlFor="type">Question type</Label>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Layers3 className="mr-2 h-4 w-4" /> Add section
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add an examination section</DialogTitle>
+                      <DialogDescription>
+                        Sections organize longer papers and give candidates clearer
+                        context.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form
+                      className="space-y-4"
+                      onSubmit={(event) => {
+                        event.preventDefault()
+                        const form = new FormData(event.currentTarget)
+                        createSection.mutate({
+                          title: String(form.get("title") || ""),
+                          instructions:
+                            String(form.get("instructions") || "") || undefined,
+                          sortOrder: exam.data.sections?.length ?? 0,
+                        })
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <Label htmlFor="section-title">Title</Label>
+                        <Input id="section-title" name="title" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="section-instructions">Instructions</Label>
+                        <Textarea id="section-instructions" name="instructions" />
+                      </div>
+                      <Button className="w-full" disabled={createSection.isPending}>
+                        Add section
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={bankOpen} onOpenChange={setBankOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <BookOpen className="mr-2 h-4 w-4" /> Question bank
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>Question bank</DialogTitle>
+                      <DialogDescription>
+                        Search reusable questions and copy them into this draft paper.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
+                      <Input
+                        value={bankSearch}
+                        onChange={(event) => setBankSearch(event.target.value)}
+                        placeholder="Search question text or topic"
+                      />
                       <select
-                        id="type"
-                        value={type}
-                        onChange={(event) => {
-                          setType(event.target.value as CbtQuestionType)
-                          setCorrectAnswer("")
-                        }}
-                        className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                        value={bankSectionId}
+                        onChange={(event) => setBankSectionId(event.target.value)}
+                        className="h-10 rounded-md border bg-white px-3 text-sm"
                       >
-                        {QUESTION_TYPES.map((item) => (
-                          <option key={item.value} value={item.value}>
-                            {item.label}
+                        <option value="">No section</option>
+                        {(exam.data.sections ?? []).map((section) => (
+                          <option key={section.id} value={section.id}>
+                            {section.title}
                           </option>
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="body">Question</Label>
-                      <Textarea id="body" name="body" required className="min-h-28" />
-                    </div>
-                    {(type === "mcq" || type === "multiple_response") && (
-                      <div className="space-y-2">
-                        <Label htmlFor="options">Options, one per line</Label>
-                        <Textarea
-                          id="options"
-                          value={optionsText}
-                          onChange={(event) => setOptionsText(event.target.value)}
-                          required
-                          className="min-h-32"
-                          placeholder={"First option\nSecond option\nThird option"}
-                        />
-                        <p className="text-xs text-slate-500">
-                          Option IDs will be option-1, option-2 and so on.
-                        </p>
-                      </div>
-                    )}
-                    {type !== "essay" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="correct">Correct answer</Label>
-                        {type === "mcq" ? (
-                          <select
-                            id="correct"
-                            value={correctAnswer}
-                            onChange={(event) => setCorrectAnswer(event.target.value)}
-                            required
-                            className="h-10 w-full rounded-md border bg-white px-3 text-sm"
-                          >
-                            <option value="">Select the correct option</option>
-                            {optionLines.map((line, index) => (
-                              <option
-                                key={`${index}-${line}`}
-                                value={`option-${index + 1}`}
-                              >
-                                {line}
-                              </option>
-                            ))}
-                          </select>
-                        ) : type === "true_false" ? (
-                          <select
-                            id="correct"
-                            value={correctAnswer}
-                            onChange={(event) => setCorrectAnswer(event.target.value)}
-                            required
-                            className="h-10 w-full rounded-md border bg-white px-3 text-sm"
-                          >
-                            <option value="">Choose</option>
-                            <option value="true">True</option>
-                            <option value="false">False</option>
-                          </select>
-                        ) : type === "multiple_response" ? (
-                          <div className="space-y-2 rounded-lg border p-3">
-                            {!optionLines.length && (
-                              <p className="text-xs text-slate-500">
-                                Add the answer options first.
+                    <div className="space-y-3">
+                      {questionBank.data?.map((question) => (
+                        <div key={question.id} className="rounded-xl border p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline">{question.type}</Badge>
+                                <Badge variant="secondary">{question.difficulty}</Badge>
+                                {question.topic && (
+                                  <span className="text-xs text-slate-500">
+                                    {question.topic}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-3 text-sm font-medium whitespace-pre-wrap">
+                                {question.body}
                               </p>
-                            )}
-                            {optionLines.map((line, index) => {
-                              const optionId = `option-${index + 1}`
-                              const selected = correctAnswer.split(",").filter(Boolean)
-                              return (
-                                <label
-                                  key={`${index}-${line}`}
-                                  className="flex cursor-pointer items-center gap-3 text-sm"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selected.includes(optionId)}
-                                    onChange={(event) =>
-                                      setCorrectAnswer(
-                                        event.target.checked
-                                          ? [...selected, optionId].join(",")
-                                          : selected
-                                              .filter((id) => id !== optionId)
-                                              .join(",")
-                                      )
-                                    }
-                                  />
-                                  {line}
-                                </label>
-                              )
-                            })}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => importQuestion.mutate(question.id)}
+                              disabled={importQuestion.isPending}
+                            >
+                              <Plus className="mr-1 h-4 w-4" /> Add
+                            </Button>
                           </div>
-                        ) : (
-                          <Input
-                            id="correct"
-                            value={correctAnswer}
-                            onChange={(event) => setCorrectAnswer(event.target.value)}
-                            required
-                            placeholder="Expected answer"
-                          />
-                        )}
-                      </div>
-                    )}
-                    <div className="grid grid-cols-3 gap-3">
+                        </div>
+                      ))}
+                      {!questionBank.isLoading && !questionBank.data?.length && (
+                        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">
+                          No reusable questions match this search. Save a question from a
+                          draft paper to add it here.
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Plus className="mr-2 h-4 w-4" /> Add question
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Add a question</DialogTitle>
+                      <DialogDescription>
+                        Answer keys are never included in the student examination
+                        response.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form className="space-y-5" onSubmit={submitQuestion}>
                       <div className="space-y-2">
-                        <Label htmlFor="marks">Marks</Label>
-                        <Input
-                          id="marks"
-                          name="marks"
-                          type="number"
-                          min={0}
-                          step="0.5"
-                          defaultValue={1}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="difficulty">Difficulty</Label>
+                        <Label htmlFor="type">Question type</Label>
                         <select
-                          id="difficulty"
-                          name="difficulty"
-                          defaultValue="medium"
+                          id="type"
+                          value={type}
+                          onChange={(event) => {
+                            setType(event.target.value as CbtQuestionType)
+                            setCorrectAnswer("")
+                          }}
                           className="h-10 w-full rounded-md border bg-white px-3 text-sm"
                         >
-                          <option value="easy">Easy</option>
-                          <option value="medium">Medium</option>
-                          <option value="hard">Hard</option>
+                          {QUESTION_TYPES.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="topic">Topic</Label>
-                        <Input id="topic" name="topic" />
+                        <Label htmlFor="body">Question</Label>
+                        <Textarea id="body" name="body" required className="min-h-28" />
                       </div>
-                    </div>
-                    <Button
-                      className="w-full"
-                      type="submit"
-                      disabled={
-                        addQuestion.isPending ||
-                        (type === "multiple_response" && !correctAnswer)
-                      }
-                    >
-                      Add question
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                      {!!exam.data.sections?.length && (
+                        <div className="space-y-2">
+                          <Label htmlFor="sectionId">Section</Label>
+                          <select
+                            id="sectionId"
+                            name="sectionId"
+                            className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                          >
+                            <option value="">No section</option>
+                            {exam.data.sections
+                              .slice()
+                              .sort((a, b) => a.sortOrder - b.sortOrder)
+                              .map((section) => (
+                                <option key={section.id} value={section.id}>
+                                  {section.title}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
+                      {(type === "mcq" || type === "multiple_response") && (
+                        <div className="space-y-2">
+                          <Label htmlFor="options">Options, one per line</Label>
+                          <Textarea
+                            id="options"
+                            value={optionsText}
+                            onChange={(event) => setOptionsText(event.target.value)}
+                            required
+                            className="min-h-32"
+                            placeholder={"First option\nSecond option\nThird option"}
+                          />
+                          <p className="text-xs text-slate-500">
+                            Option IDs will be option-1, option-2 and so on.
+                          </p>
+                        </div>
+                      )}
+                      {type !== "essay" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="correct">Correct answer</Label>
+                          {type === "mcq" ? (
+                            <select
+                              id="correct"
+                              value={correctAnswer}
+                              onChange={(event) => setCorrectAnswer(event.target.value)}
+                              required
+                              className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                            >
+                              <option value="">Select the correct option</option>
+                              {optionLines.map((line, index) => (
+                                <option
+                                  key={`${index}-${line}`}
+                                  value={`option-${index + 1}`}
+                                >
+                                  {line}
+                                </option>
+                              ))}
+                            </select>
+                          ) : type === "true_false" ? (
+                            <select
+                              id="correct"
+                              value={correctAnswer}
+                              onChange={(event) => setCorrectAnswer(event.target.value)}
+                              required
+                              className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                            >
+                              <option value="">Choose</option>
+                              <option value="true">True</option>
+                              <option value="false">False</option>
+                            </select>
+                          ) : type === "multiple_response" ? (
+                            <div className="space-y-2 rounded-lg border p-3">
+                              {!optionLines.length && (
+                                <p className="text-xs text-slate-500">
+                                  Add the answer options first.
+                                </p>
+                              )}
+                              {optionLines.map((line, index) => {
+                                const optionId = `option-${index + 1}`
+                                const selected = correctAnswer.split(",").filter(Boolean)
+                                return (
+                                  <label
+                                    key={`${index}-${line}`}
+                                    className="flex cursor-pointer items-center gap-3 text-sm"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selected.includes(optionId)}
+                                      onChange={(event) =>
+                                        setCorrectAnswer(
+                                          event.target.checked
+                                            ? [...selected, optionId].join(",")
+                                            : selected
+                                                .filter((id) => id !== optionId)
+                                                .join(",")
+                                        )
+                                      }
+                                    />
+                                    {line}
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <Input
+                              id="correct"
+                              value={correctAnswer}
+                              onChange={(event) => setCorrectAnswer(event.target.value)}
+                              required
+                              placeholder="Expected answer"
+                            />
+                          )}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="marks">Marks</Label>
+                          <Input
+                            id="marks"
+                            name="marks"
+                            type="number"
+                            min={0}
+                            step="0.5"
+                            defaultValue={1}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="difficulty">Difficulty</Label>
+                          <select
+                            id="difficulty"
+                            name="difficulty"
+                            defaultValue="medium"
+                            className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                          >
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="topic">Topic</Label>
+                          <Input id="topic" name="topic" />
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full"
+                        type="submit"
+                        disabled={
+                          addQuestion.isPending ||
+                          (type === "multiple_response" && !correctAnswer)
+                        }
+                      >
+                        Add question
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             )}
           </div>
 
@@ -406,6 +624,13 @@ export default function CbtExamBuilderPage() {
                         <span className="text-xs text-slate-500">
                           {Number(question.marks)} marks
                         </span>
+                        {question.sectionId && (
+                          <Badge variant="secondary">
+                            {exam.data.sections?.find(
+                              (section) => section.id === question.sectionId
+                            )?.title || "Section"}
+                          </Badge>
+                        )}
                         {question.correctAnswer && (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Answer key set
@@ -424,6 +649,17 @@ export default function CbtExamBuilderPage() {
                           ))}
                         </ol>
                       ) : null}
+                      {isDraft && (
+                        <Button
+                          className="mt-4"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => saveToBank.mutate(question.id)}
+                          disabled={saveToBank.isPending}
+                        >
+                          <Save className="mr-2 h-4 w-4" /> Save to question bank
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

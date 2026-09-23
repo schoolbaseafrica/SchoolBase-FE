@@ -25,6 +25,16 @@ export interface CbtQuestion {
   difficulty: "easy" | "medium" | "hard"
   correctAnswer?: string | null
   explanation?: string | null
+  sectionId?: string | null
+  sortOrder?: number
+}
+
+export interface CbtExamSection {
+  id: string
+  title: string
+  instructions: string | null
+  sortOrder: number
+  questionLimit: number | null
 }
 
 export interface CbtAttemptSummary {
@@ -54,6 +64,7 @@ export interface CbtExamSummary {
   questionCount?: number
   attempts?: CbtAttemptSummary[]
   questions?: CbtQuestion[]
+  sections?: CbtExamSection[]
   classes?: Array<{ id: string; name: string; arm?: string }>
 }
 
@@ -73,6 +84,7 @@ export interface CbtAttempt {
   lastSavedAt: string | null
   exam: Pick<CbtExamSummary, "id" | "name" | "instructions" | "timeLimitMinutes"> & {
     shuffleOptions: boolean
+    sections?: Array<Pick<CbtExamSection, "id" | "title" | "instructions" | "sortOrder">>
   }
   questions: CbtQuestion[]
   answers?: CbtSavedAnswer[]
@@ -325,6 +337,30 @@ export const CbtAPI = {
       method: "POST",
       data,
     }).then(unwrap),
+
+  createSection: (examId: string, data: Record<string, unknown>) =>
+    apiFetch(`/cbt/exams/${examId}/sections`, { method: "POST", data }).then(unwrap),
+
+  listQuestionBank: (search?: string) =>
+    apiFetch<ApiEnvelope<CbtQuestion[]> | CbtQuestion[]>("/cbt/question-bank", {
+      params: { search: search || undefined },
+    }).then(unwrap),
+
+  saveQuestionToBank: (questionId: string) =>
+    apiFetch<ApiEnvelope<CbtQuestion> | CbtQuestion>(
+      `/cbt/questions/${questionId}/save-to-bank`,
+      { method: "POST" }
+    ).then(unwrap),
+
+  importBankQuestion: (
+    examId: string,
+    questionId: string,
+    data: { sectionId?: string; sortOrder?: number }
+  ) =>
+    apiFetch<ApiEnvelope<CbtQuestion> | CbtQuestion>(
+      `/cbt/exams/${examId}/questions/import/${questionId}`,
+      { method: "POST", data }
+    ).then(unwrap),
 }
 
 export const PublicCbtAPI = {

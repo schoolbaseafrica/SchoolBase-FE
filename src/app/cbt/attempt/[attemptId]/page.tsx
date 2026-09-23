@@ -262,14 +262,35 @@ export default function PublicCbtAttemptPage() {
           const serverAnswer = attempt.data.answers?.find(
             (item) => item.questionId === question.id
           )
+          const section = attempt.data.exam.sections?.find(
+            (item) => item.id === question.sectionId
+          )
+          const sectionStarts =
+            section &&
+            (index === 0 ||
+              attempt.data.questions[index - 1]?.sectionId !== question.sectionId)
           return (
             <Card key={question.id} className="rounded-2xl">
               <CardContent className="space-y-5 p-5 md:p-7">
                 <div className="flex justify-between gap-4">
-                  <p className="font-medium">
-                    <span className="mr-2 text-slate-400">{index + 1}.</span>
-                    {question.body}
-                  </p>
+                  <div>
+                    {sectionStarts && (
+                      <div className="mb-3 rounded-lg bg-slate-100 p-3">
+                        <p className="text-xs font-semibold text-slate-700">
+                          {section.title}
+                        </p>
+                        {section.instructions && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {section.instructions}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <p className="font-medium">
+                      <span className="mr-2 text-slate-400">{index + 1}.</span>
+                      {question.body}
+                    </p>
+                  </div>
                   <Badge variant="secondary">
                     {Number(question.marks)} mark{Number(question.marks) === 1 ? "" : "s"}
                   </Badge>

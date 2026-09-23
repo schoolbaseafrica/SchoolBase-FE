@@ -363,6 +363,9 @@ export default function CbtAttemptPage() {
 
   const questions = attempt.data.questions
   const current = questions[currentIndex]
+  const currentSection = attempt.data.exam.sections?.find(
+    (section) => section.id === current.sectionId
+  )
   const answeredCount = questions.filter((question) =>
     hasAnswer(answers[question.id]?.value)
   ).length
@@ -442,6 +445,18 @@ export default function CbtAttemptPage() {
                 <p className="text-sm font-medium text-[var(--primary)]">
                   Question {currentIndex + 1} of {questions.length}
                 </p>
+                {currentSection && (
+                  <div className="mt-1">
+                    <p className="text-xs font-medium text-slate-700">
+                      {currentSection.title}
+                    </p>
+                    {currentSection.instructions && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {currentSection.instructions}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {current.topic && (
                   <p className="mt-1 text-xs text-slate-500">{current.topic}</p>
                 )}
