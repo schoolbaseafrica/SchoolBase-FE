@@ -143,6 +143,15 @@ export default function CbtAttemptReviewPage() {
     },
     onError: (error: Error) => toast.error(error.message || "Could not publish result"),
   })
+  const acknowledgeEvent = useMutation({
+    mutationFn: (eventId: string) => CbtAPI.acknowledgeAttemptEvent(eventId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["cbt", "attempt-review", attemptId],
+      })
+      toast.success("Monitoring event acknowledged")
+    },
+  })
 
   if (review.isLoading) {
     return (
@@ -246,9 +255,25 @@ export default function CbtAttemptReviewPage() {
                     <span className="font-medium">
                       {event.eventType.replaceAll("_", " ")}
                     </span>
-                    <span className="text-xs text-slate-500">
-                      {new Date(event.createdAt).toLocaleString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">
+                        {new Date(event.createdAt).toLocaleString()}
+                      </span>
+                      {(event.eventType === "connection_lost" ||
+                        event.eventType === "visibility_hidden") &&
+                        !event.metadata?.acknowledgedAt && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => acknowledgeEvent.mutate(event.id)}
+                          >
+                            Acknowledge
+                          </Button>
+                        )}
+                      {event.metadata?.acknowledgedAt && (
+                        <Badge variant="secondary">Reviewed</Badge>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

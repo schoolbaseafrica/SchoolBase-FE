@@ -680,6 +680,7 @@ export default function CbtExamBuilderPage() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[
                 ["Started", attempts.data?.summary.started ?? 0],
+                ["Not started", attempts.data?.summary.notStarted ?? 0],
                 ["In progress", attempts.data?.summary.inProgress ?? 0],
                 ["Submitted", attempts.data?.summary.submitted ?? 0],
                 ["Pending marking", attempts.data?.summary.pendingMarking ?? 0],
@@ -709,6 +710,7 @@ export default function CbtExamBuilderPage() {
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Answered</th>
                       <th className="px-4 py-3">Activity</th>
+                      <th className="px-4 py-3">Timing</th>
                       <th className="px-4 py-3">Score</th>
                       <th className="px-4 py-3">Action</th>
                     </tr>
@@ -723,6 +725,28 @@ export default function CbtExamBuilderPage() {
                           <p className="text-xs text-slate-500">
                             {attempt.registrationNumber || "No registration number"}
                           </p>
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          <p>
+                            {attempt.connectionState === "offline"
+                              ? "Offline / reconnecting"
+                              : attempt.status === "submitted"
+                                ? "Completed"
+                                : "Online"}
+                          </p>
+                          <p className="text-slate-500">
+                            Last activity:{" "}
+                            {new Date(
+                              attempt.lastEventAt ??
+                                attempt.lastSavedAt ??
+                                attempt.startedAt
+                            ).toLocaleString()}
+                          </p>
+                          {attempt.status !== "submitted" && (
+                            <p className="text-slate-500">
+                              Due: {new Date(attempt.deadlineAt).toLocaleString()}
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <Badge
@@ -775,11 +799,95 @@ export default function CbtExamBuilderPage() {
                     ))}
                     {!attempts.isLoading && !attempts.data?.attempts.length && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                        <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
                           No student has started this examination.
                         </td>
                       </tr>
                     )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card className="p-5">
+                <h3 className="font-semibold">Score analytics</h3>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                  {[
+                    ["Completion", `${attempts.data?.summary.completionRate ?? 0}%`],
+                    [
+                      "Pass rate",
+                      attempts.data?.summary.passRate == null
+                        ? "—"
+                        : `${attempts.data.summary.passRate}%`,
+                    ],
+                    [
+                      "Median",
+                      attempts.data?.summary.medianPercent == null
+                        ? "—"
+                        : `${attempts.data.summary.medianPercent}%`,
+                    ],
+                    [
+                      "Highest",
+                      attempts.data?.summary.highestPercent == null
+                        ? "—"
+                        : `${attempts.data.summary.highestPercent}%`,
+                    ],
+                    [
+                      "Lowest",
+                      attempts.data?.summary.lowestPercent == null
+                        ? "—"
+                        : `${attempts.data.summary.lowestPercent}%`,
+                    ],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">{label}</p>
+                      <p className="font-semibold">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-5">
+                <h3 className="font-semibold">Score distribution</h3>
+                <div className="mt-4 space-y-2">
+                  {attempts.data?.scoreDistribution.map((bucket) => (
+                    <div
+                      key={bucket.label}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span>{bucket.label}%</span>
+                      <span className="font-semibold">{bucket.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+            <Card className="overflow-hidden rounded-xl p-5">
+              <h3 className="font-semibold">Question performance</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b text-slate-500">
+                      <th className="py-2">Question</th>
+                      <th>Topic / section</th>
+                      <th>Correct</th>
+                      <th>Incorrect</th>
+                      <th>Skipped</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attempts.data?.questionAnalytics.map((item) => (
+                      <tr key={item.id} className="border-b">
+                        <td className="max-w-md py-3">{item.body}</td>
+                        <td>
+                          {item.topic || "—"}
+                          {item.sectionTitle ? ` · ${item.sectionTitle}` : ""}
+                          <p className="text-xs text-slate-500">{item.difficulty}</p>
+                        </td>
+                        <td>{item.correctRate == null ? "—" : `${item.correctRate}%`}</td>
+                        <td>{item.incorrectCount}</td>
+                        <td>{item.skippedCount}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

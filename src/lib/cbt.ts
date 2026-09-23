@@ -100,12 +100,19 @@ export interface CbtAttempt {
 export interface CbtExamAttempts {
   summary: {
     started: number
+    expectedCandidates: number
+    notStarted: number
     inProgress: number
     submitted: number
     pendingMarking: number
     published: number
     flagged: number
     averagePercent: number | null
+    medianPercent: number | null
+    highestPercent: number | null
+    lowestPercent: number | null
+    passRate: number | null
+    completionRate: number
   }
   attempts: Array<{
     id: string
@@ -127,6 +134,22 @@ export interface CbtExamAttempts {
     visibilityHiddenCount: number
     lastEventAt: string | null
     applicantEmail: string | null
+    deadlineAt: string
+    connectionState: "online" | "offline"
+  }>
+  scoreDistribution: Array<{ label: string; count: number }>
+  questionAnalytics: Array<{
+    id: string
+    body: string
+    topic: string | null
+    difficulty: string
+    sectionTitle: string | null
+    attemptCount: number
+    answeredCount: number
+    correctCount: number
+    skippedCount: number
+    incorrectCount: number
+    correctRate: number | null
   }>
 }
 
@@ -329,6 +352,8 @@ export const CbtAPI = {
       `/cbt/attempts/${attemptId}/publish-result`,
       { method: "POST" }
     ).then(unwrap),
+  acknowledgeAttemptEvent: (eventId: string) =>
+    apiFetch(`/cbt/attempt-events/${eventId}/acknowledge`, { method: "PATCH" }),
 
   createExam: (data: Record<string, unknown>) =>
     apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>("/cbt/exams", {
