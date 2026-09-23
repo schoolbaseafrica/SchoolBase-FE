@@ -34,6 +34,7 @@ const StatCard = ({
 
 import { useFeesAnalytics } from "../_hooks/use-fees-analytics"
 import { Skeleton } from "@/components/ui/skeleton"
+import { formatNaira } from "@/lib/format-money"
 
 const StatsCards = ({ sessionId, termId }: { sessionId?: string; termId?: string }) => {
   const { data, isLoading } = useFeesAnalytics({
@@ -87,7 +88,7 @@ const StatsCards = ({ sessionId, termId }: { sessionId?: string; termId?: string
             isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : stat.isCurrency ? (
-              `₦${(stat.value || 0).toLocaleString()}`
+              formatNaira(stat.value as number | string | undefined)
             ) : (
               (stat.value || 0).toString()
             )

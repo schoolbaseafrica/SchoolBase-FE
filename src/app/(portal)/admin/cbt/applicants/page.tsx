@@ -47,9 +47,11 @@ export default function CbtApplicantsPage() {
         ? "admitted"
         : item.hasPassed
           ? "passed"
-          : item.attemptCount > item.completedAttemptCount
-            ? "in_progress"
-            : "awaiting_pass"
+          : item.hasPendingMarking
+            ? "pending_marking"
+            : item.attemptCount > item.completedAttemptCount
+              ? "in_progress"
+              : "review_required"
       return matchesSearch && (status === "all" || status === applicantStatus)
     })
   }, [applicants.data, search, status])
@@ -123,7 +125,8 @@ export default function CbtApplicantsPage() {
                   <SelectItem value="all">All applicants</SelectItem>
                   <SelectItem value="passed">Passed</SelectItem>
                   <SelectItem value="in_progress">In progress</SelectItem>
-                  <SelectItem value="awaiting_pass">Awaiting pass</SelectItem>
+                  <SelectItem value="pending_marking">Pending marking</SelectItem>
+                  <SelectItem value="review_required">Review required</SelectItem>
                   <SelectItem value="admitted">Admitted</SelectItem>
                 </SelectContent>
               </Select>
@@ -155,7 +158,7 @@ export default function CbtApplicantsPage() {
                     <tr>
                       <th className="py-3">Applicant</th>
                       <th>External exam</th>
-                      <th>Applied</th>
+                      <th>Latest attempt</th>
                       <th>Attempts</th>
                       <th>Best score</th>
                       <th>Status</th>
@@ -181,7 +184,13 @@ export default function CbtApplicantsPage() {
                             {item.termName ? ` · ${item.termName}` : " · Whole session"}
                           </p>
                         </td>
-                        <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <p>{new Date(item.latestAttemptAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-slate-500">
+                            Profile created{" "}
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
+                        </td>
                         <td>{item.attemptCount}</td>
                         <td>
                           {item.bestPercentage === null ? "—" : `${item.bestPercentage}%`}
@@ -192,9 +201,13 @@ export default function CbtApplicantsPage() {
                               ? "Admitted"
                               : item.hasPassed
                                 ? "Passed"
-                                : item.attemptCount > item.completedAttemptCount
-                                  ? "In progress"
-                                  : "Awaiting pass"}
+                                : item.hasPendingMarking
+                                  ? "Pending marking"
+                                  : item.attemptCount > item.completedAttemptCount
+                                    ? "In progress"
+                                    : item.passMarkConfigured
+                                      ? "Review required"
+                                      : "Pass mark not set"}
                           </Badge>
                         </td>
                       </tr>

@@ -9,6 +9,7 @@ import { Banknote } from "lucide-react"
 import { useFeesAnalytics } from "../../fees-record/_hooks/use-fees-analytics"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { formatCompactNaira, toMoneyNumber } from "@/lib/format-money"
 
 // ✅ REQUIRED: ChartContainer config
 const chartConfig = {
@@ -25,8 +26,8 @@ const FeesReportChart = () => {
   const totals = analyticsData?.data?.data?.totals
 
   // Use real data from API, fallback to 0 if not available
-  const paid = totals?.total_paid || 0
-  const unpaid = totals?.outstanding_balance || 0
+  const paid = toMoneyNumber(totals?.total_paid)
+  const unpaid = toMoneyNumber(totals?.outstanding_balance)
   const total = paid + unpaid
 
   const chartData = [
@@ -96,17 +97,17 @@ const FeesReportChart = () => {
                         >
                           <tspan
                             x={viewBox.cx}
-                            y={viewBox.cy}
-                            className="fill-foreground text-xl font-semibold"
+                            y={viewBox.cy && viewBox.cy - 9}
+                            className="fill-muted-foreground text-sm font-medium"
                           >
                             Total
                           </tspan>
                           <tspan
                             x={viewBox.cx}
                             y={viewBox.cy && viewBox.cy + 22}
-                            className="fill-foreground text-2xl font-bold"
+                            className="fill-foreground text-base font-bold"
                           >
-                            ₦{(total / 1_000_000).toFixed(0)}M
+                            {formatCompactNaira(total)}
                           </tspan>
                         </text>
                       )
@@ -121,14 +122,14 @@ const FeesReportChart = () => {
               <div className="flex flex-col items-start">
                 <span className="text-muted-foreground text-sm">Paid</span>
                 <span className="font-semibold text-green-600">
-                  ₦{(paid / 1_000_000).toFixed(1)}M
+                  {formatCompactNaira(paid)}
                 </span>
               </div>
 
               <div className="flex flex-col items-end">
                 <span className="text-muted-foreground text-sm">Unpaid</span>
                 <span className="font-semibold text-red-500">
-                  ₦{(unpaid / 1_000_000).toFixed(1)}M
+                  {formatCompactNaira(unpaid)}
                 </span>
               </div>
             </div>

@@ -60,6 +60,7 @@ export default function CbtExamBuilderPage() {
     queryKey: ["cbt", "manage", "exam", examId, "attempts"],
     queryFn: () => CbtAPI.getExamAttempts(examId),
     enabled: exam.data?.status === "published",
+    refetchInterval: exam.data?.status === "published" ? 15_000 : false,
   })
   const questionBank = useQuery({
     queryKey: ["cbt", "question-bank", bankSearch],
@@ -676,12 +677,13 @@ export default function CbtExamBuilderPage() {
                 Track ongoing attempts without exposing answers or interrupting students.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[
                 ["Started", attempts.data?.summary.started ?? 0],
                 ["In progress", attempts.data?.summary.inProgress ?? 0],
                 ["Submitted", attempts.data?.summary.submitted ?? 0],
                 ["Pending marking", attempts.data?.summary.pendingMarking ?? 0],
+                ["Needs attention", attempts.data?.summary.flagged ?? 0],
                 [
                   "Average",
                   attempts.data?.summary.averagePercent === null ||
@@ -706,6 +708,7 @@ export default function CbtExamBuilderPage() {
                       <th className="px-4 py-3">Student</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Answered</th>
+                      <th className="px-4 py-3">Activity</th>
                       <th className="px-4 py-3">Score</th>
                       <th className="px-4 py-3">Action</th>
                     </tr>
@@ -730,7 +733,22 @@ export default function CbtExamBuilderPage() {
                             {attempt.status === "submitted" ? "Submitted" : "In progress"}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3">{attempt.answeredQuestions}</td>
+                        <td className="px-4 py-3">
+                          {attempt.answeredQuestions}/{attempt.questionCount}
+                        </td>
+                        <td className="px-4 py-3">
+                          {attempt.connectionLostCount ||
+                          attempt.visibilityHiddenCount ? (
+                            <div className="text-xs text-amber-700">
+                              <p>
+                                {attempt.connectionLostCount} connection interruption(s)
+                              </p>
+                              <p>{attempt.visibilityHiddenCount} page exit(s)</p>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-emerald-700">No alerts</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-medium">
                           {attempt.manualGradingRequired
                             ? "Pending marking"
@@ -757,7 +775,7 @@ export default function CbtExamBuilderPage() {
                     ))}
                     {!attempts.isLoading && !attempts.data?.attempts.length && (
                       <tr>
-                        <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                        <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
                           No student has started this examination.
                         </td>
                       </tr>

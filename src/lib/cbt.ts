@@ -104,6 +104,7 @@ export interface CbtExamAttempts {
     submitted: number
     pendingMarking: number
     published: number
+    flagged: number
     averagePercent: number | null
   }
   attempts: Array<{
@@ -121,6 +122,11 @@ export interface CbtExamAttempts {
     registrationNumber: string | null
     studentName: string
     answeredQuestions: number
+    questionCount: number
+    connectionLostCount: number
+    visibilityHiddenCount: number
+    lastEventAt: string | null
+    applicantEmail: string | null
   }>
 }
 
@@ -186,6 +192,9 @@ export interface CbtApplicantSummary {
   bestPercentage: number | null
   hasPassed: boolean
   latestExamName: string | null
+  latestAttemptAt: string
+  hasPendingMarking: boolean
+  passMarkConfigured: boolean
 }
 
 export interface CbtApplicantDetail extends CbtApplicantSummary {
