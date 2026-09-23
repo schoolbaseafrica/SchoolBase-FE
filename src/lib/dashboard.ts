@@ -53,6 +53,18 @@ export interface TodayActivitiesData {
   summary: ActivitySummary
 }
 
+export interface AdminDashboardMetadata {
+  total_students: number
+  total_teachers: number
+  total_parents: number
+}
+
+export interface ResolvedDashboardData {
+  dashboard: string
+  modules: unknown[]
+  metadata: AdminDashboardMetadata
+}
+
 interface ResponsePack<T> {
   status_code: number
   message: string
@@ -64,6 +76,12 @@ interface ResponsePack<T> {
 // --------------------
 
 export const DashboardAPI = {
+  resolve: () =>
+    apiFetch<ResponsePack<ResolvedDashboardData>>(
+      "/dashboard/resolve",
+      { method: "GET" },
+      true
+    ),
   getTodayActivities: () =>
     apiFetch<ResponsePack<TodayActivitiesData>>(
       "/dashboard/admin/today-activities",

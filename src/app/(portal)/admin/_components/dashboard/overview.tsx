@@ -3,6 +3,7 @@
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import StatCard, { StatItem } from "@/components/dashboard/stat-card"
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import TodayActivities from "./today-activities-table"
 
 import { Button } from "@/components/ui/button"
@@ -17,18 +18,25 @@ import {
 import NotePad from "../../../../../../public/svgs/note-pad"
 import { useTodayActivities } from "../../_hooks/today-activity"
 import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
-import { useStudentsCount } from "../../students/_hooks/use-students"
-import { useTeachersCount } from "../../teachers/_hooks/use-teachers"
 import FeesReportChart from "./fees-report-chart"
 import StudentGrowthChart from "./student-growth-chart"
 import { useDashboardStore } from "@/store/dashboard-store"
 import { useShallow } from "zustand/react/shallow"
 // Import the Activity type
-import type { Activity as DashboardActivity } from "@/lib/dashboard"
+import { DashboardAPI, type Activity as DashboardActivity } from "@/lib/dashboard"
+import { useActiveAcademicSession } from "../../class-management/session/_hooks/use-session"
+import { useActiveAcademicTerm } from "../../class-management/_hooks/use-academic-term"
 
 const Overview = () => {
-  const { data: teacherTotal, isLoading: teacherLoading } = useTeachersCount()
-  const { data: studentTotal, isLoading: studentIsLoading } = useStudentsCount()
+  const { data: resolvedDashboard, isLoading: summaryLoading } = useQuery({
+    queryKey: ["dashboard", "active-period-summary"],
+    queryFn: () => DashboardAPI.resolve(),
+  })
+  const { data: activeSession } = useActiveAcademicSession()
+  const { data: activeTerm } = useActiveAcademicTerm()
+  const metadata = resolvedDashboard?.data?.metadata
+  const teacherTotal = metadata?.total_teachers ?? 0
+  const studentTotal = metadata?.total_students ?? 0
   // Fetch just count for classes
   const { data: classesData, isLoading: classLoading } = useGetClassesInfo({
     limit: 1,
@@ -86,28 +94,23 @@ const Overview = () => {
     return num.toString()
   }
 
-  const formattedTeachers = teacherTotal ? formatNumber(teacherTotal) : "0"
-  const formattedStudents = studentIsLoading
-    ? "..."
-    : studentTotal
-      ? formatNumber(studentTotal)
-      : "0"
+  const formattedTeachers = summaryLoading ? "..." : formatNumber(teacherTotal)
+  const formattedStudents = summaryLoading ? "..." : formatNumber(studentTotal)
   const formattedClass = classLoading ? "..." : formatNumber(classTotal)
 
-  const isLoading =
-    teacherLoading || studentIsLoading || classLoading || activitiesLoading
+  const isLoading = summaryLoading || classLoading || activitiesLoading
 
   const dashboardStats: StatItem[] = useMemo(
     () => [
       {
         name: "Total Students",
-        quantity: studentIsLoading ? "..." : formattedStudents,
+        quantity: formattedStudents,
         percentage: 10,
         icon: GraduationCap,
       },
       {
         name: "Total Teachers",
-        quantity: teacherLoading ? "..." : formattedTeachers,
+        quantity: formattedTeachers,
         percentage: 10,
         icon: Users,
       },
@@ -119,22 +122,24 @@ const Overview = () => {
         icon: Book,
       },
     ],
-    [
-      teacherLoading,
-      studentIsLoading,
-      classLoading,
-      formattedTeachers,
-      formattedStudents,
-      formattedClass,
-    ]
+    [classLoading, formattedTeachers, formattedStudents, formattedClass]
   )
 
   return (
     <div className="bg-[#FAFAFA] px-4 pt-4 sm:px-6 sm:pt-6">
       <DashboardTitle
         heading="Dashboard"
-        description="Welcome back! Here is an overview of your school"
+        description="Welcome back! Here is an overview of your active academic period"
       />
+
+      <div className="mt-3 mb-5 flex flex-wrap gap-2 text-sm">
+        <span className="rounded-full border bg-white px-3 py-1 font-medium">
+          Session: {activeSession?.name ?? "No active session"}
+        </span>
+        <span className="rounded-full border bg-white px-3 py-1 font-medium">
+          Term: {activeTerm?.name ?? "No active term"}
+        </span>
+      </div>
 
       <StatCard stats={dashboardStats} isLoading={isLoading} />
 

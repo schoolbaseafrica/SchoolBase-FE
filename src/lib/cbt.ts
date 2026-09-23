@@ -1,6 +1,8 @@
 import { apiFetch } from "./api/client"
 
 export type CbtExamStatus = "draft" | "published" | "archived"
+export type CbtExamType = "in_school" | "entrance"
+export type CbtProctoringMode = "none" | "human" | "recorded" | "both"
 export type CbtQuestionType =
   | "mcq"
   | "multiple_response"
@@ -37,6 +39,8 @@ export interface CbtExamSummary {
   name: string
   instructions: string | null
   status: CbtExamStatus
+  examType: CbtExamType
+  proctoringMode: CbtProctoringMode
   timeLimitMinutes: number
   maxAttempts: number
   availableFrom: string | null
@@ -93,6 +97,39 @@ export interface CbtExamAttempts {
   }>
 }
 
+export interface CbtApplicantSummary {
+  id: string
+  fullName: string
+  email: string
+  phone: string | null
+  createdAt: string
+  admittedAt: string | null
+  studentId: string | null
+  intakeName: string
+  attemptCount: number
+  bestScore: number | null
+}
+
+export interface CbtApplicantDetail extends CbtApplicantSummary {
+  intake: { id: string; name: string }
+  attempts: Array<{
+    id: string
+    status: "in_progress" | "submitted"
+    score: number | null
+    totalMarks: number
+    percentage: number | null
+    startedAt: string
+    submittedAt: string | null
+    exam: CbtExamSummary
+  }>
+}
+
+export interface PublicCbtSession {
+  accessToken: string
+  candidate: { fullName: string; email: string }
+  attempt: CbtAttempt
+}
+
 type ApiEnvelope<T> = { data: T; message?: string; status_code?: number }
 
 function unwrap<T>(response: ApiEnvelope<T> | T): T {
@@ -142,8 +179,21 @@ export const CbtAPI = {
       data: { eventType },
     }),
 
-  listExams: () =>
-    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/cbt/exams").then(unwrap),
+  listExams: (examType?: CbtExamType) =>
+    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>(
+      `/cbt/exams${examType ? `?examType=${examType}` : ""}`
+    ).then(unwrap),
+
+  listApplicants: () =>
+    apiFetch<ApiEnvelope<CbtApplicantSummary[]> | CbtApplicantSummary[]>(
+      "/cbt/applicants"
+    ).then(unwrap),
+  getApplicant: (applicantId: string) =>
+    apiFetch<ApiEnvelope<CbtApplicantDetail> | CbtApplicantDetail>(
+      `/cbt/applicants/${applicantId}`
+    ).then(unwrap),
+  admitApplicant: (applicantId: string) =>
+    apiFetch(`/cbt/applicants/${applicantId}/admit`, { method: "POST" }),
 
   getExam: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(`/cbt/exams/${examId}`).then(
@@ -174,4 +224,61 @@ export const CbtAPI = {
       method: "POST",
       data,
     }).then(unwrap),
+}
+
+export const PublicCbtAPI = {
+  listExams: () =>
+    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/public/cbt/exams").then(
+      unwrap
+    ),
+  getExam: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(
+      `/public/cbt/exams/${examId}`
+    ).then(unwrap),
+  startAttempt: (
+    examId: string,
+    candidate: { fullName: string; email: string; phone?: string }
+  ) =>
+    apiFetch<ApiEnvelope<PublicCbtSession> | PublicCbtSession>(
+      `/public/cbt/exams/${examId}/attempts`,
+      { method: "POST", data: candidate }
+    ).then(unwrap),
+  getAttempt: (attemptId: string, token: string) =>
+    apiFetch<ApiEnvelope<CbtAttempt> | CbtAttempt>(`/public/cbt/attempts/${attemptId}`, {
+      headers: { "X-CBT-Access-Token": token },
+    }).then(unwrap),
+  saveAnswer: (
+    attemptId: string,
+    questionId: string,
+    token: string,
+    answer: { value: unknown },
+    revision: number
+  ) =>
+    apiFetch<ApiEnvelope<CbtSavedAnswer> | CbtSavedAnswer>(
+      `/public/cbt/attempts/${attemptId}/answers/${questionId}`,
+      {
+        method: "PATCH",
+        headers: { "X-CBT-Access-Token": token },
+        data: { answer, revision },
+      }
+    ).then(unwrap),
+  recordEvent: (
+    attemptId: string,
+    token: string,
+    eventType:
+      | "connection_lost"
+      | "connection_restored"
+      | "visibility_hidden"
+      | "visibility_visible"
+  ) =>
+    apiFetch(`/public/cbt/attempts/${attemptId}/events`, {
+      method: "POST",
+      headers: { "X-CBT-Access-Token": token },
+      data: { eventType },
+    }),
+  submitAttempt: (attemptId: string, token: string) =>
+    apiFetch(`/public/cbt/attempts/${attemptId}/submit`, {
+      method: "POST",
+      headers: { "X-CBT-Access-Token": token },
+    }),
 }

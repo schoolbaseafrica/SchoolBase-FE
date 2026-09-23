@@ -68,7 +68,16 @@ const mainItems = [
     ],
   },
   { title: "Results", url: "/admin/results", icon: Calendar },
-  { title: "Examinations", url: "/admin/cbt", icon: ClipboardCheck },
+  {
+    title: "CBT",
+    url: "/admin/cbt",
+    icon: ClipboardCheck,
+    subItems: [
+      { title: "Internal Exams", url: "/admin/cbt/internal" },
+      { title: "External Exams", url: "/admin/cbt/external" },
+      { title: "Applicants", url: "/admin/cbt/applicants" },
+    ],
+  },
   { title: "Admins", url: "/admin/admins", icon: Users },
   { title: "Teachers", url: "/admin/teachers", icon: Users },
   { title: "Students", url: "/admin/students", icon: GraduationCap },

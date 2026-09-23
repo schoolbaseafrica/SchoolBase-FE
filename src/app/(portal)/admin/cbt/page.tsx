@@ -1,5 +1,5 @@
-import { CbtManagement } from "@/components/cbt/cbt-management"
+import { redirect } from "next/navigation"
 
 export default function AdminCbtPage() {
-  return <CbtManagement />
+  redirect("/admin/cbt/internal")
 }

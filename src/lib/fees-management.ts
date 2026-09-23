@@ -113,8 +113,12 @@ interface ResponsePack<T> {
 // ----------------------
 export const FeesAPI = {
   // Get all fee components
-  getAll: (params?: { page?: number; limit?: number }) =>
-    apiFetch<FeePaginationResponse>("/fees", { params }, true),
+  getAll: (params?: {
+    page?: number
+    limit?: number
+    session_id?: string
+    term_id?: string
+  }) => apiFetch<FeePaginationResponse>("/fees", { params }, true),
 
   // Get one fee component
   getOne: (id: string) =>
@@ -175,7 +179,9 @@ export const FeesAPI = {
 
   // Assign fee to students
   assignStudents: (id: string, studentIds: string[]) =>
-    apiFetch<ResponsePack<{ assigned: number; already_assigned: number; failed: number }>>(
+    apiFetch<
+      ResponsePack<{ assigned: number; already_assigned: number; failed: number }>
+    >(
       `/fees/${id}/assign-students`,
       {
         method: "POST",

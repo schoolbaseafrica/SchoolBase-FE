@@ -22,21 +22,23 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { CbtAPI } from "@/lib/cbt"
+import { CbtAPI, CbtExamType, CbtProctoringMode } from "@/lib/cbt"
 import { ClassesAPI } from "@/lib/classes"
 
-export function CbtManagement() {
+export function CbtManagement({ examType }: { examType: CbtExamType }) {
+  const external = examType === "entrance"
   const router = useRouter()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const exams = useQuery({
-    queryKey: ["cbt", "manage", "exams"],
-    queryFn: CbtAPI.listExams,
+    queryKey: ["cbt", "manage", "exams", examType],
+    queryFn: () => CbtAPI.listExams(examType),
   })
   const classes = useQuery({
     queryKey: ["classes", "cbt-builder"],
     queryFn: () => ClassesAPI.getAll({ limit: 100 }),
+    enabled: !external,
   })
   const classOptions = useMemo(
     () =>
@@ -73,6 +75,8 @@ export function CbtManagement() {
       shuffleQuestions: true,
       shuffleOptions: true,
       showResultImmediately: false,
+      examType,
+      proctoringMode: String(form.get("proctoringMode")) as CbtProctoringMode,
     })
   }
 
@@ -85,10 +89,12 @@ export function CbtManagement() {
               <BookOpenCheck className="h-4 w-4" /> Assessment workspace
             </div>
             <h1 className="mt-2 text-2xl font-semibold text-slate-950 md:text-3xl">
-              Examinations
+              {external ? "External Exams" : "Internal Exams"}
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Build, schedule and monitor reliable computer-based examinations.
+              {external
+                ? "Publish entrance tests for applicants and monitor their results."
+                : "Build, schedule and monitor assessments for enrolled students."}
             </p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -163,37 +169,56 @@ export function CbtManagement() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Assigned classes</Label>
-                  <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border p-2">
-                    {classOptions.map((item) => (
-                      <label
-                        key={item.id}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-50"
-                      >
-                        <Checkbox
-                          checked={selectedClasses.includes(item.id)}
-                          onCheckedChange={(checked) =>
-                            setSelectedClasses((current) =>
-                              checked
-                                ? [...current, item.id]
-                                : current.filter((id) => id !== item.id)
-                            )
-                          }
-                        />
-                        <span className="text-sm">{item.label}</span>
-                      </label>
-                    ))}
-                    {!classes.isLoading && !classOptions.length && (
-                      <p className="p-3 text-sm text-slate-500">
-                        Create a class before scheduling an examination.
-                      </p>
-                    )}
-                  </div>
+                  <Label htmlFor="proctoringMode">Proctoring</Label>
+                  <select
+                    id="proctoringMode"
+                    name="proctoringMode"
+                    defaultValue="none"
+                    className="h-10 w-full rounded-md border bg-white px-3 text-sm"
+                  >
+                    <option value="none">Not proctored</option>
+                    <option value="human">Live proctor</option>
+                    <option value="recorded">Recorded review</option>
+                    <option value="both">Live and recorded</option>
+                  </select>
+                  <p className="text-xs text-slate-500">
+                    Live and recorded modes enable candidate integrity monitoring.
+                  </p>
                 </div>
+                {!external && (
+                  <div className="space-y-2">
+                    <Label>Assigned classes</Label>
+                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border p-2">
+                      {classOptions.map((item) => (
+                        <label
+                          key={item.id}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-50"
+                        >
+                          <Checkbox
+                            checked={selectedClasses.includes(item.id)}
+                            onCheckedChange={(checked) =>
+                              setSelectedClasses((current) =>
+                                checked
+                                  ? [...current, item.id]
+                                  : current.filter((id) => id !== item.id)
+                              )
+                            }
+                          />
+                          <span className="text-sm">{item.label}</span>
+                        </label>
+                      ))}
+                      {!classes.isLoading && !classOptions.length && (
+                        <p className="p-3 text-sm text-slate-500">
+                          Create a class before scheduling an examination.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={create.isPending || !selectedClasses.length}
+                  disabled={create.isPending || (!external && !selectedClasses.length)}
                 >
                   Create draft
                 </Button>
@@ -242,7 +267,8 @@ export function CbtManagement() {
                       <Clock className="h-3.5 w-3.5" /> {exam.timeLimitMinutes}m
                     </span>
                     <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" /> {exam.classes?.length ?? 0}
+                      <Users className="h-3.5 w-3.5" />{" "}
+                      {external ? exam.proctoringMode : (exam.classes?.length ?? 0)}
                     </span>
                   </div>
                   <Button

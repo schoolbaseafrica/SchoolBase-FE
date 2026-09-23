@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import CreateComponentButton from "./_components/create-component-button"
 import FeeComponentTable from "./_components/fee-component-table"
@@ -21,10 +21,30 @@ import { useGetFees } from "./_hooks/use-fees"
 import { useFeesStore, selectFilteredFees } from "@/store/fees-store"
 import { useShallow } from "zustand/react/shallow"
 import { ItemLoader } from "../_components/sub-loader"
+import {
+  useAcademicSessions,
+  useActiveAcademicSession,
+} from "../class-management/session/_hooks/use-session"
+import {
+  useAcademicTermsForSession,
+  useActiveAcademicTerm,
+} from "../class-management/_hooks/use-academic-term"
 
 const FeeManagement = () => {
+  const { data: activeSession } = useActiveAcademicSession()
+  const { data: activeTerm } = useActiveAcademicTerm()
+  const { data: sessions } = useAcademicSessions({ limit: 100 })
+  const [sessionId, setSessionId] = useState("")
+  const [termId, setTermId] = useState("")
+  const effectiveSessionId = sessionId || activeSession?.id || ""
+  const effectiveTermId = termId || activeTerm?.id || "session"
+  const { data: terms = [] } = useAcademicTermsForSession(effectiveSessionId || undefined)
+
   // 1. Fetch data
-  const { isError, isLoading: isQueryLoading } = useGetFees()
+  const { isError, isLoading: isQueryLoading } = useGetFees({
+    session_id: effectiveSessionId || undefined,
+    term_id: effectiveTermId !== "session" ? effectiveTermId : undefined,
+  })
 
   // 2. State & Actions
   const { fees, feeIds, filters } = useFeesStore(
@@ -64,7 +84,7 @@ const FeeManagement = () => {
       <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
         <DashboardTitle
           heading="Fee Management"
-          description="Create and manage different fees"
+          description="Create and manage fees for the selected academic period"
         />
         <CreateComponentButton>Add Fee</CreateComponentButton>
       </div>
@@ -80,7 +100,7 @@ const FeeManagement = () => {
       ) : (
         <>
           {/* Search and Status */}
-          <div className="grid w-full grid-cols-[85fr_15fr] gap-5">
+          <div className="grid w-full gap-3 md:grid-cols-[1fr_180px_180px_150px]">
             {/* Search Bar */}
             <div className="relative">
               <Search className="text-text-secondary absolute top-1/2 left-3 size-5 -translate-y-1/2" />
@@ -91,6 +111,41 @@ const FeeManagement = () => {
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
+
+            <Select
+              value={effectiveSessionId}
+              onValueChange={(value) => {
+                setSessionId(value)
+                setTermId("session")
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions?.data?.map((session) => (
+                  <SelectItem key={session.id} value={session.id}>
+                    {session.name}
+                    {session.isActive ? " (Active)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={effectiveTermId} onValueChange={setTermId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="session">Whole session</SelectItem>
+                {terms.map((term) => (
+                  <SelectItem key={term.id} value={term.id}>
+                    {term.name}
+                    {term.id === activeTerm?.id ? " (Active)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Status Filter */}
             <Select value={currentStatus} onValueChange={handleStatusChange}>

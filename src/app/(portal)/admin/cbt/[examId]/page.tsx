@@ -126,7 +126,11 @@ export default function CbtExamBuilderPage() {
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <Link
-          href="/admin/cbt"
+          href={
+            exam.data.examType === "entrance"
+              ? "/admin/cbt/external"
+              : "/admin/cbt/internal"
+          }
           className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-950"
         >
           <ArrowLeft className="h-4 w-4" /> Back to examinations
@@ -169,8 +173,14 @@ export default function CbtExamBuilderPage() {
               <p className="font-semibold">{exam.data.questions?.length ?? 0}</p>
             </div>
             <div>
-              <p className="text-slate-500">Classes</p>
-              <p className="font-semibold">{exam.data.classes?.length ?? 0}</p>
+              <p className="text-slate-500">
+                {exam.data.examType === "entrance" ? "Proctoring" : "Classes"}
+              </p>
+              <p className="font-semibold">
+                {exam.data.examType === "entrance"
+                  ? exam.data.proctoringMode.replace("_", " ")
+                  : (exam.data.classes?.length ?? 0)}
+              </p>
             </div>
             <div>
               <p className="text-slate-500">Pass mark</p>
