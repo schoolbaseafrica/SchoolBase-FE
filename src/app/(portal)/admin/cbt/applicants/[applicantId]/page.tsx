@@ -86,6 +86,12 @@ export default function ApplicantDetailPage() {
             <div>
               <CardTitle>{applicant.data.fullName}</CardTitle>
               <p className="mt-1 text-sm text-slate-500">{applicant.data.intake.name}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {applicant.data.period.sessionName}
+                {applicant.data.period.termName
+                  ? ` · ${applicant.data.period.termName}`
+                  : " · Whole session"}
+              </p>
             </div>
             <Badge variant={applicant.data.admittedAt ? "default" : "secondary"}>
               {applicant.data.admittedAt ? "Admitted" : "Applicant"}

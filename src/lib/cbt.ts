@@ -179,6 +179,8 @@ export interface CbtApplicantSummary {
   admittedAt: string | null
   studentId: string | null
   intakeName: string
+  sessionName: string
+  termName: string | null
   attemptCount: number
   completedAttemptCount: number
   bestPercentage: number | null
@@ -188,6 +190,7 @@ export interface CbtApplicantSummary {
 
 export interface CbtApplicantDetail extends CbtApplicantSummary {
   intake: { id: string; name: string }
+  period: { sessionName: string; termName: string | null }
   attempts: Array<{
     id: string
     status: "in_progress" | "submitted"

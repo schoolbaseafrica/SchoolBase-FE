@@ -155,6 +155,7 @@ export default function CbtApplicantsPage() {
                     <tr>
                       <th className="py-3">Applicant</th>
                       <th>External exam</th>
+                      <th>Applied</th>
                       <th>Attempts</th>
                       <th>Best score</th>
                       <th>Status</th>
@@ -175,7 +176,12 @@ export default function CbtApplicantsPage() {
                         <td>
                           <p>{item.latestExamName ?? "No attempt yet"}</p>
                           <p className="text-xs text-slate-500">{item.intakeName}</p>
+                          <p className="text-xs text-slate-500">
+                            {item.sessionName}
+                            {item.termName ? ` · ${item.termName}` : " · Whole session"}
+                          </p>
                         </td>
+                        <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                         <td>{item.attemptCount}</td>
                         <td>
                           {item.bestPercentage === null ? "—" : `${item.bestPercentage}%`}
