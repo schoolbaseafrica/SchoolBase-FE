@@ -95,9 +95,12 @@ export default function StudentCbtPage() {
               const active = exam.attempts?.find(
                 (attempt) => attempt.status === "in_progress"
               )
-              const submitted =
-                exam.attempts?.filter((attempt) => attempt.status === "submitted")
-                  .length ?? 0
+              const submittedAttempts =
+                exam.attempts?.filter((attempt) => attempt.status === "submitted") ?? []
+              const submitted = submittedAttempts.length
+              const visibleResult = submittedAttempts.find(
+                (attempt) => attempt.resultVisible && attempt.percentage !== null
+              )
               const exhausted = !active && submitted >= exam.maxAttempts
               return (
                 <Card
@@ -132,6 +135,16 @@ export default function StudentCbtPage() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500">{availability(exam)}</p>
+                    {visibleResult && (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+                        <p className="text-xs font-medium text-emerald-700">
+                          Available result
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-emerald-900">
+                          {visibleResult.percentage}%
+                        </p>
+                      </div>
+                    )}
                     <Button
                       className="w-full"
                       disabled={exhausted || start.isPending}

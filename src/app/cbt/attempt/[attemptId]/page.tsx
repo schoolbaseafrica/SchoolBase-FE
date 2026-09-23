@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Check, Clock3, Send } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -102,6 +102,7 @@ function remaining(deadline?: string) {
 export default function PublicCbtAttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [token] = useState(() =>
     typeof window === "undefined"
       ? ""
@@ -146,10 +147,11 @@ export default function PublicCbtAttemptPage() {
   }, [attemptId, token])
   const submit = useMutation({
     mutationFn: () => PublicCbtAPI.submitAttempt(attemptId, token),
-    onSuccess: () => {
-      sessionStorage.removeItem(`cbt-token:${attemptId}`)
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["public-cbt", "attempt", attemptId],
+      })
       toast.success("Your examination was submitted")
-      router.push("/cbt")
     },
     onError: (error: Error) => toast.error(error.message || "Submission failed"),
   })
@@ -201,6 +203,45 @@ export default function PublicCbtAttemptPage() {
         <Skeleton className="h-96 rounded-2xl" />
       </main>
     )
+  if (attempt.data.status === "submitted") {
+    return (
+      <main className="min-h-screen bg-slate-50 p-4 md:p-8">
+        <Card className="mx-auto max-w-xl rounded-2xl">
+          <CardContent className="space-y-5 p-7 text-center md:p-10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <Check className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold">Examination submitted</h1>
+              <p className="mt-2 text-sm text-slate-600">{attempt.data.exam.name}</p>
+            </div>
+            {attempt.data.result ? (
+              <div className="rounded-2xl border bg-slate-50 p-5">
+                <p className="text-sm text-slate-500">Result</p>
+                <p className="mt-1 text-4xl font-bold text-slate-950">
+                  {attempt.data.result.percentage}%
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {attempt.data.result.score} of {attempt.data.result.totalMarks} marks
+                </p>
+              </div>
+            ) : (
+              <p className="rounded-2xl border bg-amber-50 p-4 text-sm text-amber-900">
+                Your result is being prepared. Keep this page available in this browser
+                and check again after the school publishes it.
+              </p>
+            )}
+            <div className="flex justify-center gap-3">
+              <Button variant="outline" onClick={() => void attempt.refetch()}>
+                Check result
+              </Button>
+              <Button onClick={() => router.push("/cbt")}>View examinations</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
   void now
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">

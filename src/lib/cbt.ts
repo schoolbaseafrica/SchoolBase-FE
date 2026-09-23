@@ -32,6 +32,11 @@ export interface CbtAttemptSummary {
   status: "in_progress" | "submitted"
   startedAt: string
   submittedAt: string | null
+  resultPublishedAt?: string | null
+  resultVisible?: boolean
+  score?: number | null
+  totalMarks?: number | null
+  percentage?: number | null
 }
 
 export interface CbtExamSummary {
@@ -71,6 +76,13 @@ export interface CbtAttempt {
   }
   questions: CbtQuestion[]
   answers?: CbtSavedAnswer[]
+  result?: {
+    score: number
+    totalMarks: number
+    percentage: number
+    passed: boolean | null
+    publishedAt: string | null
+  } | null
 }
 
 export interface CbtExamAttempts {
@@ -78,6 +90,8 @@ export interface CbtExamAttempts {
     started: number
     inProgress: number
     submitted: number
+    pendingMarking: number
+    published: number
     averagePercent: number | null
   }
   attempts: Array<{
@@ -90,10 +104,57 @@ export interface CbtExamAttempts {
     totalMarks: number
     percentage: number | null
     manualGradingRequired: boolean
+    resultPublishedAt: string | null
     studentId: string | null
     registrationNumber: string | null
     studentName: string
     answeredQuestions: number
+  }>
+}
+
+export interface CbtAttemptReview {
+  id: string
+  status: "in_progress" | "submitted"
+  startedAt: string
+  submittedAt: string | null
+  candidate: {
+    name: string
+    email?: string
+    registrationNumber?: string | null
+    type: "student" | "applicant"
+  }
+  exam: { id: string; name: string; passMarkPercent: number | null }
+  score: number
+  totalMarks: number
+  percentage: number
+  manualGradingRequired: boolean
+  gradingCompletedAt: string | null
+  resultPublishedAt: string | null
+  answers: Array<{
+    id: string
+    questionId: string
+    response: { value?: unknown } | unknown
+    isCorrect: boolean | null
+    marksAwarded: number | null
+    question: {
+      body: string
+      type: CbtQuestionType
+      marks: number
+      options: CbtQuestionOption[] | null
+      correctAnswer: string | null
+      explanation: string | null
+    }
+    grading: {
+      graderId: string
+      gradedAt: string
+      comment: string | null
+    } | null
+  }>
+  events: Array<{
+    id: string
+    eventType: string
+    createdAt: string
+    metadata: Record<string, unknown> | null
   }>
 }
 
@@ -222,6 +283,27 @@ export const CbtAPI = {
   getExamAttempts: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
       `/cbt/exams/${examId}/attempts`
+    ).then(unwrap),
+
+  getAttemptReview: (attemptId: string) =>
+    apiFetch<ApiEnvelope<CbtAttemptReview> | CbtAttemptReview>(
+      `/cbt/attempts/${attemptId}/review`
+    ).then(unwrap),
+
+  gradeAttemptAnswer: (
+    attemptId: string,
+    questionId: string,
+    data: { marksAwarded: number; comment?: string }
+  ) =>
+    apiFetch<ApiEnvelope<CbtAttemptReview> | CbtAttemptReview>(
+      `/cbt/attempts/${attemptId}/answers/${questionId}/grade`,
+      { method: "PATCH", data }
+    ).then(unwrap),
+
+  publishAttemptResult: (attemptId: string) =>
+    apiFetch<ApiEnvelope<CbtAttemptReview> | CbtAttemptReview>(
+      `/cbt/attempts/${attemptId}/publish-result`,
+      { method: "POST" }
     ).then(unwrap),
 
   createExam: (data: Record<string, unknown>) =>

@@ -124,7 +124,7 @@ export default function ApplicantDetailPage() {
           <h2 className="text-lg font-semibold">External exam history</h2>
           {applicant.data.attempts.map((attempt) => (
             <Card key={attempt.id}>
-              <CardContent className="grid gap-4 p-5 sm:grid-cols-4">
+              <CardContent className="grid items-center gap-4 p-5 sm:grid-cols-5">
                 <div className="sm:col-span-2">
                   <p className="font-medium">{attempt.exam.name}</p>
                   <p className="text-xs text-slate-500">
@@ -136,6 +136,15 @@ export default function ApplicantDetailPage() {
                   <p className="font-semibold">
                     {attempt.percentage === null ? "Pending" : `${attempt.percentage}%`}
                   </p>
+                </div>
+                <div>
+                  {attempt.status === "submitted" && (
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/admin/cbt/attempts/${attempt.id}`}>
+                        {attempt.manualGradingRequired ? "Mark answers" : "Review"}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <Badge

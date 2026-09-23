@@ -440,11 +440,12 @@ export default function CbtExamBuilderPage() {
                 Track ongoing attempts without exposing answers or interrupting students.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {[
                 ["Started", attempts.data?.summary.started ?? 0],
                 ["In progress", attempts.data?.summary.inProgress ?? 0],
                 ["Submitted", attempts.data?.summary.submitted ?? 0],
+                ["Pending marking", attempts.data?.summary.pendingMarking ?? 0],
                 [
                   "Average",
                   attempts.data?.summary.averagePercent === null ||
@@ -470,6 +471,7 @@ export default function CbtExamBuilderPage() {
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Answered</th>
                       <th className="px-4 py-3">Score</th>
+                      <th className="px-4 py-3">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -500,11 +502,26 @@ export default function CbtExamBuilderPage() {
                               ? "—"
                               : `${attempt.percentage}%`}
                         </td>
+                        <td className="px-4 py-3">
+                          {attempt.status === "submitted" ? (
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={`/admin/cbt/attempts/${attempt.id}`}>
+                                {attempt.manualGradingRequired
+                                  ? "Mark answers"
+                                  : attempt.resultPublishedAt
+                                    ? "View result"
+                                    : "Review result"}
+                              </Link>
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-slate-400">In progress</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {!attempts.isLoading && !attempts.data?.attempts.length && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
+                        <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                           No student has started this examination.
                         </td>
                       </tr>
