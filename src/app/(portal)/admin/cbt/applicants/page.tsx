@@ -178,7 +178,6 @@ export default function CbtApplicantsPage() {
                         </td>
                         <td>
                           <p>{item.latestExamName ?? "No attempt yet"}</p>
-                          <p className="text-xs text-slate-500">{item.intakeName}</p>
                           <p className="text-xs text-slate-500">
                             {item.sessionName}
                             {item.termName ? ` · ${item.termName}` : " · Whole session"}
@@ -186,10 +185,6 @@ export default function CbtApplicantsPage() {
                         </td>
                         <td>
                           <p>{new Date(item.latestAttemptAt).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500">
-                            Profile created{" "}
-                            {new Date(item.createdAt).toLocaleDateString()}
-                          </p>
                         </td>
                         <td>{item.attemptCount}</td>
                         <td>
