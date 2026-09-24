@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { CbtAPI, CbtQuestionType } from "@/lib/cbt"
+import { CbtAPI, CbtExamStatus, CbtQuestionType } from "@/lib/cbt"
 
 const QUESTION_TYPES: Array<{ value: CbtQuestionType; label: string }> = [
   { value: "mcq", label: "Multiple choice" },
@@ -59,8 +59,8 @@ export default function CbtExamBuilderPage() {
   const attempts = useQuery({
     queryKey: ["cbt", "manage", "exam", examId, "attempts"],
     queryFn: () => CbtAPI.getExamAttempts(examId),
-    enabled: exam.data?.status === "published",
-    refetchInterval: exam.data?.status === "published" ? 15_000 : false,
+    enabled: ["active", "closed", "published"].includes(exam.data?.status ?? ""),
+    refetchInterval: exam.data?.status === "active" ? 15_000 : false,
   })
   const questionBank = useQuery({
     queryKey: ["cbt", "question-bank", bankSearch],
@@ -119,14 +119,14 @@ export default function CbtExamBuilderPage() {
     },
     onError: (error: Error) => toast.error(error.message || "Could not import question"),
   })
-  const publish = useMutation({
-    mutationFn: () => CbtAPI.publishExam(examId),
-    onSuccess: () => {
+  const transition = useMutation({
+    mutationFn: (status: CbtExamStatus) => CbtAPI.transitionExam(examId, status),
+    onSuccess: (_, status) => {
       refresh()
-      toast.success("Examination published")
+      toast.success(`Examination moved to ${status.replace("_", " ")}`)
     },
     onError: (error: Error) =>
-      toast.error(error.message || "Could not publish examination"),
+      toast.error(error.message || "Could not update examination status"),
   })
 
   const submitQuestion = (event: FormEvent<HTMLFormElement>) => {
@@ -172,6 +172,27 @@ export default function CbtExamBuilderPage() {
     )
 
   const isDraft = exam.data.status === "draft"
+  const canMonitor = ["active", "closed", "published"].includes(exam.data.status)
+  const lifecycleAction = (() => {
+    switch (exam.data.status) {
+      case "draft":
+        return { status: "review" as const, label: "Submit for review" }
+      case "review":
+        return exam.data.availableFrom && new Date(exam.data.availableFrom) > new Date()
+          ? { status: "scheduled" as const, label: "Schedule examination" }
+          : { status: "active" as const, label: "Activate examination" }
+      case "scheduled":
+        return { status: "active" as const, label: "Activate now" }
+      case "active":
+        return { status: "closed" as const, label: "Close examination" }
+      case "closed":
+        return { status: "published" as const, label: "Publish results" }
+      case "published":
+        return { status: "archived" as const, label: "Archive" }
+      default:
+        return null
+    }
+  })()
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -201,20 +222,34 @@ export default function CbtExamBuilderPage() {
                 {exam.data.instructions || "No instructions have been added."}
               </p>
             </div>
-            {isDraft && (
-              <Button
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Publish this examination? Questions can no longer be edited afterwards."
+            {lifecycleAction && (
+              <div className="flex flex-wrap gap-2">
+                {["review", "scheduled"].includes(exam.data.status) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => transition.mutate("draft")}
+                    disabled={transition.isPending}
+                  >
+                    Return to draft
+                  </Button>
+                )}
+                <Button
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `${lifecycleAction.label}?${isDraft ? " Questions can no longer be edited while it is under review." : ""}`
+                      )
                     )
-                  )
-                    publish.mutate()
-                }}
-                disabled={publish.isPending || !exam.data.questions?.length}
-              >
-                <Send className="mr-2 h-4 w-4" /> Publish
-              </Button>
+                      transition.mutate(lifecycleAction.status)
+                  }}
+                  disabled={
+                    transition.isPending ||
+                    (isDraft && !exam.data.questions?.length)
+                  }
+                >
+                  <Send className="mr-2 h-4 w-4" /> {lifecycleAction.label}
+                </Button>
+              </div>
             )}
           </div>
           <div className="mt-5 grid gap-3 border-t pt-5 text-sm sm:grid-cols-3">
@@ -669,7 +704,7 @@ export default function CbtExamBuilderPage() {
           )}
         </section>
 
-        {!isDraft && (
+        {canMonitor && (
           <section className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold">Participation and results</h2>

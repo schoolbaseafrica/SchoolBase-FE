@@ -1,6 +1,13 @@
 import { apiFetch } from "./api/client"
 
-export type CbtExamStatus = "draft" | "published" | "archived"
+export type CbtExamStatus =
+  | "draft"
+  | "review"
+  | "scheduled"
+  | "active"
+  | "closed"
+  | "published"
+  | "archived"
 export type CbtExamType = "in_school" | "entrance"
 export type CbtProctoringMode = "none" | "human" | "recorded" | "both"
 export type CbtQuestionType =
@@ -367,6 +374,12 @@ export const CbtAPI = {
       {
         method: "POST",
       }
+    ).then(unwrap),
+
+  transitionExam: (examId: string, status: CbtExamStatus) =>
+    apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(
+      `/cbt/exams/${examId}/status`,
+      { method: "PATCH", data: { status } }
     ).then(unwrap),
 
   addQuestion: (examId: string, data: Record<string, unknown>) =>

@@ -268,9 +268,9 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                   <div className="flex items-start justify-between gap-3">
                     <CardTitle className="text-lg">{exam.name}</CardTitle>
                     <Badge
-                      variant={exam.status === "published" ? "default" : "secondary"}
+                      variant={exam.status === "active" ? "default" : "secondary"}
                     >
-                      {exam.status}
+                      {exam.status.replace("_", " ")}
                     </Badge>
                   </div>
                 </CardHeader>
