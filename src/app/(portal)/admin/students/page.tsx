@@ -132,6 +132,7 @@ export default function StudentsPage() {
         statusFilter={currentStatusFilter}
         currentPage={filters.page}
         totalPages={totalPages}
+        totalItems={serverData?.meta?.total ?? paginatedStudents.length}
         pageSize={filters.limit}
         onSearchChange={handleSearchChange}
         onStatusFilterChange={handleStatusFilterChange}

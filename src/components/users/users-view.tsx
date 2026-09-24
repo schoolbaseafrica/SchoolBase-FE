@@ -29,6 +29,7 @@ interface UsersViewProps {
 
   pageSize?: number
   totalPages?: number
+  totalItems?: number
   onAddUser?: () => void
 }
 
@@ -46,6 +47,7 @@ export function UsersView({
   error = "An unexpected error occurred.",
   pageSize = 20,
   totalPages,
+  totalItems,
   onAddUser,
 }: UsersViewProps) {
   const router = useRouter()
@@ -90,7 +92,7 @@ export function UsersView({
               itemName={userType}
               currentPage={currentPage}
               totalPages={totalPages || 1}
-              totalItems={users.length}
+              totalItems={totalItems ?? users.length}
               onPageChange={onPageChange}
               className="mt-6"
             />

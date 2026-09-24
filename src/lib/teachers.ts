@@ -30,7 +30,7 @@ export interface TeachersListResponse {
 
 export const TeachersAPI = {
   getAll: (params?: GetTeachersParams) =>
-    apiFetch<ResponsePack<ResponsePack<User[]>>>(
+    apiFetch<ResponsePack<TeachersListResponse>>(
       "/teachers",
       {
         params,

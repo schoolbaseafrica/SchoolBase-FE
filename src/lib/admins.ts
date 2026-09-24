@@ -30,7 +30,7 @@ export interface AdminsListResponse {
 
 export const AdminsAPI = {
   getAll: (params?: GetAdminsParams) =>
-    apiFetch<ResponsePack<ResponsePack<User[]>>>(
+    apiFetch<AdminsListResponse>(
       "/users/admins",
       {
         params,
@@ -39,7 +39,7 @@ export const AdminsAPI = {
     ),
 
   getTotal: (params?: GetAdminsParams) =>
-    apiFetch<ResponsePack<AdminsListResponse>>(
+    apiFetch<AdminsListResponse>(
       "/users/admins",
       {
         params,
@@ -47,8 +47,7 @@ export const AdminsAPI = {
       true
     ),
 
-  getOne: (id: string) =>
-    apiFetch<ResponsePack<User>>(`/users/${id}`, undefined, true),
+  getOne: (id: string) => apiFetch<ResponsePack<User>>(`/users/${id}`, undefined, true),
 
   create: (data: CreateAdminData): Promise<User> =>
     apiFetch<ResponsePack<User>>(

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   TeachersAPI,
   CreateTeacherData,
+  GetTeachersParams,
   UpdateTeacherData,
   // GetTeachersParams,
 } from "@/lib/teachers"
@@ -16,6 +17,14 @@ import { useIsSuperAdmin } from "@/hooks/use-is-super-admin"
 
 // The main list query key - simplified
 const TEACHERS_KEY = ["teachers"]
+
+export function useGetTeachersPage(params: GetTeachersParams) {
+  return useQuery({
+    queryKey: [...TEACHERS_KEY, "page", params],
+    queryFn: async () => (await TeachersAPI.getAll(params)).data,
+    staleTime: 1000 * 60,
+  })
+}
 
 // ----------------------------
 // 🔍 GET ALL TEACHERS
@@ -147,19 +156,19 @@ export function useUpdateTeacher(id: string) {
       updateTeacher(id, updatedTeacher)
 
       // Invalidate and force refetch to ensure fresh data
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: TEACHERS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: [...TEACHERS_KEY, id],
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: TEACHERS_KEY,
-        type: "active"
+        type: "active",
       })
-      
+
       toast.success("Teacher updated successfully")
     },
     onError: (error) => {
@@ -190,13 +199,13 @@ export function useDeleteTeacher() {
 
     onError: async (error) => {
       // Refetch on error to restore correct state
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: TEACHERS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: TEACHERS_KEY,
-        type: "active"
+        type: "active",
       })
 
       const message = extractErrorMessage(error)
@@ -205,13 +214,13 @@ export function useDeleteTeacher() {
 
     onSuccess: async () => {
       // Force refetch to ensure UI shows current state
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         queryKey: TEACHERS_KEY,
-        refetchType: "active"
+        refetchType: "active",
       })
-      await queryClient.refetchQueries({ 
+      await queryClient.refetchQueries({
         queryKey: TEACHERS_KEY,
-        type: "active"
+        type: "active",
       })
       toast.success("Teacher deleted successfully")
     },
@@ -223,7 +232,7 @@ export function useDeleteTeacher() {
 // --------------------------
 export function useTeachersCount() {
   const isSuperAdmin = useIsSuperAdmin()
-  
+
   return useQuery({
     queryKey: ["teachers_count", "active"],
     queryFn: async () => {

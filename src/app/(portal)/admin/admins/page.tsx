@@ -1,41 +1,27 @@
 "use client"
 
 import { UsersView } from "@/components/users/users-view"
-import { useGetAdmins } from "./_hooks/use-admins"
-import {
-  useAdminsStore,
-  selectFilteredAdmins,
-  selectPaginatedAdmins,
-} from "@/store/admins-store"
+import { useGetAdminsPage } from "./_hooks/use-admins"
+import { useAdminsStore } from "@/store/admins-store"
 import { useShallow } from "zustand/react/shallow"
-import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 
 export default function AdminsPage() {
   const router = useRouter()
-  const { isLoading: isQueryLoading, isError, error } = useGetAdmins()
-
-  const { admins, adminIds, filters } = useAdminsStore(
+  const { filters } = useAdminsStore(
     useShallow((state) => ({
-      admins: state.admins,
-      adminIds: state.adminIds,
       filters: state.filters,
     }))
   )
 
   const setFilters = useAdminsStore((state) => state.setFilters)
 
-  const filteredAll = useMemo(
-    () => selectFilteredAdmins(admins, adminIds, filters),
-    [admins, adminIds, filters]
-  )
-
-  const paginatedAdmins = useMemo(
-    () => selectPaginatedAdmins(filteredAll, filters.page, filters.limit),
-    [filteredAll, filters.page, filters.limit]
-  )
-
-  const totalPages = Math.ceil(filteredAll.length / filters.limit)
+  const admins = useGetAdminsPage({
+    page: filters.page,
+    limit: filters.limit,
+    search: filters.search || undefined,
+    is_active: filters.isActive,
+  })
 
   const handlePageChange = (page: number) => {
     setFilters({ page })
@@ -62,15 +48,17 @@ export default function AdminsPage() {
 
   return (
     <UsersView
-      isLoading={isQueryLoading && adminIds.length === 0}
-      isError={isError}
-      error={error?.message}
-      users={paginatedAdmins}
+      isLoading={admins.isLoading}
+      isError={admins.isError}
+      error={admins.error?.message}
+      users={admins.data?.data ?? []}
       userType="admins"
       searchQuery={filters.search}
       statusFilter={currentStatusFilter}
       currentPage={filters.page}
-      totalPages={totalPages}
+      pageSize={filters.limit}
+      totalPages={admins.data?.total_pages ?? 1}
+      totalItems={admins.data?.total ?? 0}
       onSearchChange={handleSearchChange}
       onStatusFilterChange={handleStatusFilterChange}
       onPageChange={handlePageChange}

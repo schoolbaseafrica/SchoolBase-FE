@@ -1,42 +1,23 @@
 "use client"
 
 import { UsersView } from "@/components/users/users-view"
-import { useGetTeachers } from "./_hooks/use-teachers"
-import {
-  useTeachersStore,
-  selectFilteredTeachers,
-  selectPaginatedTeachers,
-} from "@/store/teachers-store"
+import { useGetTeachersPage } from "./_hooks/use-teachers"
+import { useTeachersStore } from "@/store/teachers-store"
 import { useShallow } from "zustand/react/shallow"
-import { useMemo } from "react"
 
 export default function TeachersPage() {
-  // 1. Fetch data (background sync)
-  const { isLoading: isQueryLoading, isError, error, data: queryData } = useGetTeachers()
-
-  // 2. Get state from store (optimized selectors)
-  const { teachers, teacherIds, filters } = useTeachersStore(
+  const { filters } = useTeachersStore(
     useShallow((state) => ({
-      teachers: state.teachers,
-      teacherIds: state.teacherIds,
       filters: state.filters,
     }))
   )
-
   const setFilters = useTeachersStore((state) => state.setFilters)
-
-  // 3. Compute derived state (memoized)
-  const filteredAll = useMemo(
-    () => selectFilteredTeachers(teachers, teacherIds, filters),
-    [teachers, teacherIds, filters]
-  )
-
-  const paginatedTeachers = useMemo(
-    () => selectPaginatedTeachers(filteredAll, filters.page, filters.limit),
-    [filteredAll, filters.page, filters.limit]
-  )
-
-  const totalPages = Math.ceil(filteredAll.length / filters.limit)
+  const teachers = useGetTeachersPage({
+    page: filters.page,
+    limit: filters.limit,
+    search: filters.search || undefined,
+    is_active: filters.isActive,
+  })
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -60,15 +41,17 @@ export default function TeachersPage() {
 
   return (
     <UsersView
-      isLoading={isQueryLoading && teacherIds.length === 0} // Only show loading if no data found yet
-      isError={isError}
-      error={error?.message}
-      users={paginatedTeachers}
+      isLoading={teachers.isLoading}
+      isError={teachers.isError}
+      error={teachers.error?.message}
+      users={teachers.data?.data ?? []}
       userType="teachers"
       searchQuery={filters.search}
       statusFilter={currentStatusFilter}
       currentPage={filters.page}
-      totalPages={totalPages}
+      pageSize={filters.limit}
+      totalPages={teachers.data?.total_pages ?? 1}
+      totalItems={teachers.data?.total ?? 0}
       onSearchChange={handleSearchChange}
       onStatusFilterChange={handleStatusFilterChange}
       onPageChange={handlePageChange}

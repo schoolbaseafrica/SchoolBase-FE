@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AdminsAPI,
   CreateAdminData,
+  GetAdminsParams,
   UpdateAdminData,
 } from "@/lib/admins"
 import type { SnakeUser as User } from "@/types/user"
@@ -15,6 +16,14 @@ import { useShallow } from "zustand/react/shallow"
 
 // The main list query key
 const ADMINS_KEY = ["admins"]
+
+export function useGetAdminsPage(params: GetAdminsParams) {
+  return useQuery({
+    queryKey: [...ADMINS_KEY, "page", params],
+    queryFn: () => AdminsAPI.getAll(params),
+    staleTime: 1000 * 60,
+  })
+}
 
 // ----------------------------
 // 🔍 GET ALL ADMINS
@@ -31,12 +40,16 @@ export function useGetAdmins() {
 
   const query = useQuery({
     // Include is_active filter in queryKey so it refetches when filter changes
-    queryKey: [...ADMINS_KEY, "all", { is_active: filters.isActive, search: filters.search }],
+    queryKey: [
+      ...ADMINS_KEY,
+      "all",
+      { is_active: filters.isActive, search: filters.search },
+    ],
     queryFn: async () => {
       setLoading(true)
       try {
         // Pass the is_active filter to the backend API
-        const res = await AdminsAPI.getAll({ 
+        const res = await AdminsAPI.getAll({
           limit: 100,
           is_active: filters.isActive,
           search: filters.search || undefined,
