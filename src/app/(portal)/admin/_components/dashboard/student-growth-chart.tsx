@@ -37,7 +37,8 @@ export default function StudentGrowthChart() {
       icon={GraduationCap}
       data={chartData}
       xKey="period"
-      bars={["newStudents", "totalStudents"]}
+      bars={["newStudents"]}
+      lines={["totalStudents"]}
       config={studentConfig}
       dropdown={[
         { label: "Monthly", value: "month" },

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select"
 import { TypedChartConfig } from "@/types/chart"
 import { Loader2, LucideIcon } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts"
 
 interface ReuseableBarChartProps<XKey extends string, BarKey extends string> {
   title: string
@@ -19,6 +19,7 @@ interface ReuseableBarChartProps<XKey extends string, BarKey extends string> {
   xKey: XKey
   data: Array<Record<XKey | BarKey, string | number>>
   bars: BarKey[]
+  lines?: BarKey[]
   config: TypedChartConfig<BarKey>
   dropdown?: { label: string; value: string }[]
   onDropdownChange?: (value: string) => void
@@ -33,6 +34,7 @@ export function ReuseableBarChart<XKey extends string, BarKey extends string>({
   xKey,
   data,
   bars,
+  lines = [],
   config,
   dropdown,
   onDropdownChange,
@@ -77,7 +79,7 @@ export function ReuseableBarChart<XKey extends string, BarKey extends string>({
           </div>
         ) : (
           <ChartContainer config={config}>
-            <BarChart data={data} barCategoryGap={10} barGap={0}>
+            <ComposedChart data={data} barCategoryGap={10} barGap={4}>
               <CartesianGrid vertical={false} />
               <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={10} />
               <YAxis tickLine={false} axisLine={false} tickMargin={10} />
@@ -93,7 +95,17 @@ export function ReuseableBarChart<XKey extends string, BarKey extends string>({
                   radius={0}
                 />
               ))}
-            </BarChart>
+              {lines.map((lineKey) => (
+                <Line
+                  key={lineKey}
+                  type="monotone"
+                  dataKey={lineKey}
+                  stroke={config[lineKey].color}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              ))}
+            </ComposedChart>
           </ChartContainer>
         )}
       </div>
