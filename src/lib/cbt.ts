@@ -36,6 +36,28 @@ export interface CbtQuestion {
   sortOrder?: number
 }
 
+export interface CbtBlueprintRule {
+  topic?: string
+  type?: CbtQuestionType
+  difficulty?: "easy" | "medium" | "hard"
+  count: number
+  sectionId?: string
+}
+
+export interface CbtBlueprintPreview {
+  valid: boolean
+  requested: number
+  selected: number
+  rules: Array<{
+    ruleIndex: number
+    requested: number
+    available: number
+    shortage: number
+    sectionId: string | null
+    questions: CbtQuestion[]
+  }>
+}
+
 export interface CbtExamSection {
   id: string
   title: string
@@ -381,6 +403,21 @@ export const CbtAPI = {
       `/cbt/exams/${examId}/status`,
       { method: "PATCH", data: { status } }
     ).then(unwrap),
+
+  previewBlueprint: (examId: string, rules: CbtBlueprintRule[]) =>
+    apiFetch<ApiEnvelope<CbtBlueprintPreview> | CbtBlueprintPreview>(
+      `/cbt/exams/${examId}/blueprint/preview`,
+      { method: "POST", data: { rules } }
+    ).then(unwrap),
+
+  applyBlueprint: (
+    examId: string,
+    selections: Array<{ questionId: string; sectionId?: string }>
+  ) =>
+    apiFetch(`/cbt/exams/${examId}/blueprint/apply`, {
+      method: "POST",
+      data: { selections },
+    }).then(unwrap),
 
   addQuestion: (examId: string, data: Record<string, unknown>) =>
     apiFetch<ApiEnvelope<CbtQuestion> | CbtQuestion>(`/cbt/exams/${examId}/questions`, {

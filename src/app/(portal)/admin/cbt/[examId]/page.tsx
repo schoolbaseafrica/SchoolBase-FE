@@ -18,6 +18,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { BlueprintDialog } from "@/components/cbt/blueprint-dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
@@ -243,8 +244,7 @@ export default function CbtExamBuilderPage() {
                       transition.mutate(lifecycleAction.status)
                   }}
                   disabled={
-                    transition.isPending ||
-                    (isDraft && !exam.data.questions?.length)
+                    transition.isPending || (isDraft && !exam.data.questions?.length)
                   }
                 >
                   <Send className="mr-2 h-4 w-4" /> {lifecycleAction.label}
@@ -321,6 +321,11 @@ export default function CbtExamBuilderPage() {
             </div>
             {isDraft && (
               <div className="flex flex-wrap justify-end gap-2">
+                <BlueprintDialog
+                  examId={examId}
+                  sections={exam.data.sections ?? []}
+                  onApplied={refresh}
+                />
                 <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
