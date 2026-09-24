@@ -270,7 +270,7 @@ export default function CbtAttemptReviewPage() {
                             Acknowledge
                           </Button>
                         )}
-                      {event.metadata?.acknowledgedAt && (
+                      {Boolean(event.metadata?.acknowledgedAt) && (
                         <Badge variant="secondary">Reviewed</Badge>
                       )}
                     </div>
