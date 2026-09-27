@@ -20,11 +20,7 @@ export default function StudentClassroomPage() {
   const session = useClassroomSession(classId)
   useClassroomPresence(classId, session.data?.status === "live")
 
-  const {
-    data: whiteboard,
-    isLoading,
-    error,
-  } = useWhiteboard(classId, { enablePolling: true })
+  const { data: whiteboard, isLoading, error } = useWhiteboard(classId)
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
   const [imagesData, setImagesData] = useState<Record<string, MediaPosition>>({})

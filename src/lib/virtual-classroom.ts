@@ -35,6 +35,14 @@ export interface ClassroomMessage {
   createdAt: string
 }
 
+export interface ClassroomCollaborationTicket {
+  ticket: string
+  expiresInSeconds: number
+  namespace: string
+  classroomId: string
+  canWrite: boolean
+}
+
 const unwrap = <T>(response: ResponsePack<T> | T): T =>
   response && typeof response === "object" && "data" in response
     ? (response as ResponsePack<T>).data
@@ -83,6 +91,12 @@ export const VirtualClassroomAPI = {
   leave: (id: string) => apiFetch(`/virtual-classrooms/${id}/leave`, { method: "POST" }),
   heartbeat: (id: string) =>
     apiFetch(`/virtual-classrooms/${id}/heartbeat`, { method: "POST" }),
+  getCollaborationTicket: async (id: string) =>
+    unwrap(
+      await apiFetch<
+        ResponsePack<ClassroomCollaborationTicket> | ClassroomCollaborationTicket
+      >(`/virtual-classrooms/${id}/collaboration-ticket`, { method: "POST" })
+    ),
   getWhiteboard: async (id: string) =>
     unwrap(
       await apiFetch<ResponsePack<ClassroomWhiteboard> | ClassroomWhiteboard>(

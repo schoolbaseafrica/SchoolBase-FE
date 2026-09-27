@@ -26,7 +26,8 @@ export default function TeacherClassroomPage() {
     data: whiteboard,
     isLoading,
     error,
-  } = useWhiteboard(classId, { enablePolling: true })
+    collaborationStatus,
+  } = useWhiteboard(classId)
   const updateMutation = useUpdateWhiteboard(classId)
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
@@ -378,7 +379,9 @@ export default function TeacherClassroomPage() {
           <h1 className="truncate text-xs font-medium text-gray-700 md:text-sm">
             {session.data?.title ?? "Virtual Classroom"}
           </h1>
-          <p className="text-[10px] text-gray-500 capitalize">{session.data?.status}</p>
+          <p className="text-[10px] text-gray-500 capitalize">
+            {session.data?.status} · {collaborationStatus}
+          </p>
         </div>
         <div className="flex items-center gap-1 md:gap-3">
           {/* Desktop: Show full toggle */}

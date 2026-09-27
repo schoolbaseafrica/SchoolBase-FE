@@ -1,6 +1,11 @@
+import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UpdateWhiteboardData, WhiteboardResponse } from "@/lib/whiteboard"
 import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
+import {
+  classroomCollaboration,
+  CollaborationStatus,
+} from "@/lib/classroom-collaboration"
 import { toast } from "sonner"
 
 export const WHITEBOARD_KEY = (classroomId: string) => [
@@ -27,19 +32,48 @@ const normalize = (
   version: data.version,
 })
 
-export function useWhiteboard(
-  classroomId: string,
-  options?: { enablePolling?: boolean }
-) {
-  return useQuery({
+export function useWhiteboard(classroomId: string) {
+  const queryClient = useQueryClient()
+  const [collaborationStatus, setCollaborationStatus] =
+    useState<CollaborationStatus>("connecting")
+  const query = useQuery({
     queryKey: WHITEBOARD_KEY(classroomId),
     queryFn: async () =>
       normalize(classroomId, await VirtualClassroomAPI.getWhiteboard(classroomId)),
     enabled: Boolean(classroomId),
     staleTime: 0,
-    refetchInterval: options?.enablePolling ? 3_000 : false,
+    refetchInterval: false,
     refetchOnWindowFocus: false,
   })
+  useEffect(() => {
+    if (!classroomId) return
+    const collaboration = classroomCollaboration(classroomId)
+    return collaboration.subscribe((snapshot, status) => {
+      setCollaborationStatus(status)
+      if (!Object.keys(snapshot).length) return
+      const current = queryClient.getQueryData<SessionWhiteboard>(
+        WHITEBOARD_KEY(classroomId)
+      )
+      queryClient.setQueryData(
+        WHITEBOARD_KEY(classroomId),
+        normalize(classroomId, {
+          version: current?.version ?? 0,
+          snapshot,
+          allowStudentDraw: current?.allow_student_edit ?? false,
+        })
+      )
+    })
+  }, [classroomId, queryClient])
+  useEffect(() => {
+    if (!query.data || !classroomId) return
+    classroomCollaboration(classroomId).seed({
+      canvas_state: query.data.canvas_state,
+      images_data: query.data.images_data,
+      videos_data: query.data.videos_data,
+      text_boxes: query.data.text_boxes,
+    })
+  }, [classroomId, query.data])
+  return { ...query, collaborationStatus }
 }
 
 export function useUpdateWhiteboard(classroomId: string) {
@@ -71,20 +105,15 @@ export function useUpdateWhiteboard(classroomId: string) {
         ...data,
       }
       delete snapshot.allow_student_edit
-      const result = await VirtualClassroomAPI.updateWhiteboard(
-        classroomId,
-        current?.version ?? 0,
-        snapshot
-      )
+      classroomCollaboration(classroomId).update(snapshot)
       return normalize(classroomId, {
-        ...result,
+        version: current?.version ?? 0,
+        snapshot,
         allowStudentDraw: current?.allow_student_edit ?? false,
       })
     },
     onSuccess: (data) => queryClient.setQueryData(WHITEBOARD_KEY(classroomId), data),
-    onError: (error: Error) => {
-      void queryClient.invalidateQueries({ queryKey: WHITEBOARD_KEY(classroomId) })
-      toast.error(error.message || "Failed to update whiteboard")
-    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Failed to update whiteboard"),
   })
 }
