@@ -7,6 +7,11 @@ import { ArrowLeft, Loader2, Users, AlertCircle, MessageSquare, X } from "lucide
 import { useWhiteboard, useUpdateWhiteboard } from "./_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "./_components/whiteboard-canvas"
 import { ClassroomChat } from "./_components/classroom-chat"
+import {
+  ClassroomBoardBar,
+  CollaborationCursors,
+} from "./_components/classroom-board-bar"
+import { useCollaborationPresence } from "./_hooks/use-collaboration-presence"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { EmptyState } from "@/components/results/empty-state"
@@ -18,6 +23,7 @@ export default function TeacherClassroomPage() {
   const params = useParams()
   const router = useRouter()
   const classId = params.classId as string
+  const [activePage, setActivePage] = useState("main")
   const session = useClassroomSession(classId)
   useClassroomPresence(classId, session.data?.status === "live")
 
@@ -27,8 +33,9 @@ export default function TeacherClassroomPage() {
     isLoading,
     error,
     collaborationStatus,
-  } = useWhiteboard(classId)
-  const updateMutation = useUpdateWhiteboard(classId)
+  } = useWhiteboard(classId, activePage)
+  const updateMutation = useUpdateWhiteboard(classId, activePage)
+  const presence = useCollaborationPresence(classId, activePage)
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
   const [imagesData, setImagesData] = useState<
@@ -432,44 +439,57 @@ export default function TeacherClassroomPage() {
           <span className="ml-2 text-gray-500">Loading classroom...</span>
         </div>
       ) : (
-        <div className="relative flex flex-1 overflow-hidden">
-          {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
-          <div
-            className={`flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
-          >
-            <WhiteboardCanvas
-              canvasState={canvasState}
-              onSave={handleCanvasSave}
-              isLoading={isLoading}
-              isReadOnly={false}
-              images={images}
-              videoLinks={videoLinks}
-              textBoxes={textBoxes}
-              imagesData={imagesData}
-              videosData={videosData}
-              onAddImage={handleAddImage}
-              onRemoveImage={handleRemoveImage}
-              onAddVideo={handleAddVideo}
-              onRemoveVideo={handleRemoveVideo}
-              onAddTextBox={handleAddTextBox}
-              onUpdateTextBox={handleUpdateTextBox}
-              onRemoveTextBox={handleRemoveTextBox}
-              onUpdateImagesData={handleUpdateImagesData}
-              onUpdateVideosData={handleUpdateVideosData}
-              onClearAll={handleClearAll}
-            />
-          </div>
-          {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
-          <div
-            className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
-          >
-            <ClassroomChat
-              classId={classId}
-              isReadOnly={false}
-              isCollapsed={isChatCollapsed}
-              onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
-              showCollapseButton={true}
-            />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <ClassroomBoardBar
+            classroomId={classId}
+            activePage={activePage}
+            onPageChange={setActivePage}
+            canManage={true}
+            participants={presence.participants}
+          />
+          <div className="relative flex flex-1 overflow-hidden">
+            {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
+            <div
+              className={`relative flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
+              onPointerMove={presence.sendPointer}
+              onPointerLeave={presence.clearPointer}
+            >
+              <CollaborationCursors cursors={presence.cursors} />
+              <WhiteboardCanvas
+                key={activePage}
+                canvasState={canvasState}
+                onSave={handleCanvasSave}
+                isLoading={isLoading}
+                isReadOnly={false}
+                images={images}
+                videoLinks={videoLinks}
+                textBoxes={textBoxes}
+                imagesData={imagesData}
+                videosData={videosData}
+                onAddImage={handleAddImage}
+                onRemoveImage={handleRemoveImage}
+                onAddVideo={handleAddVideo}
+                onRemoveVideo={handleRemoveVideo}
+                onAddTextBox={handleAddTextBox}
+                onUpdateTextBox={handleUpdateTextBox}
+                onRemoveTextBox={handleRemoveTextBox}
+                onUpdateImagesData={handleUpdateImagesData}
+                onUpdateVideosData={handleUpdateVideosData}
+                onClearAll={handleClearAll}
+              />
+            </div>
+            {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
+            <div
+              className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
+            >
+              <ClassroomChat
+                classId={classId}
+                isReadOnly={false}
+                isCollapsed={isChatCollapsed}
+                onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
+                showCollapseButton={true}
+              />
+            </div>
           </div>
         </div>
       )}

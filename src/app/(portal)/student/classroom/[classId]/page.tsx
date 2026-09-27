@@ -10,6 +10,11 @@ import {
 } from "../../../teacher/classroom/[classId]/_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "../../../teacher/classroom/[classId]/_components/whiteboard-canvas"
 import { ClassroomChat } from "../../../teacher/classroom/[classId]/_components/classroom-chat"
+import {
+  ClassroomBoardBar,
+  CollaborationCursors,
+} from "../../../teacher/classroom/[classId]/_components/classroom-board-bar"
+import { useCollaborationPresence } from "../../../teacher/classroom/[classId]/_hooks/use-collaboration-presence"
 import { TextBoxData, MediaPosition } from "@/lib/whiteboard"
 import { useClassroomPresence, useClassroomSession } from "@/hooks/use-virtual-classroom"
 
@@ -17,10 +22,12 @@ export default function StudentClassroomPage() {
   const params = useParams()
   const router = useRouter()
   const classId = params.classId as string
+  const [activePage, setActivePage] = useState("main")
   const session = useClassroomSession(classId)
   useClassroomPresence(classId, session.data?.status === "live")
 
-  const { data: whiteboard, isLoading, error } = useWhiteboard(classId)
+  const { data: whiteboard, isLoading, error } = useWhiteboard(classId, activePage)
+  const presence = useCollaborationPresence(classId, activePage)
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
   const [imagesData, setImagesData] = useState<Record<string, MediaPosition>>({})
@@ -120,7 +127,7 @@ export default function StudentClassroomPage() {
   const images = Object.keys(imagesData)
   const videoLinks = Object.keys(videosData)
 
-  const { mutate: updateWhiteboard } = useUpdateWhiteboard(classId)
+  const { mutate: updateWhiteboard } = useUpdateWhiteboard(classId, activePage)
 
   // Save function for when students have edit rights
   const handleCanvasSave = useCallback(
@@ -220,44 +227,57 @@ export default function StudentClassroomPage() {
           <span className="ml-2 text-gray-500">Loading classroom...</span>
         </div>
       ) : (
-        <div className="relative flex flex-1 overflow-hidden">
-          {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
-          <div
-            className={`flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
-          >
-            <WhiteboardCanvas
-              canvasState={canvasState}
-              onSave={handleCanvasSave}
-              isLoading={isLoading}
-              isReadOnly={!whiteboard?.allow_student_edit}
-              images={images}
-              videoLinks={videoLinks}
-              textBoxes={textBoxes}
-              imagesData={imagesData}
-              videosData={videosData}
-              onAddImage={() => {}}
-              onRemoveImage={() => {}}
-              onAddVideo={() => {}}
-              onRemoveVideo={() => {}}
-              onAddTextBox={() => {}}
-              onUpdateTextBox={() => {}}
-              onRemoveTextBox={() => {}}
-              onUpdateImagesData={() => {}}
-              onUpdateVideosData={() => {}}
-              onClearAll={() => {}}
-            />
-          </div>
-          {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
-          <div
-            className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent md:py-2`}
-          >
-            <ClassroomChat
-              classId={classId}
-              isReadOnly={false}
-              isCollapsed={isChatCollapsed}
-              onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
-              showCollapseButton={true}
-            />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <ClassroomBoardBar
+            classroomId={classId}
+            activePage={activePage}
+            onPageChange={setActivePage}
+            canManage={false}
+            participants={presence.participants}
+          />
+          <div className="relative flex flex-1 overflow-hidden">
+            {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
+            <div
+              className={`relative flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
+              onPointerMove={presence.sendPointer}
+              onPointerLeave={presence.clearPointer}
+            >
+              <CollaborationCursors cursors={presence.cursors} />
+              <WhiteboardCanvas
+                key={activePage}
+                canvasState={canvasState}
+                onSave={handleCanvasSave}
+                isLoading={isLoading}
+                isReadOnly={!whiteboard?.allow_student_edit}
+                images={images}
+                videoLinks={videoLinks}
+                textBoxes={textBoxes}
+                imagesData={imagesData}
+                videosData={videosData}
+                onAddImage={() => {}}
+                onRemoveImage={() => {}}
+                onAddVideo={() => {}}
+                onRemoveVideo={() => {}}
+                onAddTextBox={() => {}}
+                onUpdateTextBox={() => {}}
+                onRemoveTextBox={() => {}}
+                onUpdateImagesData={() => {}}
+                onUpdateVideosData={() => {}}
+                onClearAll={() => {}}
+              />
+            </div>
+            {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
+            <div
+              className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent md:py-2`}
+            >
+              <ClassroomChat
+                classId={classId}
+                isReadOnly={false}
+                isCollapsed={isChatCollapsed}
+                onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
+                showCollapseButton={true}
+              />
+            </div>
           </div>
         </div>
       )}

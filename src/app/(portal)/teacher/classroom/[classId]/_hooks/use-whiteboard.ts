@@ -8,9 +8,10 @@ import {
 } from "@/lib/classroom-collaboration"
 import { toast } from "sonner"
 
-export const WHITEBOARD_KEY = (classroomId: string) => [
+export const WHITEBOARD_KEY = (classroomId: string, pageKey = "main") => [
   "classroom-whiteboard",
   classroomId,
+  pageKey,
 ]
 
 type SessionWhiteboard = WhiteboardResponse & { version: number }
@@ -32,14 +33,19 @@ const normalize = (
   version: data.version,
 })
 
-export function useWhiteboard(classroomId: string) {
+export function useWhiteboard(classroomId: string, pageKey = "main") {
   const queryClient = useQueryClient()
   const [collaborationStatus, setCollaborationStatus] =
     useState<CollaborationStatus>("connecting")
   const query = useQuery({
-    queryKey: WHITEBOARD_KEY(classroomId),
-    queryFn: async () =>
-      normalize(classroomId, await VirtualClassroomAPI.getWhiteboard(classroomId)),
+    queryKey: WHITEBOARD_KEY(classroomId, pageKey),
+    queryFn: async () => {
+      const legacy = await VirtualClassroomAPI.getWhiteboard(classroomId)
+      return normalize(classroomId, {
+        ...legacy,
+        snapshot: pageKey === "main" ? legacy.snapshot : {},
+      })
+    },
     enabled: Boolean(classroomId),
     staleTime: 0,
     refetchInterval: false,
@@ -47,41 +53,42 @@ export function useWhiteboard(classroomId: string) {
   })
   useEffect(() => {
     if (!classroomId) return
-    const collaboration = classroomCollaboration(classroomId)
-    return collaboration.subscribe((snapshot, status) => {
+    const collaboration = classroomCollaboration(classroomId, pageKey)
+    return collaboration.subscribe((snapshot, status, allowStudentDraw) => {
       setCollaborationStatus(status)
       if (!Object.keys(snapshot).length) return
       const current = queryClient.getQueryData<SessionWhiteboard>(
-        WHITEBOARD_KEY(classroomId)
+        WHITEBOARD_KEY(classroomId, pageKey)
       )
       queryClient.setQueryData(
-        WHITEBOARD_KEY(classroomId),
+        WHITEBOARD_KEY(classroomId, pageKey),
         normalize(classroomId, {
           version: current?.version ?? 0,
           snapshot,
-          allowStudentDraw: current?.allow_student_edit ?? false,
+          allowStudentDraw: allowStudentDraw ?? current?.allow_student_edit ?? false,
         })
       )
     })
-  }, [classroomId, queryClient])
+  }, [classroomId, pageKey, queryClient])
   useEffect(() => {
     if (!query.data || !classroomId) return
-    classroomCollaboration(classroomId).seed({
+    if (pageKey !== "main") return
+    classroomCollaboration(classroomId, pageKey).seed({
       canvas_state: query.data.canvas_state,
       images_data: query.data.images_data,
       videos_data: query.data.videos_data,
       text_boxes: query.data.text_boxes,
     })
-  }, [classroomId, query.data])
+  }, [classroomId, pageKey, query.data])
   return { ...query, collaborationStatus }
 }
 
-export function useUpdateWhiteboard(classroomId: string) {
+export function useUpdateWhiteboard(classroomId: string, pageKey = "main") {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: UpdateWhiteboardData) => {
       const current = queryClient.getQueryData<SessionWhiteboard>(
-        WHITEBOARD_KEY(classroomId)
+        WHITEBOARD_KEY(classroomId, pageKey)
       )
       if (data.allow_student_edit !== undefined) {
         await VirtualClassroomAPI.updatePermissions(classroomId, {
@@ -105,14 +112,15 @@ export function useUpdateWhiteboard(classroomId: string) {
         ...data,
       }
       delete snapshot.allow_student_edit
-      classroomCollaboration(classroomId).update(snapshot)
+      classroomCollaboration(classroomId, pageKey).update(snapshot)
       return normalize(classroomId, {
         version: current?.version ?? 0,
         snapshot,
         allowStudentDraw: current?.allow_student_edit ?? false,
       })
     },
-    onSuccess: (data) => queryClient.setQueryData(WHITEBOARD_KEY(classroomId), data),
+    onSuccess: (data) =>
+      queryClient.setQueryData(WHITEBOARD_KEY(classroomId, pageKey), data),
     onError: (error: Error) =>
       toast.error(error.message || "Failed to update whiteboard"),
   })

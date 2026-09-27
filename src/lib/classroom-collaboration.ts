@@ -4,7 +4,25 @@ import * as Y from "yjs"
 import { VirtualClassroomAPI } from "./virtual-classroom"
 
 export type CollaborationStatus = "connecting" | "connected" | "reconnecting" | "offline"
-type Listener = (snapshot: Record<string, unknown>, status: CollaborationStatus) => void
+type Listener = (
+  snapshot: Record<string, unknown>,
+  status: CollaborationStatus,
+  allowStudentDraw: boolean | null
+) => void
+export interface CollaborationParticipant {
+  userId: string
+  name: string
+  roles: string[]
+  socketId: string
+}
+export interface CollaborationCursor extends CollaborationParticipant {
+  x: number
+  y: number
+}
+type PresenceListener = (
+  participants: CollaborationParticipant[],
+  cursors: CollaborationCursor[]
+) => void
 
 const socketOrigin = () => {
   const configured = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -21,8 +39,12 @@ class ClassroomCollaborationClient {
   private listeners = new Set<Listener>()
   private started = false
   private canWrite = false
+  private allowStudentDraw: boolean | null = null
   private refreshingTicket = false
   private hasOfflineChanges = false
+  private presenceListeners = new Set<PresenceListener>()
+  private participants = new Map<string, CollaborationParticipant>()
+  private cursors = new Map<string, CollaborationCursor>()
 
   constructor(
     private readonly classroomId: string,
@@ -47,10 +69,21 @@ class ClassroomCollaborationClient {
 
   subscribe(listener: Listener) {
     this.listeners.add(listener)
-    listener(this.snapshot(), this.status)
+    listener(this.snapshot(), this.status, this.allowStudentDraw)
     void this.start()
     return () => {
       this.listeners.delete(listener)
+      this.stopWhenUnused()
+    }
+  }
+
+  subscribePresence(listener: PresenceListener) {
+    this.presenceListeners.add(listener)
+    this.notifyPresence()
+    void this.start()
+    return () => {
+      this.presenceListeners.delete(listener)
+      this.stopWhenUnused()
     }
   }
 
@@ -75,6 +108,7 @@ class ClassroomCollaborationClient {
     try {
       const access = await VirtualClassroomAPI.getCollaborationTicket(this.classroomId)
       this.canWrite = access.canWrite
+      this.allowStudentDraw = access.allowStudentDraw
       const socket = io(`${socketOrigin()}${access.namespace}`, {
         transports: ["websocket"],
         auth: { ticket: access.ticket },
@@ -123,6 +157,37 @@ class ClassroomCollaborationClient {
         Y.applyUpdate(this.doc, base64ToBytes(item.update), "remote")
         this.sequence = Math.max(this.sequence, item.sequence)
       })
+      socket.on("presence-snapshot", (items: CollaborationParticipant[]) => {
+        this.participants = new Map(items.map((item) => [item.socketId, item]))
+        this.notifyPresence()
+      })
+      socket.on(
+        "presence",
+        (item: CollaborationParticipant & { type: "joined" | "left" }) => {
+          if (item.type === "left") {
+            this.participants.delete(item.socketId)
+            this.cursors.delete(item.socketId)
+          } else {
+            this.participants.set(item.socketId, item)
+          }
+          this.notifyPresence()
+        }
+      )
+      socket.on("permissions", (permissions: { allowStudentDraw: boolean }) => {
+        this.allowStudentDraw = permissions.allowStudentDraw
+        this.notify()
+      })
+      socket.on(
+        "awareness",
+        (item: { userId: string; socketId: string; state?: unknown }) => {
+          const participant = this.participants.get(item.socketId)
+          const state = item.state as { x?: number; y?: number } | null
+          if (participant && typeof state?.x === "number" && typeof state.y === "number")
+            this.cursors.set(item.socketId, { ...participant, x: state.x, y: state.y })
+          else this.cursors.delete(item.socketId)
+          this.notifyPresence()
+        }
+      )
     } catch {
       this.setStatus("offline")
     }
@@ -134,6 +199,7 @@ class ClassroomCollaborationClient {
     try {
       const access = await VirtualClassroomAPI.getCollaborationTicket(this.classroomId)
       this.canWrite = access.canWrite
+      this.allowStudentDraw = access.allowStudentDraw
       this.socket.auth = { ticket: access.ticket }
       this.setStatus("reconnecting")
       this.socket.connect()
@@ -155,16 +221,33 @@ class ClassroomCollaborationClient {
 
   private notify() {
     const snapshot = this.snapshot()
-    for (const listener of this.listeners) listener(snapshot, this.status)
+    for (const listener of this.listeners)
+      listener(snapshot, this.status, this.allowStudentDraw)
+  }
+
+  private notifyPresence() {
+    const participants = [...this.participants.values()]
+    const cursors = [...this.cursors.values()]
+    for (const listener of this.presenceListeners) listener(participants, cursors)
+  }
+
+  private stopWhenUnused() {
+    if (this.listeners.size || this.presenceListeners.size) return
+    this.socket?.disconnect()
+    this.socket = null
+    this.started = false
+    this.participants.clear()
+    this.cursors.clear()
   }
 }
 
 const clients = new Map<string, ClassroomCollaborationClient>()
-export const classroomCollaboration = (classroomId: string) => {
-  let client = clients.get(classroomId)
+export const classroomCollaboration = (classroomId: string, pageKey = "main") => {
+  const key = `${classroomId}:${pageKey}`
+  let client = clients.get(key)
   if (!client) {
-    client = new ClassroomCollaborationClient(classroomId)
-    clients.set(classroomId, client)
+    client = new ClassroomCollaborationClient(classroomId, pageKey)
+    clients.set(key, client)
   }
   return client
 }

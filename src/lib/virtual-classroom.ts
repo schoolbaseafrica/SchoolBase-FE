@@ -41,6 +41,13 @@ export interface ClassroomCollaborationTicket {
   namespace: string
   classroomId: string
   canWrite: boolean
+  allowStudentDraw: boolean
+}
+
+export interface WhiteboardPage {
+  pageKey: string
+  title: string
+  sortOrder: number
 }
 
 const unwrap = <T>(response: ResponsePack<T> | T): T =>
@@ -96,6 +103,37 @@ export const VirtualClassroomAPI = {
       await apiFetch<
         ResponsePack<ClassroomCollaborationTicket> | ClassroomCollaborationTicket
       >(`/virtual-classrooms/${id}/collaboration-ticket`, { method: "POST" })
+    ),
+  getWhiteboardPages: async (id: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<WhiteboardPage[]> | WhiteboardPage[]>(
+        `/virtual-classrooms/${id}/whiteboard-pages`
+      )
+    ),
+  createWhiteboardPage: async (id: string, title: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<WhiteboardPage> | WhiteboardPage>(
+        `/virtual-classrooms/${id}/whiteboard-pages`,
+        { method: "POST", data: { title } }
+      )
+    ),
+  renameWhiteboardPage: async (id: string, pageKey: string, title: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<WhiteboardPage> | WhiteboardPage>(
+        `/virtual-classrooms/${id}/whiteboard-pages/${pageKey}`,
+        { method: "PATCH", data: { title } }
+      )
+    ),
+  deleteWhiteboardPage: (id: string, pageKey: string) =>
+    apiFetch(`/virtual-classrooms/${id}/whiteboard-pages/${pageKey}`, {
+      method: "DELETE",
+    }),
+  reorderWhiteboardPages: async (id: string, pageKeys: string[]) =>
+    unwrap(
+      await apiFetch<ResponsePack<WhiteboardPage[]> | WhiteboardPage[]>(
+        `/virtual-classrooms/${id}/whiteboard-pages`,
+        { method: "PATCH", data: { pageKeys } }
+      )
     ),
   getWhiteboard: async (id: string) =>
     unwrap(
