@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, CheckCircle2, Send, ShieldAlert } from "lucide-react"
+import { Activity, ArrowLeft, CheckCircle2, Send, ShieldAlert, X } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
@@ -14,6 +14,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
 import { CbtAPI, CbtAttemptReview } from "@/lib/cbt"
 
 function responseText(response: unknown) {
@@ -202,6 +211,81 @@ export default function CbtAttemptReviewPage() {
                 {attempt.resultPublishedAt && (
                   <Badge variant="outline">Result published</Badge>
                 )}
+                <Drawer direction="right">
+                  <DrawerTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Activity className="mr-2 h-4 w-4" />
+                      Browser activity
+                      {attempt.events.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {attempt.events.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent className="w-[92vw] sm:max-w-xl">
+                    <DrawerClose asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-3 right-3 z-10"
+                        aria-label="Close browser activity"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </DrawerClose>
+                    <DrawerHeader className="border-b pr-10">
+                      <DrawerTitle>Browser activity</DrawerTitle>
+                      <DrawerDescription>
+                        Connection, page visibility, and examination activity recorded for{" "}
+                        {attempt.candidate.name}. This does not include camera,
+                        microphone, or screen recording.
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="flex-1 overflow-y-auto p-4">
+                      {attempt.events.length ? (
+                        <div className="space-y-2">
+                          {attempt.events.map((event) => (
+                            <div
+                              key={event.id}
+                              className="rounded-lg border px-3 py-3 text-sm"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="font-medium capitalize">
+                                  {event.eventType.replaceAll("_", " ")}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {new Date(event.createdAt).toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="mt-2 flex justify-end">
+                                {(event.eventType === "connection_lost" ||
+                                  event.eventType === "visibility_hidden") &&
+                                  !event.metadata?.acknowledgedAt && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={acknowledgeEvent.isPending}
+                                      onClick={() => acknowledgeEvent.mutate(event.id)}
+                                    >
+                                      Acknowledge
+                                    </Button>
+                                  )}
+                                {Boolean(event.metadata?.acknowledgedAt) && (
+                                  <Badge variant="secondary">Reviewed</Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500">
+                          No browser activity has been recorded.
+                        </p>
+                      )}
+                    </div>
+                  </DrawerContent>
+                </Drawer>
               </div>
             </div>
             <div className="mt-6 grid gap-3 border-t pt-5 sm:grid-cols-3">
@@ -239,49 +323,6 @@ export default function CbtAttemptReviewPage() {
             </Card>
           )}
         </div>
-
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-base">Attempt activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attempt.events.length ? (
-              <div className="space-y-2">
-                {attempt.events.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex flex-col justify-between gap-1 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center"
-                  >
-                    <span className="font-medium">
-                      {event.eventType.replaceAll("_", " ")}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
-                        {new Date(event.createdAt).toLocaleString()}
-                      </span>
-                      {(event.eventType === "connection_lost" ||
-                        event.eventType === "visibility_hidden") &&
-                        !event.metadata?.acknowledgedAt && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => acknowledgeEvent.mutate(event.id)}
-                          >
-                            Acknowledge
-                          </Button>
-                        )}
-                      {Boolean(event.metadata?.acknowledgedAt) && (
-                        <Badge variant="secondary">Reviewed</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No activity events recorded.</p>
-            )}
-          </CardContent>
-        </Card>
 
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
