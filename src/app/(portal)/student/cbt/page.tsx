@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CbtAPI, CbtExamSummary } from "@/lib/cbt"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { extractErrorMessage } from "@/lib/error-handler"
 
 function availability(exam: CbtExamSummary) {
   if (exam.availableTo) return `Closes ${format(new Date(exam.availableTo), "PPp")}`
@@ -36,8 +37,8 @@ export default function StudentCbtPage() {
   const start = useMutation({
     mutationFn: CbtAPI.startAttempt,
     onSuccess: (attempt) => router.push(`/student/cbt/${attempt.id}`),
-    onError: (error: Error) =>
-      toast.error(error.message || "Could not open the examination"),
+    onError: (error: unknown) =>
+      toast.error(extractErrorMessage(error) || "Could not open the examination"),
   })
 
   return (
@@ -49,7 +50,7 @@ export default function StudentCbtPage() {
             Computer-based testing
           </div>
           <h1 className="mt-2 text-2xl font-semibold text-slate-950 md:text-3xl">
-            Examinations
+            Internal examinations
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Answers are saved on this device first, so a short connection interruption
@@ -85,7 +86,8 @@ export default function StudentCbtPage() {
               <BookOpenCheck className="mb-3 h-9 w-9 text-slate-400" />
               <p className="font-semibold">No examination is currently available</p>
               <p className="mt-1 text-sm text-slate-500">
-                Scheduled examinations will appear here when they open.
+                Internal examinations assigned to your class will appear here when they
+                open.
               </p>
             </CardContent>
           </Card>

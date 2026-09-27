@@ -294,7 +294,9 @@ export const CbtAPI = {
   listStudentExams: (period?: CbtPeriodParams) =>
     apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>("/cbt/student/exams", {
       params: period,
-    }).then(unwrap),
+    })
+      .then(unwrap)
+      .then((exams) => exams.filter((exam) => exam.examType === "in_school")),
 
   startAttempt: (examId: string) =>
     apiFetch<ApiEnvelope<CbtAttempt> | CbtAttempt>(
