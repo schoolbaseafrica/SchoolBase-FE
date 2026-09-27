@@ -48,6 +48,13 @@ const formSchema = z
     room_id: z.string().optional(),
   })
   .refine(
+    (data) => !data.start_time || !data.end_time || data.start_time < data.end_time,
+    {
+      message: "End time must be later than start time",
+      path: ["end_time"],
+    }
+  )
+  .refine(
     (data) => {
       if (data.period_type === "ACADEMICS") {
         return !!data.subject_id && !!data.teacher_id
@@ -112,7 +119,8 @@ export default function CreateScheduleModal({
         class_id: selectedClassId,
         subject_id: values.period_type === "BREAK" ? undefined : values.subject_id,
         teacher_id: values.period_type === "BREAK" ? undefined : values.teacher_id,
-        room_id: values.period_type === "BREAK" ? undefined : values.room_id,
+        room_id:
+          values.period_type === "BREAK" || !values.room_id ? undefined : values.room_id,
       },
       {
         onSuccess: () => {

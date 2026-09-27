@@ -3,6 +3,7 @@ import { TimetableAPI, CreateSchedulePayload } from "@/lib/timetable"
 import { toast } from "sonner"
 import { useTimetableStore } from "@/store/timetable-store"
 import { useEffect } from "react"
+import { extractErrorMessage } from "@/lib/error-handler"
 
 export const useClassTimetable = (classId: string) => {
   const setTimetable = useTimetableStore((state) => state.setTimetable)
@@ -41,8 +42,8 @@ export const useCreateSchedule = () => {
       toast.success("Schedule created successfully")
       queryClient.invalidateQueries({ queryKey: ["timetable"] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to create schedule")
+    onError: (error: unknown) => {
+      toast.error(extractErrorMessage(error) || "Failed to create schedule")
     },
   })
 }
@@ -57,8 +58,8 @@ export const useUpdateSchedule = () => {
       toast.success("Schedule updated successfully")
       queryClient.invalidateQueries({ queryKey: ["timetable"] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to update schedule")
+    onError: (error: unknown) => {
+      toast.error(extractErrorMessage(error) || "Failed to update schedule")
     },
   })
 }
@@ -72,8 +73,8 @@ export const useDeleteSchedule = () => {
       toast.success("Schedule deleted successfully")
       queryClient.invalidateQueries({ queryKey: ["timetable"] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete schedule")
+    onError: (error: unknown) => {
+      toast.error(extractErrorMessage(error) || "Failed to delete schedule")
     },
   })
 }

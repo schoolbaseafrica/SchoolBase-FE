@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ClassesAPI } from "@/lib/classes"
 import { toast } from "sonner"
 import { extractErrorMessage } from "@/lib/error-handler"
-import { AxiosError } from "axios"
 
 const CLASSES_KEY = ["classes"]
 const TEACHER_CLASSES_KEY = (teacherId: string) => ["teacher_classes", teacherId]
@@ -22,27 +21,12 @@ export function useAssignTeacherToClass() {
       classId: string
       sessionId?: string
     }) => {
-      try {
-        const response = await ClassesAPI.assignTeacherToClass(
-          teacherId,
-          classId,
-          sessionId
-        )
-        return response.data
-      } catch (error) {
-        // Handle 409 Conflict - teacher already assigned
-        if (error instanceof AxiosError && error.response?.status === 409) {
-          // Return a success-like response since the assignment already exists
-          return {
-            message: "Teacher is already assigned to this class",
-            teacher_id: teacherId,
-            class_id: classId,
-            class_name: "",
-            assignment_date: new Date().toISOString(),
-          }
-        }
-        throw error
-      }
+      const response = await ClassesAPI.assignTeacherToClass(
+        teacherId,
+        classId,
+        sessionId
+      )
+      return response.data
     },
     onSuccess: async (data, variables) => {
       toast.success(data.message || "Teacher assigned to class successfully")
