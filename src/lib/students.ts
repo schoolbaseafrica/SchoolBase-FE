@@ -31,6 +31,7 @@ type MetaResponsePack<T> = {
     limit: number
     page: number
     total_pages: number
+    totalPages?: number
   }
 }
 
@@ -93,7 +94,15 @@ export const StudentsAPI = {
         params,
       },
       true
-    ),
+    ).then((response) => ({
+      ...response,
+      meta: response.meta
+        ? {
+            ...response.meta,
+            total_pages: response.meta.total_pages ?? response.meta.totalPages ?? 1,
+          }
+        : response.meta,
+    })),
 
   getTotal: (params?: GetStudentsParams) =>
     apiFetch<StudentsListResponse>( // Remove ResponsePack wrapper
