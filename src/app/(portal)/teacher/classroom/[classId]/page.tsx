@@ -4,7 +4,11 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2, Users, AlertCircle, MessageSquare, X } from "lucide-react"
-import { useWhiteboard, useUpdateWhiteboard } from "./_hooks/use-whiteboard"
+import {
+  useWhiteboard,
+  useUpdateWhiteboard,
+  useUpdateWhiteboardElements,
+} from "./_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "./_components/whiteboard-canvas"
 import { ClassroomChat } from "./_components/classroom-chat"
 import {
@@ -35,6 +39,7 @@ export default function TeacherClassroomPage() {
     collaborationStatus,
   } = useWhiteboard(classId, activePage)
   const updateMutation = useUpdateWhiteboard(classId, activePage)
+  const updateElements = useUpdateWhiteboardElements(classId, activePage)
   const presence = useCollaborationPresence(classId, activePage)
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
@@ -458,7 +463,9 @@ export default function TeacherClassroomPage() {
               <WhiteboardCanvas
                 key={activePage}
                 canvasState={canvasState}
+                elements={whiteboard?.excalidraw_elements}
                 onSave={handleCanvasSave}
+                onElementsChange={updateElements}
                 isLoading={isLoading}
                 isReadOnly={false}
                 images={images}

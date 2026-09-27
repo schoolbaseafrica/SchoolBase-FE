@@ -24,6 +24,7 @@ export interface WhiteboardResponse {
   id: string | null
   class_id: string
   canvas_state: string | null
+  excalidraw_elements: Record<string, unknown>[]
   images_data: Record<string, MediaPosition>
   videos_data: Record<string, MediaPosition>
   text_boxes: TextBoxData[]
@@ -72,6 +73,7 @@ export const WhiteboardAPI = {
         id: data.id ?? null,
         class_id: data.class_id,
         canvas_state: data.canvas_state ?? null,
+        excalidraw_elements: data.excalidraw_elements ?? [],
         images_data: data.images_data ?? {},
         videos_data: data.videos_data ?? {},
         text_boxes: data.text_boxes ?? [],

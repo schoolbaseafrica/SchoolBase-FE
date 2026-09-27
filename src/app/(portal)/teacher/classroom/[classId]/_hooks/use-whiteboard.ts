@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UpdateWhiteboardData, WhiteboardResponse } from "@/lib/whiteboard"
 import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
@@ -23,6 +23,8 @@ const normalize = (
   id: classroomId,
   class_id: classroomId,
   canvas_state: (data.snapshot.canvas_state as string | null) ?? null,
+  excalidraw_elements:
+    (data.snapshot.excalidraw_elements as Record<string, unknown>[]) ?? [],
   images_data: (data.snapshot.images_data as WhiteboardResponse["images_data"]) ?? {},
   videos_data: (data.snapshot.videos_data as WhiteboardResponse["videos_data"]) ?? {},
   text_boxes: (data.snapshot.text_boxes as WhiteboardResponse["text_boxes"]) ?? [],
@@ -124,4 +126,13 @@ export function useUpdateWhiteboard(classroomId: string, pageKey = "main") {
     onError: (error: Error) =>
       toast.error(error.message || "Failed to update whiteboard"),
   })
+}
+
+export function useUpdateWhiteboardElements(classroomId: string, pageKey = "main") {
+  return useCallback(
+    (elements: ReadonlyArray<Record<string, unknown>>) => {
+      classroomCollaboration(classroomId, pageKey).updateElements(elements)
+    },
+    [classroomId, pageKey]
+  )
 }

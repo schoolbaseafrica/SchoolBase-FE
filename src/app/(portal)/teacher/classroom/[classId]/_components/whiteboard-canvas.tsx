@@ -1,50 +1,50 @@
 "use client"
 
-import { useRef, useEffect, useState, useCallback } from "react"
-import { ReactSketchCanvas } from "react-sketch-canvas"
+import dynamic from "next/dynamic"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types"
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
+import { Image as ImageIcon, Link as LinkIcon, Loader2, Trash2, Type } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import {
-  Loader2,
-  Trash2,
-  Image as ImageIcon,
-  Video,
-  Link as LinkIcon,
-  Type,
-  Pen,
-  Undo2,
-  X,
-} from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import type { TextBoxData } from "@/lib/whiteboard"
 import { FloatingImage, FloatingVideo } from "./floating-media"
 import { FloatingText } from "./floating-text"
 
+import "@excalidraw/excalidraw/index.css"
+
+const Excalidraw = dynamic(
+  async () => (await import("@excalidraw/excalidraw")).Excalidraw,
+  { ssr: false }
+)
+
 interface MediaItem {
-  id: string
-  url: string
+  id?: string
+  url?: string
   x: number
   y: number
+  width?: number
+  height?: number
 }
 
-// Import TextBoxData from the shared type definition
-import type { TextBoxData } from "@/lib/whiteboard"
+type PositionedMedia = Record<
+  string,
+  Required<Pick<MediaItem, "x" | "y" | "width" | "height">>
+>
 
 interface WhiteboardCanvasProps {
   canvasState: string | null
+  elements?: Record<string, unknown>[]
   onSave: (canvasState: string) => void
+  onElementsChange?: (elements: ReadonlyArray<Record<string, unknown>>) => void
   isLoading?: boolean
   isReadOnly?: boolean
   images?: string[]
   videoLinks?: string[]
   textBoxes?: TextBoxData[]
-  imagesData?: Record<
-    string,
-    MediaItem | { x: number; y: number; width: number; height: number }
-  >
-  videosData?: Record<
-    string,
-    MediaItem | { x: number; y: number; width: number; height: number }
-  >
+  imagesData?: Record<string, MediaItem>
+  videosData?: Record<string, MediaItem>
   onAddImage?: (url: string) => void
   onRemoveImage?: (url: string) => void
   onAddVideo?: (url: string) => void
@@ -52,18 +52,59 @@ interface WhiteboardCanvasProps {
   onAddTextBox?: (textBox: TextBoxData) => void
   onUpdateTextBox?: (id: string, updates: Partial<TextBoxData>) => void
   onRemoveTextBox?: (id: string) => void
-  onUpdateImagesData?: (
-    data: Record<string, { x: number; y: number; width: number; height: number }>
-  ) => void
-  onUpdateVideosData?: (
-    data: Record<string, { x: number; y: number; width: number; height: number }>
-  ) => void
+  onUpdateImagesData?: (data: PositionedMedia) => void
+  onUpdateVideosData?: (data: PositionedMedia) => void
   onClearAll?: () => void
+}
+
+type LegacyPath = {
+  strokeColor?: string
+  strokeWidth?: number
+  paths?: Array<{ x: number; y: number }>
+}
+
+const sceneSignature = (elements: ReadonlyArray<Record<string, unknown>>) =>
+  JSON.stringify(
+    elements.map(({ id, version, versionNonce, isDeleted }) => ({
+      id,
+      version,
+      versionNonce,
+      isDeleted,
+    }))
+  )
+
+async function importLegacyPaths(canvasState: string) {
+  const paths = JSON.parse(canvasState) as LegacyPath[]
+  if (!Array.isArray(paths)) return []
+  const skeletons = paths.flatMap((path, index) => {
+    if (!path.paths?.length) return []
+    const [origin, ...remaining] = path.paths
+    return [
+      {
+        id: `legacy-stroke-${index}`,
+        type: "freedraw" as const,
+        x: origin.x,
+        y: origin.y,
+        points: [
+          [0, 0],
+          ...remaining.map((point) => [point.x - origin.x, point.y - origin.y]),
+        ],
+        strokeColor: path.strokeColor ?? "#000000",
+        strokeWidth: path.strokeWidth ?? 2,
+      },
+    ]
+  })
+  const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+  return convertToExcalidrawElements(
+    skeletons as unknown as Parameters<typeof convertToExcalidrawElements>[0],
+    { regenerateIds: false }
+  )
 }
 
 export function WhiteboardCanvas({
   canvasState,
-  onSave,
+  elements = [],
+  onElementsChange,
   isLoading = false,
   isReadOnly = false,
   images = [],
@@ -82,364 +123,123 @@ export function WhiteboardCanvas({
   onUpdateVideosData,
   onClearAll,
 }: WhiteboardCanvasProps) {
-  const canvasRef = useRef<any>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [strokeColor, setStrokeColor] = useState("#000000")
-  const [strokeWidth, setStrokeWidth] = useState(4)
+  const migrationStarted = useRef(false)
+  const publishTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSceneSignature = useRef("")
   const [videoUrl, setVideoUrl] = useState("")
   const [showVideoInput, setShowVideoInput] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
-  const [isPenToolActive, setIsPenToolActive] = useState(false)
 
-  // Get selected text box for style controls
-  const selectedTextBox = textBoxes.find((tb) => tb.id === selectedElementId)
+  const sceneElements = useMemo(
+    () => elements as unknown as readonly ExcalidrawElement[],
+    [elements]
+  )
 
-  // Use provided data from props (loaded from backend)
-  const imageData = imagesData
-  const videoData = videosData
-
-  // Load canvas state when it changes
   useEffect(() => {
-    if (canvasState && canvasRef.current) {
-      try {
-        // Parse the JSON string to CanvasPath array
-        const paths = JSON.parse(canvasState)
-        if (Array.isArray(paths)) {
-          canvasRef.current.loadPaths(paths)
-        }
-      } catch (error) {
-        console.error("Error loading canvas paths:", error)
-      }
-    }
-  }, [canvasState])
+    const nextSignature = sceneSignature(elements)
+    if (!apiRef.current || nextSignature === lastSceneSignature.current) return
+    lastSceneSignature.current = nextSignature
+    apiRef.current.updateScene({ elements: sceneElements })
+  }, [elements, sceneElements])
 
-  const handleExport = useCallback(async () => {
-    if (!canvasRef.current || isReadOnly) return
-    try {
-      const paths = await canvasRef.current.exportPaths()
-      const pathsString = JSON.stringify(paths)
-      onSave(pathsString)
-    } catch (error) {
-      console.error("Error exporting canvas:", error)
-    }
-  }, [onSave, isReadOnly])
-
-  // Auto-save timer ref
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  const handleUndo = useCallback(() => {
-    if (canvasRef.current && !isReadOnly) {
-      canvasRef.current.undo()
-      handleExport() // Save after undo
-    }
-  }, [handleExport, isReadOnly])
-
-  const handleClearDrawings = useCallback(() => {
-    if (canvasRef.current && !isReadOnly) {
-      canvasRef.current.clearCanvas()
-      handleExport() // Save after clear
-    }
-  }, [handleExport, isReadOnly])
-
-  const handleClear = () => {
-    if (canvasRef.current && !isReadOnly) {
-      canvasRef.current.clearCanvas()
-      handleExport()
-      // Clear all floating elements via parent callback (which saves to backend)
-      if (onClearAll) {
-        onClearAll()
-      } else {
-        // Fallback: clear locally if callback not provided
-        if (onRemoveImage) {
-          images.forEach((url) => onRemoveImage(url))
-        }
-        if (onRemoveVideo) {
-          videoLinks.forEach((url) => onRemoveVideo(url))
-        }
-        if (onRemoveTextBox) {
-          textBoxes.forEach((tb) => onRemoveTextBox(tb.id))
-        }
-      }
-      setSelectedElementId(null)
-    }
-  }
-
-  // Handle keyboard delete key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isReadOnly) return
+    if (elements.length || !canvasState || migrationStarted.current || !onElementsChange)
+      return
+    migrationStarted.current = true
+    void importLegacyPaths(canvasState)
+      .then((imported) => {
+        if (imported.length)
+          onElementsChange(imported as unknown as Record<string, unknown>[])
+      })
+      .catch((error: unknown) =>
+        console.error("Could not import legacy whiteboard strokes", error)
+      )
+  }, [canvasState, elements.length, onElementsChange])
 
-      // Handle Delete or Backspace key (only if not typing in an input/textarea)
-      const target = e.target as HTMLElement
-      const isInputElement =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
+  useEffect(
+    () => () => {
+      if (publishTimer.current) clearTimeout(publishTimer.current)
+    },
+    []
+  )
 
-      // If Ctrl/Cmd + Z, undo last stroke on canvas
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey && !isInputElement) {
-        e.preventDefault()
-        if (canvasRef.current) {
-          canvasRef.current.undo()
-          handleExport() // Save after undo
-        }
-        return
-      }
+  const publishElements = useCallback(
+    (next: readonly ExcalidrawElement[]) => {
+      if (isReadOnly || !onElementsChange) return
+      const records = next as unknown as ReadonlyArray<Record<string, unknown>>
+      const nextSignature = sceneSignature(records)
+      if (nextSignature === lastSceneSignature.current) return
+      lastSceneSignature.current = nextSignature
+      if (publishTimer.current) clearTimeout(publishTimer.current)
+      publishTimer.current = setTimeout(() => onElementsChange(records), 120)
+    },
+    [isReadOnly, onElementsChange]
+  )
 
-      // If Delete/Backspace with selected element, delete that element
-      if (
-        (e.key === "Delete" || e.key === "Backspace") &&
-        selectedElementId &&
-        !isInputElement
-      ) {
-        e.preventDefault()
-        e.stopPropagation()
-
-        // Determine element type and remove
-        if (selectedElementId.startsWith("img-")) {
-          const index = parseInt(selectedElementId.replace("img-", ""))
-          if (!isNaN(index) && images[index] && onRemoveImage) {
-            onRemoveImage(images[index])
-          }
-        } else if (selectedElementId.startsWith("vid-")) {
-          const index = parseInt(selectedElementId.replace("vid-", ""))
-          if (!isNaN(index) && videoLinks[index] && onRemoveVideo) {
-            onRemoveVideo(videoLinks[index])
-          }
-        } else if (selectedElementId.startsWith("text-")) {
-          if (onRemoveTextBox) {
-            onRemoveTextBox(selectedElementId)
-          }
-        }
-
-        setSelectedElementId(null)
-        return
-      }
-
-      // If Delete/Backspace without selected element and canvas is focused, undo last stroke
-      if (
-        (e.key === "Delete" || e.key === "Backspace") &&
-        !selectedElementId &&
-        !isInputElement
-      ) {
-        // Check if the click target was the canvas
-        const isCanvasFocused =
-          document.activeElement?.tagName === "CANVAS" ||
-          target.closest(".react-sketch-canvas") !== null
-        if (isCanvasFocused && canvasRef.current) {
-          e.preventDefault()
-          canvasRef.current.undo()
-          handleExport() // Save after undo
-        }
-      }
-
-      // Clear selection on Escape
-      if (e.key === "Escape") {
-        setSelectedElementId(null)
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [
-    selectedElementId,
-    images,
-    videoLinks,
-    textBoxes,
-    onRemoveImage,
-    onRemoveVideo,
-    onRemoveTextBox,
-    isReadOnly,
-  ])
+  const updateMedia = useCallback(
+    (kind: "image" | "video", id: string, changes: Partial<MediaItem>) => {
+      const urls = kind === "image" ? images : videoLinks
+      const source = kind === "image" ? imagesData : videosData
+      const update = kind === "image" ? onUpdateImagesData : onUpdateVideosData
+      const index = Number(id.replace(kind === "image" ? "img-" : "vid-", ""))
+      const url = urls[index]
+      if (!url || !update) return
+      const current = source[url] ?? { x: 50, y: 50 }
+      update({
+        ...source,
+        [url]: {
+          x: changes.x ?? current.x,
+          y: changes.y ?? current.y,
+          width: changes.width ?? current.width ?? (kind === "image" ? 200 : 400),
+          height: changes.height ?? current.height ?? (kind === "image" ? 150 : 225),
+        },
+      } as PositionedMedia)
+    },
+    [images, videoLinks, imagesData, videosData, onUpdateImagesData, onUpdateVideosData]
+  )
 
   const handleImageUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
       if (!file || !onAddImage) return
-
-      // Convert file to base64 data URL for persistence
       const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64String = reader.result as string
-        if (base64String) {
-          onAddImage(base64String)
-        }
-      }
+      reader.onloadend = () =>
+        typeof reader.result === "string" && onAddImage(reader.result)
       reader.readAsDataURL(file)
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
+      event.target.value = ""
     },
     [onAddImage]
   )
 
-  const handleAddVideo = useCallback(() => {
-    if (videoUrl.trim() && onAddVideo) {
-      onAddVideo(videoUrl.trim())
-      setVideoUrl("")
-      setShowVideoInput(false)
-    }
-  }, [videoUrl, onAddVideo])
-
-  const handleImagePositionChange = useCallback(
-    (id: string, x: number, y: number) => {
-      const index = parseInt(id.replace("img-", ""))
-      if (!isNaN(index) && images[index] && onUpdateImagesData) {
-        const url = images[index]
-        const existing = imagesData[url] as any
-        const updatedData = {
-          ...imagesData,
-          [url]: {
-            ...existing,
-            x,
-            y,
-            width: existing?.width || 200,
-            height: existing?.height || 200,
-          },
-        }
-        onUpdateImagesData(
-          updatedData as Record<
-            string,
-            { x: number; y: number; width: number; height: number }
-          >
-        )
-      }
-    },
-    [images, imagesData, onUpdateImagesData]
-  )
-
-  const handleImageSizeChange = useCallback(
-    (id: string, width: number, height: number) => {
-      const index = parseInt(id.replace("img-", ""))
-      if (!isNaN(index) && images[index] && onUpdateImagesData) {
-        const url = images[index]
-        const existing = imagesData[url] as any
-        const updatedData = {
-          ...imagesData,
-          [url]: { ...existing, x: existing?.x || 0, y: existing?.y || 0, width, height },
-        }
-        onUpdateImagesData(
-          updatedData as Record<
-            string,
-            { x: number; y: number; width: number; height: number }
-          >
-        )
-      }
-    },
-    [images, imagesData, onUpdateImagesData]
-  )
-
-  const handleVideoPositionChange = useCallback(
-    (id: string, x: number, y: number) => {
-      const index = parseInt(id.replace("vid-", ""))
-      if (!isNaN(index) && videoLinks[index] && onUpdateVideosData) {
-        const url = videoLinks[index]
-        const existing = videosData[url] as any
-        const updatedData = {
-          ...videosData,
-          [url]: {
-            ...existing,
-            x,
-            y,
-            width: existing?.width || 400,
-            height: existing?.height || 225,
-          },
-        }
-        onUpdateVideosData(
-          updatedData as Record<
-            string,
-            { x: number; y: number; width: number; height: number }
-          >
-        )
-      }
-    },
-    [videoLinks, videosData, onUpdateVideosData]
-  )
-
-  const handleVideoSizeChange = useCallback(
-    (id: string, width: number, height: number) => {
-      const index = parseInt(id.replace("vid-", ""))
-      if (!isNaN(index) && videoLinks[index] && onUpdateVideosData) {
-        const url = videoLinks[index]
-        const existing = videosData[url] as any
-        const updatedData = {
-          ...videosData,
-          [url]: {
-            ...existing,
-            x: existing?.x || 0,
-            y: existing?.y || 0,
-            width,
-            height,
-          },
-        }
-        onUpdateVideosData(
-          updatedData as Record<
-            string,
-            { x: number; y: number; width: number; height: number }
-          >
-        )
-      }
-    },
-    [videoLinks, videosData, onUpdateVideosData]
-  )
-
-  const handleAddTextBox = useCallback(() => {
-    if (!onAddTextBox) return
-    const newTextBox: TextBoxData = {
-      id: `text-${Date.now()}`,
+  const addTextBox = () =>
+    onAddTextBox?.({
+      id: `text-${crypto.randomUUID()}`,
       text: "",
-      x: Math.random() * 200 + 50,
-      y: Math.random() * 200 + 50,
-      width: 200,
+      x: 80,
+      y: 80,
+      width: 220,
       height: 100,
       fontSize: 16,
       fontFamily: "Arial",
       fontWeight: "normal",
       color: "#000000",
-    }
-    onAddTextBox(newTextBox)
-  }, [onAddTextBox])
+    })
 
-  const handleTextBoxPositionChange = useCallback(
-    (id: string, x: number, y: number) => {
-      onUpdateTextBox?.(id, { x, y })
-    },
-    [onUpdateTextBox]
-  )
-
-  const handleTextBoxSizeChange = useCallback(
-    (id: string, width: number, height: number) => {
-      onUpdateTextBox?.(id, { width, height })
-    },
-    [onUpdateTextBox]
-  )
-
-  const handleTextBoxTextChange = useCallback(
-    (id: string, text: string) => {
-      onUpdateTextBox?.(id, { text })
-    },
-    [onUpdateTextBox]
-  )
-
-  const handleTextBoxStyleChange = useCallback(
-    (
-      id: string,
-      styles: {
-        fontSize?: number
-        fontFamily?: string
-        fontWeight?: string
-        color?: string
-      }
-    ) => {
-      onUpdateTextBox?.(id, styles)
-    },
-    [onUpdateTextBox]
-  )
+  const clearBoard = () => {
+    if (isReadOnly) return
+    const deleted = sceneElements.map((element) => ({
+      ...element,
+      isDeleted: true,
+      version: element.version + 1,
+      updated: Date.now(),
+    }))
+    apiRef.current?.updateScene({ elements: deleted })
+    onElementsChange?.(deleted as unknown as Record<string, unknown>[])
+    onClearAll?.()
+    setSelectedElementId(null)
+  }
 
   if (isLoading) {
     return (
@@ -450,366 +250,144 @@ export function WhiteboardCanvas({
   }
 
   return (
-    <div ref={containerRef} className="flex h-full w-full flex-col">
-      {/* Toolbar */}
+    <div className="flex h-full w-full flex-col">
       {!isReadOnly && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b bg-gray-50 px-2 py-1.5 sm:gap-2 sm:px-4 sm:py-2">
-          <Button
-            variant={isPenToolActive ? "default" : "outline"}
-            size="sm"
-            onClick={() => setIsPenToolActive(!isPenToolActive)}
-            className="h-7 text-xs sm:h-8 sm:text-sm"
-          >
-            <Pen className="mr-1 h-3 w-3 sm:mr-2" />
-            <span className="hidden sm:inline">Pen Tool</span>
-            <span className="sm:hidden">Pen</span>
-          </Button>
-
-          {isPenToolActive && (
-            <>
-              <div className="h-5 w-px bg-gray-300 sm:h-6" />
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="color" className="hidden text-xs font-medium sm:block">
-                  Color:
-                </Label>
-                <Input
-                  id="color"
-                  type="color"
-                  value={strokeColor}
-                  onChange={(e) => setStrokeColor(e.target.value)}
-                  className="h-7 w-12 cursor-pointer sm:h-8 sm:w-16"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="width" className="hidden text-xs font-medium sm:block">
-                  Width:
-                </Label>
-                <Input
-                  id="width"
-                  type="range"
-                  min="1"
-                  max="20"
-                  value={strokeWidth}
-                  onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                  className="w-16 sm:w-20"
-                />
-                <span className="text-xs text-gray-600">{strokeWidth}px</span>
-              </div>
-
-              <div className="h-5 w-px bg-gray-300 sm:h-6" />
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUndo}
-                className="h-7 sm:h-8"
-                title="Undo last stroke (Ctrl+Z)"
-              >
-                <Undo2 className="h-3 w-3" />
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearDrawings}
-                className="h-7 text-xs sm:h-8 sm:text-sm"
-                title="Clear all drawings"
-              >
-                <X className="mr-1 h-3 w-3 sm:mr-2" />
-                <span className="hidden sm:inline">Clear Drawings</span>
-                <span className="sm:hidden">Clear</span>
-              </Button>
-            </>
-          )}
-
+        <div className="flex flex-wrap items-center gap-2 border-b bg-gray-50 px-3 py-2">
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
             className="hidden"
-            id="image-upload"
           />
           <Button
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="h-7 text-xs sm:h-8 sm:text-sm"
           >
-            <ImageIcon className="mr-1 h-3 w-3 sm:mr-2" />
-            <span className="hidden sm:inline">Upload Image</span>
-            <span className="sm:hidden">Image</span>
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Upload image
           </Button>
-
           {showVideoInput ? (
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               <Input
-                placeholder="Paste video URL"
                 value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddVideo()
-                }}
-                className="h-7 w-32 text-xs sm:h-8 sm:w-48"
+                onChange={(event) => setVideoUrl(event.target.value)}
+                placeholder="Paste video URL"
+                className="h-8 w-48"
               />
-              <Button size="sm" onClick={handleAddVideo} className="h-7 text-xs sm:h-8 sm:text-sm">
-                Add
-              </Button>
               <Button
-                variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setShowVideoInput(false)
+                  if (videoUrl.trim()) onAddVideo?.(videoUrl.trim())
                   setVideoUrl("")
+                  setShowVideoInput(false)
                 }}
-                className="h-7 text-xs sm:h-8 sm:text-sm"
               >
+                Add
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowVideoInput(false)}>
                 Cancel
               </Button>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowVideoInput(true)}
-              className="h-7 text-xs sm:h-8 sm:text-sm"
-            >
-              <LinkIcon className="mr-1 h-3 w-3 sm:mr-2" />
-              <span className="hidden sm:inline">Add Video Link</span>
-              <span className="sm:hidden">Video</span>
+            <Button variant="outline" size="sm" onClick={() => setShowVideoInput(true)}>
+              <LinkIcon className="mr-2 h-4 w-4" />
+              Add video
             </Button>
           )}
-
-          <div className="h-5 w-px bg-gray-300 sm:h-6" />
-
-          {!isReadOnly && onAddTextBox && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAddTextBox}
-                className="h-7 text-xs sm:h-8 sm:text-sm"
-              >
-                <Type className="mr-1 h-3 w-3 sm:mr-2" />
-                <span className="hidden sm:inline">Add Text Box</span>
-                <span className="sm:hidden">Text</span>
-              </Button>
-              <div className="h-5 w-px bg-gray-300 sm:h-6" />
-            </>
+          {onAddTextBox && (
+            <Button variant="outline" size="sm" onClick={addTextBox}>
+              <Type className="mr-2 h-4 w-4" />
+              Add text box
+            </Button>
           )}
-
-          {/* Text Box Style Controls - Only show when a text box is selected */}
-          {selectedTextBox && !isReadOnly && onUpdateTextBox && (
-            <>
-              <div className="h-5 w-px bg-gray-300 sm:h-6" />
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="text-size" className="hidden text-xs font-medium sm:block">
-                  Size:
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newSize = Math.max(8, (selectedTextBox.fontSize || 16) - 2)
-                    onUpdateTextBox(selectedTextBox.id, { fontSize: newSize })
-                  }}
-                  className="flex h-6 w-6 items-center justify-center rounded border text-xs hover:bg-gray-100"
-                  title="Decrease size"
-                >
-                  −
-                </button>
-                <Input
-                  id="text-size"
-                  type="number"
-                  min="8"
-                  max="120"
-                  value={selectedTextBox.fontSize || 16}
-                  onChange={(e) => {
-                    const newSize = parseInt(e.target.value) || 16
-                    onUpdateTextBox(selectedTextBox.id, { fontSize: newSize })
-                  }}
-                  className="h-7 w-12 text-center text-xs sm:h-8 sm:w-16"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newSize = Math.min(120, (selectedTextBox.fontSize || 16) + 2)
-                    onUpdateTextBox(selectedTextBox.id, { fontSize: newSize })
-                  }}
-                  className="flex h-6 w-6 items-center justify-center rounded border text-xs hover:bg-gray-100"
-                  title="Increase size"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="text-font" className="hidden text-xs font-medium sm:block">
-                  Font:
-                </Label>
-                <select
-                  id="text-font"
-                  value={selectedTextBox.fontFamily || "Arial"}
-                  onChange={(e) => {
-                    onUpdateTextBox(selectedTextBox.id, { fontFamily: e.target.value })
-                  }}
-                  className="h-7 rounded border px-1.5 text-xs sm:h-8 sm:px-2"
-                >
-                  <option value="Arial">Arial</option>
-                  <option value="Times New Roman">Times</option>
-                  <option value="Courier New">Courier</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Verdana">Verdana</option>
-                  <option value="Comic Sans MS">Comic</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="text-weight" className="hidden text-xs font-medium sm:block">
-                  Weight:
-                </Label>
-                <select
-                  id="text-weight"
-                  value={selectedTextBox.fontWeight || "normal"}
-                  onChange={(e) => {
-                    onUpdateTextBox(selectedTextBox.id, { fontWeight: e.target.value })
-                  }}
-                  className="h-7 rounded border px-1.5 text-xs sm:h-8 sm:px-2"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="bold">Bold</option>
-                  <option value="lighter">Light</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Label htmlFor="text-color" className="hidden text-xs font-medium sm:block">
-                  Color:
-                </Label>
-                <Input
-                  id="text-color"
-                  type="color"
-                  value={selectedTextBox.color || "#000000"}
-                  onChange={(e) => {
-                    onUpdateTextBox(selectedTextBox.id, { color: e.target.value })
-                  }}
-                  className="h-7 w-12 cursor-pointer sm:h-8 sm:w-16"
-                />
-              </div>
-              <div className="h-6 w-px bg-gray-300" />
-            </>
-          )}
-
-          <Button variant="outline" size="sm" onClick={handleClear} className="h-8">
-            <Trash2 className="mr-2 h-3 w-3" />
-            Clear
+          <Button variant="outline" size="sm" onClick={clearBoard}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clear board
           </Button>
+          <span className="text-muted-foreground ml-auto text-xs">
+            Shapes, text and freehand drawing save collaboratively
+          </span>
         </div>
       )}
 
-      {/* Whiteboard Canvas with Floating Media */}
-      <div
-        className="relative flex-1 overflow-hidden bg-white"
-        onClick={(e) => {
-          // Clear selection when clicking on empty canvas
-          if (
-            e.target === e.currentTarget ||
-            (e.target as HTMLElement).tagName === "CANVAS"
-          ) {
-            setSelectedElementId(null)
-          }
-        }}
-      >
-        <ReactSketchCanvas
-          ref={canvasRef}
-          strokeColor={strokeColor}
-          strokeWidth={strokeWidth}
-          width="100%"
-          height="100%"
-          exportWithBackgroundImage={false}
-          className={isReadOnly ? "cursor-default" : ""}
-          style={{
-            border: "none",
-            cursor: isReadOnly
-              ? "default"
-              : isPenToolActive
-                ? 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23000" d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.84 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>\') 0 24, auto'
-                : "default",
+      <div className="relative flex-1 overflow-hidden bg-white">
+        <Excalidraw
+          initialData={{ elements: sceneElements }}
+          excalidrawAPI={(api) => {
+            apiRef.current = api
           }}
-          allowOnlyPointerType={isReadOnly || !isPenToolActive ? "none" : "all"}
-          withTimestamp={true}
-          {...(isReadOnly || !isPenToolActive
-            ? {}
-            : {
-                // Note: onStroke may not be available in react-sketch-canvas
-                // Auto-save is handled via useEffect instead
-              })}
+          onChange={(next) => publishElements(next)}
+          viewModeEnabled={isReadOnly}
+          zenModeEnabled
+          gridModeEnabled={false}
+          UIOptions={{
+            canvasActions: {
+              loadScene: false,
+              saveToActiveFile: false,
+              export: false,
+            },
+          }}
         />
 
-        {/* Floating Images */}
         {images.map((url, index) => {
-          const data = imageData[url] || { x: 50, y: 50, width: 200, height: 150 }
-          const elementId = `img-${index}`
+          const data = imagesData[url] ?? { x: 50, y: 50, width: 200, height: 150 }
+          const id = `img-${index}`
           return (
             <FloatingImage
               key={url}
-              id={elementId}
+              id={id}
               url={url}
               x={data.x}
               y={data.y}
-              width={(data as any).width || 200}
-              height={(data as any).height || 200}
+              width={data.width ?? 200}
+              height={data.height ?? 150}
               onRemove={() => onRemoveImage?.(url)}
-              onPositionChange={handleImagePositionChange}
-              onSizeChange={handleImageSizeChange}
+              onPositionChange={(_, x, y) => updateMedia("image", id, { x, y })}
+              onSizeChange={(_, width, height) =>
+                updateMedia("image", id, { width, height })
+              }
               onSelect={setSelectedElementId}
-              isSelected={selectedElementId === elementId}
+              isSelected={selectedElementId === id}
               isReadOnly={isReadOnly}
             />
           )
         })}
-
-        {/* Floating Videos */}
         {videoLinks.map((url, index) => {
-          const data = videoData[url] || { x: 50, y: 50, width: 400, height: 225 }
-          const elementId = `vid-${index}`
+          const data = videosData[url] ?? { x: 50, y: 50, width: 400, height: 225 }
+          const id = `vid-${index}`
           return (
             <FloatingVideo
               key={url}
-              id={elementId}
+              id={id}
               url={url}
               x={data.x}
               y={data.y}
-              width={(data as any).width || 200}
-              height={(data as any).height || 200}
+              width={data.width ?? 400}
+              height={data.height ?? 225}
               onRemove={() => onRemoveVideo?.(url)}
-              onPositionChange={handleVideoPositionChange}
-              onSizeChange={handleVideoSizeChange}
+              onPositionChange={(_, x, y) => updateMedia("video", id, { x, y })}
+              onSizeChange={(_, width, height) =>
+                updateMedia("video", id, { width, height })
+              }
               onSelect={setSelectedElementId}
-              isSelected={selectedElementId === elementId}
+              isSelected={selectedElementId === id}
               isReadOnly={isReadOnly}
             />
           )
         })}
-
-        {/* Floating Text Boxes */}
-        {textBoxes.map((textBox) => (
+        {textBoxes.map((box) => (
           <FloatingText
-            key={textBox.id}
-            id={textBox.id}
-            text={textBox.text}
-            x={textBox.x}
-            y={textBox.y}
-            width={textBox.width}
-            height={textBox.height}
-            fontSize={textBox.fontSize}
-            fontFamily={textBox.fontFamily}
-            fontWeight={textBox.fontWeight}
-            color={textBox.color}
-            onRemove={() => onRemoveTextBox?.(textBox.id)}
-            onPositionChange={handleTextBoxPositionChange}
-            onTextChange={handleTextBoxTextChange}
-            onSizeChange={handleTextBoxSizeChange}
-            onStyleChange={handleTextBoxStyleChange}
+            key={box.id}
+            {...box}
+            onRemove={() => onRemoveTextBox?.(box.id)}
+            onPositionChange={(id, x, y) => onUpdateTextBox?.(id, { x, y })}
+            onTextChange={(id, text) => onUpdateTextBox?.(id, { text })}
+            onSizeChange={(id, width, height) => onUpdateTextBox?.(id, { width, height })}
+            onStyleChange={(id, styles) => onUpdateTextBox?.(id, styles)}
             onSelect={setSelectedElementId}
-            isSelected={selectedElementId === textBox.id}
+            isSelected={selectedElementId === box.id}
             isReadOnly={isReadOnly}
           />
         ))}

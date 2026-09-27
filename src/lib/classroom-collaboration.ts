@@ -33,6 +33,7 @@ const socketOrigin = () => {
 class ClassroomCollaborationClient {
   private readonly doc = new Y.Doc()
   private readonly board = this.doc.getMap<unknown>("board")
+  private readonly elements = this.doc.getMap<Record<string, unknown>>("elements")
   private socket: Socket | null = null
   private sequence = 0
   private status: CollaborationStatus = "connecting"
@@ -93,6 +94,18 @@ class ClassroomCollaborationClient {
     }, "local")
   }
 
+  updateElements(elements: ReadonlyArray<Record<string, unknown>>) {
+    this.doc.transact(() => {
+      for (const element of elements) {
+        const id = String(element.id)
+        if (!id) continue
+        const current = this.elements.get(id)
+        if (JSON.stringify(current) !== JSON.stringify(element))
+          this.elements.set(id, { ...element })
+      }
+    }, "local")
+  }
+
   seed(values: Record<string, unknown>) {
     if (this.board.size) return
     this.update(values)
@@ -130,7 +143,11 @@ class ClassroomCollaborationClient {
             for (const item of state.updates)
               Y.applyUpdate(this.doc, base64ToBytes(item.update), "remote")
             this.sequence = state.sequence
-            if (this.canWrite && this.hasOfflineChanges && this.board.size) {
+            if (
+              this.canWrite &&
+              this.hasOfflineChanges &&
+              (this.board.size || this.elements.size)
+            ) {
               socket.emit(
                 "whiteboard-update",
                 {
@@ -211,7 +228,15 @@ class ClassroomCollaborationClient {
   }
 
   private snapshot() {
-    return Object.fromEntries(this.board.entries())
+    const elements = [...this.elements.values()].sort((left, right) => {
+      const leftIndex = typeof left.index === "string" ? left.index : ""
+      const rightIndex = typeof right.index === "string" ? right.index : ""
+      return leftIndex.localeCompare(rightIndex)
+    })
+    return {
+      ...Object.fromEntries(this.board.entries()),
+      excalidraw_elements: elements,
+    }
   }
 
   private setStatus(status: CollaborationStatus) {

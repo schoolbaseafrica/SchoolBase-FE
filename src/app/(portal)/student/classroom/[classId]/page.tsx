@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, MessageSquare, X } from "lucide-react"
 import {
   useWhiteboard,
   useUpdateWhiteboard,
+  useUpdateWhiteboardElements,
 } from "../../../teacher/classroom/[classId]/_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "../../../teacher/classroom/[classId]/_components/whiteboard-canvas"
 import { ClassroomChat } from "../../../teacher/classroom/[classId]/_components/classroom-chat"
@@ -128,6 +129,7 @@ export default function StudentClassroomPage() {
   const videoLinks = Object.keys(videosData)
 
   const { mutate: updateWhiteboard } = useUpdateWhiteboard(classId, activePage)
+  const updateElements = useUpdateWhiteboardElements(classId, activePage)
 
   // Save function for when students have edit rights
   const handleCanvasSave = useCallback(
@@ -246,7 +248,9 @@ export default function StudentClassroomPage() {
               <WhiteboardCanvas
                 key={activePage}
                 canvasState={canvasState}
+                elements={whiteboard?.excalidraw_elements}
                 onSave={handleCanvasSave}
+                onElementsChange={updateElements}
                 isLoading={isLoading}
                 isReadOnly={!whiteboard?.allow_student_edit}
                 images={images}
