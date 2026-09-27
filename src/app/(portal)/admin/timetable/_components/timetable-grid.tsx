@@ -2,7 +2,7 @@
 
 import { Schedule } from "@/lib/timetable"
 import { useTimetableStore } from "@/store/timetable-store"
-import { Pencil } from "lucide-react"
+import { BookOpen, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 import { useClassTimetable } from "../_hooks/use-timetable"
@@ -32,9 +32,14 @@ const formatTime = (time: string) => {
 interface TimetableGridProps {
   classId: string
   readonly?: boolean
+  onOpenClassroom?: (schedule: Schedule) => void
 }
 
-export default function TimetableGrid({ classId, readonly = false }: TimetableGridProps) {
+export default function TimetableGrid({
+  classId,
+  readonly = false,
+  onOpenClassroom,
+}: TimetableGridProps) {
   // 1. Fetch
   useClassTimetable(classId)
 
@@ -136,6 +141,19 @@ export default function TimetableGrid({ classId, readonly = false }: TimetableGr
                                 Room: {schedule.room.name}
                               </span>
                             )}
+                            {onOpenClassroom && schedule.period_type !== "BREAK" && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onOpenClassroom(schedule)
+                                }}
+                                className="mt-1 flex items-center gap-1 self-start rounded border border-gray-300 bg-white px-2 py-1 text-[10px] font-medium hover:border-red-500 hover:text-red-600"
+                              >
+                                <BookOpen className="h-3 w-3" />
+                                Classroom
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div className="h-full min-h-[60px] w-full" />
@@ -156,6 +174,7 @@ export default function TimetableGrid({ classId, readonly = false }: TimetableGr
           schedules={schedules}
           onEdit={handleEdit}
           readonly={readonly}
+          onOpenClassroom={onOpenClassroom}
         />
       </div>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil } from "lucide-react"
+import { BookOpen, Pencil } from "lucide-react"
 import { Schedule } from "@/lib/timetable"
 import { cn } from "@/lib/utils"
 
@@ -9,6 +9,7 @@ interface MobileTimetableViewProps {
   schedules: Schedule[]
   onEdit: (schedule: Schedule) => void
   readonly?: boolean
+  onOpenClassroom?: (schedule: Schedule) => void
 }
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
@@ -25,6 +26,7 @@ export default function MobileTimetableView({
   schedules,
   onEdit,
   readonly = false,
+  onOpenClassroom,
 }: MobileTimetableViewProps) {
   const [selectedDay, setSelectedDay] = useState("MONDAY")
 
@@ -126,6 +128,19 @@ export default function MobileTimetableView({
                     </div>
                   )}
                 </div>
+              )}
+              {schedule && schedule.period_type !== "BREAK" && onOpenClassroom && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenClassroom(schedule)
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:border-red-500 hover:text-red-600"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Open classroom
+                </button>
               )}
             </div>
           )

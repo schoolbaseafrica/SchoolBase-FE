@@ -11,11 +11,14 @@ import {
 import { WhiteboardCanvas } from "../../../teacher/classroom/[classId]/_components/whiteboard-canvas"
 import { ClassroomChat } from "../../../teacher/classroom/[classId]/_components/classroom-chat"
 import { TextBoxData, MediaPosition } from "@/lib/whiteboard"
+import { useClassroomPresence, useClassroomSession } from "@/hooks/use-virtual-classroom"
 
 export default function StudentClassroomPage() {
   const params = useParams()
   const router = useRouter()
   const classId = params.classId as string
+  const session = useClassroomSession(classId)
+  useClassroomPresence(classId, session.data?.status === "live")
 
   const {
     data: whiteboard,
@@ -105,6 +108,8 @@ export default function StudentClassroomPage() {
         textBoxesCount: safeTextBoxes.length,
       })
 
+      // The query snapshot is the external classroom state mirrored by this canvas.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCanvasState(whiteboard.canvas_state || null)
       setImagesData(safeImagesData)
       setVideosData(safeVideosData)
@@ -152,7 +157,12 @@ export default function StudentClassroomPage() {
     return (
       <div className="flex h-full w-full flex-col">
         <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
-          <Button variant="ghost" size="sm" onClick={() => router.back()} className="h-8 px-2 md:px-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-8 px-2 md:px-3"
+          >
             <ArrowLeft className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Back</span>
           </Button>
@@ -173,11 +183,21 @@ export default function StudentClassroomPage() {
     <div className="fixed inset-0 flex h-screen w-screen flex-col bg-white">
       {/* Minimal header with back button */}
       <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="h-8 px-2 md:px-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
+          className="h-8 px-2 md:px-3"
+        >
           <ArrowLeft className="h-4 w-4 md:mr-2" />
           <span className="hidden md:inline">Back</span>
         </Button>
-        <h1 className="text-xs font-medium text-gray-600 md:text-sm">Virtual Classroom</h1>
+        <div className="min-w-0 text-center">
+          <h1 className="truncate text-xs font-medium text-gray-700 md:text-sm">
+            {session.data?.title ?? "Virtual Classroom"}
+          </h1>
+          <p className="text-[10px] text-gray-500 capitalize">{session.data?.status}</p>
+        </div>
         {/* Chat toggle button - visible on mobile */}
         <div className="flex md:hidden">
           <Button
@@ -195,10 +215,10 @@ export default function StudentClassroomPage() {
           </Button>
         </div>
         {/* Desktop spacer */}
-        <div className="hidden md:block w-16" />
+        <div className="hidden w-16 md:block" />
       </div>
 
-      {isLoading || !hasInitializedRef.current ? (
+      {isLoading || !whiteboard ? (
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           <span className="ml-2 text-gray-500">Loading classroom...</span>
@@ -206,7 +226,9 @@ export default function StudentClassroomPage() {
       ) : (
         <div className="relative flex flex-1 overflow-hidden">
           {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
-          <div className={`flex-1 overflow-hidden ${isChatOpen ? 'hidden md:block' : ''}`}>
+          <div
+            className={`flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
+          >
             <WhiteboardCanvas
               canvasState={canvasState}
               onSave={handleCanvasSave}
@@ -230,9 +252,11 @@ export default function StudentClassroomPage() {
             />
           </div>
           {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
-          <div className={`${isChatOpen ? 'block' : 'hidden'} md:block ${isChatOpen ? 'w-full' : ''} ${isChatCollapsed ? 'md:w-12' : 'md:w-80'} flex-shrink-0 absolute md:relative inset-0 md:inset-auto z-10 md:z-auto bg-white md:bg-transparent transition-all duration-300 md:py-2`}>
-            <ClassroomChat 
-              classId={classId} 
+          <div
+            className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent md:py-2`}
+          >
+            <ClassroomChat
+              classId={classId}
               isReadOnly={false}
               isCollapsed={isChatCollapsed}
               onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}

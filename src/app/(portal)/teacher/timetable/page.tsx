@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, AlertCircle, BookOpen } from "lucide-react"
+import { ChevronDown, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
@@ -16,11 +16,51 @@ import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { Schedule } from "@/lib/timetable"
+import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
+import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
+import { toast } from "sonner"
 
 export default function TeacherTimetablePage() {
   const router = useRouter()
   const period = useAcademicPeriod("teacher-timetable")
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
+  const [openingScheduleId, setOpeningScheduleId] = useState<string | null>(null)
+  const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
+
+  const openClassroom = async (schedule: Schedule) => {
+    if (!period.sessionId || openingScheduleId) return
+    setOpeningScheduleId(schedule.id)
+    try {
+      let room = classrooms.data?.find(
+        (candidate) =>
+          candidate.scheduleId === schedule.id &&
+          (candidate.status === "scheduled" || candidate.status === "live")
+      )
+      if (!room) {
+        const startsAt = new Date()
+        const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000)
+        room = await VirtualClassroomAPI.create({
+          scheduleId: schedule.id,
+          sessionId: period.sessionId,
+          termId: period.termId,
+          title: schedule.subject?.name
+            ? `${schedule.subject.name} live class`
+            : "Live classroom",
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt.toISOString(),
+        })
+      }
+      if (room.status === "scheduled") {
+        room = await VirtualClassroomAPI.setStatus(room.id, "live")
+      }
+      router.push(`/teacher/classroom/${room.id}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open classroom")
+    } finally {
+      setOpeningScheduleId(null)
+    }
+  }
 
   const {
     data: assignedClasses,
@@ -101,18 +141,6 @@ export default function TeacherTimetablePage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              {/* Show "Open Classroom" button when a class is selected */}
-              {effectiveClassId && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/teacher/classroom/${effectiveClassId}`)}
-                  className="h-9 w-full text-sm sm:h-10 sm:w-auto sm:text-base"
-                >
-                  <BookOpen className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Open Classroom</span>
-                  <span className="sm:hidden">Classroom</span>
-                </Button>
-              )}
             </div>
           ) : (
             <Alert>
@@ -125,7 +153,11 @@ export default function TeacherTimetablePage() {
 
           {/* Timetable Grid */}
           {effectiveClassId ? (
-            <TimetableGrid classId={effectiveClassId} readonly={true} />
+            <TimetableGrid
+              classId={effectiveClassId}
+              readonly
+              onOpenClassroom={openClassroom}
+            />
           ) : classesArray.length > 0 ? (
             <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500">
               Please select a class to view its timetable

@@ -1,67 +1,89 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
-import { WhiteboardAPI, UpdateWhiteboardData } from "@/lib/whiteboard"
+import { UpdateWhiteboardData, WhiteboardResponse } from "@/lib/whiteboard"
+import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
 import { toast } from "sonner"
 
-export const WHITEBOARD_KEY = (classId: string) => ["whiteboard", classId]
+export const WHITEBOARD_KEY = (classroomId: string) => [
+  "classroom-whiteboard",
+  classroomId,
+]
 
-/**
- * Get whiteboard for a class
- * @param classId - The class ID
- * @param options - Optional configuration
- * @param options.enablePolling - Enable polling for real-time updates (default: false, set to true for students)
- */
-export function useWhiteboard(classId: string, options?: { enablePolling?: boolean }) {
-  const { enablePolling = false } = options || {}
+type SessionWhiteboard = WhiteboardResponse & { version: number }
 
+const normalize = (
+  classroomId: string,
+  data: { version: number; snapshot: Record<string, unknown>; allowStudentDraw: boolean }
+): SessionWhiteboard => ({
+  id: classroomId,
+  class_id: classroomId,
+  canvas_state: (data.snapshot.canvas_state as string | null) ?? null,
+  images_data: (data.snapshot.images_data as WhiteboardResponse["images_data"]) ?? {},
+  videos_data: (data.snapshot.videos_data as WhiteboardResponse["videos_data"]) ?? {},
+  text_boxes: (data.snapshot.text_boxes as WhiteboardResponse["text_boxes"]) ?? [],
+  is_active: true,
+  allow_student_edit: data.allowStudentDraw,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  version: data.version,
+})
+
+export function useWhiteboard(
+  classroomId: string,
+  options?: { enablePolling?: boolean }
+) {
   return useQuery({
-    queryKey: WHITEBOARD_KEY(classId),
-    queryFn: () => WhiteboardAPI.getByClass(classId),
-    enabled: !!classId,
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: enablePolling ? 3000 : false, // Poll every 3 seconds if enabled (for students), disabled for teachers
-    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid conflicts
-    refetchOnMount: true, // Always refetch on mount to get latest data
-    retry: (failureCount, error: any) => {
-      // Don't retry on 403 (Forbidden) errors - user doesn't have access
-      if (error?.response?.status === 403) {
-        return false
-      }
-      // Retry other errors up to 1 time
-      return failureCount < 1
-    },
+    queryKey: WHITEBOARD_KEY(classroomId),
+    queryFn: async () =>
+      normalize(classroomId, await VirtualClassroomAPI.getWhiteboard(classroomId)),
+    enabled: Boolean(classroomId),
+    staleTime: 0,
+    refetchInterval: options?.enablePolling ? 3_000 : false,
+    refetchOnWindowFocus: false,
   })
 }
 
-/**
- * Update whiteboard state
- */
-export function useUpdateWhiteboard(classId: string) {
+export function useUpdateWhiteboard(classroomId: string) {
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async (data: UpdateWhiteboardData) => {
-      console.log("[useUpdateWhiteboard] Updating whiteboard with data:", data)
-      const result = await WhiteboardAPI.update(classId, data)
-      console.log("[useUpdateWhiteboard] API returned:", result)
-      return result
-    },
-    onSuccess: (updatedData) => {
-      console.log("[useUpdateWhiteboard] Update successful, updating cache:", updatedData)
-      // Update the cache directly with the new data
-      // This ensures React Query has the latest data without triggering a refetch
-      queryClient.setQueryData(WHITEBOARD_KEY(classId), (oldData: any) => {
-        // Merge with existing data to preserve all fields
-        const merged = {
-          ...oldData,
-          ...updatedData,
-        }
-        console.log("[useUpdateWhiteboard] Merged cache data:", merged)
-        return merged
+      const current = queryClient.getQueryData<SessionWhiteboard>(
+        WHITEBOARD_KEY(classroomId)
+      )
+      if (data.allow_student_edit !== undefined) {
+        await VirtualClassroomAPI.updatePermissions(classroomId, {
+          allowStudentDraw: data.allow_student_edit,
+        })
+      }
+      const snapshotChanged = Object.keys(data).some(
+        (key) => key !== "allow_student_edit"
+      )
+      if (!snapshotChanged) {
+        return {
+          ...current,
+          allow_student_edit: data.allow_student_edit,
+        } as SessionWhiteboard
+      }
+      const snapshot: Record<string, unknown> = {
+        canvas_state: current?.canvas_state ?? null,
+        images_data: current?.images_data ?? {},
+        videos_data: current?.videos_data ?? {},
+        text_boxes: current?.text_boxes ?? [],
+        ...data,
+      }
+      delete snapshot.allow_student_edit
+      const result = await VirtualClassroomAPI.updateWhiteboard(
+        classroomId,
+        current?.version ?? 0,
+        snapshot
+      )
+      return normalize(classroomId, {
+        ...result,
+        allowStudentDraw: current?.allow_student_edit ?? false,
       })
     },
+    onSuccess: (data) => queryClient.setQueryData(WHITEBOARD_KEY(classroomId), data),
     onError: (error: Error) => {
-      console.error("[useUpdateWhiteboard] Update failed:", error)
+      void queryClient.invalidateQueries({ queryKey: WHITEBOARD_KEY(classroomId) })
       toast.error(error.message || "Failed to update whiteboard")
     },
   })

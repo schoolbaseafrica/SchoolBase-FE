@@ -8,6 +8,9 @@ import { CalendarDays, Clock, MapPin, User, BookOpen } from "lucide-react"
 import { EmptyState } from "@/components/results/empty-state"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
 
 const DAYS = [
   "MONDAY",
@@ -21,6 +24,8 @@ const DAYS = [
 
 export default function StudentTimetablePage() {
   const router = useRouter()
+  const period = useAcademicPeriod("student-timetable")
+  const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
 
   // Get student profile using shared hook
   const {
@@ -100,15 +105,10 @@ export default function StudentTimetablePage() {
               : "View your class schedule"}
           </p>
         </div>
-        {classId && (
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/student/classroom/${classId}`)}
-          >
-            <BookOpen className="mr-2 h-4 w-4" />
-            Open Classroom
-          </Button>
-        )}
+      </div>
+
+      <div className="mb-6">
+        <AcademicPeriodSelector scope="student-timetable" sessionOnly />
       </div>
 
       {isLoading ? (
@@ -142,42 +142,59 @@ export default function StudentTimetablePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {daySchedules.map((schedule) => (
-                      <div
-                        key={schedule.id}
-                        className="flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-4"
-                      >
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            {schedule.start_time} - {schedule.end_time}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="h-4 w-4 text-blue-600" />
-                            <span className="font-semibold text-gray-900">
-                              {schedule.subject?.name || schedule.period_type}
+                    {daySchedules.map((schedule) => {
+                      const liveClassroom = classrooms.data?.find(
+                        (room) =>
+                          room.scheduleId === schedule.id && room.status === "live"
+                      )
+                      return (
+                        <div
+                          key={schedule.id}
+                          className="flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-4"
+                        >
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              {schedule.start_time} - {schedule.end_time}
                             </span>
                           </div>
-                          {schedule.teacher && (
-                            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-                              <User className="h-3 w-3" />
-                              <span>
-                                {schedule.teacher.title} {schedule.teacher.first_name}{" "}
-                                {schedule.teacher.last_name}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <span className="font-semibold text-gray-900">
+                                {schedule.subject?.name || schedule.period_type}
                               </span>
                             </div>
-                          )}
-                          {schedule.room && (
-                            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="h-3 w-3" />
-                              <span>{schedule.room.name}</span>
-                            </div>
+                            {schedule.teacher && (
+                              <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+                                <User className="h-3 w-3" />
+                                <span>
+                                  {schedule.teacher.title} {schedule.teacher.first_name}{" "}
+                                  {schedule.teacher.last_name}
+                                </span>
+                              </div>
+                            )}
+                            {schedule.room && (
+                              <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+                                <MapPin className="h-3 w-3" />
+                                <span>{schedule.room.name}</span>
+                              </div>
+                            )}
+                          </div>
+                          {liveClassroom && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                router.push(`/student/classroom/${liveClassroom.id}`)
+                              }
+                            >
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              Join live class
+                            </Button>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </CardContent>
               </Card>

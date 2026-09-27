@@ -10,11 +10,16 @@ import { ClassroomChat } from "./_components/classroom-chat"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { EmptyState } from "@/components/results/empty-state"
+import { useClassroomPresence, useClassroomSession } from "@/hooks/use-virtual-classroom"
+import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
+import { toast } from "sonner"
 
 export default function TeacherClassroomPage() {
   const params = useParams()
   const router = useRouter()
   const classId = params.classId as string
+  const session = useClassroomSession(classId)
+  useClassroomPresence(classId, session.data?.status === "live")
 
   // Enable polling on teacher side to see student changes in real-time
   const {
@@ -54,6 +59,7 @@ export default function TeacherClassroomPage() {
   useEffect(() => {
     if (whiteboard) {
       // Always sync canvas state from API to see student drawings
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCanvasState(whiteboard.canvas_state || null)
       setImagesData(whiteboard.images_data || {})
       setVideosData(whiteboard.videos_data || {})
@@ -119,7 +125,8 @@ export default function TeacherClassroomPage() {
 
   const handleRemoveImage = useCallback(
     (url: string) => {
-      const { [url]: removed, ...newImagesData } = imagesData
+      const newImagesData = { ...imagesData }
+      delete newImagesData[url]
       setImagesData(newImagesData)
       updateMutation.mutate({ images_data: newImagesData })
     },
@@ -145,7 +152,8 @@ export default function TeacherClassroomPage() {
 
   const handleRemoveVideo = useCallback(
     (url: string) => {
-      const { [url]: removed, ...newVideosData } = videosData
+      const newVideosData = { ...videosData }
+      delete newVideosData[url]
       setVideosData(newVideosData)
       updateMutation.mutate({ videos_data: newVideosData })
     },
@@ -282,10 +290,22 @@ export default function TeacherClassroomPage() {
     [updateMutation]
   )
 
+  const handleEndClass = async () => {
+    try {
+      await VirtualClassroomAPI.setStatus(classId, "ended")
+      toast.success("Classroom ended and attendance was saved")
+      router.push("/teacher/timetable")
+    } catch (statusError) {
+      toast.error(
+        statusError instanceof Error ? statusError.message : "Could not end class"
+      )
+    }
+  }
+
   // Check if error is a 403 Forbidden (access denied)
   const isForbiddenError =
     error &&
-    ((error as any)?.response?.status === 403 ||
+    ((error as { response?: { status?: number } })?.response?.status === 403 ||
       (error instanceof Error &&
         (error.message.includes("403") ||
           error.message.includes("Forbidden") ||
@@ -345,14 +365,24 @@ export default function TeacherClassroomPage() {
     <div className="fixed inset-0 flex h-screen w-screen flex-col bg-white">
       {/* Minimal header with back button */}
       <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="h-8 px-2 md:px-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
+          className="h-8 px-2 md:px-3"
+        >
           <ArrowLeft className="h-4 w-4 md:mr-2" />
           <span className="hidden md:inline">Back</span>
         </Button>
-        <h1 className="text-xs font-medium text-gray-600 md:text-sm">Virtual Classroom</h1>
+        <div className="min-w-0 text-center">
+          <h1 className="truncate text-xs font-medium text-gray-700 md:text-sm">
+            {session.data?.title ?? "Virtual Classroom"}
+          </h1>
+          <p className="text-[10px] text-gray-500 capitalize">{session.data?.status}</p>
+        </div>
         <div className="flex items-center gap-1 md:gap-3">
           {/* Desktop: Show full toggle */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <Users className="h-4 w-4 text-gray-600" />
             <Label
               htmlFor="student-edit-toggle"
@@ -365,9 +395,12 @@ export default function TeacherClassroomPage() {
               checked={whiteboard?.allow_student_edit ?? false}
               onCheckedChange={handleToggleStudentEdit}
             />
+            <Button variant="destructive" size="sm" onClick={handleEndClass}>
+              End class
+            </Button>
           </div>
           {/* Mobile: Show compact toggle and chat button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             <Switch
               id="student-edit-toggle-mobile"
               checked={whiteboard?.allow_student_edit ?? false}
@@ -398,7 +431,9 @@ export default function TeacherClassroomPage() {
       ) : (
         <div className="relative flex flex-1 overflow-hidden">
           {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
-          <div className={`flex-1 overflow-hidden ${isChatOpen ? 'hidden md:block' : ''}`}>
+          <div
+            className={`flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
+          >
             <WhiteboardCanvas
               canvasState={canvasState}
               onSave={handleCanvasSave}
@@ -422,9 +457,11 @@ export default function TeacherClassroomPage() {
             />
           </div>
           {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
-          <div className={`${isChatOpen ? 'block' : 'hidden'} md:block ${isChatOpen ? 'w-full' : ''} ${isChatCollapsed ? 'md:w-12' : 'md:w-80'} flex-shrink-0 absolute md:relative inset-0 md:inset-auto z-10 md:z-auto bg-white md:bg-transparent transition-all duration-300`}>
-            <ClassroomChat 
-              classId={classId} 
+          <div
+            className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
+          >
+            <ClassroomChat
+              classId={classId}
               isReadOnly={false}
               isCollapsed={isChatCollapsed}
               onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}

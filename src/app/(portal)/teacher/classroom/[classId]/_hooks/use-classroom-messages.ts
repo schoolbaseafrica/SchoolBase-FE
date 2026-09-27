@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  ClassroomMessageAPI,
-  ClassroomMessage,
-  CreateMessageData,
-} from "@/lib/classroom-message"
+import { ClassroomMessage, CreateMessageData } from "@/lib/classroom-message"
+import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
 
 export const CLASSROOM_MESSAGES_KEY = (classId: string) => ["classroom-messages", classId]
 
@@ -18,7 +15,21 @@ export function useClassroomMessages(
 
   return useQuery({
     queryKey: CLASSROOM_MESSAGES_KEY(classId),
-    queryFn: () => ClassroomMessageAPI.getByClass(classId),
+    queryFn: async () =>
+      (await VirtualClassroomAPI.getMessages(classId)).map<ClassroomMessage>(
+        (message) => ({
+          id: message.id,
+          class_id: classId,
+          sender_type: message.senderRole === "student" ? "student" : "teacher",
+          sender_id: message.senderId,
+          sender_name: message.senderRole === "student" ? "Student" : "Teacher",
+          text: message.body,
+          audio_url: null,
+          audio_duration: null,
+          createdAt: message.createdAt,
+          updatedAt: message.createdAt,
+        })
+      ),
     enabled: !!classId,
     staleTime: 0,
     refetchInterval: enablePolling ? 3000 : false, // Poll every 3 seconds if enabled
@@ -35,11 +46,8 @@ export function useCreateMessage(classId: string) {
 
   return useMutation({
     mutationFn: (data: CreateMessageData) => {
-      const messageData: CreateMessageData = {
-        ...data,
-        class_id: classId,
-      }
-      return ClassroomMessageAPI.create(messageData)
+      if (!data.text?.trim()) throw new Error("A text message is required")
+      return VirtualClassroomAPI.sendMessage(classId, data.text)
     },
     onSuccess: () => {
       // Invalidate and refetch messages

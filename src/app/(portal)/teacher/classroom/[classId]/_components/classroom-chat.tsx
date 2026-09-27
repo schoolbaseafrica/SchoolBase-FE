@@ -3,10 +3,9 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Mic, Square, Loader2, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react"
+import { Send, Loader2, ChevronRight, MessageSquare } from "lucide-react"
 import { useClassroomMessages, useCreateMessage } from "../_hooks/use-classroom-messages"
 import { ClassroomMessage } from "@/lib/classroom-message"
-import { ClassroomMessageAPI } from "@/lib/classroom-message"
 // Simple date formatting without date-fns dependency
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -27,21 +26,15 @@ interface ClassroomChatProps {
   showCollapseButton?: boolean
 }
 
-export function ClassroomChat({ 
-  classId, 
+export function ClassroomChat({
+  classId,
   isReadOnly = false,
   isCollapsed = false,
   onToggleCollapse,
   showCollapseButton = false,
 }: ClassroomChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [textInput, setTextInput] = useState("")
-  const [isRecording, setIsRecording] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
-  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
 
   const { data: messages = [], isLoading } = useClassroomMessages(classId, {
     enablePolling: true,
@@ -83,148 +76,6 @@ export function ClassroomChat({
     }
   }
 
-  // Start recording audio
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("audio/webm")
-          ? "audio/webm"
-          : "audio/mp4",
-      })
-
-      const chunks: Blob[] = []
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data)
-        }
-      }
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: recorder.mimeType })
-        setAudioChunks(chunks)
-
-        // Create File from Blob
-        const audioFile = new File(
-          [audioBlob],
-          `voice-note-${Date.now()}.${recorder.mimeType.includes("webm") ? "webm" : "mp4"}`,
-          {
-            type: recorder.mimeType,
-          }
-        )
-
-        // Upload audio file
-        try {
-          const uploadResult = await ClassroomMessageAPI.uploadAudio(audioFile)
-
-          // Get audio duration
-          const audio = new Audio(uploadResult.url)
-          audio.addEventListener("loadedmetadata", async () => {
-            const duration = audio.duration
-
-            // Create message with audio
-            await createMessageMutation.mutateAsync({
-              class_id: classId,
-              // Backend will determine sender_type and sender_id from token
-              audio_url: uploadResult.url,
-              audio_duration: duration,
-            })
-          })
-
-          // Load metadata
-          audio.load()
-        } catch (error) {
-          console.error("Failed to upload audio:", error)
-        }
-
-        // Stop all tracks to release microphone
-        stream.getTracks().forEach((track) => track.stop())
-      }
-
-      recorder.start()
-      setMediaRecorder(recorder)
-      setIsRecording(true)
-      setRecordingTime(0)
-
-      // Update recording time every second
-      const interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1)
-      }, 1000)
-
-      // Store interval ID to clear later
-      ;(recorder as any).intervalId = interval
-    } catch (error) {
-      console.error("Failed to start recording:", error)
-      alert("Failed to access microphone. Please check permissions.")
-    }
-  }, [classId, createMessageMutation])
-
-  // Stop recording audio
-  const stopRecording = useCallback(() => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop()
-      setIsRecording(false)
-
-      // Clear interval
-      if ((mediaRecorder as any).intervalId) {
-        clearInterval((mediaRecorder as any).intervalId)
-      }
-    }
-  }, [mediaRecorder])
-
-  // Format recording time
-  const formatRecordingTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
-
-  // Handle audio playback
-  const handlePlayAudio = useCallback((audioUrl: string, messageId: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
-
-    const audio = new Audio(audioUrl)
-    audioRef.current = audio
-    setPlayingAudioId(messageId)
-
-    audio.onended = () => {
-      setPlayingAudioId(null)
-      audioRef.current = null
-    }
-
-    audio.onerror = () => {
-      setPlayingAudioId(null)
-      audioRef.current = null
-    }
-
-    audio.play()
-  }, [])
-
-  // Stop audio playback
-  const handleStopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current = null
-    }
-    setPlayingAudioId(null)
-  }, [])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop()
-      }
-      if (audioRef.current) {
-        audioRef.current.pause()
-      }
-    }
-  }, [mediaRecorder])
-
   // Format message timestamp
   const formatMessageTime = (timestamp: string) => {
     try {
@@ -248,16 +99,17 @@ export function ClassroomChat({
 
   // Check if message is from current user (approximate check)
   // Backend determines sender, so we show all messages but style them differently
-  const isOwnMessage = (_message: ClassroomMessage) => {
+  const isOwnMessage = (message: ClassroomMessage) => {
     // For now, show all messages with same styling
     // Could enhance by storing current user ID in context/token if needed
+    void message
     return false
   }
 
   if (isCollapsed && showCollapseButton) {
     return (
-      <div className="flex h-full flex-col border-t md:border-t-0 md:border-l bg-white">
-        <div className="flex items-center justify-center py-3 border-b bg-gray-50">
+      <div className="flex h-full flex-col border-t bg-white md:border-t-0 md:border-l">
+        <div className="flex items-center justify-center border-b bg-gray-50 py-3">
           <Button
             variant="ghost"
             size="sm"
@@ -273,19 +125,19 @@ export function ClassroomChat({
   }
 
   return (
-    <div className="flex h-full flex-col border-t md:border-t-0 md:border-l bg-white rounded-lg md:shadow-sm">
+    <div className="flex h-full flex-col rounded-lg border-t bg-white md:border-t-0 md:border-l md:shadow-sm">
       {/* Chat Header */}
-      <div className="flex items-center justify-between border-b bg-gray-50 px-3 py-2.5 rounded-t-lg">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-gray-900 truncate">Class Chat</h2>
-          <p className="text-xs text-gray-500 truncate">Messages with students</p>
+      <div className="flex items-center justify-between rounded-t-lg border-b bg-gray-50 px-3 py-2.5">
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-sm font-semibold text-gray-900">Class Chat</h2>
+          <p className="truncate text-xs text-gray-500">Messages with students</p>
         </div>
         {showCollapseButton && onToggleCollapse && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
-            className="h-8 w-8 p-0 flex-shrink-0 ml-2"
+            className="ml-2 h-8 w-8 flex-shrink-0 p-0"
             title="Collapse chat"
           >
             <ChevronRight className="h-4 w-4" />
@@ -294,7 +146,7 @@ export function ClassroomChat({
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-3 md:p-4 pb-2 md:pb-4">
+      <div className="flex-1 space-y-4 overflow-y-auto p-3 pb-2 md:p-4 md:pb-4">
         {isLoading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -331,45 +183,6 @@ export function ClassroomChat({
                     </div>
                   )}
 
-                  {/* Audio message */}
-                  {message.audio_url && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-8 px-2 ${
-                          isOwn
-                            ? "bg-blue-400 text-white hover:bg-blue-300"
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                        onClick={() => {
-                          if (playingAudioId === message.id) {
-                            handleStopAudio()
-                          } else {
-                            handlePlayAudio(message.audio_url!, message.id)
-                          }
-                        }}
-                      >
-                        {playingAudioId === message.id ? (
-                          <Square className="h-3 w-3" />
-                        ) : (
-                          <svg
-                            className="h-3 w-3"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                          </svg>
-                        )}
-                      </Button>
-                      <span className="text-xs opacity-75">
-                        {message.audio_duration
-                          ? `${Math.round(message.audio_duration)}s`
-                          : "Voice"}
-                      </span>
-                    </div>
-                  )}
-
                   {/* Timestamp */}
                   <div
                     className={`mt-1 text-xs ${
@@ -388,27 +201,7 @@ export function ClassroomChat({
 
       {/* Input Area */}
       {!isReadOnly && (
-        <div className="border-t bg-white p-3 md:p-4 pt-2 md:pt-4 rounded-b-lg">
-          {/* Recording indicator */}
-          {isRecording && (
-            <div className="mb-2 flex items-center justify-between rounded-lg bg-red-50 px-3 py-2">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                <span className="text-sm text-red-700">
-                  Recording: {formatRecordingTime(recordingTime)}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={stopRecording}
-                className="h-6 px-2 text-red-700 hover:bg-red-100"
-              >
-                <Square className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-
+        <div className="rounded-b-lg border-t bg-white p-3 pt-2 md:p-4 md:pt-4">
           {/* Text input and buttons */}
           <div className="flex items-center gap-2">
             <Input
@@ -417,32 +210,21 @@ export function ClassroomChat({
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1"
-              disabled={createMessageMutation.isPending || isRecording}
+              disabled={createMessageMutation.isPending}
             />
-            {!isRecording ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={startRecording}
-                  disabled={createMessageMutation.isPending}
-                  className="h-10 w-10"
-                >
-                  <Mic className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={handleSendText}
-                  disabled={!textInput.trim() || createMessageMutation.isPending}
-                  className="h-10 w-10"
-                >
-                  {createMessageMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </>
-            ) : null}
+            <>
+              <Button
+                onClick={handleSendText}
+                disabled={!textInput.trim() || createMessageMutation.isPending}
+                className="h-10 w-10"
+              >
+                {createMessageMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </>
           </div>
         </div>
       )}
