@@ -35,3 +35,14 @@ export function useStudentProfile() {
     retry: 1,
   })
 }
+
+export function useStudentAcademicContext(sessionId?: string) {
+  const { studentId } = useStudentAuth()
+
+  return useQuery({
+    queryKey: ["student-academic-context", studentId, sessionId],
+    queryFn: () => StudentsAPI.getAcademicContext(studentId!, sessionId!),
+    enabled: !!studentId && !!sessionId,
+    staleTime: 1000 * 60 * 5,
+  })
+}

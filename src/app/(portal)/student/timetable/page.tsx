@@ -1,6 +1,6 @@
 "use client"
 
-import { useStudentProfile } from "../_hooks/use-student-profile"
+import { useStudentAcademicContext } from "../_hooks/use-student-profile"
 import { useGetClassTimetable } from "../_hooks/use-student-timetable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -27,14 +27,13 @@ export default function StudentTimetablePage() {
   const period = useAcademicPeriod("student-timetable")
   const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
 
-  // Get student profile using shared hook
   const {
-    data: studentProfile,
-    isLoading: isLoadingProfile,
-    error: profileError,
-  } = useStudentProfile()
+    data: academicContext,
+    isLoading: isLoadingContext,
+    error: contextError,
+  } = useStudentAcademicContext(period.sessionId)
 
-  const classId = studentProfile?.class_details?.id
+  const classId = academicContext?.class_details?.id
 
   // Get full weekly timetable for the class
   const {
@@ -43,40 +42,9 @@ export default function StudentTimetablePage() {
     error: timetableError,
   } = useGetClassTimetable(classId)
 
-  const isLoading = isLoadingProfile || isLoadingTimetable
+  const isLoading = period.isLoading || isLoadingContext || isLoadingTimetable
 
-  // Debug logging
-  console.log("[StudentTimetablePage] State:", {
-    isLoadingProfile,
-    isLoadingTimetable,
-    isLoading,
-    profileError,
-    timetableError,
-    studentProfile: studentProfile
-      ? {
-          id: studentProfile.id,
-          class_details: studentProfile.class_details,
-          full_profile: studentProfile, // Log full profile to see what's actually returned
-        }
-      : null,
-    classId,
-    hasClassId: !!classId,
-    timetable: timetable
-      ? {
-          schedulesCount: timetable.schedules?.length || 0,
-          schedules: timetable.schedules,
-        }
-      : null,
-  })
-
-  if (!classId && studentProfile && !isLoadingProfile) {
-    console.warn(
-      "[StudentTimetablePage] WARNING: No classId available. studentProfile.class_details:",
-      studentProfile.class_details
-    )
-  }
-
-  if (!studentProfile && !isLoadingProfile) {
+  if (contextError || timetableError) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="mb-6">
@@ -86,7 +54,9 @@ export default function StudentTimetablePage() {
         <Card>
           <CardContent className="flex h-[400px] items-center justify-center">
             <div className="text-center">
-              <p className="text-gray-500">Student information not available</p>
+              <p className="text-gray-500">
+                The timetable could not be loaded. Please try again.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -100,8 +70,8 @@ export default function StudentTimetablePage() {
         <div>
           <h1 className="text-2xl font-semibold">Timetable</h1>
           <p className="text-gray-600">
-            {studentProfile?.class_details?.name
-              ? `Class: ${studentProfile.class_details.name}`
+            {academicContext?.class_details?.name
+              ? `Class: ${academicContext.class_details.name}`
               : "View your class schedule"}
           </p>
         </div>
@@ -120,7 +90,7 @@ export default function StudentTimetablePage() {
       ) : !classId ? (
         <EmptyState
           title="No Class Assigned"
-          description="You are not assigned to a class yet. Please contact the administrator."
+          description="You are not assigned to a class in the selected academic session."
           icon={CalendarDays}
         />
       ) : !timetable || timetable.schedules.length === 0 ? (

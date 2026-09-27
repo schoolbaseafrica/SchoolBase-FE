@@ -28,6 +28,18 @@ export interface StudentProfileResponse {
   } | null
 }
 
+export interface StudentAcademicContextResponse {
+  class_details: {
+    id: string
+    name: string
+    arm: string | null
+  } | null
+  academic_details: {
+    id: string
+    name: string
+  } | null
+}
+
 export const StudentsAPI = {
   getStudentProfile: async (studentId: string) => {
     const response = await apiFetch<ResponsePack<StudentProfileResponse>>(
@@ -40,6 +52,15 @@ export const StudentsAPI = {
     console.log(
       "[StudentsAPI.getStudentProfile] class_details in response.data:",
       response.data?.class_details
+    )
+    return response.data
+  },
+
+  getAcademicContext: async (studentId: string, sessionId: string) => {
+    const response = await apiFetch<ResponsePack<StudentAcademicContextResponse>>(
+      `/students/profile/${studentId}/academic-context`,
+      { method: "GET", params: { session_id: sessionId } },
+      true
     )
     return response.data
   },

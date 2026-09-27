@@ -14,9 +14,9 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
     return <>{children}</>
   }
 
-  // For other routes, render with sidebar and header (sidebar collapsed by default)
+  // Desktop navigation is visible by default; mobile continues to use the overlay menu.
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen>
       <StudentSidebar />
       <main className="mt-[50px] h-full w-full">
         <DashboardHeader />
