@@ -16,7 +16,7 @@ export default function TeacherLayoutClient({ children }: { children: React.Reac
 
   // For other routes, render with sidebar and header
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen>
       <TeacherSidebar />
       <main className="min-h-screen w-full pt-10 lg:pt-20">
         <DashboardHeader />

@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BlueprintDialog } from "@/components/cbt/blueprint-dialog"
+import { ProctorAssignments } from "@/components/cbt/proctor-assignments"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
@@ -708,6 +709,10 @@ export default function CbtExamBuilderPage() {
             </div>
           )}
         </section>
+
+        {exam.data.examType === "in_school" && (
+          <ProctorAssignments examId={examId} classes={exam.data.classes ?? []} />
+        )}
 
         {canMonitor && (
           <section className="space-y-4">

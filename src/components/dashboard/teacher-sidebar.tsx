@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
-import { Menu, GraduationCap } from "lucide-react"
+import { Menu, GraduationCap, ClipboardCheck } from "lucide-react"
 
 import { LuCalendarCheck } from "react-icons/lu"
 import NotePad from "../../../public/svgs/note-pad"
@@ -36,6 +36,7 @@ const items = [
   { title: "Attendance", url: "/teacher/attendance", icon: NotePad },
   { title: "Students", url: "/teacher/students", icon: GraduationCap },
   { title: "Results", url: "/teacher/results", icon: NotePad },
+  { title: "Exam Monitoring", url: "/teacher/cbt", icon: ClipboardCheck },
 ]
 
 // ----------------------------

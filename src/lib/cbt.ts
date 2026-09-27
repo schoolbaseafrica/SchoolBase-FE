@@ -166,6 +166,29 @@ export interface CbtExamAttempts {
     deadlineAt: string
     connectionState: "online" | "offline"
   }>
+  candidates: Array<{
+    id: string
+    attemptId?: string | null
+    status: "not_started" | "in_progress" | "submitted"
+    startedAt: string | null
+    submittedAt: string | null
+    lastSavedAt: string | null
+    score: number | null
+    totalMarks: number
+    percentage: number | null
+    manualGradingRequired: boolean
+    resultPublishedAt: string | null
+    studentId: string | null
+    registrationNumber: string | null
+    studentName: string
+    answeredQuestions: number
+    questionCount: number
+    connectionLostCount: number
+    visibilityHiddenCount: number
+    lastEventAt: string | null
+    deadlineAt: string | null
+    connectionState: "not_started" | "online" | "offline"
+  }>
   scoreDistribution: Array<{ label: string; count: number }>
   questionAnalytics: Array<{
     id: string
@@ -180,6 +203,30 @@ export interface CbtExamAttempts {
     incorrectCount: number
     correctRate: number | null
   }>
+}
+
+export interface CbtProctorAssignment {
+  userId: string
+  name: string
+  email: string
+  classes: Array<{ id: string; name: string; arm?: string }>
+}
+
+export interface CbtProctorExam {
+  id: string
+  name: string
+  status: CbtExamStatus
+  availableFrom: string | null
+  availableTo: string | null
+  timeLimitMinutes: number
+  proctoringMode: CbtProctoringMode
+  classes: Array<{ id: string; name: string; arm?: string }>
+}
+
+export interface CbtAttemptActivity {
+  attemptId: string
+  candidateName: string
+  events: CbtAttemptReview["events"]
 }
 
 export interface CbtAttemptReview {
@@ -362,6 +409,34 @@ export const CbtAPI = {
     apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
       `/cbt/exams/${examId}/attempts`
     ).then(unwrap),
+
+  listExamProctors: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtProctorAssignment[]> | CbtProctorAssignment[]>(
+      `/cbt/exams/${examId}/proctors`
+    ).then(unwrap),
+  assignExamProctor: (examId: string, data: { teacherId: string; classIds: string[] }) =>
+    apiFetch<ApiEnvelope<CbtProctorAssignment[]> | CbtProctorAssignment[]>(
+      `/cbt/exams/${examId}/proctors`,
+      { method: "POST", data }
+    ).then(unwrap),
+  removeExamProctor: (examId: string, userId: string) =>
+    apiFetch(`/cbt/exams/${examId}/proctors/${userId}`, { method: "DELETE" }),
+  listProctorExams: () =>
+    apiFetch<ApiEnvelope<CbtProctorExam[]> | CbtProctorExam[]>("/cbt/proctor/exams").then(
+      unwrap
+    ),
+  getProctorExamAttempts: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
+      `/cbt/proctor/exams/${examId}/attempts`
+    ).then(unwrap),
+  getProctorAttemptActivity: (attemptId: string) =>
+    apiFetch<ApiEnvelope<CbtAttemptActivity> | CbtAttemptActivity>(
+      `/cbt/proctor/attempts/${attemptId}/activity`
+    ).then(unwrap),
+  acknowledgeProctorEvent: (eventId: string) =>
+    apiFetch(`/cbt/proctor/attempt-events/${eventId}/acknowledge`, {
+      method: "PATCH",
+    }),
 
   getAttemptReview: (attemptId: string) =>
     apiFetch<ApiEnvelope<CbtAttemptReview> | CbtAttemptReview>(
