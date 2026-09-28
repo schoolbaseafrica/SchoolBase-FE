@@ -60,6 +60,8 @@ class ClassroomCollaborationClient {
   private presenceListeners = new Set<PresenceListener>()
   private participants = new Map<string, CollaborationParticipant>()
   private cursors = new Map<string, CollaborationCursor>()
+  private initialSyncComplete = false
+  private pendingSeed: Record<string, unknown> | null = null
 
   constructor(
     private readonly classroomId: string,
@@ -134,7 +136,15 @@ class ClassroomCollaborationClient {
   }
 
   seed(values: Record<string, unknown>) {
-    if (this.board.size) return
+    if (!this.initialSyncComplete) {
+      this.pendingSeed = values
+      return
+    }
+    this.seedIfEmpty(values)
+  }
+
+  private seedIfEmpty(values: Record<string, unknown>) {
+    if (this.board.size || this.elements.size) return
     this.update(values)
   }
 
@@ -171,6 +181,11 @@ class ClassroomCollaborationClient {
             for (const item of state.updates)
               Y.applyUpdate(this.doc, base64ToBytes(item.update), "remote")
             this.sequence = state.sequence
+            this.initialSyncComplete = true
+            if (this.pendingSeed) {
+              this.seedIfEmpty(this.pendingSeed)
+              this.pendingSeed = null
+            }
             if (
               this.canWrite &&
               this.hasOfflineChanges &&
@@ -290,6 +305,7 @@ class ClassroomCollaborationClient {
     this.socket?.disconnect()
     this.socket = null
     this.started = false
+    this.initialSyncComplete = false
     this.participants.clear()
     this.cursors.clear()
   }
