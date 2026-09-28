@@ -110,12 +110,25 @@ class ClassroomCollaborationClient {
 
   updateElements(elements: ReadonlyArray<Record<string, unknown>>) {
     this.doc.transact(() => {
+      const incomingIds = new Set(
+        elements.map((element) => String(element.id)).filter(Boolean)
+      )
       for (const element of elements) {
         const id = String(element.id)
         if (!id) continue
         const current = this.elements.get(id)
         if (JSON.stringify(current) !== JSON.stringify(element))
           this.elements.set(id, { ...element })
+      }
+      for (const [id, current] of this.elements.entries()) {
+        if (incomingIds.has(id) || current.isDeleted === true) continue
+        this.elements.set(id, {
+          ...current,
+          isDeleted: true,
+          version: Math.max(1, Number(current.version) || 1) + 1,
+          versionNonce: Math.floor(Math.random() * 2_147_483_647),
+          updated: Date.now(),
+        })
       }
     }, "local")
   }

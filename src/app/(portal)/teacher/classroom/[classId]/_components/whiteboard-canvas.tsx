@@ -157,6 +157,7 @@ export function WhiteboardCanvas({
   const migrationStarted = useRef(false)
   const publishTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSceneSignature = useRef("")
+  const sceneReady = useRef(false)
   const [videoUrl, setVideoUrl] = useState("")
   const [showVideoInput, setShowVideoInput] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
@@ -171,6 +172,7 @@ export function WhiteboardCanvas({
     if (!apiRef.current || nextSignature === lastSceneSignature.current) return
     lastSceneSignature.current = nextSignature
     apiRef.current.updateScene({ elements: sceneElements })
+    sceneReady.current = true
   }, [elements, sceneElements])
 
   useEffect(() => {
@@ -196,7 +198,7 @@ export function WhiteboardCanvas({
 
   const publishElements = useCallback(
     (next: readonly ExcalidrawElement[]) => {
-      if (isReadOnly || !onElementsChange) return
+      if (isReadOnly || !onElementsChange || !sceneReady.current) return
       const records = next as unknown as ReadonlyArray<Record<string, unknown>>
       const nextSignature = sceneSignature(records)
       if (nextSignature === lastSceneSignature.current) return
@@ -381,6 +383,9 @@ export function WhiteboardCanvas({
           initialData={{ elements: sceneElements }}
           excalidrawAPI={(api) => {
             apiRef.current = api
+            lastSceneSignature.current = sceneSignature(elements)
+            api.updateScene({ elements: sceneElements })
+            sceneReady.current = true
           }}
           onChange={(next) => publishElements(next)}
           viewModeEnabled={isReadOnly}
