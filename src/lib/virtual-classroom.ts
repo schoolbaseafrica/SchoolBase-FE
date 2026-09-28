@@ -31,7 +31,12 @@ export interface ClassroomMessage {
   id: string
   senderId: string
   senderRole: "teacher" | "student" | "admin"
-  body: string
+  body: string | null
+  messageType: "text" | "voice"
+  audioUrl: string | null
+  audioDuration: number | null
+  audioMimeType: string | null
+  audioSize: number | null
   createdAt: string
 }
 
@@ -165,6 +170,22 @@ export const VirtualClassroomAPI = {
         { method: "POST", data: { body } }
       )
     ),
+  sendVoiceNote: async (id: string, file: Blob, duration: number) => {
+    const data = new FormData()
+    const extension = file.type.includes("ogg")
+      ? "ogg"
+      : file.type.includes("mp4")
+        ? "m4a"
+        : "webm"
+    data.append("file", file, `voice-note.${extension}`)
+    data.append("duration", String(duration))
+    return unwrap(
+      await apiFetch<ResponsePack<ClassroomMessage> | ClassroomMessage>(
+        `/virtual-classrooms/${id}/messages/voice`,
+        { method: "POST", data }
+      )
+    )
+  },
   updatePermissions: async (
     id: string,
     data: { allowStudentChat?: boolean; allowStudentDraw?: boolean }

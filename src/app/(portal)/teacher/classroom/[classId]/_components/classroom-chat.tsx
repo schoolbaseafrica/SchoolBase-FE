@@ -3,8 +3,21 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Loader2, ChevronRight, MessageSquare } from "lucide-react"
-import { useClassroomMessages, useCreateMessage } from "../_hooks/use-classroom-messages"
+import {
+  Send,
+  Loader2,
+  ChevronRight,
+  MessageSquare,
+  Mic,
+  Square,
+  Trash2,
+  RotateCcw,
+} from "lucide-react"
+import {
+  useClassroomMessages,
+  useCreateMessage,
+  useCreateVoiceNote,
+} from "../_hooks/use-classroom-messages"
 import { ClassroomMessage } from "@/lib/classroom-message"
 // Simple date formatting without date-fns dependency
 const formatDate = (date: Date) => {
@@ -34,12 +47,131 @@ export function ClassroomChat({
   showCollapseButton = false,
 }: ClassroomChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const recordingStreamRef = useRef<MediaStream | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const recordingStartedAtRef = useRef(0)
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const discardRecordingRef = useRef(false)
   const [textInput, setTextInput] = useState("")
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [voiceNote, setVoiceNote] = useState<{
+    blob: Blob
+    url: string
+    duration: number
+  } | null>(null)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
 
   const { data: messages = [], isLoading } = useClassroomMessages(classId, {
     enablePolling: true,
   })
   const createMessageMutation = useCreateMessage(classId)
+  const createVoiceNoteMutation = useCreateVoiceNote(classId)
+
+  const releaseRecorder = useCallback(() => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
+    recordingTimerRef.current = null
+    recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
+    recordingStreamRef.current = null
+    recorderRef.current = null
+    setIsRecording(false)
+  }, [])
+
+  const discardVoiceNote = useCallback(() => {
+    if (voiceNote) URL.revokeObjectURL(voiceNote.url)
+    setVoiceNote(null)
+    setVoiceError(null)
+  }, [voiceNote])
+
+  useEffect(
+    () => () => {
+      releaseRecorder()
+      if (voiceNote) URL.revokeObjectURL(voiceNote.url)
+    },
+    [releaseRecorder, voiceNote]
+  )
+
+  const stopRecording = useCallback(() => {
+    const recorder = recorderRef.current
+    if (recorder?.state === "recording") recorder.stop()
+  }, [])
+
+  const cancelRecording = useCallback(() => {
+    discardRecordingRef.current = true
+    stopRecording()
+  }, [stopRecording])
+
+  const startRecording = useCallback(async () => {
+    setVoiceError(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const preferredTypes = [
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ]
+      const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type))
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      chunksRef.current = []
+      discardRecordingRef.current = false
+      recordingStreamRef.current = stream
+      recorderRef.current = recorder
+      recordingStartedAtRef.current = Date.now()
+      setRecordingSeconds(0)
+      setIsRecording(true)
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) chunksRef.current.push(event.data)
+      }
+      recorder.onstop = () => {
+        const duration = Math.max(
+          1,
+          Math.min(120, Math.ceil((Date.now() - recordingStartedAtRef.current) / 1000))
+        )
+        const blob = new Blob(chunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        })
+        releaseRecorder()
+        if (discardRecordingRef.current) {
+          chunksRef.current = []
+          setRecordingSeconds(0)
+          return
+        }
+        if (!blob.size) {
+          setVoiceError("No audio was captured. Please try again.")
+          return
+        }
+        setVoiceNote({ blob, url: URL.createObjectURL(blob), duration })
+      }
+      recorder.start(1000)
+      recordingTimerRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current) / 1000)
+        setRecordingSeconds(elapsed)
+        if (elapsed >= 120 && recorder.state === "recording") recorder.stop()
+      }, 250)
+    } catch {
+      releaseRecorder()
+      setVoiceError(
+        "Microphone access was not available. Check your browser permission and try again."
+      )
+    }
+  }, [releaseRecorder])
+
+  const sendVoiceNote = useCallback(async () => {
+    if (!voiceNote || createVoiceNoteMutation.isPending) return
+    setVoiceError(null)
+    try {
+      await createVoiceNoteMutation.mutateAsync({
+        file: voiceNote.blob,
+        duration: voiceNote.duration,
+      })
+      discardVoiceNote()
+    } catch (error) {
+      setVoiceError(
+        error instanceof Error ? error.message : "Voice note upload failed. Try again."
+      )
+    }
+  }, [voiceNote, createVoiceNoteMutation, discardVoiceNote])
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -182,6 +314,21 @@ export function ClassroomChat({
                       {message.text}
                     </div>
                   )}
+                  {message.audio_url && (
+                    <div className="min-w-48">
+                      <audio
+                        controls
+                        preload="metadata"
+                        src={message.audio_url}
+                        className="h-9 w-full"
+                      />
+                      {message.audio_duration && (
+                        <div className="mt-1 text-xs opacity-70">
+                          Voice note · {message.audio_duration}s
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Timestamp */}
                   <div
@@ -202,6 +349,60 @@ export function ClassroomChat({
       {/* Input Area */}
       {!isReadOnly && (
         <div className="rounded-b-lg border-t bg-white p-3 pt-2 md:p-4 md:pt-4">
+          {isRecording && (
+            <div className="mb-2 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
+              Recording {recordingSeconds}s / 120s
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={cancelRecording}
+                className="ml-auto h-8"
+              >
+                Cancel
+              </Button>
+              <Button size="sm" variant="outline" onClick={stopRecording} className="h-8">
+                <Square className="mr-2 h-3 w-3 fill-current" />
+                Stop
+              </Button>
+            </div>
+          )}
+          {voiceNote && !isRecording && (
+            <div className="mb-2 space-y-2 rounded-md border bg-gray-50 p-2">
+              <audio controls src={voiceNote.url} className="h-9 w-full" />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">
+                  Preview · {voiceNote.duration}s
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={discardVoiceNote}
+                  disabled={createVoiceNoteMutation.isPending}
+                  className="ml-auto h-8"
+                >
+                  <Trash2 className="mr-1 h-3 w-3" />
+                  Discard
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={sendVoiceNote}
+                  disabled={createVoiceNoteMutation.isPending}
+                  className="h-8"
+                >
+                  {createVoiceNoteMutation.isPending ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : voiceError ? (
+                    <RotateCcw className="mr-1 h-3 w-3" />
+                  ) : (
+                    <Send className="mr-1 h-3 w-3" />
+                  )}
+                  {voiceError ? "Retry" : "Send"}
+                </Button>
+              </div>
+            </div>
+          )}
+          {voiceError && <p className="mb-2 text-xs text-red-600">{voiceError}</p>}
           {/* Text input and buttons */}
           <div className="flex items-center gap-2">
             <Input
@@ -212,6 +413,20 @@ export function ClassroomChat({
               className="flex-1"
               disabled={createMessageMutation.isPending}
             />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={Boolean(voiceNote) || createVoiceNoteMutation.isPending}
+              className="h-10 w-10 p-0"
+              title={isRecording ? "Stop recording" : "Record voice note"}
+            >
+              {isRecording ? (
+                <Square className="h-4 w-4 fill-current text-red-600" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
             <>
               <Button
                 onClick={handleSendText}

@@ -13,6 +13,18 @@ async function methodHandler(
 
   const backendRes = await proxyAuthRequest(req, pathWithQuery)
 
+  const contentType = backendRes.headers.get("content-type") ?? ""
+  if (
+    contentType.startsWith("audio/") ||
+    contentType.startsWith("video/") ||
+    contentType === "application/octet-stream"
+  ) {
+    return new NextResponse(await backendRes.arrayBuffer(), {
+      status: backendRes.status,
+      headers: backendRes.headers,
+    })
+  }
+
   // Special handling for DELETE requests with no content
   if (req.method === "DELETE") {
     // For DELETE requests, 204 No Content or 200 with no body are common
@@ -26,8 +38,8 @@ async function methodHandler(
 
     // If DELETE returns 200 with content, handle it
     if (backendRes.status === 200) {
-      const contentType = backendRes.headers.get("content-type")
-      if (!contentType || !contentType.includes("application/json")) {
+      const deleteContentType = backendRes.headers.get("content-type")
+      if (!deleteContentType || !deleteContentType.includes("application/json")) {
         // If not JSON, assume empty success response
         return new NextResponse(null, {
           status: 200,
@@ -50,7 +62,7 @@ async function methodHandler(
   // For error responses, ensure we preserve the error body
   // This is critical for axios to capture the error details
   const responseHeaders = new Headers(backendRes.headers)
-  
+
   // Ensure content-type is set for error responses
   if (backendRes.status >= 400 && !responseHeaders.get("content-type")) {
     responseHeaders.set("content-type", "application/json; charset=utf-8")

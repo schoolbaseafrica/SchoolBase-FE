@@ -24,8 +24,10 @@ export function useClassroomMessages(
           sender_id: message.senderId,
           sender_name: message.senderRole === "student" ? "Student" : "Teacher",
           text: message.body,
-          audio_url: null,
-          audio_duration: null,
+          audio_url: message.audioUrl
+            ? `/api/proxy-auth/${message.audioUrl.replace(/^\/+/, "")}`
+            : null,
+          audio_duration: message.audioDuration,
           createdAt: message.createdAt,
           updatedAt: message.createdAt,
         })
@@ -35,6 +37,16 @@ export function useClassroomMessages(
     refetchInterval: enablePolling ? 3000 : false, // Poll every 3 seconds if enabled
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+  })
+}
+
+export function useCreateVoiceNote(classId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ file, duration }: { file: Blob; duration: number }) =>
+      VirtualClassroomAPI.sendVoiceNote(classId, file, duration),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: CLASSROOM_MESSAGES_KEY(classId) }),
   })
 }
 

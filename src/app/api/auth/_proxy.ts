@@ -11,16 +11,20 @@ import { splitCookiesString } from "set-cookie-parser"
 const getBackendBaseUrl = (req: Request): string => {
   // Extract host from request URL or headers first (needed for dynamic construction)
   const url = new URL(req.url)
-  const hostname = req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
+  const hostname =
+    req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
   const protocol = req.headers.get("x-forwarded-proto") || url.protocol.replace(":", "")
-  
+
   // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
   // This is set in docker-compose.yml for each school
   if (process.env.API_BASE_URL) {
-    const apiBaseUrl = process.env.API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+    const apiBaseUrl = process.env.API_BASE_URL.replace(/\/+$/, "").replace(
+      /\/api\/v1\/?$/,
+      ""
+    )
     return apiBaseUrl
   }
-  
+
   // Priority 2: Construct dynamically from request hostname (most reliable for multi-school)
   // For multi-school deployment, prepend 'api.' to the hostname
   // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
@@ -32,19 +36,22 @@ const getBackendBaseUrl = (req: Request): string => {
       const backendUrl = `${protocol}://${hostname}`
       return backendUrl
     }
-    
+
     // Prepend 'api.' to the hostname
     const backendHostname = `api.${hostname}`
     const backendUrl = `${protocol}://${backendHostname}`
     return backendUrl
   }
-  
+
   // Priority 3: Runtime NEXT_PUBLIC_API_BASE_URL (might be baked at build time, less reliable)
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "").replace(
+      /\/api\/v1\/?$/,
+      ""
+    )
     return apiBaseUrl
   }
-  
+
   // Fallback for localhost or single-domain setups
   const fallbackUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
   return fallbackUrl
@@ -85,7 +92,7 @@ const forwardRequest = async (
         url: backendUrl,
       })
     }
-    
+
     return res
   } catch (err) {
     console.error("[proxy] Error in forwardRequest:", err)
@@ -94,7 +101,9 @@ const forwardRequest = async (
 }
 
 /* Attempt Refresh Token */
-const attemptRefresh = async (req: Request): Promise<{
+const attemptRefresh = async (
+  req: Request
+): Promise<{
   ok: boolean
   newAccessToken: string | null
   refreshResponse: Response | null
@@ -145,22 +154,19 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     for (const [key, value] of req.headers.entries()) {
       const lower = key.toLowerCase()
       // Always exclude these headers - they'll be set by fetch or are not needed
-      if (
-        ["host", "connection", "expect"].includes(lower) ||
-        value === null
-      ) {
+      if (["host", "connection", "expect"].includes(lower) || value === null) {
         continue
       }
-      
+
       // For multipart, preserve Content-Type (with boundary) but let fetch set Content-Length
       // For other requests, exclude content-length as fetch will set it
       if (lower === "content-length" && !isMultipart) {
         continue
       }
-      
+
       headers.set(key, value)
     }
-    
+
     // For multipart, ensure Content-Type is preserved with boundary
     // and set Content-Length to match the arrayBuffer size
     if (isMultipart) {
@@ -186,14 +192,28 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
       }
     }
 
-    const responseText = await backendRes.text()
-    
-    const nextRes = new NextResponse(responseText || null, {
+    const responseContentType = backendRes.headers.get("content-type") ?? ""
+    const isBinaryResponse =
+      responseContentType.startsWith("audio/") ||
+      responseContentType.startsWith("video/") ||
+      responseContentType === "application/octet-stream"
+    const responseBody = isBinaryResponse
+      ? await backendRes.arrayBuffer()
+      : await backendRes.text()
+
+    const responseHeaders = new Headers()
+    responseHeaders.set(
+      "content-type",
+      responseContentType || "application/json; charset=utf-8"
+    )
+    for (const name of ["content-length", "content-disposition", "cache-control"]) {
+      const value = backendRes.headers.get(name)
+      if (value) responseHeaders.set(name, value)
+    }
+
+    const nextRes = new NextResponse(responseBody || null, {
       status: backendRes.status,
-      headers: {
-        "content-type":
-          backendRes.headers.get("content-type") ?? "application/json; charset=utf-8",
-      },
+      headers: responseHeaders,
     })
 
     const setCookieHeader = backendRes.headers.get("set-cookie")
