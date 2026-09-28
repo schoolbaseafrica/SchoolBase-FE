@@ -18,7 +18,17 @@ export interface VirtualClassroom {
   status: ClassroomStatus
   allowStudentChat: boolean
   allowStudentDraw: boolean
+  allowStudentMicrophone: boolean
   whiteboardVersion: number
+}
+
+export interface ClassroomMediaToken {
+  token: string
+  url: string
+  roomName: string
+  canPublish: boolean
+  allowStudentMicrophone: boolean
+  expiresInSeconds: number
 }
 
 export interface ClassroomWhiteboard {
@@ -109,6 +119,13 @@ export const VirtualClassroomAPI = {
         ResponsePack<ClassroomCollaborationTicket> | ClassroomCollaborationTicket
       >(`/virtual-classrooms/${id}/collaboration-ticket`, { method: "POST" })
     ),
+  getMediaToken: async (id: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<ClassroomMediaToken> | ClassroomMediaToken>(
+        `/virtual-classrooms/${id}/media-token`,
+        { method: "POST" }
+      )
+    ),
   getWhiteboardPages: async (id: string) =>
     unwrap(
       await apiFetch<ResponsePack<WhiteboardPage[]> | WhiteboardPage[]>(
@@ -188,7 +205,11 @@ export const VirtualClassroomAPI = {
   },
   updatePermissions: async (
     id: string,
-    data: { allowStudentChat?: boolean; allowStudentDraw?: boolean }
+    data: {
+      allowStudentChat?: boolean
+      allowStudentDraw?: boolean
+      allowStudentMicrophone?: boolean
+    }
   ) =>
     unwrap(
       await apiFetch<ResponsePack<VirtualClassroom> | VirtualClassroom>(

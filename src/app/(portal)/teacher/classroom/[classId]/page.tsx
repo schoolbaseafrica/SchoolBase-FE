@@ -11,6 +11,7 @@ import {
 } from "./_hooks/use-whiteboard"
 import { WhiteboardCanvas } from "./_components/whiteboard-canvas"
 import { ClassroomChat } from "./_components/classroom-chat"
+import { ClassroomAudio } from "./_components/classroom-audio"
 import {
   ClassroomBoardBar,
   CollaborationCursors,
@@ -445,6 +446,12 @@ export default function TeacherClassroomPage() {
         </div>
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden">
+          <ClassroomAudio
+            classroomId={classId}
+            canManage={true}
+            allowStudentMicrophone={session.data?.allowStudentMicrophone ?? false}
+            onPermissionChanged={() => void session.refetch()}
+          />
           <ClassroomBoardBar
             classroomId={classId}
             activePage={activePage}
