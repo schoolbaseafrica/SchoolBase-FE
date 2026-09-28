@@ -24,10 +24,24 @@ type PresenceListener = (
   cursors: CollaborationCursor[]
 ) => void
 
+let socketOriginPromise: Promise<string> | null = null
+
 const socketOrigin = () => {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL
-  if (!configured) return window.location.origin
-  return new URL(configured, window.location.origin).origin
+  if (socketOriginPromise) return socketOriginPromise
+  socketOriginPromise = fetch("/api/config", { credentials: "same-origin" })
+    .then(async (response) => {
+      if (!response.ok) throw new Error("Runtime configuration is unavailable")
+      const config = (await response.json()) as { apiUrl?: string }
+      if (!config.apiUrl) throw new Error("The public API URL is not configured")
+      return new URL(config.apiUrl, window.location.origin).origin
+    })
+    .catch(() => {
+      const configured = process.env.NEXT_PUBLIC_API_BASE_URL
+      return configured
+        ? new URL(configured, window.location.origin).origin
+        : window.location.origin
+    })
+  return socketOriginPromise
 }
 
 class ClassroomCollaborationClient {
@@ -122,7 +136,8 @@ class ClassroomCollaborationClient {
       const access = await VirtualClassroomAPI.getCollaborationTicket(this.classroomId)
       this.canWrite = access.canWrite
       this.allowStudentDraw = access.allowStudentDraw
-      const socket = io(`${socketOrigin()}${access.namespace}`, {
+      const origin = await socketOrigin()
+      const socket = io(`${origin}${access.namespace}`, {
         transports: ["websocket"],
         auth: { ticket: access.ticket },
         withCredentials: true,
@@ -170,6 +185,7 @@ class ClassroomCollaborationClient {
         this.setStatus("offline")
         void this.refreshTicket()
       })
+      socket.on("collaboration-error", () => this.setStatus("offline"))
       socket.on("whiteboard-update", (item: { sequence: number; update: string }) => {
         Y.applyUpdate(this.doc, base64ToBytes(item.update), "remote")
         this.sequence = Math.max(this.sequence, item.sequence)
