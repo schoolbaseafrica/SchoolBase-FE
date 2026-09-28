@@ -73,24 +73,53 @@ const sceneSignature = (elements: ReadonlyArray<Record<string, unknown>>) =>
     }))
   )
 
+const EXCALIDRAW_TYPES = new Set([
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "line",
+  "arrow",
+  "freedraw",
+  "text",
+  "image",
+  "frame",
+  "magicframe",
+  "embeddable",
+  "iframe",
+])
+
+const isRenderableElement = (element: Record<string, unknown>) =>
+  typeof element.id === "string" &&
+  EXCALIDRAW_TYPES.has(String(element.type)) &&
+  Number.isFinite(element.x) &&
+  Number.isFinite(element.y) &&
+  Number.isFinite(element.width) &&
+  Number.isFinite(element.height)
+
 async function importLegacyPaths(canvasState: string) {
   const paths = JSON.parse(canvasState) as LegacyPath[]
   if (!Array.isArray(paths)) return []
   const skeletons = paths.flatMap((path, index) => {
-    if (!path.paths?.length) return []
-    const [origin, ...remaining] = path.paths
+    if (!Array.isArray(path.paths)) return []
+    const points = path.paths.filter(
+      (point) => Number.isFinite(point?.x) && Number.isFinite(point?.y)
+    )
+    if (!points.length) return []
+    const [origin, ...remaining] = points
+    const relativePoints = [
+      [0, 0],
+      ...remaining.map((point) => [point.x - origin.x, point.y - origin.y]),
+    ]
+    if (relativePoints.length === 1) relativePoints.push([0.1, 0.1])
     return [
       {
         id: `legacy-stroke-${index}`,
         type: "freedraw" as const,
         x: origin.x,
         y: origin.y,
-        points: [
-          [0, 0],
-          ...remaining.map((point) => [point.x - origin.x, point.y - origin.y]),
-        ],
+        points: relativePoints,
         strokeColor: path.strokeColor ?? "#000000",
-        strokeWidth: path.strokeWidth ?? 2,
+        strokeWidth: Math.max(1, Math.min(20, Number(path.strokeWidth) || 2)),
       },
     ]
   })
@@ -133,7 +162,7 @@ export function WhiteboardCanvas({
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
 
   const sceneElements = useMemo(
-    () => elements as unknown as readonly ExcalidrawElement[],
+    () => elements.filter(isRenderableElement) as unknown as readonly ExcalidrawElement[],
     [elements]
   )
 
@@ -240,6 +269,41 @@ export function WhiteboardCanvas({
     onClearAll?.()
     setSelectedElementId(null)
   }
+
+  useEffect(() => {
+    if (!selectedElementId || isReadOnly) return
+    const removeSelected = (event: KeyboardEvent) => {
+      if (event.key !== "Delete" && event.key !== "Backspace") return
+      const target = event.target as HTMLElement | null
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable
+      )
+        return
+      event.preventDefault()
+      if (selectedElementId.startsWith("img-")) {
+        const url = images[Number(selectedElementId.slice(4))]
+        if (url) onRemoveImage?.(url)
+      } else if (selectedElementId.startsWith("vid-")) {
+        const url = videoLinks[Number(selectedElementId.slice(4))]
+        if (url) onRemoveVideo?.(url)
+      } else if (selectedElementId.startsWith("text-")) {
+        onRemoveTextBox?.(selectedElementId)
+      }
+      setSelectedElementId(null)
+    }
+    window.addEventListener("keydown", removeSelected)
+    return () => window.removeEventListener("keydown", removeSelected)
+  }, [
+    images,
+    isReadOnly,
+    onRemoveImage,
+    onRemoveTextBox,
+    onRemoveVideo,
+    selectedElementId,
+    videoLinks,
+  ])
 
   if (isLoading) {
     return (

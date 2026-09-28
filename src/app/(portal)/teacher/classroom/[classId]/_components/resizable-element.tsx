@@ -46,6 +46,8 @@ export function ResizableElement({
   const elementRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Prop changes come from the persisted collaborative board state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPosition({ x, y })
     setSize({ width, height })
   }, [x, y, width, height])
@@ -178,6 +180,7 @@ export function ResizableElement({
         outlineOffset: "2px",
       }}
       onMouseDown={handleMouseDown}
+      onFocusCapture={() => onSelect?.(id)}
       tabIndex={isReadOnly ? -1 : 0}
       className="group focus:outline-none"
     >

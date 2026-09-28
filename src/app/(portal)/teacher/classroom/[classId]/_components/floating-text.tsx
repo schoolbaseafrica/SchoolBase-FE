@@ -48,7 +48,6 @@ export function FloatingText({
   onPositionChange,
   onTextChange,
   onSizeChange,
-  onStyleChange,
   isReadOnly = false,
   isSelected = false,
   onSelect,
@@ -96,7 +95,8 @@ export function FloatingText({
           className="h-full w-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0"
           readOnly={isReadOnly}
           placeholder="Type text here..."
-          onClick={(e) => e.stopPropagation()} // Prevent selecting parent when clicking textarea
+          onFocus={() => onSelect?.(id)}
+          onClick={(e) => e.stopPropagation()}
         />
       </div>
     </ResizableElement>
