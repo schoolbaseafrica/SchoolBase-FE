@@ -117,6 +117,10 @@ export default function StudentTimetablePage() {
                         (room) =>
                           room.scheduleId === schedule.id && room.status === "live"
                       )
+                      const scheduledClassroom = classrooms.data?.find(
+                        (room) =>
+                          room.scheduleId === schedule.id && room.status === "scheduled"
+                      )
                       return (
                         <div
                           key={schedule.id}
@@ -160,6 +164,11 @@ export default function StudentTimetablePage() {
                             >
                               <BookOpen className="mr-2 h-4 w-4" />
                               Join live class
+                            </Button>
+                          )}
+                          {!liveClassroom && scheduledClassroom && (
+                            <Button size="sm" variant="outline" disabled>
+                              Waiting for teacher
                             </Button>
                           )}
                         </div>

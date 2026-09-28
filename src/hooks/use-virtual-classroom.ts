@@ -20,6 +20,8 @@ export function useVirtualClassrooms(sessionId?: string, termId?: string) {
     queryKey: classroomKeys.list(sessionId, termId),
     queryFn: () => VirtualClassroomAPI.list(sessionId, termId),
     enabled: Boolean(sessionId),
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
   })
 }
 
