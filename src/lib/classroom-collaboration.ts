@@ -144,7 +144,7 @@ class ClassroomCollaborationClient {
       })
       this.socket = socket
       socket.on("connect", () => {
-        this.setStatus("connected")
+        this.setStatus("connecting")
         socket.emit(
           "sync",
           { pageKey: this.pageKey, sinceSequence: this.sequence },
@@ -176,7 +176,7 @@ class ClassroomCollaborationClient {
                 }
               )
             }
-            this.notify()
+            this.setStatus("connected")
           }
         )
       })

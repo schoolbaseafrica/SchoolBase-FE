@@ -58,7 +58,11 @@ export function useWhiteboard(classroomId: string, pageKey = "main", enabled = t
     const collaboration = classroomCollaboration(classroomId, pageKey)
     return collaboration.subscribe((snapshot, status, allowStudentDraw) => {
       setCollaborationStatus(status)
-      if (!Object.keys(snapshot).length) return
+      const elements = snapshot.excalidraw_elements
+      const hasContent =
+        Object.keys(snapshot).some((key) => key !== "excalidraw_elements") ||
+        (Array.isArray(elements) && elements.length > 0)
+      if (!hasContent && status !== "connected") return
       const current = queryClient.getQueryData<SessionWhiteboard>(
         WHITEBOARD_KEY(classroomId, pageKey)
       )
