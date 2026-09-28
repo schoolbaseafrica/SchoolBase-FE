@@ -35,7 +35,7 @@ const normalize = (
   version: data.version,
 })
 
-export function useWhiteboard(classroomId: string, pageKey = "main") {
+export function useWhiteboard(classroomId: string, pageKey = "main", enabled = true) {
   const queryClient = useQueryClient()
   const [collaborationStatus, setCollaborationStatus] =
     useState<CollaborationStatus>("connecting")
@@ -48,13 +48,13 @@ export function useWhiteboard(classroomId: string, pageKey = "main") {
         snapshot: pageKey === "main" ? legacy.snapshot : {},
       })
     },
-    enabled: Boolean(classroomId),
+    enabled: Boolean(classroomId) && enabled,
     staleTime: 0,
     refetchInterval: false,
     refetchOnWindowFocus: false,
   })
   useEffect(() => {
-    if (!classroomId) return
+    if (!classroomId || !enabled) return
     const collaboration = classroomCollaboration(classroomId, pageKey)
     return collaboration.subscribe((snapshot, status, allowStudentDraw) => {
       setCollaborationStatus(status)
@@ -71,7 +71,7 @@ export function useWhiteboard(classroomId: string, pageKey = "main") {
         })
       )
     })
-  }, [classroomId, pageKey, queryClient])
+  }, [classroomId, enabled, pageKey, queryClient])
   useEffect(() => {
     if (!query.data || !classroomId) return
     if (pageKey !== "main") return

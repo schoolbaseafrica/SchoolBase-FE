@@ -28,8 +28,12 @@ export default function StudentClassroomPage() {
   const session = useClassroomSession(classId)
   useClassroomPresence(classId, session.data?.status === "live")
 
-  const { data: whiteboard, isLoading, error } = useWhiteboard(classId, activePage)
-  const presence = useCollaborationPresence(classId, activePage)
+  const {
+    data: whiteboard,
+    isLoading,
+    error,
+  } = useWhiteboard(classId, activePage, Boolean(session.data))
+  const presence = useCollaborationPresence(classId, activePage, Boolean(session.data))
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
   const [imagesData, setImagesData] = useState<Record<string, MediaPosition>>({})
@@ -159,7 +163,9 @@ export default function StudentClassroomPage() {
     [whiteboard?.allow_student_edit, updateWhiteboard]
   )
 
-  if (error) {
+  const pageError = session.error ?? error
+
+  if (pageError) {
     return (
       <div className="flex h-full w-full flex-col">
         <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
@@ -177,7 +183,7 @@ export default function StudentClassroomPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
             <p className="text-lg font-semibold text-red-600">Failed to load classroom</p>
             <p className="mt-2 text-sm text-red-500">
-              {error instanceof Error ? error.message : "An error occurred"}
+              {pageError instanceof Error ? pageError.message : "An error occurred"}
             </p>
           </div>
         </div>

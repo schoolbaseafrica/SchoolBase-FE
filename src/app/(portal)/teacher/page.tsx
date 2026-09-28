@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { LiaListAltSolid } from "react-icons/lia"
@@ -15,6 +15,9 @@ import { TeacherAttendanceAPI } from "@/lib/teacher-attendance"
 import { useQuery } from "@tanstack/react-query"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
+import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
+import { toast } from "sonner"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -85,6 +88,39 @@ const getSubjectImage = (subject: string): string => {
 export default function TeachersPage() {
   const router = useRouter()
   const period = useAcademicPeriod("teacher-dashboard")
+  const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
+  const [openingScheduleId, setOpeningScheduleId] = useState<string | null>(null)
+
+  const openClassroom = async (scheduledClass: DisplayClass) => {
+    if (!period.sessionId || openingScheduleId) return
+    setOpeningScheduleId(scheduledClass.id)
+    try {
+      let room = classrooms.data?.find(
+        (candidate) =>
+          candidate.scheduleId === scheduledClass.id &&
+          (candidate.status === "scheduled" || candidate.status === "live")
+      )
+      if (!room) {
+        const startsAt = new Date()
+        room = await VirtualClassroomAPI.create({
+          scheduleId: scheduledClass.id,
+          sessionId: period.sessionId,
+          termId: period.termId,
+          title: `${scheduledClass.subject} live class`,
+          startsAt: startsAt.toISOString(),
+          endsAt: new Date(startsAt.getTime() + 60 * 60 * 1000).toISOString(),
+        })
+      }
+      if (room.status === "scheduled") {
+        room = await VirtualClassroomAPI.setStatus(room.id, "live")
+      }
+      router.push(`/teacher/classroom/${room.id}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open classroom")
+    } finally {
+      setOpeningScheduleId(null)
+    }
+  }
 
   // Fetch today's classes from dashboard API
   const {
@@ -333,9 +369,10 @@ export default function TeachersPage() {
                       <Button
                         variant="outline"
                         className="flex-1 rounded-lg border-[#DA3743] text-base font-medium text-[#DA3743]"
-                        onClick={() => router.push(`/teacher/classroom/${cls.classId}`)}
+                        onClick={() => void openClassroom(cls)}
+                        disabled={openingScheduleId === cls.id}
                       >
-                        Open Classroom
+                        {openingScheduleId === cls.id ? "Opening..." : "Open Classroom"}
                       </Button>
                     </div>
                   </div>

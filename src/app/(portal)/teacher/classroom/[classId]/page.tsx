@@ -38,10 +38,10 @@ export default function TeacherClassroomPage() {
     isLoading,
     error,
     collaborationStatus,
-  } = useWhiteboard(classId, activePage)
+  } = useWhiteboard(classId, activePage, Boolean(session.data))
   const updateMutation = useUpdateWhiteboard(classId, activePage)
   const updateElements = useUpdateWhiteboardElements(classId, activePage)
-  const presence = useCollaborationPresence(classId, activePage)
+  const presence = useCollaborationPresence(classId, activePage, Boolean(session.data))
 
   const [canvasState, setCanvasState] = useState<string | null>(null)
   const [imagesData, setImagesData] = useState<
@@ -316,17 +316,19 @@ export default function TeacherClassroomPage() {
     }
   }
 
+  const pageError = session.error ?? error
+
   // Check if error is a 403 Forbidden (access denied)
   const isForbiddenError =
-    error &&
-    ((error as { response?: { status?: number } })?.response?.status === 403 ||
-      (error instanceof Error &&
-        (error.message.includes("403") ||
-          error.message.includes("Forbidden") ||
-          error.message.includes("not assigned") ||
-          error.message.includes("do not have access"))))
+    pageError &&
+    ((pageError as { response?: { status?: number } })?.response?.status === 403 ||
+      (pageError instanceof Error &&
+        (pageError.message.includes("403") ||
+          pageError.message.includes("Forbidden") ||
+          pageError.message.includes("not assigned") ||
+          pageError.message.includes("do not have access"))))
 
-  if (error) {
+  if (pageError) {
     return (
       <div className="flex h-full w-full flex-col">
         <div className="flex items-center justify-between border-b bg-white px-4 py-2">
@@ -355,8 +357,8 @@ export default function TeacherClassroomPage() {
                 icon={AlertCircle}
                 title="Failed to Load Classroom"
                 description={
-                  error instanceof Error
-                    ? error.message
+                  pageError instanceof Error
+                    ? pageError.message
                     : "An unexpected error occurred while loading the classroom. Please try again later."
                 }
                 action={

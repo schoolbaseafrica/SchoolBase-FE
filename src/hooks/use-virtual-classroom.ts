@@ -28,7 +28,8 @@ export function useClassroomSession(id: string) {
     queryKey: classroomKeys.detail(id),
     queryFn: () => VirtualClassroomAPI.get(id),
     enabled: Boolean(id),
-    refetchInterval: 10_000,
+    retry: false,
+    refetchInterval: (query) => (query.state.data ? 10_000 : false),
   })
 }
 
