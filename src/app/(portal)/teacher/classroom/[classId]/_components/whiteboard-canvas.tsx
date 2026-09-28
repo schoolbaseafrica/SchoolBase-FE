@@ -55,6 +55,7 @@ interface WhiteboardCanvasProps {
   onUpdateImagesData?: (data: PositionedMedia) => void
   onUpdateVideosData?: (data: PositionedMedia) => void
   onClearAll?: () => void
+  onLegacyRetired?: () => void
 }
 
 type LegacyPath = {
@@ -151,6 +152,7 @@ export function WhiteboardCanvas({
   onUpdateImagesData,
   onUpdateVideosData,
   onClearAll,
+  onLegacyRetired,
 }: WhiteboardCanvasProps) {
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -161,6 +163,7 @@ export function WhiteboardCanvas({
   const [videoUrl, setVideoUrl] = useState("")
   const [showVideoInput, setShowVideoInput] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
+  const [selectedSceneIds, setSelectedSceneIds] = useState<string[]>([])
 
   const sceneElements = useMemo(
     () => elements.filter(isRenderableElement) as unknown as readonly ExcalidrawElement[],
@@ -183,11 +186,12 @@ export function WhiteboardCanvas({
       .then((imported) => {
         if (imported.length)
           onElementsChange(imported as unknown as Record<string, unknown>[])
+        if (imported.length) onLegacyRetired?.()
       })
       .catch((error: unknown) =>
         console.error("Could not import legacy whiteboard strokes", error)
       )
-  }, [canvasState, elements.length, onElementsChange])
+  }, [canvasState, elements.length, onElementsChange, onLegacyRetired])
 
   useEffect(
     () => () => {
@@ -269,7 +273,29 @@ export function WhiteboardCanvas({
     apiRef.current?.updateScene({ elements: deleted })
     onElementsChange?.(deleted as unknown as Record<string, unknown>[])
     onClearAll?.()
+    if (canvasState) onLegacyRetired?.()
     setSelectedElementId(null)
+    setSelectedSceneIds([])
+  }
+
+  const deleteSelectedSceneElements = () => {
+    const api = apiRef.current
+    if (!api || !selectedSceneIds.length || isReadOnly || !onElementsChange) return
+    const selected = new Set(selectedSceneIds)
+    const deleted = api.getSceneElementsIncludingDeleted().map((element) =>
+      selected.has(element.id)
+        ? {
+            ...element,
+            isDeleted: true,
+            version: element.version + 1,
+            versionNonce: Math.floor(Math.random() * 2_147_483_647),
+            updated: Date.now(),
+          }
+        : element
+    )
+    api.updateScene({ elements: deleted })
+    onElementsChange(deleted as unknown as Record<string, unknown>[])
+    setSelectedSceneIds([])
   }
 
   useEffect(() => {
@@ -372,6 +398,12 @@ export function WhiteboardCanvas({
             <Trash2 className="mr-2 h-4 w-4" />
             Clear board
           </Button>
+          {selectedSceneIds.length > 0 && (
+            <Button variant="destructive" size="sm" onClick={deleteSelectedSceneElements}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete selected ({selectedSceneIds.length})
+            </Button>
+          )}
           <span className="text-muted-foreground ml-auto text-xs">
             Shapes, text and freehand drawing save collaboratively
           </span>
@@ -387,7 +419,16 @@ export function WhiteboardCanvas({
             api.updateScene({ elements: sceneElements })
             sceneReady.current = true
           }}
-          onChange={(next) => publishElements(next)}
+          onChange={(next, appState) => {
+            const nextSelectedIds = Object.keys(appState.selectedElementIds)
+            setSelectedSceneIds((current) =>
+              current.length === nextSelectedIds.length &&
+              current.every((id, index) => id === nextSelectedIds[index])
+                ? current
+                : nextSelectedIds
+            )
+            publishElements(next)
+          }}
           viewModeEnabled={isReadOnly}
           zenModeEnabled
           gridModeEnabled={false}

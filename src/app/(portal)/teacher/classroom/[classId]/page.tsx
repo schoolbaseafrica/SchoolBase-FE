@@ -280,6 +280,17 @@ export default function TeacherClassroomPage() {
     })
   }, [updateMutation])
 
+  const handleLegacyRetired = useCallback(() => {
+    setCanvasState(null)
+    void VirtualClassroomAPI.retireLegacyWhiteboard(classId).catch((retireError) => {
+      toast.error(
+        retireError instanceof Error
+          ? retireError.message
+          : "Could not finish migrating the legacy board"
+      )
+    })
+  }, [classId])
+
   // Handle toggling student edit permission
   const handleToggleStudentEdit = useCallback(
     (checked: boolean) => {
@@ -492,6 +503,7 @@ export default function TeacherClassroomPage() {
                 onUpdateImagesData={handleUpdateImagesData}
                 onUpdateVideosData={handleUpdateVideosData}
                 onClearAll={handleClearAll}
+                onLegacyRetired={handleLegacyRetired}
               />
             </div>
             {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}

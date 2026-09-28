@@ -174,6 +174,8 @@ export const VirtualClassroomAPI = {
         { method: "PATCH", data: { version, snapshot } }
       )
     ),
+  retireLegacyWhiteboard: (id: string) =>
+    apiFetch(`/virtual-classrooms/${id}/whiteboard/legacy`, { method: "DELETE" }),
   getMessages: async (id: string) =>
     unwrap(
       await apiFetch<ResponsePack<ClassroomMessage[]> | ClassroomMessage[]>(
