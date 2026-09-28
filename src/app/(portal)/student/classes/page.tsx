@@ -44,7 +44,11 @@ export default function StudentClassesPage() {
         <EmptyState
           icon={Video}
           title="Classes could not be loaded"
-          description="Please try again. If the problem continues, contact your school administrator."
+          description={
+            classrooms.error instanceof Error
+              ? classrooms.error.message
+              : "Please try again. If the problem continues, contact your school administrator."
+          }
           action={<Button onClick={() => classrooms.refetch()}>Try again</Button>}
         />
       ) : rooms.length === 0 ? (
