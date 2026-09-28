@@ -7,6 +7,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
 import { Image as ImageIcon, Link as LinkIcon, Loader2, Trash2, Type } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import type { TextBoxData } from "@/lib/whiteboard"
 import { FloatingImage, FloatingVideo } from "./floating-media"
@@ -160,6 +161,7 @@ export function WhiteboardCanvas({
   const publishTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSceneSignature = useRef("")
   const sceneReady = useRef(false)
+  const selectedSceneIdsRef = useRef<string[]>([])
   const [videoUrl, setVideoUrl] = useState("")
   const [showVideoInput, setShowVideoInput] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
@@ -275,13 +277,16 @@ export function WhiteboardCanvas({
     onClearAll?.()
     if (canvasState) onLegacyRetired?.()
     setSelectedElementId(null)
+    selectedSceneIdsRef.current = []
     setSelectedSceneIds([])
+    toast.success("Board cleared")
   }
 
   const deleteSelectedSceneElements = () => {
     const api = apiRef.current
-    if (!api || !selectedSceneIds.length || isReadOnly || !onElementsChange) return
-    const selected = new Set(selectedSceneIds)
+    const selectedIds = selectedSceneIdsRef.current
+    if (!api || !selectedIds.length || isReadOnly || !onElementsChange) return
+    const selected = new Set(selectedIds)
     const deleted = api.getSceneElementsIncludingDeleted().map((element) =>
       selected.has(element.id)
         ? {
@@ -295,7 +300,13 @@ export function WhiteboardCanvas({
     )
     api.updateScene({ elements: deleted })
     onElementsChange(deleted as unknown as Record<string, unknown>[])
+    selectedSceneIdsRef.current = []
     setSelectedSceneIds([])
+    toast.success(
+      selectedIds.length === 1
+        ? "Whiteboard item deleted"
+        : `${selectedIds.length} whiteboard items deleted`
+    )
   }
 
   useEffect(() => {
@@ -399,7 +410,15 @@ export function WhiteboardCanvas({
             Clear board
           </Button>
           {selectedSceneIds.length > 0 && (
-            <Button variant="destructive" size="sm" onClick={deleteSelectedSceneElements}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onPointerDown={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+              }}
+              onClick={deleteSelectedSceneElements}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete selected ({selectedSceneIds.length})
             </Button>
@@ -421,6 +440,7 @@ export function WhiteboardCanvas({
           }}
           onChange={(next, appState) => {
             const nextSelectedIds = Object.keys(appState.selectedElementIds)
+            selectedSceneIdsRef.current = nextSelectedIds
             setSelectedSceneIds((current) =>
               current.length === nextSelectedIds.length &&
               current.every((id, index) => id === nextSelectedIds[index])
