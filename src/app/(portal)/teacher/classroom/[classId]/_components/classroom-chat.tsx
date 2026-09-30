@@ -12,6 +12,9 @@ import {
   Square,
   Trash2,
   RotateCcw,
+  Play,
+  Pause,
+  Volume2,
 } from "lucide-react"
 import {
   useClassroomMessages,
@@ -27,6 +30,128 @@ const formatDate = (date: Date) => {
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
+}
+
+const formatAudioTime = (seconds: number) => {
+  const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`
+}
+
+function VoiceNotePlayer({
+  source,
+  durationHint,
+}: {
+  source: string
+  durationHint?: number
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [resolvedSource, setResolvedSource] = useState("")
+  const [playing, setPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(durationHint ?? 0)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let disposed = false
+    let objectUrl = ""
+    const resolve = async () => {
+      try {
+        if (source.startsWith("blob:")) {
+          if (!disposed) setResolvedSource(source)
+          return
+        }
+        const response = await fetch(source, { credentials: "include" })
+        if (!response.ok) throw new Error(`Playback failed (${response.status})`)
+        objectUrl = URL.createObjectURL(await response.blob())
+        if (!disposed) setResolvedSource(objectUrl)
+      } catch (caught) {
+        if (!disposed)
+          setError(caught instanceof Error ? caught.message : "Voice note could not load")
+      }
+    }
+    const timer = window.setTimeout(() => {
+      setError("")
+      setResolvedSource("")
+      setCurrentTime(0)
+      setPlaying(false)
+      void resolve()
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      disposed = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [source])
+
+  const toggle = async () => {
+    const audio = audioRef.current
+    if (!audio || !resolvedSource) return
+    if (audio.paused) {
+      try {
+        await audio.play()
+      } catch {
+        setError("This browser could not play the voice note")
+      }
+    } else audio.pause()
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-sm">
+      <audio
+        ref={audioRef}
+        src={resolvedSource || undefined}
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+        onError={() => setError("This voice note could not be played")}
+      />
+      <div className="flex items-center gap-2.5">
+        <Button
+          type="button"
+          size="icon"
+          onClick={() => void toggle()}
+          disabled={!resolvedSource || Boolean(error)}
+          className="h-9 w-9 shrink-0 rounded-full"
+          aria-label={playing ? "Pause voice note" : "Play voice note"}
+        >
+          {resolvedSource ? (
+            playing ? (
+              <Pause className="h-4 w-4 fill-current" />
+            ) : (
+              <Play className="ml-0.5 h-4 w-4 fill-current" />
+            )
+          ) : (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+        </Button>
+        <div className="min-w-0 flex-1">
+          <input
+            type="range"
+            min={0}
+            max={Math.max(duration, 1)}
+            step={0.1}
+            value={Math.min(currentTime, Math.max(duration, 1))}
+            onChange={(event) => {
+              const value = Number(event.target.value)
+              if (audioRef.current) audioRef.current.currentTime = value
+              setCurrentTime(value)
+            }}
+            className="h-1.5 w-full cursor-pointer accent-[var(--primary)]"
+            aria-label="Voice note position"
+          />
+          <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+            <span>{formatAudioTime(currentTime)}</span>
+            <span>{formatAudioTime(duration || durationHint || 0)}</span>
+          </div>
+        </div>
+        <Volume2 className="h-4 w-4 shrink-0 text-slate-400" />
+      </div>
+      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+    </div>
+  )
 }
 
 interface ClassroomChatProps {
@@ -105,14 +230,24 @@ export function ClassroomChat({
   const startRecording = useCallback(async () => {
     setVoiceError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      })
       const preferredTypes = [
         "audio/webm;codecs=opus",
         "audio/ogg;codecs=opus",
         "audio/mp4",
       ]
       const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type))
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType, audioBitsPerSecond: 48_000 } : undefined
+      )
       chunksRef.current = []
       discardRecordingRef.current = false
       recordingStreamRef.current = stream
@@ -315,12 +450,10 @@ export function ClassroomChat({
                     </div>
                   )}
                   {message.audio_url && (
-                    <div className="min-w-48">
-                      <audio
-                        controls
-                        preload="metadata"
-                        src={message.audio_url}
-                        className="h-9 w-full"
+                    <div className="min-w-56">
+                      <VoiceNotePlayer
+                        source={message.audio_url}
+                        durationHint={message.audio_duration ?? undefined}
                       />
                       {message.audio_duration && (
                         <div className="mt-1 text-xs opacity-70">
@@ -350,9 +483,15 @@ export function ClassroomChat({
       {!isReadOnly && (
         <div className="rounded-b-lg border-t bg-white p-3 pt-2 md:p-4 md:pt-4">
           {isRecording && (
-            <div className="mb-2 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
-              Recording {recordingSeconds}s / 120s
+            <div className="mb-3 flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700 shadow-sm">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
+              </span>
+              <span className="font-medium">Recording</span>
+              <span className="font-mono text-xs">
+                {formatAudioTime(recordingSeconds)} / 2:00
+              </span>
               <Button
                 size="sm"
                 variant="ghost"
@@ -368,8 +507,8 @@ export function ClassroomChat({
             </div>
           )}
           {voiceNote && !isRecording && (
-            <div className="mb-2 space-y-2 rounded-md border bg-gray-50 p-2">
-              <audio controls src={voiceNote.url} className="h-9 w-full" />
+            <div className="mb-3 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+              <VoiceNotePlayer source={voiceNote.url} durationHint={voiceNote.duration} />
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-xs">
                   Preview · {voiceNote.duration}s

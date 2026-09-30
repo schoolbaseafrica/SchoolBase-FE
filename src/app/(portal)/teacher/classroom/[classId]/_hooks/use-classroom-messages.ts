@@ -22,7 +22,13 @@ export function useClassroomMessages(
           class_id: classId,
           sender_type: message.senderRole === "student" ? "student" : "teacher",
           sender_id: message.senderId,
-          sender_name: message.senderRole === "student" ? "Student" : "Teacher",
+          sender_name:
+            message.senderName ||
+            (message.senderRole === "student"
+              ? "Student"
+              : message.senderRole === "admin"
+                ? "Administrator"
+                : "Teacher"),
           text: message.body,
           audio_url: message.audioUrl
             ? `/api/proxy-auth/${message.audioUrl.replace(/^\/+/, "")}`

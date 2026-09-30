@@ -41,6 +41,7 @@ export interface ClassroomMessage {
   id: string
   senderId: string
   senderRole: "teacher" | "student" | "admin"
+  senderName: string | null
   body: string | null
   messageType: "text" | "voice"
   audioUrl: string | null
