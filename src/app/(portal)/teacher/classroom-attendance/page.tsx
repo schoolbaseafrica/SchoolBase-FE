@@ -9,6 +9,13 @@ import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  CompactMetric,
+  CompactMetricStrip,
+  CompactRecordHeader,
+  CompactRecordList,
+  CompactRecordRow,
+} from "@/components/ui/compact-record-list"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
@@ -173,19 +180,12 @@ export default function ClassroomAttendancePage() {
         </Card>
       ) : review.data ? (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <CompactMetricStrip className="grid-cols-2 sm:grid-cols-5">
             {(["total", "present", "late", "partial", "absent"] as const).map((key) => (
-              <Card key={key}>
-                <CardContent className="p-4">
-                  <div className="text-sm text-gray-500 capitalize">{key}</div>
-                  <div className="mt-1 text-2xl font-semibold">
-                    {review.data.summary[key]}
-                  </div>
-                </CardContent>
-              </Card>
+              <CompactMetric key={key} label={key} value={review.data.summary[key]} />
             ))}
-          </div>
-          <div className="space-y-3">
+          </CompactMetricStrip>
+          <div>
             {review.data.students.length === 0 ? (
               <Card>
                 <CardContent className="p-10 text-center text-gray-500">
@@ -193,52 +193,66 @@ export default function ClassroomAttendancePage() {
                 </CardContent>
               </Card>
             ) : (
-              review.data.students.map((student) => (
-                <Card key={student.userId}>
-                  <CardContent className="grid gap-4 p-4 md:grid-cols-[minmax(160px,1.3fr)_1fr_1fr_1fr_auto] md:items-center">
+              <CompactRecordList>
+                <CompactRecordHeader className="grid-cols-[minmax(160px,1.3fr)_1fr_1fr_1fr_auto] gap-4">
+                  <span>Student</span>
+                  <span>First join</span>
+                  <span>Participation</span>
+                  <span>Status</span>
+                  <span className="sr-only">Action</span>
+                </CompactRecordHeader>
+                {review.data.students.map((student) => (
+                  <CompactRecordRow
+                    key={student.userId}
+                    className="md:grid-cols-[minmax(160px,1.3fr)_1fr_1fr_1fr_auto] md:items-center md:gap-4"
+                  >
                     <div>
                       <div className="font-medium">{student.name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         {student.registrationNumber}
                       </div>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">First join</span>
-                      <br />
-                      {formatTime(student.firstJoin)}
+                    <div className="flex justify-between gap-3 text-sm md:block">
+                      <span className="text-gray-500 md:hidden">First join</span>
+                      <span>{formatTime(student.firstJoin)}</span>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Connected</span>
-                      <br />
-                      {formatDuration(student.connectedSeconds)} ·{" "}
-                      {student.reconnectCount} reconnects
+                    <div className="flex justify-between gap-3 text-sm md:block">
+                      <span className="text-gray-500 md:hidden">Participation</span>
+                      <span>
+                        {formatDuration(student.connectedSeconds)} ·{" "}
+                        {student.reconnectCount} reconnects
+                      </span>
                     </div>
-                    <div>
-                      <Badge
-                        variant={
-                          student.status === "absent" ? "destructive" : "secondary"
-                        }
-                        className="capitalize"
-                      >
-                        {student.status}
-                      </Badge>
-                      {student.adjustment && (
-                        <div className="mt-1 text-xs text-gray-500">
-                          Corrected by {student.adjustment.correctedByName}
-                        </div>
-                      )}
+                    <div className="flex items-center justify-between gap-3 md:block">
+                      <span className="text-sm text-gray-500 md:hidden">Status</span>
+                      <div>
+                        <Badge
+                          variant={
+                            student.status === "absent" ? "destructive" : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {student.status}
+                        </Badge>
+                        {student.adjustment && (
+                          <div className="mt-0.5 text-[11px] text-gray-500">
+                            Corrected by {student.adjustment.correctedByName}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 w-full md:w-auto"
                       onClick={() => openCorrection(student)}
                     >
                       <UserCheck className="mr-2 h-4 w-4" />
                       Correct
                     </Button>
-                  </CardContent>
-                </Card>
-              ))
+                  </CompactRecordRow>
+                ))}
+              </CompactRecordList>
             )}
           </div>
         </>
