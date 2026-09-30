@@ -301,17 +301,36 @@ export function ClassroomAudio({
       room.on(RoomEvent.TrackPublished, refresh)
       room.on(RoomEvent.TrackUnpublished, refresh)
       room.on(RoomEvent.ParticipantPermissionsChanged, refresh)
-      room.on(RoomEvent.TrackSubscribed, (track) => {
+      room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
         if (track.kind === Track.Kind.Audio) {
           const element = track.attach()
           element.autoplay = true
           audioRootRef.current?.appendChild(element)
         }
-        refresh()
+        if (publication.source === Track.Source.Camera) {
+          setCameraTracks((current) => [
+            ...current.filter((camera) => camera.id !== publication.trackSid),
+            {
+              id: publication.trackSid,
+              participantName: displayName(participant),
+              track,
+              local: false,
+              speaking: participant.isSpeaking,
+            },
+          ])
+        } else {
+          refresh()
+        }
       })
-      room.on(RoomEvent.TrackUnsubscribed, (track) => {
+      room.on(RoomEvent.TrackUnsubscribed, (track, publication) => {
         track.detach().forEach((element) => element.remove())
-        refresh()
+        if (publication.source === Track.Source.Camera) {
+          setCameraTracks((current) =>
+            current.filter((camera) => camera.id !== publication.trackSid)
+          )
+        } else {
+          refresh()
+        }
       })
       room.on(RoomEvent.MediaDevicesError, () => {
         toast.error("Camera or microphone access failed. Check your browser permission.")
@@ -411,10 +430,12 @@ export function ClassroomAudio({
 
   return (
     <div className="border-b bg-white px-3 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-36 items-center gap-2 text-xs text-gray-600">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2 text-xs text-gray-600">
           <Headphones className="h-4 w-4 text-red-600" />
-          <span>{connected ? "Live media" : connectionLabel[connection]}</span>
+          <span className="whitespace-nowrap">
+            {connected ? "Live media" : connectionLabel[connection]}
+          </span>
           {connected && <span>· {participants.length} connected</span>}
         </div>
 
@@ -427,87 +448,99 @@ export function ClassroomAudio({
             )}
             Join live session
           </Button>
-        ) : (
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={toggleMicrophone}
-              disabled={!canManage && !allowStudentMicrophone}
-            >
-              {isMicrophoneEnabled ? (
-                <Mic className="mr-2 h-4 w-4" />
-              ) : (
-                <MicOff className="mr-2 h-4 w-4" />
-              )}
-              {isMicrophoneEnabled ? "Mute" : "Unmute"}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={leave}>
-              <PhoneOff className="mr-2 h-4 w-4" /> Leave live session
-            </Button>
-            <Button
-              size="sm"
-              variant={isCameraEnabled ? "default" : "outline"}
-              onClick={() => void toggleCamera()}
-              disabled={!canManage && !allowStudentCamera}
-            >
-              {isCameraEnabled ? (
-                <CameraOff className="mr-2 h-4 w-4" />
-              ) : (
-                <Camera className="mr-2 h-4 w-4" />
-              )}
-              {isCameraEnabled ? "Stop camera" : "Start camera"}
-            </Button>
-            {canManage && (
-              <Button
-                size="sm"
-                variant={isScreenSharing ? "default" : "outline"}
-                onClick={() => void toggleScreenShare()}
-                disabled={isChangingScreenShare}
-              >
-                {isChangingScreenShare ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : isScreenSharing ? (
-                  <ScreenShareOff className="mr-2 h-4 w-4" />
-                ) : (
-                  <MonitorUp className="mr-2 h-4 w-4" />
-                )}
-                {isScreenSharing ? "Stop sharing" : "Share screen"}
-              </Button>
-            )}
-          </>
-        )}
+        ) : null}
 
-        {canManage && (
-          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="student-microphones" className="text-xs text-gray-600">
-                Student microphones
-              </Label>
-              <Switch
-                id="student-microphones"
-                checked={allowStudentMicrophone}
-                disabled={isSavingPermission}
-                onCheckedChange={updateStudentMicrophones}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="student-cameras" className="text-xs text-gray-600">
-                Student cameras
-              </Label>
-              <Switch
-                id="student-cameras"
-                checked={allowStudentCamera}
-                disabled={isSavingPermission}
-                onCheckedChange={updateStudentCameras}
-              />
-            </div>
-          </div>
+        {connected && (
+          <Button size="sm" variant="ghost" onClick={leave} className="shrink-0">
+            <PhoneOff className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Leave live session</span>
+            <span className="sm:hidden">Leave</span>
+          </Button>
         )}
       </div>
 
+      {connected && (
+        <div
+          className={`mt-2 grid gap-2 ${canManage ? "grid-cols-3" : "grid-cols-2"} sm:flex sm:flex-wrap`}
+        >
+          <Button
+            size="sm"
+            variant="outline"
+            className="min-w-0 px-2 sm:px-3"
+            onClick={toggleMicrophone}
+            disabled={!canManage && !allowStudentMicrophone}
+          >
+            {isMicrophoneEnabled ? (
+              <Mic className="mr-2 h-4 w-4" />
+            ) : (
+              <MicOff className="mr-2 h-4 w-4" />
+            )}
+            {isMicrophoneEnabled ? "Mute" : "Unmute"}
+          </Button>
+          <Button
+            size="sm"
+            variant={isCameraEnabled ? "default" : "outline"}
+            className="min-w-0 px-2 sm:px-3"
+            onClick={() => void toggleCamera()}
+            disabled={!canManage && !allowStudentCamera}
+          >
+            {isCameraEnabled ? (
+              <CameraOff className="mr-2 h-4 w-4" />
+            ) : (
+              <Camera className="mr-2 h-4 w-4" />
+            )}
+            {isCameraEnabled ? "Stop camera" : "Start camera"}
+          </Button>
+          {canManage && (
+            <Button
+              size="sm"
+              variant={isScreenSharing ? "default" : "outline"}
+              className="min-w-0 px-2 sm:px-3"
+              onClick={() => void toggleScreenShare()}
+              disabled={isChangingScreenShare}
+            >
+              {isChangingScreenShare ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : isScreenSharing ? (
+                <ScreenShareOff className="mr-2 h-4 w-4" />
+              ) : (
+                <MonitorUp className="mr-2 h-4 w-4" />
+              )}
+              {isScreenSharing ? "Stop sharing" : "Share screen"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {canManage && (
+        <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg border bg-gray-50/70 sm:ml-auto sm:flex sm:w-fit sm:rounded-full">
+          <div className="flex min-w-0 items-center justify-between gap-2 border-r px-3 py-2 sm:border-r-0 sm:py-1.5">
+            <Label htmlFor="student-microphones" className="text-xs text-gray-600">
+              Microphones
+            </Label>
+            <Switch
+              id="student-microphones"
+              checked={allowStudentMicrophone}
+              disabled={isSavingPermission}
+              onCheckedChange={updateStudentMicrophones}
+            />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2 sm:py-1.5">
+            <Label htmlFor="student-cameras" className="text-xs text-gray-600">
+              Cameras
+            </Label>
+            <Switch
+              id="student-cameras"
+              checked={allowStudentCamera}
+              disabled={isSavingPermission}
+              onCheckedChange={updateStudentCameras}
+            />
+          </div>
+        </div>
+      )}
+
       {connected && participants.length > 0 && (
-        <div className="mt-2 flex max-h-14 flex-wrap gap-1 overflow-y-auto">
+        <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5 sm:max-h-14 sm:flex-wrap sm:overflow-y-auto">
           {participants.map((participant) => (
             <span
               key={participant.identity}
@@ -528,7 +561,9 @@ export function ClassroomAudio({
         </div>
       )}
       {connected && cameraTracks.length > 0 && (
-        <div className="mt-3 grid max-h-[42dvh] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div
+          className={`mt-3 grid max-h-[36dvh] gap-2 overflow-y-auto ${cameraTracks.length > 1 || canManage ? "grid-cols-2" : "grid-cols-1"} sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`}
+        >
           {cameraTracks.map((camera) => (
             <CameraTile key={camera.id} camera={camera} />
           ))}
