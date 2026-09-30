@@ -96,7 +96,7 @@ function VoiceNotePlayer({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 p-2.5 shadow-sm">
+    <div className="min-w-0">
       <audio
         ref={audioRef}
         src={resolvedSource || undefined}
@@ -108,13 +108,13 @@ function VoiceNotePlayer({
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
         onError={() => setError("This voice note could not be played")}
       />
-      <div className="flex items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2">
         <Button
           type="button"
           size="icon"
           onClick={() => void toggle()}
           disabled={!resolvedSource || Boolean(error)}
-          className="h-9 w-9 shrink-0 rounded-full"
+          className="h-9 w-9 shrink-0 rounded-full shadow-none"
           aria-label={playing ? "Pause voice note" : "Play voice note"}
         >
           {resolvedSource ? (
@@ -147,7 +147,7 @@ function VoiceNotePlayer({
             <span>{formatAudioTime(duration || durationHint || 0)}</span>
           </div>
         </div>
-        <Volume2 className="h-4 w-4 shrink-0 text-slate-400" />
+        <Volume2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
       </div>
       {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
     </div>
@@ -413,7 +413,7 @@ export function ClassroomChat({
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-3 pb-2 md:p-4 md:pb-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 pb-2">
         {isLoading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -431,7 +431,7 @@ export function ClassroomChat({
                 className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[75%] rounded-lg px-3 py-2 ${
+                  className={`max-w-[88%] min-w-0 rounded-2xl px-3 py-2.5 ${
                     isOwn ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
                   }`}
                 >
@@ -450,16 +450,11 @@ export function ClassroomChat({
                     </div>
                   )}
                   {message.audio_url && (
-                    <div className="min-w-56">
+                    <div className="mt-1 w-56 max-w-full min-w-0">
                       <VoiceNotePlayer
                         source={message.audio_url}
                         durationHint={message.audio_duration ?? undefined}
                       />
-                      {message.audio_duration && (
-                        <div className="mt-1 text-xs opacity-70">
-                          Voice note · {message.audio_duration}s
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -483,33 +478,42 @@ export function ClassroomChat({
       {!isReadOnly && (
         <div className="rounded-b-lg border-t bg-white p-3 pt-2 md:p-4 md:pt-4">
           {isRecording && (
-            <div className="mb-3 flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700 shadow-sm">
-              <span className="relative flex h-3 w-3">
+            <div className="mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-2xl border border-red-100 bg-red-50 p-2.5 text-sm text-red-700">
+              <span className="relative flex h-3 w-3 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
               </span>
-              <span className="font-medium">Recording</span>
-              <span className="font-mono text-xs">
-                {formatAudioTime(recordingSeconds)} / 2:00
+              <span className="min-w-0">
+                <span className="block font-medium">Recording</span>
+                <span className="block font-mono text-xs">
+                  {formatAudioTime(recordingSeconds)} / 2:00
+                </span>
               </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={cancelRecording}
-                className="ml-auto h-8"
-              >
-                Cancel
-              </Button>
-              <Button size="sm" variant="outline" onClick={stopRecording} className="h-8">
-                <Square className="mr-2 h-3 w-3 fill-current" />
-                Stop
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={cancelRecording}
+                  className="h-8 px-2"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={stopRecording}
+                  className="h-8 w-8 shrink-0"
+                  aria-label="Stop recording"
+                >
+                  <Square className="h-3 w-3 fill-current" />
+                </Button>
+              </div>
             </div>
           )}
           {voiceNote && !isRecording && (
-            <div className="mb-3 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+            <div className="mb-3 min-w-0 space-y-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
               <VoiceNotePlayer source={voiceNote.url} durationHint={voiceNote.duration} />
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-muted-foreground text-xs">
                   Preview · {voiceNote.duration}s
                 </span>
@@ -518,7 +522,7 @@ export function ClassroomChat({
                   size="sm"
                   onClick={discardVoiceNote}
                   disabled={createVoiceNoteMutation.isPending}
-                  className="ml-auto h-8"
+                  className="ml-auto h-8 px-2"
                 >
                   <Trash2 className="mr-1 h-3 w-3" />
                   Discard
