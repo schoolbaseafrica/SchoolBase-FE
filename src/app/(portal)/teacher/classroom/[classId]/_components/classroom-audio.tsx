@@ -3,13 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ConnectionState,
+  LocalTrack,
   LocalParticipant,
   Participant,
+  RemoteTrack,
   Room,
   RoomEvent,
   Track,
 } from "livekit-client"
-import { Headphones, Loader2, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react"
+import {
+  Headphones,
+  Loader2,
+  Mic,
+  MicOff,
+  MonitorUp,
+  PhoneOff,
+  ScreenShareOff,
+  Volume2,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -36,6 +47,43 @@ function displayName(participant: Participant) {
   return participant.name?.trim() || participant.identity || "Participant"
 }
 
+interface ScreenShareTrack {
+  id: string
+  participantName: string
+  track: LocalTrack | RemoteTrack
+  local: boolean
+}
+
+function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) share.track.attach(video)
+    return () => {
+      if (video) share.track.detach(video)
+    }
+  }, [share.track])
+  return (
+    <div className="overflow-hidden rounded-xl border bg-slate-950 shadow-sm">
+      <div className="flex items-center justify-between bg-slate-900 px-3 py-2 text-xs text-white">
+        <span>
+          {share.local ? "You are presenting" : `${share.participantName} is presenting`}
+        </span>
+        <span className="flex items-center gap-1 text-emerald-300">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Live
+        </span>
+      </div>
+      <video
+        ref={videoRef}
+        autoPlay
+        muted={share.local}
+        playsInline
+        className="max-h-[55vh] w-full bg-black object-contain"
+      />
+    </div>
+  )
+}
+
 export function ClassroomAudio({
   classroomId,
   canManage,
@@ -48,6 +96,9 @@ export function ClassroomAudio({
   const [participants, setParticipants] = useState<Participant[]>([])
   const [isJoining, setIsJoining] = useState(false)
   const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(false)
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const [screenShares, setScreenShares] = useState<ScreenShareTrack[]>([])
+  const [isChangingScreenShare, setIsChangingScreenShare] = useState(false)
   const [canPublish, setCanPublish] = useState(false)
   const [isSavingPermission, setIsSavingPermission] = useState(false)
 
@@ -55,6 +106,31 @@ export function ClassroomAudio({
     setParticipants([room.localParticipant, ...room.remoteParticipants.values()])
     setIsMicrophoneEnabled(room.localParticipant.isMicrophoneEnabled)
     setCanPublish(room.localParticipant.permissions?.canPublish ?? false)
+    setIsScreenSharing(room.localParticipant.isScreenShareEnabled)
+    const shares: ScreenShareTrack[] = []
+    const localPublication = room.localParticipant.getTrackPublication(
+      Track.Source.ScreenShare
+    )
+    if (localPublication?.track) {
+      shares.push({
+        id: localPublication.trackSid,
+        participantName: displayName(room.localParticipant),
+        track: localPublication.track,
+        local: true,
+      })
+    }
+    room.remoteParticipants.forEach((participant) => {
+      const publication = participant.getTrackPublication(Track.Source.ScreenShare)
+      if (publication?.track) {
+        shares.push({
+          id: publication.trackSid,
+          participantName: displayName(participant),
+          track: publication.track,
+          local: false,
+        })
+      }
+    })
+    setScreenShares(shares)
   }, [])
 
   const leave = useCallback(() => {
@@ -67,6 +143,8 @@ export function ClassroomAudio({
     setConnection(ConnectionState.Disconnected)
     setParticipants([])
     setIsMicrophoneEnabled(false)
+    setIsScreenSharing(false)
+    setScreenShares([])
     setCanPublish(false)
   }, [])
 
@@ -89,6 +167,8 @@ export function ClassroomAudio({
       room.on(RoomEvent.ActiveSpeakersChanged, refresh)
       room.on(RoomEvent.TrackMuted, refresh)
       room.on(RoomEvent.TrackUnmuted, refresh)
+      room.on(RoomEvent.LocalTrackPublished, refresh)
+      room.on(RoomEvent.LocalTrackUnpublished, refresh)
       room.on(RoomEvent.ParticipantPermissionsChanged, refresh)
       room.on(RoomEvent.TrackSubscribed, (track) => {
         if (track.kind === Track.Kind.Audio) {
@@ -96,9 +176,11 @@ export function ClassroomAudio({
           element.autoplay = true
           audioRootRef.current?.appendChild(element)
         }
+        refresh()
       })
       room.on(RoomEvent.TrackUnsubscribed, (track) => {
         track.detach().forEach((element) => element.remove())
+        refresh()
       })
       room.on(RoomEvent.MediaDevicesError, () => {
         toast.error("Microphone access failed. Check your browser permission.")
@@ -145,6 +227,26 @@ export function ClassroomAudio({
     }
   }
 
+  const toggleScreenShare = async () => {
+    const participant = roomRef.current?.localParticipant
+    if (!participant || !canManage) return
+    setIsChangingScreenShare(true)
+    try {
+      await participant.setScreenShareEnabled(!participant.isScreenShareEnabled, {
+        audio: true,
+      })
+      if (roomRef.current) refreshParticipants(roomRef.current)
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Screen sharing could not start. Check browser permission."
+      )
+    } finally {
+      setIsChangingScreenShare(false)
+    }
+  }
+
   const connected = connection === ConnectionState.Connected
 
   return (
@@ -152,7 +254,7 @@ export function ClassroomAudio({
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-36 items-center gap-2 text-xs text-gray-600">
           <Headphones className="h-4 w-4 text-red-600" />
-          <span>{connectionLabel[connection]}</span>
+          <span>{connected ? "Live media" : connectionLabel[connection]}</span>
           {connected && <span>· {participants.length} connected</span>}
         </div>
 
@@ -163,7 +265,7 @@ export function ClassroomAudio({
             ) : (
               <Volume2 className="mr-2 h-4 w-4" />
             )}
-            Join audio
+            Join live session
           </Button>
         ) : (
           <>
@@ -181,8 +283,25 @@ export function ClassroomAudio({
               {isMicrophoneEnabled ? "Mute" : "Unmute"}
             </Button>
             <Button size="sm" variant="ghost" onClick={leave}>
-              <PhoneOff className="mr-2 h-4 w-4" /> Leave audio
+              <PhoneOff className="mr-2 h-4 w-4" /> Leave live session
             </Button>
+            {canManage && (
+              <Button
+                size="sm"
+                variant={isScreenSharing ? "default" : "outline"}
+                onClick={() => void toggleScreenShare()}
+                disabled={isChangingScreenShare}
+              >
+                {isChangingScreenShare ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : isScreenSharing ? (
+                  <ScreenShareOff className="mr-2 h-4 w-4" />
+                ) : (
+                  <MonitorUp className="mr-2 h-4 w-4" />
+                )}
+                {isScreenSharing ? "Stop sharing" : "Share screen"}
+              </Button>
+            )}
           </>
         )}
 
@@ -212,6 +331,13 @@ export function ClassroomAudio({
               {participant instanceof LocalParticipant ? " (you)" : ""}
               {participant.isMicrophoneEnabled ? " · speaking enabled" : " · muted"}
             </span>
+          ))}
+        </div>
+      )}
+      {connected && screenShares.length > 0 && (
+        <div className="mt-3 grid gap-3 xl:grid-cols-2">
+          {screenShares.map((share) => (
+            <ScreenShareStage key={share.id} share={share} />
           ))}
         </div>
       )}
