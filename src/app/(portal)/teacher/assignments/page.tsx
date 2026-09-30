@@ -19,9 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
-import { useAuthUser } from "@/hooks/use-auth-user"
 import { AssignmentAPI, type Assignment, type AssignmentStatus } from "@/lib/assignments"
-import { ResultsAPI } from "@/lib/results"
 import { TeacherAttendanceAPI } from "@/lib/teacher-attendance"
 
 const statusStyle: Record<AssignmentStatus, string> = {
@@ -33,7 +31,6 @@ const statusStyle: Record<AssignmentStatus, string> = {
 
 export default function TeacherAssignmentsPage() {
   const period = useAcademicPeriod("teacher-assignments")
-  const auth = useAuthUser()
   const queryClient = useQueryClient()
   const [creating, setCreating] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
@@ -63,9 +60,9 @@ export default function TeacherAssignmentsPage() {
     enabled: Boolean(period.sessionId),
   })
   const subjects = useQuery({
-    queryKey: ["teacher-assignment-subjects", selectedClass, auth.data?.teacher_id],
-    queryFn: () => ResultsAPI.getSubjects(selectedClass, auth.data?.teacher_id),
-    enabled: Boolean(selectedClass && auth.data?.teacher_id),
+    queryKey: ["teacher-assignment-subjects", selectedClass],
+    queryFn: () => AssignmentAPI.teacherSubjects(selectedClass),
+    enabled: Boolean(selectedClass),
   })
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["assignments"] })
   const create = useMutation({
@@ -159,15 +156,42 @@ export default function TeacherAssignmentsPage() {
                 value={form.subjectId}
                 onChange={(event) => setForm({ ...form, subjectId: event.target.value })}
                 required
-                disabled={!selectedClass}
+                disabled={!selectedClass || subjects.isLoading || subjects.isError}
               >
-                <option value="">Select subject</option>
+                <option value="">
+                  {!selectedClass
+                    ? "Select a class first"
+                    : subjects.isLoading
+                      ? "Loading subjects…"
+                      : subjects.isError
+                        ? "Could not load subjects"
+                        : subjects.data?.length
+                          ? "Select subject"
+                          : "No subjects assigned"}
+                </option>
                 {subjects.data?.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
                 ))}
               </select>
+              {subjects.isError && (
+                <button
+                  type="button"
+                  className="mt-1 text-sm text-red-600 underline"
+                  onClick={() => subjects.refetch()}
+                >
+                  Retry loading subjects
+                </button>
+              )}
+              {selectedClass &&
+                !subjects.isLoading &&
+                !subjects.isError &&
+                subjects.data?.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    No subject is assigned to you for this class or its timetable.
+                  </p>
+                )}
             </div>
             <div className="md:col-span-2">
               <label className="text-sm font-medium">Title</label>

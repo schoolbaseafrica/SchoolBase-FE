@@ -43,6 +43,7 @@ export interface Assignment {
 }
 
 type Envelope<T> = T | { data: T }
+type AssignmentSubjectOption = { id: string; name: string }
 const unwrap = <T>(value: Envelope<T>): T =>
   value && typeof value === "object" && "data" in value ? value.data : value
 
@@ -59,6 +60,15 @@ export interface CreateAssignmentInput {
 }
 
 export const AssignmentAPI = {
+  teacherSubjects: async (classId: string) =>
+    unwrap(
+      await apiFetch<Envelope<AssignmentSubjectOption[]>>(
+        "/assignments/options/subjects",
+        {
+          params: { class_id: classId },
+        }
+      )
+    ),
   list: async (params?: {
     session_id?: string
     term_id?: string
