@@ -275,6 +275,16 @@ export const VirtualClassroomAPI = {
         { method: "PATCH", data }
       )
     ),
+  moderateParticipantMedia: (
+    id: string,
+    participantIdentity: string,
+    source: "microphone" | "camera",
+    enabled: boolean
+  ) =>
+    apiFetch(`/virtual-classrooms/${id}/participants/media`, {
+      method: "PATCH",
+      data: { participantIdentity, source, enabled },
+    }),
   getAttendance: async (id: string) =>
     unwrap(
       await apiFetch<ResponsePack<ClassroomAttendanceReview> | ClassroomAttendanceReview>(

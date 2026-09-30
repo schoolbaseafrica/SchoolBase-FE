@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ConnectionState,
+  ConnectionQuality,
   LocalTrack,
   LocalParticipant,
   Participant,
@@ -24,6 +25,8 @@ import {
   PhoneOff,
   ScreenShareOff,
   Volume2,
+  Settings2,
+  Wifi,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -82,9 +85,11 @@ function initials(name: string) {
 function CameraPlaceholder({
   participant,
   local,
+  onModerate,
 }: {
   participant: Participant
   local: boolean
+  onModerate?: (source: "microphone" | "camera", enabled: boolean) => void
 }) {
   const name = displayName(participant)
   return (
@@ -108,11 +113,45 @@ function CameraPlaceholder({
           <MicOff className="h-3.5 w-3.5 shrink-0" />
         )}
       </div>
+      {onModerate && (
+        <div className="absolute top-1 right-1 flex gap-1">
+          <button
+            type="button"
+            className="rounded bg-white/90 p-1"
+            onClick={() => onModerate("microphone", !participant.isMicrophoneEnabled)}
+            aria-label={
+              participant.isMicrophoneEnabled
+                ? "Mute student"
+                : "Allow student microphone"
+            }
+          >
+            {participant.isMicrophoneEnabled ? (
+              <MicOff className="h-3.5 w-3.5" />
+            ) : (
+              <Mic className="h-3.5 w-3.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            className="rounded bg-white/90 p-1"
+            onClick={() => onModerate("camera", true)}
+            aria-label="Allow student camera"
+          >
+            <Camera className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
-function CameraTile({ camera }: { camera: CameraTrack }) {
+function CameraTile({
+  camera,
+  onModerate,
+}: {
+  camera: CameraTrack
+  onModerate?: (source: "microphone" | "camera", enabled: boolean) => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const video = videoRef.current
@@ -141,6 +180,26 @@ function CameraTile({ camera }: { camera: CameraTrack }) {
           <span className="ml-2 shrink-0 text-emerald-300">Speaking</span>
         )}
       </div>
+      {onModerate && (
+        <div className="absolute top-1 right-1 flex gap-1">
+          <button
+            type="button"
+            className="rounded bg-black/60 p-1 text-white"
+            onClick={() => onModerate("microphone", false)}
+            aria-label="Mute student"
+          >
+            <MicOff className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            className="rounded bg-black/60 p-1 text-white"
+            onClick={() => onModerate("camera", false)}
+            aria-label="Stop student camera"
+          >
+            <CameraOff className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -252,6 +311,53 @@ export function ClassroomAudio({
   const [screenShares, setScreenShares] = useState<ScreenShareTrack[]>([])
   const [isChangingScreenShare, setIsChangingScreenShare] = useState(false)
   const [isSavingPermission, setIsSavingPermission] = useState(false)
+  const [showPreflight, setShowPreflight] = useState(false)
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+  const [selectedMicrophone, setSelectedMicrophone] = useState("")
+  const [selectedCamera, setSelectedCamera] = useState("")
+  const [selectedSpeaker, setSelectedSpeaker] = useState("")
+  const [deviceError, setDeviceError] = useState("")
+  const [isCheckingDevices, setIsCheckingDevices] = useState(false)
+  const [networkQuality, setNetworkQuality] = useState<ConnectionQuality | null>(null)
+  const desiredMedia = useRef({ microphone: false, camera: false })
+
+  const checkDevices = async () => {
+    setIsCheckingDevices(true)
+    setDeviceError("")
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      })
+      stream.getTracks().forEach((track) => track.stop())
+      const available = await navigator.mediaDevices.enumerateDevices()
+      setDevices(available)
+      setSelectedMicrophone(
+        (current) =>
+          current || available.find((item) => item.kind === "audioinput")?.deviceId || ""
+      )
+      setSelectedCamera(
+        (current) =>
+          current || available.find((item) => item.kind === "videoinput")?.deviceId || ""
+      )
+      setSelectedSpeaker(
+        (current) =>
+          current || available.find((item) => item.kind === "audiooutput")?.deviceId || ""
+      )
+    } catch (error) {
+      setDeviceError(
+        error instanceof Error ? error.message : "Camera and microphone access failed"
+      )
+      setDevices(await navigator.mediaDevices.enumerateDevices().catch(() => []))
+    } finally {
+      setIsCheckingDevices(false)
+    }
+  }
+
+  const openPreflight = () => {
+    setShowPreflight(true)
+    void checkDevices()
+  }
 
   const refreshParticipants = useCallback((room: Room) => {
     setParticipants([room.localParticipant, ...room.remoteParticipants.values()])
@@ -322,6 +428,7 @@ export function ClassroomAudio({
     setIsCameraEnabled(false)
     setCameraTracks([])
     setScreenShares([])
+    setNetworkQuality(null)
   }, [])
 
   useEffect(() => leave, [leave])
@@ -330,7 +437,12 @@ export function ClassroomAudio({
     setIsJoining(true)
     try {
       const credentials = await VirtualClassroomAPI.getMediaToken(classroomId)
-      const room = new Room({ adaptiveStream: true, dynacast: true })
+      const room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        audioCaptureDefaults: selectedMicrophone ? { deviceId: selectedMicrophone } : {},
+        videoCaptureDefaults: selectedCamera ? { deviceId: selectedCamera } : {},
+      })
       roomRef.current = room
 
       const refresh = () => refreshParticipants(room)
@@ -383,9 +495,28 @@ export function ClassroomAudio({
       room.on(RoomEvent.MediaDevicesError, () => {
         toast.error("Camera or microphone access failed. Check your browser permission.")
       })
+      room.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+        if (participant instanceof LocalParticipant) setNetworkQuality(quality)
+      })
+      room.on(RoomEvent.Reconnecting, () => {
+        desiredMedia.current = {
+          microphone: room.localParticipant.isMicrophoneEnabled,
+          camera: room.localParticipant.isCameraEnabled,
+        }
+      })
+      room.on(RoomEvent.Reconnected, () => {
+        const desired = desiredMedia.current
+        void room.localParticipant
+          .setMicrophoneEnabled(desired.microphone)
+          .catch(() => undefined)
+        void room.localParticipant.setCameraEnabled(desired.camera).catch(() => undefined)
+        toast.success("Live media reconnected")
+      })
 
       await room.connect(credentials.url, credentials.token, { autoSubscribe: true })
+      if (selectedSpeaker) await room.switchActiveDevice("audiooutput", selectedSpeaker)
       refresh()
+      setShowPreflight(false)
     } catch (error) {
       leave()
       toast.error(error instanceof Error ? error.message : "Unable to join live audio")
@@ -403,6 +534,7 @@ export function ClassroomAudio({
     }
     try {
       await participant.setCameraEnabled(!participant.isCameraEnabled)
+      desiredMedia.current.camera = participant.isCameraEnabled
       if (roomRef.current) refreshParticipants(roomRef.current)
     } catch {
       toast.error("Camera access failed. Check your browser permission.")
@@ -418,6 +550,7 @@ export function ClassroomAudio({
     }
     try {
       await participant.setMicrophoneEnabled(!participant.isMicrophoneEnabled)
+      desiredMedia.current.microphone = participant.isMicrophoneEnabled
       setIsMicrophoneEnabled(participant.isMicrophoneEnabled)
     } catch {
       toast.error("Microphone access failed. Check your browser permission.")
@@ -454,6 +587,24 @@ export function ClassroomAudio({
     }
   }
 
+  const moderateParticipant = async (
+    participantIdentity: string,
+    source: "microphone" | "camera",
+    enabled: boolean
+  ) => {
+    try {
+      await VirtualClassroomAPI.moderateParticipantMedia(
+        classroomId,
+        participantIdentity,
+        source,
+        enabled
+      )
+      toast.success(`${source === "camera" ? "Camera" : "Microphone"} permission updated`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update participant")
+    }
+  }
+
   const toggleScreenShare = async () => {
     const participant = roomRef.current?.localParticipant
     if (!participant || !canManage) return
@@ -475,6 +626,16 @@ export function ClassroomAudio({
   }
 
   const connected = connection === ConnectionState.Connected
+  const qualityLabel =
+    networkQuality === ConnectionQuality.Excellent
+      ? "Excellent"
+      : networkQuality === ConnectionQuality.Good
+        ? "Good"
+        : networkQuality === ConnectionQuality.Poor
+          ? "Weak"
+          : networkQuality === ConnectionQuality.Lost
+            ? "Lost"
+            : null
   const galleryParticipants = [...participants].sort((left, right) => {
     if (canManage) return 0
     return (
@@ -491,10 +652,26 @@ export function ClassroomAudio({
             {connected ? "Live media" : connectionLabel[connection]}
           </span>
           {connected && <span>· {participants.length} connected</span>}
+          {connected && qualityLabel && (
+            <span
+              className={
+                qualityLabel === "Weak" || qualityLabel === "Lost"
+                  ? "text-amber-600"
+                  : "text-emerald-600"
+              }
+            >
+              · <Wifi className="inline h-3 w-3" /> {qualityLabel}
+            </span>
+          )}
         </div>
 
         {!connected ? (
-          <Button size="sm" variant="outline" onClick={join} disabled={isJoining}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={openPreflight}
+            disabled={isJoining}
+          >
             {isJoining ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -505,13 +682,115 @@ export function ClassroomAudio({
         ) : null}
 
         {connected && (
-          <Button size="sm" variant="ghost" onClick={leave} className="shrink-0">
-            <PhoneOff className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Leave live session</span>
-            <span className="sm:hidden">Leave</span>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={openPreflight}
+              className="h-8 w-8"
+              aria-label="Media devices"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={leave} className="shrink-0">
+              <PhoneOff className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Leave live session</span>
+              <span className="sm:hidden">Leave</span>
+            </Button>
+          </div>
         )}
       </div>
+
+      {showPreflight && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+          <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl sm:max-w-lg sm:rounded-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">Check your devices</h2>
+                <p className="text-muted-foreground text-sm">
+                  Choose the devices to use before joining the lesson.
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowPreflight(false)}>
+                Close
+              </Button>
+            </div>
+            {deviceError && (
+              <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {deviceError}
+              </p>
+            )}
+            <div className="mt-4 grid gap-3">
+              {(
+                [
+                  ["Microphone", "audioinput", selectedMicrophone, setSelectedMicrophone],
+                  ["Camera", "videoinput", selectedCamera, setSelectedCamera],
+                  ["Speaker", "audiooutput", selectedSpeaker, setSelectedSpeaker],
+                ] as const
+              ).map(([label, kind, value, setter]) => (
+                <label key={kind} className="grid gap-1 text-sm font-medium">
+                  {label}
+                  <select
+                    className="h-10 rounded-md border bg-white px-3 font-normal"
+                    value={value}
+                    onChange={(event) => setter(event.target.value)}
+                  >
+                    {devices
+                      .filter((device) => device.kind === kind)
+                      .map((device, index) => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `${label} ${index + 1}`}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => void checkDevices()}
+                disabled={isCheckingDevices}
+              >
+                {isCheckingDevices && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Test again
+              </Button>
+              {!connected && (
+                <Button
+                  onClick={() => void join()}
+                  disabled={isJoining || isCheckingDevices}
+                >
+                  {isJoining ? "Joining…" : "Join lesson"}
+                </Button>
+              )}
+              {connected && (
+                <Button
+                  onClick={async () => {
+                    const room = roomRef.current
+                    if (!room) return
+                    if (selectedMicrophone)
+                      await room.switchActiveDevice("audioinput", selectedMicrophone)
+                    if (selectedCamera)
+                      await room.switchActiveDevice("videoinput", selectedCamera)
+                    if (selectedSpeaker)
+                      await room.switchActiveDevice("audiooutput", selectedSpeaker)
+                    setShowPreflight(false)
+                    toast.success("Media devices updated")
+                  }}
+                >
+                  Apply devices
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {connected && (qualityLabel === "Weak" || qualityLabel === "Lost") && (
+        <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Your connection is unstable. Turn off your camera if audio begins to break up.
+        </p>
+      )}
 
       {connected && (
         <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -605,12 +884,27 @@ export function ClassroomAudio({
               (item) => item.participantIdentity === participant.identity
             )
             return camera ? (
-              <CameraTile key={participant.identity} camera={camera} />
+              <CameraTile
+                key={participant.identity}
+                camera={camera}
+                onModerate={
+                  canManage && !(participant instanceof LocalParticipant)
+                    ? (source, enabled) =>
+                        void moderateParticipant(participant.identity, source, enabled)
+                    : undefined
+                }
+              />
             ) : (
               <CameraPlaceholder
                 key={participant.identity}
                 participant={participant}
                 local={participant instanceof LocalParticipant}
+                onModerate={
+                  canManage && !(participant instanceof LocalParticipant)
+                    ? (source, enabled) =>
+                        void moderateParticipant(participant.identity, source, enabled)
+                    : undefined
+                }
               />
             )
           })}
