@@ -496,6 +496,7 @@ export default function TeacherClassroomPage() {
               <CollaborationCursors cursors={presence.cursors} />
               <WhiteboardCanvas
                 key={activePage}
+                classroomId={classId}
                 canvasState={canvasState}
                 elements={whiteboard?.excalidraw_elements}
                 onSave={handleCanvasSave}

@@ -43,7 +43,19 @@ export function ResizableElement({
   const [isResizing, setIsResizing] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
+  const [parentSize, setParentSize] = useState({ width: 0, height: 0 })
   const elementRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const parent = elementRef.current?.parentElement
+    if (!parent) return
+    const updateParentSize = () =>
+      setParentSize({ width: parent.clientWidth, height: parent.clientHeight })
+    updateParentSize()
+    const observer = new ResizeObserver(updateParentSize)
+    observer.observe(parent)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     // Prop changes come from the persisted collaborative board state.
@@ -170,10 +182,10 @@ export function ResizableElement({
       ref={elementRef}
       style={{
         position: "absolute",
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${size.width}px`,
-        height: `${size.height}px`,
+        left: `${parentSize.width ? Math.max(8, Math.min(position.x, parentSize.width - Math.min(size.width, parentSize.width - 16) - 8)) : position.x}px`,
+        top: `${parentSize.height ? Math.max(8, Math.min(position.y, parentSize.height - Math.min(size.height, parentSize.height - 16) - 8)) : position.y}px`,
+        width: `${parentSize.width ? Math.min(size.width, parentSize.width - 16) : size.width}px`,
+        height: `${parentSize.height ? Math.min(size.height, parentSize.height - 16) : size.height}px`,
         cursor: isReadOnly ? "default" : isDragging ? "grabbing" : "grab",
         zIndex: isSelected ? 20 : 10,
         outline: isSelected ? "2px solid #3b82f6" : "none",

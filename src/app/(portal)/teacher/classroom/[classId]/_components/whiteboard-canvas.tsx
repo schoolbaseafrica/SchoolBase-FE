@@ -35,6 +35,7 @@ type PositionedMedia = Record<
 >
 
 interface WhiteboardCanvasProps {
+  classroomId: string
   canvasState: string | null
   elements?: Record<string, unknown>[]
   onSave: (canvasState: string) => void
@@ -133,6 +134,7 @@ async function importLegacyPaths(canvasState: string) {
 }
 
 export function WhiteboardCanvas({
+  classroomId,
   canvasState,
   elements = [],
   onElementsChange,
@@ -171,6 +173,23 @@ export function WhiteboardCanvas({
   const sceneElements = useMemo(
     () => elements.filter(isRenderableElement) as unknown as readonly ExcalidrawElement[],
     [elements]
+  )
+
+  const displayImageUrl = useCallback(
+    (url: string) => {
+      if (url.startsWith("/api/proxy-auth/")) return url
+      try {
+        const pathname = new URL(url, window.location.origin).pathname
+        const marker = `/classrooms/${classroomId}/whiteboard/`
+        const markerIndex = pathname.indexOf(marker)
+        if (markerIndex === -1) return url
+        const objectKey = pathname.slice(markerIndex + 1)
+        return `/api/proxy-auth/virtual-classrooms/${classroomId}/whiteboard/image?key=${encodeURIComponent(objectKey)}`
+      } catch {
+        return url
+      }
+    },
+    [classroomId]
   )
 
   useEffect(() => {
@@ -484,7 +503,7 @@ export function WhiteboardCanvas({
             <FloatingImage
               key={url}
               id={id}
-              url={url}
+              url={displayImageUrl(url)}
               x={data.x}
               y={data.y}
               width={data.width ?? 200}
