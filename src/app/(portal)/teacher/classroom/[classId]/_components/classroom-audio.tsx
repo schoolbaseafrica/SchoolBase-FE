@@ -320,6 +320,22 @@ export function ClassroomAudio({
   const [isCheckingDevices, setIsCheckingDevices] = useState(false)
   const [networkQuality, setNetworkQuality] = useState<ConnectionQuality | null>(null)
   const desiredMedia = useRef({ microphone: false, camera: false })
+  const reportHealth = useCallback(
+    (
+      category: "media" | "network" | "device",
+      eventType: string,
+      severity: "info" | "warning" | "error",
+      details?: Record<string, string | number | boolean | null>
+    ) => {
+      void VirtualClassroomAPI.reportHealth(classroomId, {
+        category,
+        eventType,
+        severity,
+        details,
+      }).catch(() => undefined)
+    },
+    [classroomId]
+  )
 
   const checkDevices = async () => {
     setIsCheckingDevices(true)
@@ -349,6 +365,9 @@ export function ClassroomAudio({
         error instanceof Error ? error.message : "Camera and microphone access failed"
       )
       setDevices(await navigator.mediaDevices.enumerateDevices().catch(() => []))
+      reportHealth("device", "preflight_failed", "error", {
+        message: error instanceof Error ? error.message : "Device access failed",
+      })
     } finally {
       setIsCheckingDevices(false)
     }
@@ -494,15 +513,27 @@ export function ClassroomAudio({
       })
       room.on(RoomEvent.MediaDevicesError, () => {
         toast.error("Camera or microphone access failed. Check your browser permission.")
+        reportHealth("device", "media_device_error", "error")
       })
       room.on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-        if (participant instanceof LocalParticipant) setNetworkQuality(quality)
+        if (participant instanceof LocalParticipant) {
+          setNetworkQuality(quality)
+          reportHealth(
+            "network",
+            "quality_changed",
+            quality === ConnectionQuality.Poor || quality === ConnectionQuality.Lost
+              ? "warning"
+              : "info",
+            { quality }
+          )
+        }
       })
       room.on(RoomEvent.Reconnecting, () => {
         desiredMedia.current = {
           microphone: room.localParticipant.isMicrophoneEnabled,
           camera: room.localParticipant.isCameraEnabled,
         }
+        reportHealth("media", "reconnecting", "warning")
       })
       room.on(RoomEvent.Reconnected, () => {
         const desired = desiredMedia.current
@@ -511,14 +542,19 @@ export function ClassroomAudio({
           .catch(() => undefined)
         void room.localParticipant.setCameraEnabled(desired.camera).catch(() => undefined)
         toast.success("Live media reconnected")
+        reportHealth("media", "reconnected", "info")
       })
 
       await room.connect(credentials.url, credentials.token, { autoSubscribe: true })
       if (selectedSpeaker) await room.switchActiveDevice("audiooutput", selectedSpeaker)
       refresh()
       setShowPreflight(false)
+      reportHealth("media", "connected", "info")
     } catch (error) {
       leave()
+      reportHealth("media", "connection_failed", "error", {
+        message: error instanceof Error ? error.message : "Unable to join",
+      })
       toast.error(error instanceof Error ? error.message : "Unable to join live audio")
     } finally {
       setIsJoining(false)

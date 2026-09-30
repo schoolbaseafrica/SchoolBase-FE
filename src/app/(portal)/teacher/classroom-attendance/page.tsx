@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Download, Loader2, Radio, UserCheck } from "lucide-react"
+import { Activity, Download, Loader2, Radio, UserCheck } from "lucide-react"
 import { toast } from "sonner"
 
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
@@ -67,6 +67,12 @@ export default function ClassroomAttendancePage() {
   const review = useQuery({
     queryKey: ["classroom-attendance", effectiveId],
     queryFn: () => VirtualClassroomAPI.getAttendance(effectiveId),
+    enabled: Boolean(effectiveId),
+    refetchInterval: 20_000,
+  })
+  const health = useQuery({
+    queryKey: ["classroom-health", effectiveId],
+    queryFn: () => VirtualClassroomAPI.getHealth(effectiveId),
     enabled: Boolean(effectiveId),
     refetchInterval: 20_000,
   })
@@ -255,6 +261,70 @@ export default function ClassroomAttendancePage() {
               </CompactRecordList>
             )}
           </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-red-600" />
+                <h2 className="font-semibold">Session health</h2>
+              </div>
+              {health.isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : health.isError ? (
+                <p className="text-sm text-red-600">
+                  Session diagnostics could not be loaded.
+                </p>
+              ) : health.data ? (
+                <>
+                  <CompactMetricStrip className="mb-4 grid-cols-2 sm:grid-cols-4">
+                    <CompactMetric label="Events" value={health.data.summary.total} />
+                    <CompactMetric
+                      label="Reconnects"
+                      value={health.data.summary.reconnects}
+                    />
+                    <CompactMetric
+                      label="Warnings"
+                      value={health.data.summary.warnings}
+                    />
+                    <CompactMetric label="Errors" value={health.data.summary.errors} />
+                  </CompactMetricStrip>
+                  <div className="max-h-72 space-y-2 overflow-y-auto">
+                    {health.data.events.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        No health events have been reported for this lesson.
+                      </p>
+                    ) : (
+                      health.data.events.map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex flex-col gap-1 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <span className="font-medium">{event.userName}</span>
+                            <span className="text-gray-500">
+                              {" "}
+                              · {event.category} · {event.eventType.replaceAll("_", " ")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                event.severity === "error" ? "destructive" : "secondary"
+                              }
+                            >
+                              {event.severity}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {formatTime(event.occurredAt)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </CardContent>
+          </Card>
         </>
       ) : null}
 

@@ -284,6 +284,14 @@ class ClassroomCollaborationClient {
   }
 
   private setStatus(status: CollaborationStatus) {
+    if (this.status !== status) {
+      void VirtualClassroomAPI.reportHealth(this.classroomId, {
+        category: "collaboration",
+        eventType: status,
+        severity:
+          status === "offline" ? "error" : status === "reconnecting" ? "warning" : "info",
+      }).catch(() => undefined)
+    }
     this.status = status
     this.notify()
   }

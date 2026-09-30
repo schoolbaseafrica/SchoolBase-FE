@@ -99,6 +99,19 @@ export interface ClassroomAttendanceReview {
   summary: Record<ClassroomAttendanceStatus | "total", number>
   students: ClassroomAttendanceStudent[]
 }
+export interface ClassroomHealthReview {
+  summary: { total: number; warnings: number; errors: number; reconnects: number }
+  events: Array<{
+    id: string
+    userId: string
+    userName: string
+    category: string
+    eventType: string
+    severity: "info" | "warning" | "error"
+    details: Record<string, string | number | boolean | null>
+    occurredAt: string
+  }>
+}
 
 const unwrap = <T>(response: ResponsePack<T> | T): T =>
   response && typeof response === "object" && "data" in response
@@ -285,6 +298,21 @@ export const VirtualClassroomAPI = {
       method: "PATCH",
       data: { participantIdentity, source, enabled },
     }),
+  reportHealth: (
+    id: string,
+    data: {
+      category: "media" | "collaboration" | "network" | "device"
+      eventType: string
+      severity: "info" | "warning" | "error"
+      details?: Record<string, string | number | boolean | null>
+    }
+  ) => apiFetch(`/virtual-classrooms/${id}/health-events`, { method: "POST", data }),
+  getHealth: async (id: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<ClassroomHealthReview> | ClassroomHealthReview>(
+        `/virtual-classrooms/${id}/health-events`
+      )
+    ),
   getAttendance: async (id: string) =>
     unwrap(
       await apiFetch<ResponsePack<ClassroomAttendanceReview> | ClassroomAttendanceReview>(
