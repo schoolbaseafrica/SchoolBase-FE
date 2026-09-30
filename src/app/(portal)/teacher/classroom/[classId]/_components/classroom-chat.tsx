@@ -62,7 +62,13 @@ function VoiceNotePlayer({
         }
         const response = await fetch(source, { credentials: "include" })
         if (!response.ok) throw new Error(`Playback failed (${response.status})`)
-        objectUrl = URL.createObjectURL(await response.blob())
+        const contentType = response.headers.get("content-type")?.split(";")[0].trim()
+        const bytes = await response.arrayBuffer()
+        if (!bytes.byteLength) throw new Error("The voice note is empty")
+        const blob = new Blob([bytes], {
+          type: contentType?.startsWith("audio/") ? contentType : "audio/webm",
+        })
+        objectUrl = URL.createObjectURL(blob)
         if (!disposed) setResolvedSource(objectUrl)
       } catch (caught) {
         if (!disposed)
@@ -239,9 +245,10 @@ export function ClassroomChat({
         },
       })
       const preferredTypes = [
+        "audio/mp4;codecs=mp4a.40.2",
+        "audio/mp4",
         "audio/webm;codecs=opus",
         "audio/ogg;codecs=opus",
-        "audio/mp4",
       ]
       const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type))
       const recorder = new MediaRecorder(

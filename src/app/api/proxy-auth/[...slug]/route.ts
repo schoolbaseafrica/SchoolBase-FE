@@ -19,9 +19,21 @@ async function methodHandler(
     contentType.startsWith("video/") ||
     contentType === "application/octet-stream"
   ) {
-    return new NextResponse(await backendRes.arrayBuffer(), {
+    const body = await backendRes.arrayBuffer()
+    const mediaHeaders = new Headers()
+    mediaHeaders.set("Content-Type", contentType || "application/octet-stream")
+    mediaHeaders.set("Content-Length", String(body.byteLength))
+    mediaHeaders.set(
+      "Cache-Control",
+      backendRes.headers.get("cache-control") ?? "private, max-age=300"
+    )
+    mediaHeaders.set(
+      "Content-Disposition",
+      backendRes.headers.get("content-disposition") ?? "inline"
+    )
+    return new NextResponse(body, {
       status: backendRes.status,
-      headers: backendRes.headers,
+      headers: mediaHeaders,
     })
   }
 
