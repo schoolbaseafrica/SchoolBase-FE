@@ -121,7 +121,8 @@ export default function TeacherClassroomPage() {
   )
 
   const handleAddImage = useCallback(
-    (url: string) => {
+    async (file: File) => {
+      const { url } = await VirtualClassroomAPI.uploadWhiteboardImage(classId, file)
       const newImagesData = {
         ...imagesData,
         [url]: {
@@ -134,7 +135,7 @@ export default function TeacherClassroomPage() {
       setImagesData(newImagesData)
       updateMutation.mutate({ images_data: newImagesData })
     },
-    [imagesData, updateMutation]
+    [classId, imagesData, updateMutation]
   )
 
   const handleRemoveImage = useCallback(
@@ -406,7 +407,7 @@ export default function TeacherClassroomPage() {
             {session.data?.title ?? "Virtual Classroom"}
           </h1>
           <p className="text-[10px] text-gray-500 capitalize">
-            {session.data?.status} · {collaborationStatus}
+            {session.data?.status} · Whiteboard {collaborationStatus}
           </p>
         </div>
         <div className="flex items-center gap-1 md:gap-3">

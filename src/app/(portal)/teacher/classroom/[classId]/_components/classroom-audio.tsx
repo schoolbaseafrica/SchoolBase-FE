@@ -599,7 +599,7 @@ export function ClassroomAudio({
         </div>
       )}
       {connected && galleryParticipants.length > 0 && (
-        <div className="mt-3 grid max-h-[38dvh] grid-cols-2 gap-2 overflow-y-auto sm:max-w-3xl sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-3 grid max-h-28 auto-cols-[9rem] grid-flow-col gap-2 overflow-x-auto overflow-y-hidden sm:max-h-[38dvh] sm:max-w-3xl sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-3 sm:overflow-y-auto lg:grid-cols-4">
           {galleryParticipants.map((participant) => {
             const camera = cameraTracks.find(
               (item) => item.participantIdentity === participant.identity

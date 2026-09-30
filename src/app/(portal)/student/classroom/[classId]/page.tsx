@@ -32,6 +32,7 @@ export default function StudentClassroomPage() {
     data: whiteboard,
     isLoading,
     error,
+    collaborationStatus,
   } = useWhiteboard(classId, activePage, Boolean(session.data))
   const presence = useCollaborationPresence(classId, activePage, Boolean(session.data))
 
@@ -208,7 +209,9 @@ export default function StudentClassroomPage() {
           <h1 className="truncate text-xs font-medium text-gray-700 md:text-sm">
             {session.data?.title ?? "Virtual Classroom"}
           </h1>
-          <p className="text-[10px] text-gray-500 capitalize">{session.data?.status}</p>
+          <p className="text-[10px] text-gray-500 capitalize">
+            {session.data?.status} · Whiteboard {collaborationStatus}
+          </p>
         </div>
         {/* Chat toggle button - visible on mobile */}
         <div className="flex md:hidden">

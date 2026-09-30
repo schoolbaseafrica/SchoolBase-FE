@@ -46,7 +46,7 @@ interface WhiteboardCanvasProps {
   textBoxes?: TextBoxData[]
   imagesData?: Record<string, MediaItem>
   videosData?: Record<string, MediaItem>
-  onAddImage?: (url: string) => void
+  onAddImage?: (file: File) => Promise<void> | void
   onRemoveImage?: (url: string) => void
   onAddVideo?: (url: string) => void
   onRemoveVideo?: (url: string) => void
@@ -166,6 +166,7 @@ export function WhiteboardCanvas({
   const [showVideoInput, setShowVideoInput] = useState(false)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
   const [selectedSceneIds, setSelectedSceneIds] = useState<string[]>([])
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const sceneElements = useMemo(
     () => elements.filter(isRenderableElement) as unknown as readonly ExcalidrawElement[],
@@ -238,14 +239,18 @@ export function WhiteboardCanvas({
   )
 
   const handleImageUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
       if (!file || !onAddImage) return
-      const reader = new FileReader()
-      reader.onloadend = () =>
-        typeof reader.result === "string" && onAddImage(reader.result)
-      reader.readAsDataURL(file)
       event.target.value = ""
+      setIsUploadingImage(true)
+      try {
+        await onAddImage(file)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Image upload failed")
+      } finally {
+        setIsUploadingImage(false)
+      }
     },
     [onAddImage]
   )
@@ -355,7 +360,7 @@ export function WhiteboardCanvas({
   return (
     <div className="flex h-full w-full flex-col">
       {!isReadOnly && (
-        <div className="flex flex-wrap items-center gap-2 border-b bg-gray-50 px-3 py-2">
+        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto border-b bg-gray-50 px-3 py-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -367,9 +372,15 @@ export function WhiteboardCanvas({
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className="shrink-0"
           >
-            <ImageIcon className="mr-2 h-4 w-4" />
-            Upload image
+            {isUploadingImage ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="mr-2 h-4 w-4" />
+            )}
+            {isUploadingImage ? "Uploading" : "Upload image"}
           </Button>
           {showVideoInput ? (
             <div className="flex items-center gap-2">
@@ -394,18 +405,23 @@ export function WhiteboardCanvas({
               </Button>
             </div>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => setShowVideoInput(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setShowVideoInput(true)}
+            >
               <LinkIcon className="mr-2 h-4 w-4" />
               Add video
             </Button>
           )}
           {onAddTextBox && (
-            <Button variant="outline" size="sm" onClick={addTextBox}>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={addTextBox}>
               <Type className="mr-2 h-4 w-4" />
               Add text box
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={clearBoard}>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={clearBoard}>
             <Trash2 className="mr-2 h-4 w-4" />
             Clear board
           </Button>
@@ -423,7 +439,7 @@ export function WhiteboardCanvas({
               Delete selected ({selectedSceneIds.length})
             </Button>
           )}
-          <span className="text-muted-foreground ml-auto text-xs">
+          <span className="text-muted-foreground ml-auto hidden shrink-0 text-xs lg:inline">
             Shapes, text and freehand drawing save collaboratively
           </span>
         </div>

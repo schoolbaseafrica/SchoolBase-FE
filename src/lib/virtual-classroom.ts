@@ -240,6 +240,16 @@ export const VirtualClassroomAPI = {
       )
     )
   },
+  uploadWhiteboardImage: async (id: string, file: File) => {
+    const data = new FormData()
+    data.append("file", file)
+    return unwrap(
+      await apiFetch<
+        | ResponsePack<{ url: string; publicId: string }>
+        | { url: string; publicId: string }
+      >(`/virtual-classrooms/${id}/whiteboard/images`, { method: "POST", data })
+    )
+  },
   updatePermissions: async (
     id: string,
     data: {
