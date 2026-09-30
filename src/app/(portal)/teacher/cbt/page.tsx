@@ -26,7 +26,9 @@ export default function TeacherCbtPage() {
       {exams.isError && (
         <Card>
           <CardContent className="p-6 text-sm text-red-600">
-            Assigned examinations could not be loaded.
+            {exams.error instanceof Error
+              ? exams.error.message
+              : "Assigned examinations could not be loaded."}
           </CardContent>
         </Card>
       )}
