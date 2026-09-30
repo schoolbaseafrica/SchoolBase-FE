@@ -61,10 +61,55 @@ interface ScreenShareTrack {
 
 interface CameraTrack {
   id: string
+  participantIdentity: string
   participantName: string
   track: LocalTrack | RemoteTrack
   local: boolean
   speaking: boolean
+}
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "?"
+  )
+}
+
+function CameraPlaceholder({
+  participant,
+  local,
+}: {
+  participant: Participant
+  local: boolean
+}) {
+  const name = displayName(participant)
+  return (
+    <div className="relative flex aspect-video min-w-0 items-center justify-center overflow-hidden rounded-xl border bg-slate-100">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white">
+          {initials(name)}
+        </div>
+        <span className="flex items-center gap-1 text-xs text-slate-500">
+          <CameraOff className="h-3.5 w-3.5" /> Camera off
+        </span>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-white/85 px-2 py-1.5 text-xs text-slate-700 backdrop-blur-sm">
+        <span className="truncate">
+          {name}
+          {local ? " (you)" : ""}
+        </span>
+        {participant.isMicrophoneEnabled ? (
+          <Mic className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <MicOff className="h-3.5 w-3.5 shrink-0" />
+        )}
+      </div>
+    </div>
+  )
 }
 
 function CameraTile({ camera }: { camera: CameraTrack }) {
@@ -218,6 +263,7 @@ export function ClassroomAudio({
     if (localCamera?.track) {
       cameras.push({
         id: localCamera.trackSid,
+        participantIdentity: room.localParticipant.identity,
         participantName: displayName(room.localParticipant),
         track: localCamera.track,
         local: true,
@@ -241,6 +287,7 @@ export function ClassroomAudio({
       if (camera?.track) {
         cameras.push({
           id: camera.trackSid,
+          participantIdentity: participant.identity,
           participantName: displayName(participant),
           track: camera.track,
           local: false,
@@ -312,6 +359,7 @@ export function ClassroomAudio({
             ...current.filter((camera) => camera.id !== publication.trackSid),
             {
               id: publication.trackSid,
+              participantIdentity: participant.identity,
               participantName: displayName(participant),
               track,
               local: false,
@@ -427,6 +475,12 @@ export function ClassroomAudio({
   }
 
   const connected = connection === ConnectionState.Connected
+  const galleryParticipants = [...participants].sort((left, right) => {
+    if (canManage) return 0
+    return (
+      Number(left instanceof LocalParticipant) - Number(right instanceof LocalParticipant)
+    )
+  })
 
   return (
     <div className="border-b bg-white px-3 py-2">
@@ -460,9 +514,7 @@ export function ClassroomAudio({
       </div>
 
       {connected && (
-        <div
-          className={`mt-2 grid gap-2 ${canManage ? "grid-cols-3" : "grid-cols-2"} sm:flex sm:flex-wrap`}
-        >
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <Button
             size="sm"
             variant="outline"
@@ -495,7 +547,7 @@ export function ClassroomAudio({
             <Button
               size="sm"
               variant={isScreenSharing ? "default" : "outline"}
-              className="min-w-0 px-2 sm:px-3"
+              className="col-span-2 min-w-0 px-2 sm:col-span-1 sm:px-3"
               onClick={() => void toggleScreenShare()}
               disabled={isChangingScreenShare}
             >
@@ -516,7 +568,7 @@ export function ClassroomAudio({
         <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg border bg-gray-50/70 sm:ml-auto sm:flex sm:w-fit sm:rounded-full">
           <div className="flex min-w-0 items-center justify-between gap-2 border-r px-3 py-2 sm:border-r-0 sm:py-1.5">
             <Label htmlFor="student-microphones" className="text-xs text-gray-600">
-              Microphones
+              Student microphones
             </Label>
             <Switch
               id="student-microphones"
@@ -527,7 +579,7 @@ export function ClassroomAudio({
           </div>
           <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2 sm:py-1.5">
             <Label htmlFor="student-cameras" className="text-xs text-gray-600">
-              Cameras
+              Student cameras
             </Label>
             <Switch
               id="student-cameras"
@@ -539,20 +591,6 @@ export function ClassroomAudio({
         </div>
       )}
 
-      {connected && participants.length > 0 && (
-        <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5 sm:max-h-14 sm:flex-wrap sm:overflow-y-auto">
-          {participants.map((participant) => (
-            <span
-              key={participant.identity}
-              className={`rounded-full border px-2 py-0.5 text-[11px] ${participant.isSpeaking ? "border-green-400 bg-green-50 text-green-800" : "text-gray-600"}`}
-            >
-              {displayName(participant)}
-              {participant instanceof LocalParticipant ? " (you)" : ""}
-              {participant.isMicrophoneEnabled ? " · speaking enabled" : " · muted"}
-            </span>
-          ))}
-        </div>
-      )}
       {connected && screenShares.length > 0 && (
         <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-2">
           {screenShares.map((share) => (
@@ -560,13 +598,22 @@ export function ClassroomAudio({
           ))}
         </div>
       )}
-      {connected && cameraTracks.length > 0 && (
-        <div
-          className={`mt-3 grid max-h-[36dvh] gap-2 overflow-y-auto ${cameraTracks.length > 1 || canManage ? "grid-cols-2" : "grid-cols-1"} sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`}
-        >
-          {cameraTracks.map((camera) => (
-            <CameraTile key={camera.id} camera={camera} />
-          ))}
+      {connected && galleryParticipants.length > 0 && (
+        <div className="mt-3 grid max-h-[38dvh] grid-cols-2 gap-2 overflow-y-auto sm:max-w-3xl sm:grid-cols-3 lg:grid-cols-4">
+          {galleryParticipants.map((participant) => {
+            const camera = cameraTracks.find(
+              (item) => item.participantIdentity === participant.identity
+            )
+            return camera ? (
+              <CameraTile key={participant.identity} camera={camera} />
+            ) : (
+              <CameraPlaceholder
+                key={participant.identity}
+                participant={participant}
+                local={participant instanceof LocalParticipant}
+              />
+            )
+          })}
         </div>
       )}
       <div ref={audioRootRef} className="hidden" aria-hidden="true" />
