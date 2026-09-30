@@ -196,6 +196,7 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     const isBinaryResponse =
       responseContentType.startsWith("audio/") ||
       responseContentType.startsWith("video/") ||
+      responseContentType.startsWith("image/") ||
       responseContentType === "application/octet-stream"
     const responseBody = isBinaryResponse
       ? await backendRes.arrayBuffer()
