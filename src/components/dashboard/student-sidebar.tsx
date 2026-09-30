@@ -11,6 +11,7 @@ import {
   DollarSign,
   ClipboardCheck,
   Video,
+  BookOpenCheck,
 } from "lucide-react"
 
 import {
@@ -36,6 +37,7 @@ const items = [
   { title: "Timetable", url: "/student/timetable", icon: CalendarDays },
   { title: "Live Classes", url: "/student/classes", icon: Video },
   { title: "Examinations", url: "/student/cbt", icon: ClipboardCheck },
+  { title: "Assignments", url: "/student/assignments", icon: BookOpenCheck },
   { title: "Attendance", url: "/student/attendance", icon: GraduationCap },
   { title: "Fees", url: "/student/fee-management", icon: DollarSign },
 ]

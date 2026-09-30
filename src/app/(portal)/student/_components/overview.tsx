@@ -18,6 +18,9 @@ import { AssignmentsList } from "./dashboard/assignments-list"
 import { PerformanceOverview } from "./dashboard/performance-overview"
 import { AnnouncementsList } from "./dashboard/announcements-list"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
+import { AssignmentAPI } from "@/lib/assignments"
+import { useAcademicPeriod } from "@/hooks/use-academic-period"
 
 // Type definitions
 interface Stat {
@@ -34,6 +37,13 @@ interface Assignment {
 }
 
 const Overview = () => {
+  const period = useAcademicPeriod("student-dashboard")
+  const assignmentsQuery = useQuery({
+    queryKey: ["assignments", "student-dashboard", period.sessionId, period.termId],
+    queryFn: () =>
+      AssignmentAPI.list({ session_id: period.sessionId, term_id: period.termId }),
+    enabled: Boolean(period.sessionId),
+  })
   const {
     data: dashboardData,
     isLoading,
@@ -60,7 +70,10 @@ const Overview = () => {
   const stats: Stat[] = useMemo(() => {
     const classCount = schedule.length
     const announcementsCount = dashboardData?.announcements?.length || 0
-    const assignmentsCount = 0 // TODO: Add assignments API
+    const assignmentsCount = (assignmentsQuery.data ?? []).filter((assignment) => {
+      const status = assignment.submissions[0]?.status
+      return !status || status === "draft" || status === "returned"
+    }).length
     const attendanceDisplay = isAttendanceLoading
       ? "Loading..."
       : attendancePercent !== undefined
@@ -94,10 +107,17 @@ const Overview = () => {
     dashboardData?.announcements?.length,
     attendancePercent,
     isAttendanceLoading,
+    assignmentsQuery.data,
   ])
 
-  // Dummy data for assignments (TODO: Replace with real API)
-  const assignments: Assignment[] = []
+  const assignments: Assignment[] = (assignmentsQuery.data ?? [])
+    .slice(0, 4)
+    .map((item) => ({
+      title: item.title,
+      subject: item.subject.name,
+      dueDate: item.dueAt ? new Date(item.dueAt).toLocaleDateString() : "No deadline",
+      status: item.submissions[0]?.status ?? "To do",
+    }))
 
   // Error state with retry
   if (error) {
@@ -153,7 +173,10 @@ const Overview = () => {
               <TodaysTimetable schedule={schedule} isLoading={isLoading} />
 
               {/* Assignments */}
-              <AssignmentsList assignments={assignments} isLoading={false} />
+              <AssignmentsList
+                assignments={assignments}
+                isLoading={assignmentsQuery.isLoading}
+              />
             </div>
 
             {/* Right Column */}

@@ -18,6 +18,7 @@ import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
 import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
 import { toast } from "sonner"
+import { AssignmentAPI } from "@/lib/assignments"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -136,6 +137,12 @@ export default function TeachersPage() {
     queryFn: () => TeacherAttendanceAPI.getAssignedClasses(period.sessionId),
     staleTime: 1000 * 60 * 5,
   })
+  const { data: assignments = [], isLoading: isLoadingAssignments } = useQuery({
+    queryKey: ["assignments", "teacher-dashboard", period.sessionId, period.termId],
+    queryFn: () =>
+      AssignmentAPI.list({ session_id: period.sessionId, term_id: period.termId }),
+    enabled: Boolean(period.sessionId),
+  })
 
   // Transform today's classes to display format
   // Note: All classes in todaysClassesData are classes the teacher is scheduled to teach
@@ -180,12 +187,13 @@ export default function TeachersPage() {
       },
       {
         name: "Assignment",
-        quantity: 0, // TODO: Add assignment count when API is available
+        quantity: assignments.filter((assignment) => assignment.status !== "archived")
+          .length,
         percentage: 10,
         icon: CgFileDocument,
       },
     ]
-  }, [todaysClasses.length, assignedClasses?.length])
+  }, [todaysClasses.length, assignedClasses?.length, assignments])
 
   const loading = isLoadingClasses || isLoadingAssignedClasses
 
@@ -297,6 +305,7 @@ export default function TeachersPage() {
               variant="ghost"
               size="sm"
               className="group flex h-10 items-center gap-2 rounded-lg border border-[#D5D5D5] px-6 text-base font-medium text-[#535353]"
+              onClick={() => router.push("/teacher/timetable")}
             >
               View All
             </Button>
@@ -390,14 +399,47 @@ export default function TeachersPage() {
               variant="ghost"
               size="sm"
               className="group flex h-10 items-center gap-2 rounded-lg border border-[#D5D5D5] px-6 text-base font-medium text-[#535353]"
+              onClick={() => router.push("/teacher/assignments")}
             >
               View All
             </Button>
           </div>
 
-          <p className="py-10 text-center text-[#535353]">
-            Assignment functionality coming soon
-          </p>
+          {isLoadingAssignments ? (
+            <div className="space-y-3">
+              <SkeletonHomeworkItem />
+              <SkeletonHomeworkItem />
+            </div>
+          ) : assignments.length === 0 ? (
+            <p className="py-10 text-center text-[#535353]">
+              No assignments in this period
+            </p>
+          ) : (
+            <div className="divide-y">
+              {assignments.slice(0, 5).map((assignment) => (
+                <button
+                  key={assignment.id}
+                  onClick={() => router.push("/teacher/assignments")}
+                  className="grid w-full gap-2 py-3 text-left sm:grid-cols-[1fr_auto] sm:items-center"
+                >
+                  <div>
+                    <p className="font-medium">{assignment.title}</p>
+                    <p className="text-sm text-[#6F6F6F]">
+                      {assignment.subject.name} · {assignment.classroom.name}{" "}
+                      {assignment.classroom.arm ?? ""}
+                    </p>
+                  </div>
+                  <div className="text-sm text-[#535353]">
+                    {
+                      assignment.submissions.filter((item) => item.status === "submitted")
+                        .length
+                    }{" "}
+                    awaiting review
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Notifications + Performance */}
