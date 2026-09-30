@@ -13,6 +13,8 @@ import {
 } from "livekit-client"
 import {
   Headphones,
+  Camera,
+  CameraOff,
   Maximize2,
   Minimize2,
   Loader2,
@@ -34,6 +36,7 @@ interface ClassroomAudioProps {
   classroomId: string
   canManage: boolean
   allowStudentMicrophone: boolean
+  allowStudentCamera: boolean
   onPermissionChanged?: (allowed: boolean) => void
 }
 
@@ -56,6 +59,47 @@ interface ScreenShareTrack {
   local: boolean
 }
 
+interface CameraTrack {
+  id: string
+  participantName: string
+  track: LocalTrack | RemoteTrack
+  local: boolean
+  speaking: boolean
+}
+
+function CameraTile({ camera }: { camera: CameraTrack }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) camera.track.attach(video)
+    return () => {
+      if (video) camera.track.detach(video)
+    }
+  }, [camera.track])
+  return (
+    <div
+      className={`relative aspect-video min-w-0 overflow-hidden rounded-xl border-2 bg-slate-950 ${camera.speaking ? "border-emerald-400" : "border-transparent"}`}
+    >
+      <video
+        ref={videoRef}
+        autoPlay
+        muted={camera.local}
+        playsInline
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent px-2 pt-6 pb-2 text-xs text-white">
+        <span className="truncate">
+          {camera.participantName}
+          {camera.local ? " (you)" : ""}
+        </span>
+        {camera.speaking && (
+          <span className="ml-2 shrink-0 text-emerald-300">Speaking</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -71,7 +115,7 @@ function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
   return (
     <div
       ref={stageRef}
-      className={`mx-auto overflow-hidden rounded-xl border bg-slate-950 shadow-sm fullscreen:flex fullscreen:h-screen fullscreen:w-screen fullscreen:max-w-none fullscreen:flex-col ${expanded ? "w-full" : "w-full max-w-3xl"}`}
+      className={`fullscreen:flex fullscreen:h-screen fullscreen:w-screen fullscreen:max-w-none fullscreen:flex-col mx-auto overflow-hidden rounded-xl border bg-slate-950 shadow-sm ${expanded ? "w-full" : "w-full max-w-3xl"}`}
     >
       <div className="flex items-center justify-between bg-slate-900 px-3 py-2 text-xs text-white">
         <span className="min-w-0 truncate">
@@ -85,10 +129,16 @@ function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
             <button
               type="button"
               className="rounded p-1 hover:bg-white/15"
-              aria-label={expanded ? "Use compact presentation view" : "Expand presentation"}
+              aria-label={
+                expanded ? "Use compact presentation view" : "Expand presentation"
+              }
               onClick={() => setExpanded((value) => !value)}
             >
-              {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {expanded ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
             </button>
           )}
           <button
@@ -97,7 +147,11 @@ function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
             aria-label={collapsed ? "Show presentation" : "Hide presentation"}
             onClick={() => setCollapsed((value) => !value)}
           >
-            {collapsed ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+            {collapsed ? (
+              <Maximize2 className="h-4 w-4" />
+            ) : (
+              <Minimize2 className="h-4 w-4" />
+            )}
           </button>
           {!collapsed && (
             <button
@@ -120,12 +174,12 @@ function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
             autoPlay
             muted={share.local}
             playsInline
-            className={`${expanded ? "max-h-[65vh]" : "h-44 sm:h-64 lg:h-80"} w-full bg-black object-contain fullscreen:h-full fullscreen:max-h-none fullscreen:flex-1`}
+            className={`${expanded ? "max-h-[65vh]" : "h-44 sm:h-64 lg:h-80"} fullscreen:h-full fullscreen:max-h-none fullscreen:flex-1 w-full bg-black object-contain`}
           />
           {share.local && (
             <p className="bg-slate-900 px-3 py-2 text-[11px] text-slate-300">
-              Sharing this classroom window creates a mirror effect. Share a specific tab or
-              window to avoid it.
+              Sharing this classroom window creates a mirror effect. Share a specific tab
+              or window to avoid it.
             </p>
           )}
         </>
@@ -138,6 +192,7 @@ export function ClassroomAudio({
   classroomId,
   canManage,
   allowStudentMicrophone,
+  allowStudentCamera,
   onPermissionChanged,
 }: ClassroomAudioProps) {
   const roomRef = useRef<Room | null>(null)
@@ -147,16 +202,28 @@ export function ClassroomAudio({
   const [isJoining, setIsJoining] = useState(false)
   const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(false)
   const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const [isCameraEnabled, setIsCameraEnabled] = useState(false)
+  const [cameraTracks, setCameraTracks] = useState<CameraTrack[]>([])
   const [screenShares, setScreenShares] = useState<ScreenShareTrack[]>([])
   const [isChangingScreenShare, setIsChangingScreenShare] = useState(false)
-  const [canPublish, setCanPublish] = useState(false)
   const [isSavingPermission, setIsSavingPermission] = useState(false)
 
   const refreshParticipants = useCallback((room: Room) => {
     setParticipants([room.localParticipant, ...room.remoteParticipants.values()])
     setIsMicrophoneEnabled(room.localParticipant.isMicrophoneEnabled)
-    setCanPublish(room.localParticipant.permissions?.canPublish ?? false)
     setIsScreenSharing(room.localParticipant.isScreenShareEnabled)
+    setIsCameraEnabled(room.localParticipant.isCameraEnabled)
+    const cameras: CameraTrack[] = []
+    const localCamera = room.localParticipant.getTrackPublication(Track.Source.Camera)
+    if (localCamera?.track) {
+      cameras.push({
+        id: localCamera.trackSid,
+        participantName: displayName(room.localParticipant),
+        track: localCamera.track,
+        local: true,
+        speaking: room.localParticipant.isSpeaking,
+      })
+    }
     const shares: ScreenShareTrack[] = []
     const localPublication = room.localParticipant.getTrackPublication(
       Track.Source.ScreenShare
@@ -170,6 +237,16 @@ export function ClassroomAudio({
       })
     }
     room.remoteParticipants.forEach((participant) => {
+      const camera = participant.getTrackPublication(Track.Source.Camera)
+      if (camera?.track) {
+        cameras.push({
+          id: camera.trackSid,
+          participantName: displayName(participant),
+          track: camera.track,
+          local: false,
+          speaking: participant.isSpeaking,
+        })
+      }
       const publication = participant.getTrackPublication(Track.Source.ScreenShare)
       if (publication?.track) {
         shares.push({
@@ -181,6 +258,7 @@ export function ClassroomAudio({
       }
     })
     setScreenShares(shares)
+    setCameraTracks(cameras)
   }, [])
 
   const leave = useCallback(() => {
@@ -194,8 +272,9 @@ export function ClassroomAudio({
     setParticipants([])
     setIsMicrophoneEnabled(false)
     setIsScreenSharing(false)
+    setIsCameraEnabled(false)
+    setCameraTracks([])
     setScreenShares([])
-    setCanPublish(false)
   }, [])
 
   useEffect(() => leave, [leave])
@@ -219,6 +298,8 @@ export function ClassroomAudio({
       room.on(RoomEvent.TrackUnmuted, refresh)
       room.on(RoomEvent.LocalTrackPublished, refresh)
       room.on(RoomEvent.LocalTrackUnpublished, refresh)
+      room.on(RoomEvent.TrackPublished, refresh)
+      room.on(RoomEvent.TrackUnpublished, refresh)
       room.on(RoomEvent.ParticipantPermissionsChanged, refresh)
       room.on(RoomEvent.TrackSubscribed, (track) => {
         if (track.kind === Track.Kind.Audio) {
@@ -233,11 +314,10 @@ export function ClassroomAudio({
         refresh()
       })
       room.on(RoomEvent.MediaDevicesError, () => {
-        toast.error("Microphone access failed. Check your browser permission.")
+        toast.error("Camera or microphone access failed. Check your browser permission.")
       })
 
       await room.connect(credentials.url, credentials.token, { autoSubscribe: true })
-      setCanPublish(credentials.canPublish)
       refresh()
     } catch (error) {
       leave()
@@ -247,10 +327,25 @@ export function ClassroomAudio({
     }
   }
 
+  const toggleCamera = async () => {
+    const participant = roomRef.current?.localParticipant
+    if (!participant) return
+    if (!canManage && !allowStudentCamera) {
+      toast.info("The teacher has disabled student cameras.")
+      return
+    }
+    try {
+      await participant.setCameraEnabled(!participant.isCameraEnabled)
+      if (roomRef.current) refreshParticipants(roomRef.current)
+    } catch {
+      toast.error("Camera access failed. Check your browser permission.")
+    }
+  }
+
   const toggleMicrophone = async () => {
     const participant = roomRef.current?.localParticipant
     if (!participant) return
-    if (!canPublish) {
+    if (!canManage && !allowStudentMicrophone) {
       toast.info("The teacher has disabled student microphones.")
       return
     }
@@ -272,6 +367,21 @@ export function ClassroomAudio({
       toast.success(allowed ? "Student microphones enabled" : "Student microphones muted")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update microphones")
+    } finally {
+      setIsSavingPermission(false)
+    }
+  }
+
+  const updateStudentCameras = async (allowed: boolean) => {
+    setIsSavingPermission(true)
+    try {
+      await VirtualClassroomAPI.updatePermissions(classroomId, {
+        allowStudentCamera: allowed,
+      })
+      onPermissionChanged?.(allowed)
+      toast.success(allowed ? "Student cameras enabled" : "Student cameras disabled")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update cameras")
     } finally {
       setIsSavingPermission(false)
     }
@@ -323,7 +433,7 @@ export function ClassroomAudio({
               size="sm"
               variant="outline"
               onClick={toggleMicrophone}
-              disabled={!canPublish}
+              disabled={!canManage && !allowStudentMicrophone}
             >
               {isMicrophoneEnabled ? (
                 <Mic className="mr-2 h-4 w-4" />
@@ -334,6 +444,19 @@ export function ClassroomAudio({
             </Button>
             <Button size="sm" variant="ghost" onClick={leave}>
               <PhoneOff className="mr-2 h-4 w-4" /> Leave live session
+            </Button>
+            <Button
+              size="sm"
+              variant={isCameraEnabled ? "default" : "outline"}
+              onClick={() => void toggleCamera()}
+              disabled={!canManage && !allowStudentCamera}
+            >
+              {isCameraEnabled ? (
+                <CameraOff className="mr-2 h-4 w-4" />
+              ) : (
+                <Camera className="mr-2 h-4 w-4" />
+              )}
+              {isCameraEnabled ? "Stop camera" : "Start camera"}
             </Button>
             {canManage && (
               <Button
@@ -356,16 +479,29 @@ export function ClassroomAudio({
         )}
 
         {canManage && (
-          <div className="ml-auto flex items-center gap-2">
-            <Label htmlFor="student-microphones" className="text-xs text-gray-600">
-              Student microphones
-            </Label>
-            <Switch
-              id="student-microphones"
-              checked={allowStudentMicrophone}
-              disabled={isSavingPermission}
-              onCheckedChange={updateStudentMicrophones}
-            />
+          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="student-microphones" className="text-xs text-gray-600">
+                Student microphones
+              </Label>
+              <Switch
+                id="student-microphones"
+                checked={allowStudentMicrophone}
+                disabled={isSavingPermission}
+                onCheckedChange={updateStudentMicrophones}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="student-cameras" className="text-xs text-gray-600">
+                Student cameras
+              </Label>
+              <Switch
+                id="student-cameras"
+                checked={allowStudentCamera}
+                disabled={isSavingPermission}
+                onCheckedChange={updateStudentCameras}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -388,6 +524,13 @@ export function ClassroomAudio({
         <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-2">
           {screenShares.map((share) => (
             <ScreenShareStage key={share.id} share={share} />
+          ))}
+        </div>
+      )}
+      {connected && cameraTracks.length > 0 && (
+        <div className="mt-3 grid max-h-[42dvh] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {cameraTracks.map((camera) => (
+            <CameraTile key={camera.id} camera={camera} />
           ))}
         </div>
       )}

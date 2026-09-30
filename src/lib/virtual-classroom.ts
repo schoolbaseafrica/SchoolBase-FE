@@ -19,6 +19,7 @@ export interface VirtualClassroom {
   allowStudentChat: boolean
   allowStudentDraw: boolean
   allowStudentMicrophone: boolean
+  allowStudentCamera: boolean
   whiteboardVersion: number
 }
 
@@ -28,6 +29,7 @@ export interface ClassroomMediaToken {
   roomName: string
   canPublish: boolean
   allowStudentMicrophone: boolean
+  allowStudentCamera: boolean
   expiresInSeconds: number
 }
 
@@ -244,6 +246,7 @@ export const VirtualClassroomAPI = {
       allowStudentChat?: boolean
       allowStudentDraw?: boolean
       allowStudentMicrophone?: boolean
+      allowStudentCamera?: boolean
     }
   ) =>
     unwrap(

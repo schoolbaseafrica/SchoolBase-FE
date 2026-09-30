@@ -192,7 +192,7 @@ export default function StudentClassroomPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex h-[100dvh] w-full min-h-0 flex-col overflow-hidden bg-white">
+    <div className="fixed inset-0 flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-white">
       {/* Minimal header with back button */}
       <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
         <Button
@@ -241,6 +241,7 @@ export default function StudentClassroomPage() {
             classroomId={classId}
             canManage={false}
             allowStudentMicrophone={session.data?.allowStudentMicrophone ?? false}
+            allowStudentCamera={session.data?.allowStudentCamera ?? false}
           />
           <ClassroomBoardBar
             classroomId={classId}
