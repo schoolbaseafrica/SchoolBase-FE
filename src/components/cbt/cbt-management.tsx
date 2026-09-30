@@ -2,7 +2,17 @@
 
 import { FormEvent, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { BookOpenCheck, Clock, FileQuestion, Plus, Users } from "lucide-react"
+import {
+  Archive,
+  BookOpenCheck,
+  Clock,
+  Eye,
+  EyeOff,
+  FileQuestion,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -22,7 +32,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { CbtAPI, CbtExamType, CbtProctoringMode } from "@/lib/cbt"
+import { CbtAPI, CbtExamSummary, CbtExamType, CbtProctoringMode } from "@/lib/cbt"
 import { ClassesAPI } from "@/lib/classes"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
@@ -39,6 +49,8 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<CbtExamSummary | null>(null)
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const exams = useQuery({
     queryKey: ["cbt", "manage", "exams", examType, periodParams],
@@ -71,6 +83,47 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
     onError: (error: Error) =>
       toast.error(error.message || "Could not create examination"),
   })
+  const refreshExams = () =>
+    queryClient.invalidateQueries({ queryKey: ["cbt", "manage", "exams"] })
+  const archive = useMutation({
+    mutationFn: (examId: string) => CbtAPI.transitionExam(examId, "archived"),
+    onSuccess: async () => {
+      await refreshExams()
+      toast.success("Examination archived")
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Could not archive examination"),
+  })
+  const remove = useMutation({
+    mutationFn: CbtAPI.deleteExam,
+    onSuccess: async () => {
+      setDeleteTarget(null)
+      await refreshExams()
+      toast.success("Draft examination deleted")
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Could not delete examination"),
+  })
+  const orderedExams = useMemo(() => {
+    const rank = (exam: CbtExamSummary) =>
+      exam.status === "archived"
+        ? 2
+        : exam.status === "closed" || exam.status === "published"
+          ? 1
+          : 0
+    return [...(exams.data ?? [])]
+      .sort((left, right) => {
+        const rankDifference = rank(left) - rank(right)
+        if (rankDifference) return rankDifference
+        return (
+          new Date(right.createdAt ?? 0).getTime() -
+          new Date(left.createdAt ?? 0).getTime()
+        )
+      })
+      .filter((exam) => showArchived || exam.status !== "archived")
+  }, [exams.data, showArchived])
+  const archivedCount =
+    exams.data?.filter((exam) => exam.status === "archived").length ?? 0
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -142,7 +195,7 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                     placeholder="Explain what students should know before they begin."
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="duration">Minutes</Label>
                     <Input
@@ -244,6 +297,23 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
         </header>
         <AcademicPeriodSelector scope={scope} />
 
+        {archivedCount > 0 && (
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchived((value) => !value)}
+            >
+              {showArchived ? (
+                <EyeOff className="mr-2 h-4 w-4" />
+              ) : (
+                <Eye className="mr-2 h-4 w-4" />
+              )}
+              {showArchived ? "Hide archived" : `Show archived (${archivedCount})`}
+            </Button>
+          </div>
+        )}
+
         {exams.isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {[0, 1, 2].map((item) => (
@@ -262,7 +332,7 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {exams.data.map((exam) => (
+            {orderedExams.map((exam) => (
               <Card key={exam.id} className="rounded-2xl shadow-sm">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
@@ -286,17 +356,67 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                       {external ? exam.proctoringMode : (exam.classes?.length ?? 0)}
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => router.push(`/admin/cbt/${exam.id}`)}
-                  >
-                    {exam.status === "draft" ? "Continue building" : "View examination"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="min-w-0 flex-1"
+                      onClick={() => router.push(`/admin/cbt/${exam.id}`)}
+                    >
+                      {exam.status === "draft" ? "Continue building" : "View examination"}
+                    </Button>
+                    {["draft", "closed", "published"].includes(exam.status) && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => archive.mutate(exam.id)}
+                        disabled={archive.isPending}
+                        aria-label={`Archive ${exam.name}`}
+                        title="Archive examination"
+                      >
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {exam.status === "draft" && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setDeleteTarget(exam)}
+                        aria-label={`Delete ${exam.name}`}
+                        title="Delete unused draft"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+        )}
+        {deleteTarget && (
+          <Dialog open onOpenChange={(value) => !value && setDeleteTarget(null)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete draft examination?</DialogTitle>
+                <DialogDescription>
+                  “{deleteTarget.name}” will be permanently deleted. Completed or used
+                  examinations must be archived to preserve school records.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => remove.mutate(deleteTarget.id)}
+                  disabled={remove.isPending}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete draft
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </main>

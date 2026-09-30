@@ -80,6 +80,8 @@ export interface CbtAttemptSummary {
 
 export interface CbtExamSummary {
   id: string
+  createdAt?: string
+  updatedAt?: string
   name: string
   instructions: string | null
   status: CbtExamStatus
@@ -501,6 +503,8 @@ export const CbtAPI = {
       `/cbt/exams/${examId}/status`,
       { method: "PATCH", data: { status } }
     ).then(unwrap),
+
+  deleteExam: (examId: string) => apiFetch(`/cbt/exams/${examId}`, { method: "DELETE" }),
 
   previewBlueprint: (examId: string, rules: CbtBlueprintRule[]) =>
     apiFetch<ApiEnvelope<CbtBlueprintPreview> | CbtBlueprintPreview>(
