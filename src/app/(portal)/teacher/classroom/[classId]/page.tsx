@@ -122,20 +122,25 @@ export default function TeacherClassroomPage() {
 
   const handleAddImage = useCallback(
     async (file: File) => {
+      if (collaborationStatus !== "connected")
+        throw new Error(
+          "Whiteboard is reconnecting. Wait for it to reconnect, then upload again."
+        )
       const { url } = await VirtualClassroomAPI.uploadWhiteboardImage(classId, file)
+      const mediaIndex = Object.keys(imagesData).length + Object.keys(videosData).length
       const newImagesData = {
         ...imagesData,
         [url]: {
-          x: Math.random() * 200 + 50,
-          y: Math.random() * 200 + 50,
-          width: 200,
-          height: 150,
+          x: 20 + (mediaIndex % 2) * 250,
+          y: 20 + Math.floor(mediaIndex / 2) * 175,
+          width: 220,
+          height: 160,
         },
       }
       setImagesData(newImagesData)
       updateMutation.mutate({ images_data: newImagesData })
     },
-    [classId, imagesData, updateMutation]
+    [classId, collaborationStatus, imagesData, videosData, updateMutation]
   )
 
   const handleRemoveImage = useCallback(
@@ -150,19 +155,26 @@ export default function TeacherClassroomPage() {
 
   const handleAddVideo = useCallback(
     (url: string) => {
+      if (collaborationStatus !== "connected") {
+        toast.error(
+          "Whiteboard is reconnecting. Wait for it to reconnect, then add the video again."
+        )
+        return
+      }
+      const mediaIndex = Object.keys(imagesData).length + Object.keys(videosData).length
       const newVideosData = {
         ...videosData,
         [url]: {
-          x: Math.random() * 200 + 50,
-          y: Math.random() * 200 + 50,
-          width: 400,
-          height: 225,
+          x: 20 + (mediaIndex % 2) * 250,
+          y: 20 + Math.floor(mediaIndex / 2) * 175,
+          width: 240,
+          height: 135,
         },
       }
       setVideosData(newVideosData)
       updateMutation.mutate({ videos_data: newVideosData })
     },
-    [videosData, updateMutation]
+    [collaborationStatus, imagesData, videosData, updateMutation]
   )
 
   const handleRemoveVideo = useCallback(

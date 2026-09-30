@@ -243,12 +243,16 @@ export const VirtualClassroomAPI = {
   uploadWhiteboardImage: async (id: string, file: File) => {
     const data = new FormData()
     data.append("file", file)
-    return unwrap(
+    const uploaded = unwrap(
       await apiFetch<
         | ResponsePack<{ url: string; publicId: string }>
         | { url: string; publicId: string }
       >(`/virtual-classrooms/${id}/whiteboard/images`, { method: "POST", data })
     )
+    return {
+      ...uploaded,
+      url: `/api/proxy-auth/virtual-classrooms/${id}/whiteboard/image?key=${encodeURIComponent(uploaded.publicId)}`,
+    }
   },
   updatePermissions: async (
     id: string,

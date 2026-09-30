@@ -17,6 +17,7 @@ async function methodHandler(
   if (
     contentType.startsWith("audio/") ||
     contentType.startsWith("video/") ||
+    contentType.startsWith("image/") ||
     contentType === "application/octet-stream"
   ) {
     const body = await backendRes.arrayBuffer()

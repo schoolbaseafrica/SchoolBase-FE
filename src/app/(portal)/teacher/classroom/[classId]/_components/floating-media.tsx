@@ -54,6 +54,7 @@ export function FloatingImage({
             src={url}
             alt="Floating image"
             fill
+            unoptimized
             className="object-contain"
             onError={(e) => {
               const target = e.target as HTMLImageElement
