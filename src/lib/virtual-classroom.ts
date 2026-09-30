@@ -105,6 +105,12 @@ const unwrap = <T>(response: ResponsePack<T> | T): T =>
     ? (response as ResponsePack<T>).data
     : (response as T)
 
+const toBase64Url = (value: string) =>
+  btoa(unescape(encodeURIComponent(value)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+
 export const VirtualClassroomAPI = {
   list: async (sessionId?: string, termId?: string) => {
     const params = new URLSearchParams()
@@ -251,7 +257,7 @@ export const VirtualClassroomAPI = {
     )
     return {
       ...uploaded,
-      url: `/api/proxy-auth/virtual-classrooms/${id}/whiteboard/image?key=${encodeURIComponent(uploaded.publicId)}`,
+      url: `/api/proxy-auth/virtual-classrooms/${id}/whiteboard/images/${toBase64Url(uploaded.publicId)}`,
     }
   },
   updatePermissions: async (

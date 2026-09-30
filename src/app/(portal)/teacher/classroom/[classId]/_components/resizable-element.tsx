@@ -204,7 +204,7 @@ export function ResizableElement({
       {!isReadOnly && (
         <>
           <div
-            className={`move-handle absolute -top-3 left-2 z-30 flex h-7 w-7 cursor-move items-center justify-center rounded-full bg-slate-800 text-white shadow transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            className={`move-handle absolute -top-3 left-2 z-30 flex h-7 w-7 cursor-move items-center justify-center rounded-full bg-slate-800 text-white opacity-100 shadow transition-opacity sm:group-hover:opacity-100 ${isSelected ? "sm:opacity-100" : "sm:opacity-0"}`}
             aria-label="Move item"
           >
             <Move className="h-3.5 w-3.5" />

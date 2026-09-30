@@ -184,7 +184,11 @@ export function WhiteboardCanvas({
         const markerIndex = pathname.indexOf(marker)
         if (markerIndex === -1) return url
         const objectKey = pathname.slice(markerIndex + 1)
-        return `/api/proxy-auth/virtual-classrooms/${classroomId}/whiteboard/image?key=${encodeURIComponent(objectKey)}`
+        const token = btoa(unescape(encodeURIComponent(objectKey)))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=+$/, "")
+        return `/api/proxy-auth/virtual-classrooms/${classroomId}/whiteboard/images/${token}`
       } catch {
         return url
       }
