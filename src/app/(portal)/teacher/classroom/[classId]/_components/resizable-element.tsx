@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { X } from "lucide-react"
+import { Move, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ResizableElementProps {
@@ -64,14 +64,16 @@ export function ResizableElement({
     setSize({ width, height })
   }, [x, y, width, height])
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (isReadOnly) return
     // Don't prevent default on buttons or interactive elements
     if (
       (e.target as HTMLElement).closest("button") ||
       (e.target as HTMLElement).closest("input") ||
       (e.target as HTMLElement).closest("textarea") ||
-      (e.target as HTMLElement).closest("a")
+      (e.target as HTMLElement).closest("a") ||
+      ((e.target as HTMLElement).closest("iframe") &&
+        !(e.target as HTMLElement).closest(".move-handle"))
     )
       return
 
@@ -113,7 +115,7 @@ export function ResizableElement({
   }
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       const parent = elementRef.current?.parentElement
       if (!parent) return
 
@@ -149,19 +151,21 @@ export function ResizableElement({
       }
     }
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsDragging(false)
       setIsResizing(false)
     }
 
     if (isDragging || isResizing) {
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
+      document.addEventListener("pointermove", handlePointerMove)
+      document.addEventListener("pointerup", handlePointerUp)
+      document.addEventListener("pointercancel", handlePointerUp)
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove)
-      document.removeEventListener("mouseup", handleMouseUp)
+      document.removeEventListener("pointermove", handlePointerMove)
+      document.removeEventListener("pointerup", handlePointerUp)
+      document.removeEventListener("pointercancel", handlePointerUp)
     }
   }, [
     isDragging,
@@ -191,18 +195,24 @@ export function ResizableElement({
         outline: isSelected ? "2px solid #3b82f6" : "none",
         outlineOffset: "2px",
       }}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
       onFocusCapture={() => onSelect?.(id)}
       tabIndex={isReadOnly ? -1 : 0}
-      className="group focus:outline-none"
+      className="group touch-none focus:outline-none"
     >
       {children}
       {!isReadOnly && (
         <>
+          <div
+            className={`move-handle absolute -top-3 left-2 z-30 flex h-7 w-7 cursor-move items-center justify-center rounded-full bg-slate-800 text-white shadow transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            aria-label="Move item"
+          >
+            <Move className="h-3.5 w-3.5" />
+          </div>
           <Button
             variant="destructive"
             size="sm"
-            className="absolute -top-2 -right-2 z-20 h-6 w-6 rounded-full p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className={`absolute -top-2 -right-2 z-20 h-6 w-6 rounded-full p-0 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             onClick={(e) => {
               e.stopPropagation()
               onRemove()
@@ -211,7 +221,7 @@ export function ResizableElement({
             <X className="h-3 w-3" />
           </Button>
           <div
-            className="resize-handle absolute right-0 bottom-0 h-4 w-4 cursor-se-resize rounded-tl-lg bg-blue-500 opacity-0 transition-opacity group-hover:opacity-100"
+            className={`resize-handle absolute right-0 bottom-0 h-6 w-6 cursor-se-resize rounded-tl-lg bg-blue-500 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             style={{
               background:
                 "linear-gradient(-45deg, transparent 0%, transparent 30%, rgba(59, 130, 246, 0.5) 30%, rgba(59, 130, 246, 0.5) 50%, transparent 50%)",
