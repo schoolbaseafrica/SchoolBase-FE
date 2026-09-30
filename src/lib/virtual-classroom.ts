@@ -66,6 +66,38 @@ export interface WhiteboardPage {
   sortOrder: number
 }
 
+export type ClassroomAttendanceStatus = "present" | "late" | "partial" | "absent"
+
+export interface ClassroomAttendanceStudent {
+  studentId: string
+  userId: string
+  name: string
+  registrationNumber: string
+  firstJoin: string | null
+  lastActivity: string | null
+  connectedSeconds: number
+  reconnectCount: number
+  derivedStatus: ClassroomAttendanceStatus
+  status: ClassroomAttendanceStatus
+  adjustment: null | {
+    status: ClassroomAttendanceStatus
+    reason: string
+    correctedBy: string
+    correctedByName: string
+    correctedAt: string
+  }
+}
+
+export interface ClassroomAttendanceReview {
+  classroom: Pick<
+    VirtualClassroom,
+    "id" | "title" | "status" | "sessionId" | "termId" | "startsAt" | "endsAt"
+  >
+  thresholds: { lateAfterMinutes: number; partialBelowPercent: number }
+  summary: Record<ClassroomAttendanceStatus | "total", number>
+  students: ClassroomAttendanceStudent[]
+}
+
 const unwrap = <T>(response: ResponsePack<T> | T): T =>
   response && typeof response === "object" && "data" in response
     ? (response as ResponsePack<T>).data
@@ -219,5 +251,22 @@ export const VirtualClassroomAPI = {
         `/virtual-classrooms/${id}/permissions`,
         { method: "PATCH", data }
       )
+    ),
+  getAttendance: async (id: string) =>
+    unwrap(
+      await apiFetch<ResponsePack<ClassroomAttendanceReview> | ClassroomAttendanceReview>(
+        `/virtual-classrooms/${id}/attendance`
+      )
+    ),
+  correctAttendance: async (
+    id: string,
+    studentUserId: string,
+    data: { status: ClassroomAttendanceStatus; reason: string }
+  ) =>
+    unwrap(
+      await apiFetch(`/virtual-classrooms/${id}/attendance/${studentUserId}`, {
+        method: "PATCH",
+        data,
+      })
     ),
 }
