@@ -399,9 +399,9 @@ export function ClassroomChat({
   }
 
   return (
-    <div className="flex h-full flex-col rounded-lg border-t bg-white md:border-t-0 md:border-l md:shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border-t bg-white md:border-t-0 md:border-l md:shadow-sm">
       {/* Chat Header */}
-      <div className="flex items-center justify-between rounded-t-lg border-b bg-gray-50 px-3 py-2.5">
+      <div className="flex shrink-0 items-center justify-between rounded-t-lg border-b bg-gray-50 px-3 py-2.5">
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-gray-900">Class Chat</h2>
           <p className="truncate text-xs text-gray-500">Messages with students</p>
@@ -420,7 +420,7 @@ export function ClassroomChat({
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 pb-2">
+      <div className="min-h-0 flex-1 space-y-3 overscroll-contain overflow-y-auto p-3 pb-2">
         {isLoading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -483,7 +483,7 @@ export function ClassroomChat({
 
       {/* Input Area */}
       {!isReadOnly && (
-        <div className="rounded-b-lg border-t bg-white p-3 pt-2 md:p-4 md:pt-4">
+        <div className="sticky bottom-0 z-10 shrink-0 rounded-b-lg border-t bg-white p-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-4 md:pt-4">
           {isRecording && (
             <div className="mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-2xl border border-red-100 bg-red-50 p-2.5 text-sm text-red-700">
               <span className="relative flex h-3 w-3 shrink-0">
@@ -558,7 +558,7 @@ export function ClassroomChat({
             <Input
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1"
               disabled={createMessageMutation.isPending}

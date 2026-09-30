@@ -389,7 +389,7 @@ export default function TeacherClassroomPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex h-screen w-screen flex-col bg-white">
+    <div className="fixed inset-0 flex h-[100dvh] w-full min-h-0 flex-col overflow-hidden bg-white">
       {/* Minimal header with back button */}
       <div className="flex items-center justify-between border-b bg-white px-2 py-2 md:px-4">
         <Button
@@ -458,7 +458,7 @@ export default function TeacherClassroomPage() {
           <span className="ml-2 text-gray-500">Loading classroom...</span>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ClassroomAudio
             classroomId={classId}
             canManage={true}
@@ -472,7 +472,7 @@ export default function TeacherClassroomPage() {
             canManage={true}
             participants={presence.participants}
           />
-          <div className="relative flex flex-1 overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 overflow-hidden">
             {/* Whiteboard - takes up remaining space, hidden on mobile when chat is open */}
             <div
               className={`relative flex-1 overflow-hidden ${isChatOpen ? "hidden md:block" : ""}`}
@@ -508,7 +508,7 @@ export default function TeacherClassroomPage() {
             </div>
             {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
             <div
-              className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 flex-shrink-0 bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
+              className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 min-h-0 flex-shrink-0 overflow-hidden bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
             >
               <ClassroomChat
                 classId={classId}
