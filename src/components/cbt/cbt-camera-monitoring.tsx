@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Camera, CameraOff, RefreshCw, Video } from "lucide-react"
+import { Camera, CameraOff, Maximize2, Minimize2, RefreshCw, Video } from "lucide-react"
 import { RemoteParticipant, RemoteTrack, Room, RoomEvent, Track } from "livekit-client"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -22,6 +22,7 @@ export function CandidateCameraMonitoring({ enabled, getToken }: CandidateCamera
     "idle"
   )
   const [message, setMessage] = useState("")
+  const [expanded, setExpanded] = useState(false)
 
   const connect = useCallback(async () => {
     if (!enabled || roomRef.current) return
@@ -58,16 +59,43 @@ export function CandidateCameraMonitoring({ enabled, getToken }: CandidateCamera
 
   if (!enabled) return null
   return (
-    <Card className="fixed right-4 bottom-4 z-40 w-56 overflow-hidden shadow-xl">
-      <div className="relative aspect-video bg-slate-950">
+    <Card
+      className={`fixed right-3 bottom-3 z-40 overflow-hidden shadow-xl transition-[width] sm:right-4 sm:bottom-4 sm:w-56 ${expanded ? "w-56 max-w-[calc(100vw-1.5rem)]" : "w-28"}`}
+    >
+      {!expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex h-10 w-full items-center justify-between gap-2 px-3 text-xs font-medium sm:hidden"
+          aria-label="Expand camera preview"
+        >
+          <span className="flex items-center gap-1.5">
+            <Camera className="h-3.5 w-3.5 text-emerald-600" /> Camera on
+          </span>
+          <Maximize2 className="h-3.5 w-3.5 text-slate-500" />
+        </button>
+      )}
+      <div
+        className={`relative aspect-video bg-slate-950 sm:block ${expanded ? "block" : "hidden"}`}
+      >
         <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          onClick={() => setExpanded((value) => !value)}
+          className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-white/90 sm:hidden"
+          aria-label="Minimize camera preview"
+        >
+          <Minimize2 className="h-3.5 w-3.5" />
+        </Button>
         {state !== "connected" && (
           <div className="absolute inset-0 flex items-center justify-center text-white">
             <CameraOff className="h-7 w-7" />
           </div>
         )}
       </div>
-      <CardContent className="space-y-2 p-3">
+      <CardContent className={`space-y-2 p-3 sm:block ${expanded ? "block" : "hidden"}`}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium">Live camera monitoring</span>
           <Badge variant={state === "connected" ? "secondary" : "outline"}>
@@ -124,6 +152,7 @@ export function ProctorCameraMonitoring({
   const [cameras, setCameras] = useState<RemoteCamera[]>([])
   const [error, setError] = useState("")
   const [connecting, setConnecting] = useState(false)
+  const [connected, setConnected] = useState(false)
 
   const connect = useCallback(async () => {
     if (roomRef.current) return
@@ -131,6 +160,11 @@ export function ProctorCameraMonitoring({
     setError("")
     const room = new Room({ adaptiveStream: true, dynacast: true })
     roomRef.current = room
+    room.on(RoomEvent.Disconnected, () => {
+      if (roomRef.current === room) roomRef.current = null
+      setConnected(false)
+      setCameras([])
+    })
     const addTrack = (
       track: RemoteTrack,
       _publication: unknown,
@@ -150,9 +184,11 @@ export function ProctorCameraMonitoring({
     try {
       const credentials = await getToken()
       await room.connect(credentials.url, credentials.token)
+      setConnected(true)
     } catch (caught) {
       await room.disconnect()
       roomRef.current = null
+      setConnected(false)
       setError(
         caught instanceof Error ? caught.message : "Camera monitor could not connect"
       )
@@ -160,6 +196,15 @@ export function ProctorCameraMonitoring({
       setConnecting(false)
     }
   }, [getToken])
+
+  const disconnect = useCallback(async () => {
+    const room = roomRef.current
+    roomRef.current = null
+    setConnected(false)
+    setCameras([])
+    setError("")
+    if (room) await room.disconnect()
+  }, [])
 
   useEffect(
     () => () => {
@@ -172,21 +217,23 @@ export function ProctorCameraMonitoring({
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-semibold">Live candidate cameras</h2>
           <p className="text-sm text-slate-500">
             Live video only. Camera feeds are not recorded.
           </p>
         </div>
-        <Button onClick={connect} disabled={connecting || Boolean(roomRef.current)}>
-          <Camera className="mr-2 h-4 w-4" />
-          {connecting
-            ? "Connecting…"
-            : roomRef.current
-              ? "Connected"
-              : "Start monitoring"}
-        </Button>
+        {connected ? (
+          <Button variant="outline" onClick={() => void disconnect()}>
+            <CameraOff className="mr-2 h-4 w-4" /> Stop monitoring
+          </Button>
+        ) : (
+          <Button onClick={connect} disabled={connecting}>
+            <Camera className="mr-2 h-4 w-4" />
+            {connecting ? "Connecting…" : "Start monitoring"}
+          </Button>
+        )}
       </div>
       {error && (
         <Alert variant="destructive">
@@ -194,7 +241,7 @@ export function ProctorCameraMonitoring({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      {roomRef.current && !cameras.length && (
+      {connected && !cameras.length && (
         <Card className="border-dashed">
           <CardContent className="flex items-center justify-center gap-2 p-8 text-sm text-slate-500">
             <Video className="h-5 w-5" /> Waiting for candidate cameras

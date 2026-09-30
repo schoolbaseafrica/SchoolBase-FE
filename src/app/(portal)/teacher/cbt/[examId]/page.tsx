@@ -2,8 +2,9 @@
 
 import { useCallback, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import Link from "next/link"
 import { useParams } from "next/navigation"
-import { X } from "lucide-react"
+import { ArrowLeft, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,12 +45,19 @@ export default function TeacherCbtMonitorPage() {
   const summary = monitor.data?.summary
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Live examination monitor</h1>
-        <p className="text-sm text-slate-500">
-          Refreshes every 15 seconds. Browser and connection signals are review aids;
-          camera, microphone and screen are not recorded.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Live examination monitor</h1>
+          <p className="text-sm text-slate-500">
+            Refreshes every 15 seconds. Browser and connection signals are review aids;
+            camera, microphone and screen are not recorded.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="shrink-0 self-start">
+          <Link href="/teacher/cbt">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Exit monitor
+          </Link>
+        </Button>
       </div>
       {(currentExam?.proctoringMode === "human" ||
         currentExam?.proctoringMode === "both") && (
