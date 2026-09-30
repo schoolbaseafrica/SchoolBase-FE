@@ -13,6 +13,8 @@ import {
 } from "livekit-client"
 import {
   Headphones,
+  Maximize2,
+  Minimize2,
   Loader2,
   Mic,
   MicOff,
@@ -56,30 +58,78 @@ interface ScreenShareTrack {
 
 function ScreenShareStage({ share }: { share: ScreenShareTrack }) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [collapsed, setCollapsed] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   useEffect(() => {
     const video = videoRef.current
-    if (video) share.track.attach(video)
+    if (video && !collapsed) share.track.attach(video)
     return () => {
       if (video) share.track.detach(video)
     }
-  }, [share.track])
+  }, [collapsed, share.track])
   return (
-    <div className="overflow-hidden rounded-xl border bg-slate-950 shadow-sm">
+    <div
+      ref={stageRef}
+      className={`mx-auto overflow-hidden rounded-xl border bg-slate-950 shadow-sm fullscreen:flex fullscreen:h-screen fullscreen:w-screen fullscreen:max-w-none fullscreen:flex-col ${expanded ? "w-full" : "w-full max-w-3xl"}`}
+    >
       <div className="flex items-center justify-between bg-slate-900 px-3 py-2 text-xs text-white">
-        <span>
+        <span className="min-w-0 truncate">
           {share.local ? "You are presenting" : `${share.participantName} is presenting`}
         </span>
-        <span className="flex items-center gap-1 text-emerald-300">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Live
-        </span>
+        <div className="ml-3 flex shrink-0 items-center gap-1">
+          <span className="mr-1 flex items-center gap-1 text-emerald-300">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Live
+          </span>
+          {!collapsed && (
+            <button
+              type="button"
+              className="rounded p-1 hover:bg-white/15"
+              aria-label={expanded ? "Use compact presentation view" : "Expand presentation"}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          )}
+          <button
+            type="button"
+            className="rounded p-1 hover:bg-white/15"
+            aria-label={collapsed ? "Show presentation" : "Hide presentation"}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            {collapsed ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+          </button>
+          {!collapsed && (
+            <button
+              type="button"
+              className="rounded px-2 py-1 hover:bg-white/15"
+              onClick={() => {
+                const request = stageRef.current?.requestFullscreen()
+                request?.catch(() => toast.error("Full-screen view is unavailable."))
+              }}
+            >
+              Full screen
+            </button>
+          )}
+        </div>
       </div>
-      <video
-        ref={videoRef}
-        autoPlay
-        muted={share.local}
-        playsInline
-        className="max-h-[55vh] w-full bg-black object-contain"
-      />
+      {!collapsed && (
+        <>
+          <video
+            ref={videoRef}
+            autoPlay
+            muted={share.local}
+            playsInline
+            className={`${expanded ? "max-h-[65vh]" : "h-44 sm:h-64 lg:h-80"} w-full bg-black object-contain fullscreen:h-full fullscreen:max-h-none fullscreen:flex-1`}
+          />
+          {share.local && (
+            <p className="bg-slate-900 px-3 py-2 text-[11px] text-slate-300">
+              Sharing this classroom window creates a mirror effect. Share a specific tab or
+              window to avoid it.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -335,7 +385,7 @@ export function ClassroomAudio({
         </div>
       )}
       {connected && screenShares.length > 0 && (
-        <div className="mt-3 grid gap-3 xl:grid-cols-2">
+        <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-2">
           {screenShares.map((share) => (
             <ScreenShareStage key={share.id} share={share} />
           ))}

@@ -12,7 +12,7 @@ import {
 
 const TakeAttendance = () => {
   return (
-    <section className="bg-[#fafafa] px-5 pt-10 pb-5">
+    <section className="min-w-0 bg-[#fafafa] px-4 pt-6 pb-5 md:px-5 md:pt-10">
       {/* info */}
       <h2 className="text-primary pb-4 text-2xl font-bold">Take Attendance: JSS 3A</h2>
       {/* today's date */}
@@ -22,8 +22,8 @@ const TakeAttendance = () => {
 
       {/* attendance form */}
       <form>
-        <div className="my-10 overflow-hidden rounded-xl border bg-white shadow-md">
-          <Table>
+        <div className="my-6 overflow-x-auto rounded-xl border bg-white shadow-md md:my-10">
+          <Table className="min-w-[420px]">
             <TableHeader>
               <TableRow className="bg-gray-200 hover:bg-gray-200">
                 <TableHead className="pl-10">Name</TableHead>

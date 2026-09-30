@@ -1151,7 +1151,7 @@ export const SchoolInfoSettings = () => {
 
               {/* Tabs for different user types */}
               <Tabs defaultValue="students" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
                   <TabsTrigger value="students">Students</TabsTrigger>
                   <TabsTrigger value="teachers">Teachers</TabsTrigger>
                   <TabsTrigger value="parents">Parents</TabsTrigger>

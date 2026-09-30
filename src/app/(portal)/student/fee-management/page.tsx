@@ -215,7 +215,7 @@ export default function StudentFeeManagementPage() {
             <CardContent>
               {details?.fee_breakdown && details.fee_breakdown.length > 0 ? (
                 <div className="overflow-hidden rounded-lg border border-gray-200">
-                  <div className="grid grid-cols-4 border-b border-gray-200 bg-gray-50 p-4 text-xs font-semibold text-gray-900 md:text-sm">
+                  <div className="hidden grid-cols-4 border-b border-gray-200 bg-gray-50 p-4 text-xs font-semibold text-gray-900 sm:grid md:text-sm">
                     <span>Fee Component</span>
                     <span className="text-center">Amount</span>
                     <span className="text-center">Paid</span>
@@ -229,18 +229,18 @@ export default function StudentFeeManagementPage() {
                       ) => (
                         <div
                           key={i}
-                          className="grid grid-cols-4 items-center p-4 text-sm"
+                          className="grid grid-cols-2 items-start gap-3 p-4 text-sm sm:grid-cols-4 sm:items-center sm:gap-0"
                         >
-                          <span className="font-medium text-gray-900">
+                          <span className="col-span-2 min-w-0 break-words font-medium text-gray-900 sm:col-span-1">
                             {item.component_name}
                           </span>
-                          <span className="text-center text-gray-900">
-                            ₦{item.amount.toLocaleString()}
+                          <span className="text-gray-900 sm:text-center">
+                            <span className="block text-xs text-gray-500 sm:hidden">Amount</span>₦{item.amount.toLocaleString()}
                           </span>
-                          <span className="text-center text-gray-600">
-                            ₦{item.amount_paid.toLocaleString()}
+                          <span className="text-right text-gray-600 sm:text-center">
+                            <span className="block text-xs text-gray-500 sm:hidden">Paid</span>₦{item.amount_paid.toLocaleString()}
                           </span>
-                          <div className="text-right">
+                          <div className="col-span-2 text-left sm:col-span-1 sm:text-right">
                             <Badge
                               variant="outline"
                               className={
@@ -284,13 +284,13 @@ export default function StudentFeeManagementPage() {
                     ) => (
                       <div
                         key={i}
-                        className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4"
+                        className="flex min-w-0 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
                       >
                         <div className="flex gap-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100">
                             <ArrowDown className="h-5 w-5 text-green-600" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-semibold text-gray-900">
                               {item.fee_component}
                             </p>
@@ -298,12 +298,12 @@ export default function StudentFeeManagementPage() {
                               {item.term_label} •{" "}
                               {format(new Date(item.payment_date), "MMM dd, yyyy")}
                             </p>
-                            <p className="mt-1 text-xs text-gray-400">
+                            <p className="mt-1 break-all text-xs text-gray-400">
                               Ref: {item.transaction_reference}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="font-bold text-green-600">
                             ₦{item.amount_paid.toLocaleString()}
                           </p>

@@ -26,7 +26,7 @@ export default function StudentClassesPage() {
   )
 
   return (
-    <div className="min-h-screen space-y-6 bg-gray-50 p-6">
+    <div className="min-h-screen space-y-6 bg-gray-50 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-semibold">Live Classes</h1>
         <p className="text-gray-600">
@@ -64,9 +64,9 @@ export default function StudentClassesPage() {
               key={room.id}
               className={room.status === "live" ? "border-red-200" : ""}
             >
-              <CardHeader className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-lg">{room.title}</CardTitle>
+              <CardHeader className="space-y-3 p-4 md:p-6">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                  <CardTitle className="min-w-0 break-words text-lg">{room.title}</CardTitle>
                   <Badge variant={room.status === "live" ? "default" : "secondary"}>
                     {room.status === "live" ? "Live now" : "Scheduled"}
                   </Badge>
@@ -75,7 +75,7 @@ export default function StudentClassesPage() {
                   {formatDateTime(room.startsAt)} – {formatDateTime(room.endsAt)}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                 {room.status === "live" ? (
                   <Button
                     className="w-full"

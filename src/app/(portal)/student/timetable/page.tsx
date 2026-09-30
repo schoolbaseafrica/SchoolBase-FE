@@ -46,7 +46,7 @@ export default function StudentTimetablePage() {
 
   if (contextError || timetableError) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold">Timetable</h1>
           <p className="text-gray-600">View your class schedule</p>
@@ -65,7 +65,7 @@ export default function StudentTimetablePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Timetable</h1>
@@ -107,10 +107,10 @@ export default function StudentTimetablePage() {
 
             return (
               <Card key={day}>
-                <CardHeader>
+                <CardHeader className="p-4 pb-3 md:p-6 md:pb-3">
                   <CardTitle className="text-lg font-semibold">{day}</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
                   <div className="space-y-3">
                     {daySchedules.map((schedule) => {
                       const liveClassroom = classrooms.data?.find(
@@ -124,15 +124,15 @@ export default function StudentTimetablePage() {
                       return (
                         <div
                           key={schedule.id}
-                          className="flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-4"
+                          className="flex min-w-0 flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-start sm:gap-4"
                         >
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex shrink-0 items-center gap-2 text-sm text-gray-600">
                             <Clock className="h-4 w-4" />
                             <span>
                               {schedule.start_time} - {schedule.end_time}
                             </span>
                           </div>
-                          <div className="flex-1">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <BookOpen className="h-4 w-4 text-blue-600" />
                               <span className="font-semibold text-gray-900">
@@ -142,7 +142,7 @@ export default function StudentTimetablePage() {
                             {schedule.teacher && (
                               <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
                                 <User className="h-3 w-3" />
-                                <span>
+                                <span className="min-w-0 break-words">
                                   {schedule.teacher.title} {schedule.teacher.first_name}{" "}
                                   {schedule.teacher.last_name}
                                 </span>
@@ -155,21 +155,30 @@ export default function StudentTimetablePage() {
                               </div>
                             )}
                           </div>
-                          {liveClassroom && (
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                router.push(`/student/classroom/${liveClassroom.id}`)
-                              }
-                            >
-                              <BookOpen className="mr-2 h-4 w-4" />
-                              Join live class
-                            </Button>
-                          )}
-                          {!liveClassroom && scheduledClassroom && (
-                            <Button size="sm" variant="outline" disabled>
-                              Waiting for teacher
-                            </Button>
+                          {(liveClassroom || scheduledClassroom) && (
+                            <div className="w-full shrink-0 sm:w-auto">
+                              {liveClassroom ? (
+                                <Button
+                                  size="sm"
+                                  className="w-full whitespace-normal sm:w-auto"
+                                  onClick={() =>
+                                    router.push(`/student/classroom/${liveClassroom.id}`)
+                                  }
+                                >
+                                  <BookOpen className="mr-2 h-4 w-4 shrink-0" />
+                                  Join live class
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full whitespace-normal sm:w-auto"
+                                  disabled
+                                >
+                                  Waiting for teacher
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )
