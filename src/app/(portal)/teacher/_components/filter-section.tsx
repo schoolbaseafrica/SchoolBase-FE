@@ -96,7 +96,7 @@ export function FilterSection({
       )}
 
       {/* Filters grid */}
-      <div className="grid grid-cols-3 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Class Selector */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700">Class *</label>

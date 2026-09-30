@@ -69,7 +69,7 @@ function QuestionInput({
           ]
         : (question.options ?? [])
     return (
-      <div className="space-y-3">
+      <div className="min-w-0 space-y-3">
         {options.map((option, index) => {
           const selected = value === option.id
           return (
@@ -77,7 +77,7 @@ function QuestionInput({
               key={option.id}
               type="button"
               onClick={() => onChange(option.id)}
-              className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+              className={`flex w-full min-w-0 items-start gap-3 rounded-xl border p-4 text-left transition ${
                 selected
                   ? "border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_8%,white)] ring-1 ring-[var(--primary)]"
                   : "border-slate-200 bg-white hover:border-slate-300"
@@ -96,7 +96,7 @@ function QuestionInput({
                   String.fromCharCode(65 + index)
                 )}
               </span>
-              <span className="pt-0.5 text-sm leading-6 text-slate-800">
+              <span className="min-w-0 pt-0.5 text-sm leading-6 break-words text-slate-800">
                 {option.text}
               </span>
             </button>
@@ -377,7 +377,7 @@ export default function CbtAttemptPage() {
   const pendingCount = Object.values(answers).filter((answer) => !answer.synced).length
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen max-w-full min-w-0 overflow-x-clip bg-slate-100">
       <CandidateCameraMonitoring
         enabled={
           attempt.data.exam.proctoringMode === "human" ||
@@ -386,14 +386,16 @@ export default function CbtAttemptPage() {
         getToken={getCameraToken}
       />
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
-          <div>
+        <div className="mx-auto flex max-w-7xl min-w-0 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
+          <div className="min-w-0">
             <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
               Examination
             </p>
-            <h1 className="font-semibold text-slate-950">{attempt.data.exam.name}</h1>
+            <h1 className="truncate font-semibold text-slate-950">
+              {attempt.data.exam.name}
+            </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Badge variant={online && pendingCount === 0 ? "secondary" : "outline"}>
               {online && pendingCount === 0 ? (
                 <Cloud className="mr-1 h-3.5 w-3.5" />
@@ -415,8 +417,8 @@ export default function CbtAttemptPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-5 p-4 md:grid-cols-[220px_minmax(0,1fr)] md:p-6">
-        <aside className="rounded-2xl border bg-white p-4 md:sticky md:top-24 md:h-fit">
+      <div className="mx-auto grid max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)] gap-5 p-4 md:grid-cols-[220px_minmax(0,1fr)] md:p-6">
+        <aside className="min-w-0 rounded-2xl border bg-white p-4 md:sticky md:top-24 md:h-fit">
           <div className="mb-3 flex items-center justify-between text-sm">
             <span className="font-medium">Progress</span>
             <span className="text-slate-500">
@@ -450,10 +452,10 @@ export default function CbtAttemptPage() {
           </Button>
         </aside>
 
-        <Card className="rounded-2xl border-slate-200 shadow-sm">
-          <CardContent className="p-5 md:p-8">
-            <div className="mb-7 flex items-start justify-between gap-4">
-              <div>
+        <Card className="min-w-0 overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+          <CardContent className="min-w-0 p-5 md:p-8">
+            <div className="mb-7 flex min-w-0 flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-[var(--primary)]">
                   Question {currentIndex + 1} of {questions.length}
                 </p>
@@ -477,7 +479,7 @@ export default function CbtAttemptPage() {
                 {Number(current.marks)} {Number(current.marks) === 1 ? "mark" : "marks"}
               </Badge>
             </div>
-            <p className="mb-7 text-base leading-7 font-medium whitespace-pre-wrap text-slate-950 md:text-lg">
+            <p className="mb-7 max-w-full text-base leading-7 font-medium break-words whitespace-pre-wrap text-slate-950 md:text-lg">
               {current.body}
             </p>
             <QuestionInput
@@ -485,7 +487,7 @@ export default function CbtAttemptPage() {
               value={answers[current.id]?.value}
               onChange={(value) => void chooseAnswer(current.id, value)}
             />
-            <div className="mt-8 flex items-center justify-between border-t pt-5">
+            <div className="mt-8 grid min-w-0 grid-cols-2 gap-2 border-t pt-5">
               <Button
                 variant="outline"
                 disabled={currentIndex === 0}
@@ -498,8 +500,12 @@ export default function CbtAttemptPage() {
                   Next <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               ) : (
-                <Button onClick={() => void submitAttempt()} disabled={submit.isPending}>
-                  Submit examination
+                <Button
+                  onClick={() => void submitAttempt()}
+                  disabled={submit.isPending}
+                  className="min-w-0 px-2 text-xs sm:px-4 sm:text-sm"
+                >
+                  Submit
                 </Button>
               )}
             </div>

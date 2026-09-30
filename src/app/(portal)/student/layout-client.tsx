@@ -18,7 +18,7 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
   return (
     <SidebarProvider defaultOpen>
       <StudentSidebar />
-      <main className="mt-[50px] h-full w-full">
+      <main className="mt-[50px] h-full max-w-full min-w-0 flex-1 overflow-x-clip">
         <DashboardHeader />
         {children}
       </main>

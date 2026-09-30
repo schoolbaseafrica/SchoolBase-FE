@@ -77,7 +77,7 @@ export const NotificationsDrawer = () => {
         </Button>
       </DrawerTrigger>
 
-      <DrawerContent className="w-[400px] sm:max-w-[400px]">
+      <DrawerContent className="w-full max-w-[calc(100vw-1rem)] sm:w-[400px] sm:max-w-[400px]">
         <DrawerHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
             <DrawerTitle>Notifications</DrawerTitle>

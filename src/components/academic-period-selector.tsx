@@ -28,7 +28,7 @@ export function AcademicPeriodSelector({
         <CalendarRange className="text-accent size-4" />
         Viewing
       </div>
-      <label className="text-muted-foreground grid min-w-[180px] gap-1 text-xs">
+      <label className="text-muted-foreground grid w-full min-w-0 gap-1 text-xs sm:w-auto sm:min-w-[180px]">
         Academic session
         <Select
           value={period.sessionId ?? undefined}
@@ -49,7 +49,7 @@ export function AcademicPeriodSelector({
         </Select>
       </label>
       {!sessionOnly && (
-        <label className="text-muted-foreground grid min-w-[180px] gap-1 text-xs">
+        <label className="text-muted-foreground grid w-full min-w-0 gap-1 text-xs sm:w-auto sm:min-w-[180px]">
           Academic term
           <Select
             value={period.termSelection}
@@ -71,7 +71,12 @@ export function AcademicPeriodSelector({
           </Select>
         </label>
       )}
-      <Button variant="outline" size="sm" onClick={period.reset} className="gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={period.reset}
+        className="w-full gap-2 sm:w-auto"
+      >
         <RotateCcw className="size-4" /> Current period
       </Button>
       {sessionOnly && (
