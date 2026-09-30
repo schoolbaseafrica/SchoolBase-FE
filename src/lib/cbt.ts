@@ -111,7 +111,10 @@ export interface CbtAttempt {
   startedAt: string
   deadline: string
   lastSavedAt: string | null
-  exam: Pick<CbtExamSummary, "id" | "name" | "instructions" | "timeLimitMinutes"> & {
+  exam: Pick<
+    CbtExamSummary,
+    "id" | "name" | "instructions" | "timeLimitMinutes" | "proctoringMode"
+  > & {
     shuffleOptions: boolean
     sections?: Array<Pick<CbtExamSection, "id" | "title" | "instructions" | "sortOrder">>
   }
@@ -328,6 +331,13 @@ export interface CbtPeriodParams {
   scope?: "term" | "session"
 }
 
+export interface CbtMediaToken {
+  token: string
+  url: string
+  roomName: string
+  expiresInSeconds: number
+}
+
 type ApiEnvelope<T> = { data: T; message?: string; status_code?: number }
 
 function unwrap<T>(response: ApiEnvelope<T> | T): T {
@@ -354,6 +364,12 @@ export const CbtAPI = {
   getAttempt: (attemptId: string) =>
     apiFetch<ApiEnvelope<CbtAttempt> | CbtAttempt>(
       `/cbt/student/attempts/${attemptId}`
+    ).then(unwrap),
+
+  createStudentMediaToken: (attemptId: string) =>
+    apiFetch<ApiEnvelope<CbtMediaToken> | CbtMediaToken>(
+      `/cbt/student/attempts/${attemptId}/media-token`,
+      { method: "POST" }
     ).then(unwrap),
 
   saveAnswer: (
@@ -428,6 +444,11 @@ export const CbtAPI = {
   getProctorExamAttempts: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
       `/cbt/proctor/exams/${examId}/attempts`
+    ).then(unwrap),
+  createProctorMediaToken: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtMediaToken> | CbtMediaToken>(
+      `/cbt/proctor/exams/${examId}/media-token`,
+      { method: "POST" }
     ).then(unwrap),
   getProctorAttemptActivity: (attemptId: string) =>
     apiFetch<ApiEnvelope<CbtAttemptActivity> | CbtAttemptActivity>(
@@ -548,6 +569,14 @@ export const PublicCbtAPI = {
     apiFetch<ApiEnvelope<CbtAttempt> | CbtAttempt>(`/public/cbt/attempts/${attemptId}`, {
       headers: { "X-CBT-Access-Token": token },
     }).then(unwrap),
+  createMediaToken: (attemptId: string, token: string) =>
+    apiFetch<ApiEnvelope<CbtMediaToken> | CbtMediaToken>(
+      `/public/cbt/attempts/${attemptId}/media-token`,
+      {
+        method: "POST",
+        headers: { "X-CBT-Access-Token": token },
+      }
+    ).then(unwrap),
   saveAnswer: (
     attemptId: string,
     questionId: string,

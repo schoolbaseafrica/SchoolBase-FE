@@ -189,12 +189,12 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                     className="h-10 w-full rounded-md border bg-white px-3 text-sm"
                   >
                     <option value="none">Not proctored</option>
-                    <option value="human">Live proctor</option>
-                    <option value="recorded">Recorded review</option>
-                    <option value="both">Live and recorded</option>
+                    <option value="human">Live camera</option>
+                    <option value="recorded">Browser activity</option>
+                    <option value="both">Live camera + browser activity</option>
                   </select>
                   <p className="text-xs text-slate-500">
-                    Live and recorded modes enable candidate integrity monitoring.
+                    Live camera is visible to assigned proctors and is not recorded.
                   </p>
                 </div>
                 {!external && (
@@ -267,9 +267,7 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
                     <CardTitle className="text-lg">{exam.name}</CardTitle>
-                    <Badge
-                      variant={exam.status === "active" ? "default" : "secondary"}
-                    >
+                    <Badge variant={exam.status === "active" ? "default" : "secondary"}>
                       {exam.status.replace("_", " ")}
                     </Badge>
                   </div>

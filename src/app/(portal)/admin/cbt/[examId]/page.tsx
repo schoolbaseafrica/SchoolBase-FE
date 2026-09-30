@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useCallback, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BlueprintDialog } from "@/components/cbt/blueprint-dialog"
 import { ProctorAssignments } from "@/components/cbt/proctor-assignments"
+import { ProctorCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
@@ -64,6 +65,10 @@ export default function CbtExamBuilderPage() {
     enabled: ["active", "closed", "published"].includes(exam.data?.status ?? ""),
     refetchInterval: exam.data?.status === "active" ? 15_000 : false,
   })
+  const getCameraToken = useCallback(
+    () => CbtAPI.createProctorMediaToken(examId),
+    [examId]
+  )
   const questionBank = useQuery({
     queryKey: ["cbt", "question-bank", bankSearch],
     queryFn: () => CbtAPI.listQuestionBank(bankSearch),
@@ -277,6 +282,11 @@ export default function CbtExamBuilderPage() {
             </div>
           </div>
         </header>
+
+        {(exam.data.proctoringMode === "human" || exam.data.proctoringMode === "both") &&
+          ["active", "closed"].includes(exam.data.status) && (
+            <ProctorCameraMonitoring getToken={getCameraToken} />
+          )}
 
         {!!exam.data.sections?.length && (
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

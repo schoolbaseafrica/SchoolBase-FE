@@ -75,8 +75,12 @@ export default function PublicCbtEntryPage() {
               <span className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
                 {exam.data.proctoringMode === "none"
-                  ? "Not proctored"
-                  : `${exam.data.proctoringMode} proctoring`}
+                  ? "Not monitored"
+                  : exam.data.proctoringMode === "recorded"
+                    ? "Browser activity monitored"
+                    : exam.data.proctoringMode === "human"
+                      ? "Live camera required"
+                      : "Live camera and browser activity monitored"}
               </span>
             </div>
             <form className="space-y-4" onSubmit={submit}>

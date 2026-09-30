@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Check, Clock3, Send } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { CandidateCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
 import { CbtQuestion, PublicCbtAPI } from "@/lib/cbt"
 
 function QuestionInput({
@@ -118,6 +119,10 @@ export default function PublicCbtAttemptPage() {
     enabled: Boolean(token),
     refetchOnWindowFocus: false,
   })
+  const getCameraToken = useCallback(
+    () => PublicCbtAPI.createMediaToken(attemptId, token),
+    [attemptId, token]
+  )
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
@@ -245,6 +250,13 @@ export default function PublicCbtAttemptPage() {
   void now
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
+      <CandidateCameraMonitoring
+        enabled={
+          attempt.data.exam.proctoringMode === "human" ||
+          attempt.data.exam.proctoringMode === "both"
+        }
+        getToken={getCameraToken}
+      />
       <div className="mx-auto max-w-4xl space-y-5">
         <header className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border bg-white/95 p-4 shadow-sm backdrop-blur">
           <div>

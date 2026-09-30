@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { X } from "lucide-react"
@@ -8,6 +8,7 @@ import { X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { ProctorCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
 import { CbtAPI } from "@/lib/cbt"
 
 export default function TeacherCbtMonitorPage() {
@@ -19,6 +20,15 @@ export default function TeacherCbtMonitorPage() {
     queryFn: () => CbtAPI.getProctorExamAttempts(examId),
     refetchInterval: 15_000,
   })
+  const exams = useQuery({
+    queryKey: ["cbt", "proctor", "exams"],
+    queryFn: CbtAPI.listProctorExams,
+  })
+  const currentExam = exams.data?.find((exam) => exam.id === examId)
+  const getCameraToken = useCallback(
+    () => CbtAPI.createProctorMediaToken(examId),
+    [examId]
+  )
   const activity = useQuery({
     queryKey: ["cbt", "proctor", "activity", attemptId],
     queryFn: () => CbtAPI.getProctorAttemptActivity(attemptId!),
@@ -41,6 +51,10 @@ export default function TeacherCbtMonitorPage() {
           camera, microphone and screen are not recorded.
         </p>
       </div>
+      {(currentExam?.proctoringMode === "human" ||
+        currentExam?.proctoringMode === "both") && (
+        <ProctorCameraMonitoring getToken={getCameraToken} />
+      )}
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
           ["Not started", summary?.notStarted ?? 0],

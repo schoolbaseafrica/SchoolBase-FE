@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { CandidateCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
 import { CbtAPI, CbtQuestion } from "@/lib/cbt"
 import {
   clearOfflineAnswers,
@@ -163,6 +164,10 @@ export default function CbtAttemptPage() {
     refetchOnWindowFocus: false,
   })
   const submit = useMutation({ mutationFn: () => CbtAPI.submitAttempt(attemptId) })
+  const getCameraToken = useCallback(
+    () => CbtAPI.createStudentMediaToken(attemptId),
+    [attemptId]
+  )
 
   useEffect(() => {
     const handleOnline = () => {
@@ -373,6 +378,13 @@ export default function CbtAttemptPage() {
 
   return (
     <main className="min-h-screen bg-slate-100">
+      <CandidateCameraMonitoring
+        enabled={
+          attempt.data.exam.proctoringMode === "human" ||
+          attempt.data.exam.proctoringMode === "both"
+        }
+        getToken={getCameraToken}
+      />
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div>
