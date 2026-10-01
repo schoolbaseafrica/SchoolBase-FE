@@ -110,6 +110,12 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
   const overdue = Boolean(
     due && due < new Date() && !["submitted", "graded"].includes(submission?.status ?? "")
   )
+  const dueSoon = Boolean(
+    due &&
+      !overdue &&
+      due.getTime() <= new Date().getTime() + 24 * 60 * 60 * 1000 &&
+      !["submitted", "graded"].includes(submission?.status ?? "")
+  )
   const save = useMutation({
     mutationFn: (status: "draft" | "submitted") =>
       AssignmentAPI.saveSubmission(assignment.id, {
@@ -139,6 +145,8 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
               {status}
             </Badge>
             {submission?.isLate && <Badge variant="destructive">Late</Badge>}
+            {overdue && <Badge variant="destructive">Overdue</Badge>}
+            {dueSoon && <Badge className="bg-amber-100 text-amber-800">Due soon</Badge>}
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
             {assignment.subject.name} · {assignment.teacher.title ?? ""}{" "}

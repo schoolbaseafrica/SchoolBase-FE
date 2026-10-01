@@ -15,6 +15,7 @@ import { toast } from "sonner"
 
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 import { AssignmentAttachments } from "@/components/assignments/assignment-attachments"
+import { AssignmentReportPanel } from "@/components/assignments/assignment-report-panel"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -120,6 +121,11 @@ export default function TeacherAssignmentsPage() {
           </Button>
         </div>
         <AcademicPeriodSelector scope="teacher-assignments" />
+        <AssignmentReportPanel
+          sessionId={period.sessionId}
+          termId={period.termId}
+          assignments={assignments.data ?? []}
+        />
         {creating && (
           <form
             className="grid gap-4 rounded-2xl border bg-white p-5 md:grid-cols-2"

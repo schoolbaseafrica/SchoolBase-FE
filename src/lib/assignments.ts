@@ -55,6 +55,31 @@ export interface Assignment {
   submissions: AssignmentSubmission[]
 }
 
+export interface AssignmentReport {
+  summary: {
+    total: number
+    missing: number
+    submitted: number
+    late: number
+    graded: number
+    averagePercentage: number | null
+  }
+  rows: Array<{
+    assignmentId: string
+    assignment: string
+    className: string
+    subject: string
+    dueAt: string | null
+    studentId: string
+    student: string
+    registrationNumber: string
+    status: string
+    submittedAt: string | null
+    marksAwarded: number | null
+    totalMarks: number
+  }>
+}
+
 type Envelope<T> = T | { data: T }
 type AssignmentSubjectOption = { id: string; name: string }
 const unwrap = <T>(value: Envelope<T>): T =>
@@ -82,10 +107,11 @@ export const AssignmentAPI = {
         }
       )
     ),
-  attachments: async (assignmentId: string) =>
+  attachments: async (assignmentId: string, studentId?: string) =>
     unwrap(
       await apiFetch<Envelope<AssignmentAttachment[]>>(
-        `/assignments/${assignmentId}/attachments`
+        `/assignments/${assignmentId}/attachments`,
+        { params: { student_id: studentId } }
       )
     ),
   uploadAttachment: async (
@@ -113,8 +139,12 @@ export const AssignmentAPI = {
     apiFetch(`/assignments/${assignmentId}/attachments/${attachmentId}`, {
       method: "DELETE",
     }),
-  attachmentDownloadUrl: (assignmentId: string, attachmentId: string) =>
-    `/api/proxy-auth/assignments/${assignmentId}/attachments/${attachmentId}/download`,
+  attachmentDownloadUrl: (
+    assignmentId: string,
+    attachmentId: string,
+    studentId?: string
+  ) =>
+    `/api/proxy-auth/assignments/${assignmentId}/attachments/${attachmentId}/download${studentId ? `?student_id=${encodeURIComponent(studentId)}` : ""}`,
   list: async (params?: {
     session_id?: string
     term_id?: string
@@ -122,6 +152,27 @@ export const AssignmentAPI = {
   }) => unwrap(await apiFetch<Envelope<Assignment[]>>("/assignments", { params })),
   get: async (id: string) =>
     unwrap(await apiFetch<Envelope<Assignment>>(`/assignments/${id}`)),
+  parentList: async (
+    studentId: string,
+    params?: { session_id?: string; term_id?: string }
+  ) =>
+    unwrap(
+      await apiFetch<Envelope<Assignment[]>>(`/assignments/parent/${studentId}`, {
+        params,
+      })
+    ),
+  report: async (params?: {
+    session_id?: string
+    term_id?: string
+    class_id?: string
+    subject_id?: string
+    status?: string
+  }) =>
+    unwrap(
+      await apiFetch<Envelope<AssignmentReport>>("/assignments/reports/class-work", {
+        params,
+      })
+    ),
   create: async (data: CreateAssignmentInput) =>
     unwrap(
       await apiFetch<Envelope<Assignment>>("/assignments", { method: "POST", data })

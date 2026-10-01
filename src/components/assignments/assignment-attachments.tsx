@@ -17,18 +17,20 @@ const formatSize = (bytes: number) =>
 export function AssignmentAttachments({
   assignmentId,
   canUpload,
+  studentId,
 }: {
   assignmentId: string
   canUpload: boolean
+  studentId?: string
 }) {
   const input = useRef<HTMLInputElement>(null)
   const auth = useAuthUser()
   const queryClient = useQueryClient()
   const [progress, setProgress] = useState<number | null>(null)
-  const key = ["assignment-attachments", assignmentId]
+  const key = ["assignment-attachments", assignmentId, studentId]
   const attachments = useQuery({
     queryKey: key,
-    queryFn: () => AssignmentAPI.attachments(assignmentId),
+    queryFn: () => AssignmentAPI.attachments(assignmentId, studentId),
   })
   const upload = useMutation({
     mutationFn: (file: File) =>
@@ -110,7 +112,11 @@ export function AssignmentAttachments({
                 className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm"
               >
                 <a
-                  href={AssignmentAPI.attachmentDownloadUrl(assignmentId, attachment.id)}
+                  href={AssignmentAPI.attachmentDownloadUrl(
+                    assignmentId,
+                    attachment.id,
+                    studentId
+                  )}
                   className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
                 >
                   <Download className="h-4 w-4 shrink-0" />
