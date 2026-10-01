@@ -20,6 +20,19 @@ export interface AssignmentSubmission {
   }
 }
 
+export interface AssignmentAttachment {
+  id: string
+  originalName: string
+  mimeType: string
+  size: number
+  uploadedBy: string
+  student: null | {
+    id: string
+    registration_number: string
+    user?: { first_name?: string; last_name?: string }
+  }
+}
+
 export interface Assignment {
   id: string
   title: string
@@ -69,6 +82,39 @@ export const AssignmentAPI = {
         }
       )
     ),
+  attachments: async (assignmentId: string) =>
+    unwrap(
+      await apiFetch<Envelope<AssignmentAttachment[]>>(
+        `/assignments/${assignmentId}/attachments`
+      )
+    ),
+  uploadAttachment: async (
+    assignmentId: string,
+    file: File,
+    onProgress?: (percent: number) => void
+  ) => {
+    const data = new FormData()
+    data.append("file", file)
+    return unwrap(
+      await apiFetch<Envelope<AssignmentAttachment>>(
+        `/assignments/${assignmentId}/attachments`,
+        {
+          method: "POST",
+          data,
+          onUploadProgress: (event) =>
+            onProgress?.(
+              event.total ? Math.round((event.loaded / event.total) * 100) : 0
+            ),
+        }
+      )
+    )
+  },
+  deleteAttachment: (assignmentId: string, attachmentId: string) =>
+    apiFetch(`/assignments/${assignmentId}/attachments/${attachmentId}`, {
+      method: "DELETE",
+    }),
+  attachmentDownloadUrl: (assignmentId: string, attachmentId: string) =>
+    `/api/proxy-auth/assignments/${assignmentId}/attachments/${attachmentId}/download`,
   list: async (params?: {
     session_id?: string
     term_id?: string

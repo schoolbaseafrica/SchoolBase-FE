@@ -12,9 +12,9 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { AssignmentAttachments } from "@/components/assignments/assignment-attachments"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AssignmentAPI, type Assignment } from "@/lib/assignments"
@@ -106,7 +106,6 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
   const submission = assignment.submissions[0]
   const [open, setOpen] = useState(false)
   const [responseText, setResponseText] = useState(submission?.responseText ?? "")
-  const [attachmentUrl, setAttachmentUrl] = useState(submission?.attachmentUrl ?? "")
   const due = assignment.dueAt ? new Date(assignment.dueAt) : null
   const overdue = Boolean(
     due && due < new Date() && !["submitted", "graded"].includes(submission?.status ?? "")
@@ -115,7 +114,6 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
     mutationFn: (status: "draft" | "submitted") =>
       AssignmentAPI.saveSubmission(assignment.id, {
         responseText,
-        attachmentUrl: attachmentUrl || undefined,
         status,
       }),
     onSuccess: (_, status) => {
@@ -195,16 +193,10 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
                   placeholder="Write your answer here…"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Attachment link (optional)</label>
-                <Input
-                  className="mt-1"
-                  type="url"
-                  value={attachmentUrl}
-                  onChange={(event) => setAttachmentUrl(event.target.value)}
-                  placeholder="https://…"
-                />
-              </div>
+              <AssignmentAttachments
+                assignmentId={assignment.id}
+                canUpload={assignment.status === "published"}
+              />
               {submission?.status === "returned" && submission.feedback && (
                 <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
                   <strong>Teacher feedback:</strong> {submission.feedback}
@@ -221,7 +213,7 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
                 </Button>
                 <Button
                   onClick={() => save.mutate("submitted")}
-                  disabled={save.isPending || (!responseText.trim() && !attachmentUrl)}
+                  disabled={save.isPending}
                 >
                   <Send className="mr-2 h-4 w-4" />
                   {submission?.status === "submitted" ? "Resubmit" : "Submit"}

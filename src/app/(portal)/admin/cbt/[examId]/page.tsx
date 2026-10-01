@@ -196,6 +196,8 @@ export default function CbtExamBuilderPage() {
         return { status: "published" as const, label: "Publish results" }
       case "published":
         return { status: "archived" as const, label: "Archive" }
+      case "archived":
+        return { status: "closed" as const, label: "Restore examination" }
       default:
         return null
     }

@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner"
 
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { AssignmentAttachments } from "@/components/assignments/assignment-attachments"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,7 +42,6 @@ export default function TeacherAssignmentsPage() {
     subjectId: "",
     dueAt: "",
     totalMarks: "100",
-    attachmentUrl: "",
   })
 
   const assignments = useQuery({
@@ -76,7 +76,6 @@ export default function TeacherAssignmentsPage() {
         academicTermId: period.termId,
         dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : undefined,
         totalMarks: Number(form.totalMarks),
-        attachmentUrl: form.attachmentUrl || undefined,
       }),
     onSuccess: () => {
       toast.success("Assignment draft created")
@@ -87,7 +86,6 @@ export default function TeacherAssignmentsPage() {
         subjectId: "",
         dueAt: "",
         totalMarks: "100",
-        attachmentUrl: "",
       })
       refresh()
     },
@@ -235,18 +233,6 @@ export default function TeacherAssignmentsPage() {
                 required
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="text-sm font-medium">Resource link (optional)</label>
-              <Input
-                className="mt-1"
-                type="url"
-                placeholder="https://…"
-                value={form.attachmentUrl}
-                onChange={(event) =>
-                  setForm({ ...form, attachmentUrl: event.target.value })
-                }
-              />
-            </div>
             <div className="flex gap-2 md:col-span-2">
               <Button type="submit" disabled={create.isPending}>
                 {create.isPending ? "Saving…" : "Save draft"}
@@ -326,6 +312,10 @@ function AssignmentRow({
       {open && (
         <div className="space-y-4 border-t p-4">
           <p className="text-sm whitespace-pre-wrap">{assignment.instructions}</p>
+          <AssignmentAttachments
+            assignmentId={assignment.id}
+            canUpload={assignment.status === "draft"}
+          />
           <div className="flex flex-wrap gap-2">
             {assignment.status === "draft" && (
               <Button size="sm" onClick={() => onTransition("published")}>

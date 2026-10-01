@@ -10,6 +10,7 @@ import {
   EyeOff,
   FileQuestion,
   Plus,
+  RotateCcw,
   Trash2,
   Users,
 } from "lucide-react"
@@ -93,6 +94,15 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
     },
     onError: (error: Error) =>
       toast.error(error.message || "Could not archive examination"),
+  })
+  const restore = useMutation({
+    mutationFn: (examId: string) => CbtAPI.transitionExam(examId, "closed"),
+    onSuccess: async () => {
+      await refreshExams()
+      toast.success("Examination restored")
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "Could not restore examination"),
   })
   const remove = useMutation({
     mutationFn: CbtAPI.deleteExam,
@@ -374,6 +384,18 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                         title="Archive examination"
                       >
                         <Archive className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {exam.status === "archived" && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => restore.mutate(exam.id)}
+                        disabled={restore.isPending}
+                        aria-label={`Restore ${exam.name}`}
+                        title="Restore examination"
+                      >
+                        <RotateCcw className="h-4 w-4" />
                       </Button>
                     )}
                     {exam.status === "draft" && (
