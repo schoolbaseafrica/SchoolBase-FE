@@ -451,8 +451,8 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
             <div>
               <h2 className="text-lg font-medium">Student photo</h2>
               <p className="text-muted-foreground text-sm">
-                Take a clear photo for your school profile. Saving it does not enable face
-                attendance until your school configures that feature.
+                Take a clear photo for your school profile. A school admin must approve it
+                before it can be used for face attendance.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

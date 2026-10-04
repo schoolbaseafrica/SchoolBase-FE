@@ -14,8 +14,10 @@ import {
   X,
   QrCode,
   Download,
+  ScanFace,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -36,6 +38,12 @@ export default function EditStudentPage() {
   const [isUpdatingNfc, setIsUpdatingNfc] = useState(false)
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null)
   const [isGeneratingQr, setIsGeneratingQr] = useState(false)
+  const [faceReference, setFaceReference] = useState<{
+    photoUrl: string | null
+    canApprove: boolean
+    approvedAt: string | null
+  } | null>(null)
+  const [isUpdatingFace, setIsUpdatingFace] = useState(false)
   const {
     data: student,
     isLoading,
@@ -61,6 +69,28 @@ export default function EditStudentPage() {
       })
       .catch(() => toast.error("Could not load the NFC card assignment"))
   }, [id])
+
+  useEffect(() => {
+    if (!id || Array.isArray(id)) return
+    void StudentsAPI.getFaceReference(id)
+      .then(setFaceReference)
+      .catch(() => toast.error("Could not load face photo status"))
+  }, [id])
+
+  const updateFaceApproval = async (approve: boolean) => {
+    if (!id || Array.isArray(id)) return
+    setIsUpdatingFace(true)
+    try {
+      if (approve) await StudentsAPI.approveFaceReference(id)
+      else await StudentsAPI.revokeFaceReference(id)
+      setFaceReference(await StudentsAPI.getFaceReference(id))
+      toast.success(approve ? "Face photo approved" : "Face photo approval removed")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update face photo")
+    } finally {
+      setIsUpdatingFace(false)
+    }
+  }
 
   const handleGenerateQrCode = async () => {
     const cardId = savedNfcCardId
@@ -315,6 +345,52 @@ export default function EditStudentPage() {
                 : "Assign to Class"}
             </Button>
           </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex items-center gap-3">
+            <ScanFace className="h-6 w-6 text-blue-600" />
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Face attendance photo
+              </h3>
+              <p className="text-sm text-gray-600">
+                Review the student&apos;s captured photo before it can be used for face
+                check-in. A new photo removes approval automatically.
+              </p>
+            </div>
+          </div>
+          {faceReference?.photoUrl && (
+            <Avatar className="mt-4 h-36 w-36 rounded-md">
+              <AvatarImage
+                src={faceReference.photoUrl}
+                alt={`Captured photo of ${studentName}`}
+                className="object-cover"
+              />
+            </Avatar>
+          )}
+          <p className="mt-3 text-sm">
+            {faceReference?.approvedAt
+              ? "Approved for face attendance"
+              : faceReference?.canApprove
+                ? "Waiting for approval"
+                : "Student needs to capture a new photo"}
+          </p>
+          {faceReference?.canApprove && (
+            <Button
+              type="button"
+              className="mt-3"
+              variant={faceReference.approvedAt ? "outline" : "default"}
+              disabled={isUpdatingFace}
+              onClick={() => void updateFaceApproval(!faceReference.approvedAt)}
+            >
+              {isUpdatingFace
+                ? "Saving..."
+                : faceReference.approvedAt
+                  ? "Remove approval"
+                  : "Approve photo"}
+            </Button>
+          )}
         </div>
 
         {/* NFC Card Assignment Section */}

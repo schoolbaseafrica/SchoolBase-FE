@@ -103,6 +103,27 @@ function parseCsv(text: string): string[][] {
 }
 
 export const StudentsAPI = {
+  getFaceReference: (id: string) =>
+    apiFetch<
+      ResponsePack<{
+        studentId: string
+        photoUrl: string | null
+        canApprove: boolean
+        approvedAt: string | null
+      }>
+    >(`/attendance/mobile/students/${id}/face-reference`).then(
+      (response) => response.data
+    ),
+  approveFaceReference: (id: string) =>
+    apiFetch<ResponsePack<{ studentId: string; approvedAt: string }>>(
+      `/attendance/mobile/students/${id}/face-reference/approve`,
+      { method: "POST" }
+    ).then((response) => response.data),
+  revokeFaceReference: (id: string) =>
+    apiFetch<ResponsePack<{ studentId: string; approvedAt: null }>>(
+      `/attendance/mobile/students/${id}/face-reference/approval`,
+      { method: "DELETE" }
+    ).then((response) => response.data),
   getNfcCard: (id: string) =>
     apiFetch<ResponsePack<{ studentId: string; cardId: string | null }>>(
       `/attendance/mobile/students/${id}/card`,
