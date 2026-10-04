@@ -8,7 +8,14 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
-import { Bell, Building2, ChevronDown, FileText, Image as ImageIcon } from "lucide-react"
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  FileText,
+  Image as ImageIcon,
+  ScanFace,
+} from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -34,6 +41,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
       id: "notifications",
       label: "Notifications",
       icon: Bell,
+    },
+    {
+      id: "attendance",
+      label: "Attendance Methods",
+      icon: ScanFace,
     },
     {
       id: "legal",

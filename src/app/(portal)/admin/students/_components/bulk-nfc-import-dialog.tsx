@@ -78,7 +78,7 @@ export default function BulkNfcImportDialog({
 
       // Invalidate students queries to refetch the list with updated NFC card IDs
       queryClient.invalidateQueries({ queryKey: ["students"] })
-      
+
       onSuccess?.()
       setTimeout(() => {
         setOpen(false)
@@ -88,8 +88,8 @@ export default function BulkNfcImportDialog({
           fileInputRef.current.value = ""
         }
       }, 2000)
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to import NFC cards")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to import NFC cards")
     } finally {
       setIsLoading(false)
     }
@@ -115,8 +115,9 @@ export default function BulkNfcImportDialog({
             <strong>Expected format:</strong> Registration Number, Student Name, NFC Card
             ID
             <br />
-            <strong>Note:</strong> Leave NFC Card ID empty or use "GENERATE" to
-            auto-generate.
+            <strong>Note:</strong> A generated ID must be written to an NFC text tag
+            before the card can be scanned. For existing cards, enter the value read by
+            the mobile app.
           </DialogDescription>
         </DialogHeader>
 

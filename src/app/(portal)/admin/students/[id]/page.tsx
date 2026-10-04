@@ -32,6 +32,7 @@ export default function EditStudentPage() {
   const router = useRouter()
   const [showAssignClassDialog, setShowAssignClassDialog] = useState(false)
   const [nfcCardId, setNfcCardId] = useState<string>("")
+  const [savedNfcCardId, setSavedNfcCardId] = useState<string>("")
   const [isUpdatingNfc, setIsUpdatingNfc] = useState(false)
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null)
   const [isGeneratingQr, setIsGeneratingQr] = useState(false)
@@ -49,16 +50,20 @@ export default function EditStudentPage() {
     enabled: !!student?.current_class_id,
   })
 
-  // Sync NFC card ID with student data
+  // Card values are fetched only from the admin-only card endpoint.
   useEffect(() => {
-    if (student?.nfc_card_id !== undefined) {
-      setNfcCardId(student.nfc_card_id || "")
-      setQrCodeDataUrl(null) // Reset QR code when card ID changes
-    }
-  }, [student?.nfc_card_id])
+    if (!id || Array.isArray(id)) return
+    void StudentsAPI.getNfcCard(id)
+      .then((card) => {
+        setNfcCardId(card.cardId || "")
+        setSavedNfcCardId(card.cardId || "")
+        setQrCodeDataUrl(null)
+      })
+      .catch(() => toast.error("Could not load the NFC card assignment"))
+  }, [id])
 
   const handleGenerateQrCode = async () => {
-    const cardId = student?.nfc_card_id || nfcCardId
+    const cardId = savedNfcCardId
     if (!cardId) {
       toast.error("No NFC card ID assigned")
       return
@@ -66,11 +71,11 @@ export default function EditStudentPage() {
 
     setIsGeneratingQr(true)
     try {
-      const response = await StudentsAPI.generateNfcQrCode(cardId)
-      setQrCodeDataUrl(response.data.qr_code_data_url)
+      const response = await StudentsAPI.generateNfcQrCode(id as string)
+      setQrCodeDataUrl(response.qr_code_data_url)
       toast.success("QR code generated")
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to generate QR code")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate QR code")
     } finally {
       setIsGeneratingQr(false)
     }
@@ -81,7 +86,7 @@ export default function EditStudentPage() {
 
     const link = document.createElement("a")
     link.href = qrCodeDataUrl
-    link.download = `nfc-card-${student?.nfc_card_id || "card"}.png`
+    link.download = `nfc-card-${savedNfcCardId || "card"}.png`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -92,14 +97,16 @@ export default function EditStudentPage() {
 
     setIsUpdatingNfc(true)
     try {
-      const updateData: UpdateStudentData = {
-        auto_generate_nfc_id: true,
-      } as any
-      await updateStudentMutation.mutateAsync(updateData)
-      toast.success("Secure NFC card ID generated successfully")
+      const cardId = `NFC-${crypto.randomUUID()}`
+      await StudentsAPI.assignNfcCard(id as string, cardId)
+      setNfcCardId(cardId)
+      setSavedNfcCardId(cardId)
+      toast.success(
+        "NFC card ID generated. Write this text to the physical card before use."
+      )
       refetchStudent()
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate NFC card ID")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate NFC card ID")
     } finally {
       setIsUpdatingNfc(false)
     }
@@ -115,14 +122,12 @@ export default function EditStudentPage() {
 
     setIsUpdatingNfc(true)
     try {
-      const updateData: UpdateStudentData = {
-        nfc_card_id: nfcCardId.trim() || null,
-      }
-      await updateStudentMutation.mutateAsync(updateData)
+      await StudentsAPI.assignNfcCard(id as string, nfcCardId.trim())
+      setSavedNfcCardId(nfcCardId.trim())
       toast.success("NFC card ID updated successfully")
       refetchStudent()
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to update NFC card ID")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update NFC card ID")
     } finally {
       setIsUpdatingNfc(false)
     }
@@ -133,15 +138,13 @@ export default function EditStudentPage() {
 
     setIsUpdatingNfc(true)
     try {
-      const updateData: UpdateStudentData = {
-        nfc_card_id: null,
-      }
-      await updateStudentMutation.mutateAsync(updateData)
+      await StudentsAPI.removeNfcCard(id as string)
+      setSavedNfcCardId("")
       toast.success("NFC card ID removed successfully")
       setNfcCardId("")
       refetchStudent()
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to remove NFC card ID")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove NFC card ID")
     } finally {
       setIsUpdatingNfc(false)
     }
@@ -349,14 +352,12 @@ export default function EditStudentPage() {
                 onClick={handleUpdateNfcCard}
                 variant="outline"
                 disabled={
-                  isUpdatingNfc ||
-                  !nfcCardId.trim() ||
-                  nfcCardId === (student?.nfc_card_id || "")
+                  isUpdatingNfc || !nfcCardId.trim() || nfcCardId === savedNfcCardId
                 }
               >
-                {isUpdatingNfc ? "Saving..." : student?.nfc_card_id ? "Update" : "Assign"}
+                {isUpdatingNfc ? "Saving..." : savedNfcCardId ? "Update" : "Assign"}
               </Button>
-              {student?.nfc_card_id && (
+              {savedNfcCardId && (
                 <Button
                   onClick={handleRemoveNfcCard}
                   variant="outline"
@@ -368,11 +369,11 @@ export default function EditStudentPage() {
                 </Button>
               )}
             </div>
-            {student?.nfc_card_id && (
+            {savedNfcCardId && (
               <div className="space-y-2">
                 <p className="text-xs text-gray-500">
                   Current card ID:{" "}
-                  <span className="font-mono font-semibold">{student.nfc_card_id}</span>
+                  <span className="font-mono font-semibold">{savedNfcCardId}</span>
                 </p>
                 <div className="flex items-center gap-2">
                   <Button

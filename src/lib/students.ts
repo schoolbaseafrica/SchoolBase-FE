@@ -73,7 +73,55 @@ export interface StudentGrowthReport {
   }[]
 }
 
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let cell = ""
+  let quoted = false
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    if (char === '"') {
+      if (quoted && text[i + 1] === '"') {
+        cell += '"'
+        i++
+      } else quoted = !quoted
+    } else if (char === "," && !quoted) {
+      row.push(cell)
+      cell = ""
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && text[i + 1] === "\n") i++
+      row.push(cell)
+      if (row.some((value) => value.trim())) rows.push(row)
+      row = []
+      cell = ""
+    } else cell += char
+  }
+  if (quoted) throw new Error("CSV contains an unclosed quote")
+  row.push(cell)
+  if (row.some((value) => value.trim())) rows.push(row)
+  return rows
+}
+
 export const StudentsAPI = {
+  getNfcCard: (id: string) =>
+    apiFetch<ResponsePack<{ studentId: string; cardId: string | null }>>(
+      `/attendance/mobile/students/${id}/card`,
+      undefined,
+      true
+    ).then((response) => response.data),
+  assignNfcCard: (id: string, cardId: string) =>
+    apiFetch<ResponsePack<{ studentId: string; cardId: string }>>(
+      `/attendance/mobile/students/${id}/card`,
+      { method: "POST", data: { cardId } },
+      true
+    ).then((response) => response.data),
+
+  removeNfcCard: (id: string) =>
+    apiFetch<ResponsePack<{ studentId: string; cardId: null }>>(
+      `/attendance/mobile/students/${id}/card`,
+      { method: "DELETE" },
+      true
+    ).then((response) => response.data),
   getStudentGrowthReport: (params: {
     session_id: string
     term_id?: string
@@ -165,7 +213,7 @@ export const StudentsAPI = {
         }>
       }>
     >(
-      "/students/nfc-cards/bulk-assign",
+      "/attendance/mobile/students/cards/bulk-assign",
       {
         method: "POST",
         data: { assignments },
@@ -173,31 +221,24 @@ export const StudentsAPI = {
       true
     ),
 
-  bulkImportNfcCards: (file: File) => {
-    const formData = new FormData()
-    formData.append("file", file)
-    return apiFetch<
-      ResponsePack<{
-        total: number
-        successful: number
-        failed: number
-        results: Array<{
-          student_identifier: string
-          success: boolean
-          nfc_card_id?: string
-          error?: string
-        }>
-      }>
-    >(
-      "/students/nfc-cards/bulk-import",
-      {
-        method: "POST",
-        data: formData,
-        headers: {
-          // Don't set Content-Type, let browser set it with boundary
-        },
-      },
-      true
+  bulkImportNfcCards: async (file: File) => {
+    const rows = parseCsv(await file.text())
+    if (rows.length < 2) throw new Error("CSV contains no student rows")
+    if (rows.length > 501) throw new Error("Import at most 500 cards at once")
+    const headers = rows[0].map((value) =>
+      value
+        .trim()
+        .toLowerCase()
+        .replace(/^\uFEFF/, "")
+    )
+    if (headers[0] !== "registration number" || headers[2] !== "nfc card id") {
+      throw new Error("Expected columns: Registration Number, Student Name, NFC Card ID")
+    }
+    return StudentsAPI.bulkAssignNfcCards(
+      rows.slice(1).map((row) => ({
+        student_identifier: row[0]?.trim() || "",
+        nfc_card_id: row[2]?.trim() || undefined,
+      }))
     )
   },
 
@@ -256,10 +297,13 @@ export const StudentsAPI = {
   },
 
   exportNfcCardsCsv: async () => {
-    const response = await fetch("/api/proxy-auth/students/nfc-cards/export-csv", {
-      method: "GET",
-      credentials: "include",
-    })
+    const response = await fetch(
+      "/api/proxy-auth/attendance/mobile/students/cards/export-csv",
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    )
     if (!response.ok) {
       const error = await response
         .json()
@@ -277,17 +321,13 @@ export const StudentsAPI = {
     document.body.removeChild(a)
   },
 
-  generateNfcQrCode: (cardId: string) =>
+  generateNfcQrCode: (studentId: string) =>
     apiFetch<
       ResponsePack<{
         card_id: string
         qr_code_data_url: string
       }>
-    >(
-      `/students/nfc-cards/${encodeURIComponent(cardId)}/qr-code`,
-      {
-        method: "GET",
-      },
-      true
+    >(`/attendance/mobile/students/${studentId}/card/qr`, undefined, true).then(
+      (response) => response.data
     ),
 }
