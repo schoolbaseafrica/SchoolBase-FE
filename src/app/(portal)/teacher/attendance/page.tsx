@@ -26,71 +26,61 @@ const TeacherAttendance = () => {
   // Fetch today's check-in status
   const { data: checkInStatus, isLoading: statusLoading } = useGetTodayCheckInStatus()
 
-  const isLoading = classesLoading || statusLoading
   const hasCheckedIn = checkInStatus?.has_attendance || false
   const isClassTeacher = assignedClasses && assignedClasses.length > 0
 
   return (
-    <div className="px-5 pt-10">
+    <div className="space-y-8 px-5 pt-10">
       <DashboardTitle
         heading="Attendance"
-        description="Manage your attendance and view your assigned classes"
+        description="Take student attendance and record your own check-in"
       />
       <AcademicPeriodSelector scope="teacher-attendance" sessionOnly />
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="mt-10 flex flex-col items-center justify-center py-20">
-          <Loader2 className="text-primary h-12 w-12 animate-spin" />
-          <p className="mt-4 text-gray-500">Loading attendance information...</p>
+      <section className="space-y-4" aria-labelledby="student-attendance-heading">
+        <div>
+          <h2 id="student-attendance-heading" className="text-xl font-semibold">
+            Student attendance
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Choose your class, then mark students manually or use face check-in.
+          </p>
         </div>
-      )}
+        {classesLoading ? (
+          <div className="flex items-center gap-2 py-6 text-sm">
+            <Loader2 className="size-4 animate-spin" /> Loading assigned classes…
+          </div>
+        ) : classesError ? (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>Could not load your assigned classes.</AlertDescription>
+          </Alert>
+        ) : isClassTeacher ? (
+          <ClassTeacherView assignedClasses={assignedClasses} />
+        ) : (
+          <div className="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
+            You have no assigned class in this session.
+          </div>
+        )}
+      </section>
 
-      {/* Error State */}
-      {!isLoading && classesError && (
-        <Alert variant="destructive" className="mt-5">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load your assigned classes. Please try again later.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Check-in Status Banner */}
-      {!isLoading && hasCheckedIn && checkInStatus?.check_in_time && (
-        <Alert className="mt-5 border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">
-            ✓ You have checked in today at{" "}
-            {new Date(checkInStatus.check_in_time).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Content */}
-      {!isLoading && !classesError && (
-        <div className="mt-8 space-y-6">
-          {/* Manual Check-in Card - Always shown */}
+      <section className="space-y-4" aria-labelledby="my-attendance-heading">
+        <div>
+          <h2 id="my-attendance-heading" className="text-xl font-semibold">
+            My attendance
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Record your own attendance for today.
+          </p>
+        </div>
+        {statusLoading ? (
+          <div className="flex items-center gap-2 py-6 text-sm">
+            <Loader2 className="size-4 animate-spin" /> Loading your check-in…
+          </div>
+        ) : (
           <ManualCheckInCard hasCheckedIn={hasCheckedIn} />
-
-          {/* Class Teacher View - Only if assigned as class teacher */}
-          {isClassTeacher && <ClassTeacherView assignedClasses={assignedClasses} />}
-
-          {/* No Classes Message */}
-          {!isClassTeacher && !hasCheckedIn && (
-            <div className="rounded-xl border border-dashed py-12 text-center">
-              <p className="text-gray-500">
-                You are not assigned as a class teacher for any class.
-              </p>
-              <p className="mt-2 text-sm text-gray-400">
-                Please check in manually above to mark your attendance.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </section>
     </div>
   )
 }

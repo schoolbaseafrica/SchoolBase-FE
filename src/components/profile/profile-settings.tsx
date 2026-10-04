@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -487,9 +488,17 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
             {captureMode === "phone" && captureLink && (
               <div className="space-y-3 rounded-md border p-4">
                 <p className="text-sm">
-                  Open this link on a phone with a camera. It works once and expires in
-                  ten minutes. Keep the link private.
+                  Scan this code with a phone camera, or open the link below. It works
+                  once and expires in ten minutes. Keep the code and link private.
                 </p>
+                <div className="flex justify-center rounded-md bg-white p-4">
+                  <QRCodeSVG
+                    value={captureUrl}
+                    size={192}
+                    marginSize={2}
+                    title="Student photo capture link"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Input
                     aria-label="Phone photo link"

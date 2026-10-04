@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { BookOpen, Users, Calendar, ClipboardCheck, Eye } from "lucide-react"
+import { BookOpen, Users, Calendar, ClipboardCheck, Eye, Camera } from "lucide-react"
 import { TeacherAssignedClass } from "@/lib/teacher-attendance"
 import { useRouter } from "next/navigation"
 
@@ -54,6 +54,12 @@ const ClassTeacherView: React.FC<ClassTeacherViewProps> = ({
   const handleViewAttendance = () => {
     if (selectedClassId) {
       router.push(`/teacher/attendance/view/${selectedClassId}`)
+    }
+  }
+
+  const handleFaceAttendance = () => {
+    if (selectedClassId) {
+      router.push(`/teacher/attendance/face/${selectedClassId}`)
     }
   }
 
@@ -136,7 +142,7 @@ const ClassTeacherView: React.FC<ClassTeacherViewProps> = ({
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Button
               onClick={handleMarkAttendance}
               disabled={!selectedClassId}
@@ -144,7 +150,17 @@ const ClassTeacherView: React.FC<ClassTeacherViewProps> = ({
               size="lg"
             >
               <ClipboardCheck className="mr-2 h-5 w-5" />
-              Mark Attendance
+              Mark class manually
+            </Button>
+            <Button
+              onClick={handleFaceAttendance}
+              disabled={!selectedClassId}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              <Camera className="mr-2 h-5 w-5" />
+              Face check-in
             </Button>
             <Button
               onClick={handleViewAttendance}
@@ -154,7 +170,7 @@ const ClassTeacherView: React.FC<ClassTeacherViewProps> = ({
               size="lg"
             >
               <Eye className="mr-2 h-5 w-5" />
-              View Attendance
+              View records
             </Button>
           </div>
         </div>
