@@ -19,10 +19,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, Loader2, AlertCircle, Camera, Copy, Smartphone } from "lucide-react"
 import { UpdateProfileRequestNew } from "@/types/profile"
 import { useUpdateProfile, useGetProfile } from "@/hooks/use-profile"
 import { getPhotoUrl } from "@/lib/api/utils/upload-photo"
+import { apiFetch } from "@/lib/api/client"
+import { StudentPhotoCamera } from "@/components/profile/student-photo-camera"
+
+type PhotoCaptureLink = { id: string; token: string; expiresAt: string }
 
 interface ProfileSettingsProps {
   role: "student" | "teacher" | "parent" | "admin" | "super admin"
@@ -38,14 +42,75 @@ interface FormData {
 
 export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
   const router = useRouter()
-  const { data: profile, isLoading } = useGetProfile()
+  const { data: profile, isLoading, refetch: refetchProfile } = useGetProfile()
   const updateProfile = useUpdateProfile()
   const [isSaving, setIsSaving] = useState(false)
   const [phoneError, setPhoneError] = useState("")
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+  const [captureMode, setCaptureMode] = useState<"camera" | "phone" | null>(null)
+  const [captureLink, setCaptureLink] = useState<PhotoCaptureLink | null>(null)
+  const [captureUrl, setCaptureUrl] = useState("")
+  const [preparingCapture, setPreparingCapture] = useState(false)
+
+  useEffect(() => {
+    if (captureMode !== "phone" || !captureLink) return
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await apiFetch<{
+          data: { state: string; photoUrl: string | null }
+        }>(`/students/me/photo-capture-links/${captureLink.id}`)
+        if (response.data.state === "complete") {
+          window.clearInterval(timer)
+          setCaptureMode(null)
+          setCaptureLink(null)
+          toast.success("Your photo was saved from the other device")
+          void refetchProfile()
+        } else if (response.data.state !== "pending") {
+          window.clearInterval(timer)
+          setCaptureMode(null)
+          setCaptureLink(null)
+          toast.error("That photo link expired. Generate another one.")
+        }
+      } catch {
+        // Keep polling while the desktop session is open.
+      }
+    }, 3000)
+    return () => window.clearInterval(timer)
+  }, [captureMode, captureLink, refetchProfile])
+
+  const beginCapture = async (mode: "camera" | "phone") => {
+    setPreparingCapture(true)
+    try {
+      const response = await apiFetch<{ data: PhotoCaptureLink }>(
+        "/students/me/photo-capture-links",
+        { method: "POST" }
+      )
+      const link = response.data
+      const url = new URL("/student-photo/capture", window.location.origin)
+      url.hash = link.token
+      setCaptureLink(link)
+      setCaptureUrl(url.toString())
+      setCaptureMode(mode)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not prepare photo capture"
+      )
+    } finally {
+      setPreparingCapture(false)
+    }
+  }
+
+  const copyCaptureLink = async () => {
+    try {
+      await navigator.clipboard.writeText(captureUrl)
+      toast.success("Photo link copied")
+    } catch {
+      toast.error("Copy failed. Select and copy the link below.")
+    }
+  }
+
   // Password state
   const [isSavingPassword, setIsSavingPassword] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -56,7 +121,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
     newPassword: "",
     confirmPassword: "",
   })
-  
+
   // Delete account state
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -177,9 +242,10 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
       if (avatarFile) {
         try {
           photoUrl = await getPhotoUrl(avatarFile)
-        } catch (uploadError: any) {
+        } catch (uploadError) {
           console.error("Failed to upload photo:", uploadError)
-          const errorMessage = uploadError?.message || "Failed to upload photo"
+          const errorMessage =
+            uploadError instanceof Error ? uploadError.message : "Failed to upload photo"
           toast.error(errorMessage)
           // Don't continue with profile update if photo upload fails
           setIsSaving(false)
@@ -193,7 +259,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
         middle_name: formData.middle_name.trim() || null,
         phone: formData.phone.trim(),
         homeAddress: formData.homeAddress.trim() || undefined,
-        photo_url: photoUrl,
+        photo_url: role === "student" ? undefined : photoUrl,
       }
 
       await updateProfile.mutateAsync(updateData)
@@ -246,22 +312,26 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
                 {profile?.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handlePhotoClick}
-              className="text-muted-foreground hover:bg-muted gap-2 border text-sm hover:border-2"
-            >
-              Change photo
-            </Button>
+            {role !== "student" && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePhotoClick}
+                  className="text-muted-foreground hover:bg-muted gap-2 border text-sm hover:border-2"
+                >
+                  Change photo
+                </Button>
+              </>
+            )}
           </div>
 
           <h2 className="mb-6 text-lg font-medium">Personal Information</h2>
@@ -375,6 +445,75 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
         </CardContent>
       </Card>
 
+      {role === "student" && (
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <div>
+              <h2 className="text-lg font-medium">Student photo</h2>
+              <p className="text-muted-foreground text-sm">
+                Take a clear photo for your school profile. Saving it does not enable face
+                attendance until your school configures that feature.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                disabled={preparingCapture}
+                onClick={() => void beginCapture("camera")}
+              >
+                <Camera className="mr-2 size-4" /> Use this camera
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={preparingCapture}
+                onClick={() => void beginCapture("phone")}
+              >
+                <Smartphone className="mr-2 size-4" /> Use a phone instead
+              </Button>
+            </div>
+            {captureMode === "camera" && captureLink && (
+              <StudentPhotoCamera
+                key={captureLink.id}
+                token={captureLink.token}
+                onCaptured={() => {
+                  setCaptureMode(null)
+                  setCaptureLink(null)
+                  toast.success("Student photo saved")
+                  void refetchProfile()
+                }}
+              />
+            )}
+            {captureMode === "phone" && captureLink && (
+              <div className="space-y-3 rounded-md border p-4">
+                <p className="text-sm">
+                  Open this link on a phone with a camera. It works once and expires in
+                  ten minutes. Keep the link private.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    aria-label="Phone photo link"
+                    readOnly
+                    value={captureUrl}
+                    onFocus={(event) => event.target.select()}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void copyCaptureLink()}
+                  >
+                    <Copy className="mr-2 size-4" /> Copy
+                  </Button>
+                </div>
+                <p role="status" className="text-muted-foreground text-sm">
+                  Waiting for the photo. This page will update when it is saved.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Password Settings */}
       <Card>
         <CardContent className="p-6">
@@ -382,17 +521,17 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
           <form
             onSubmit={async (e) => {
               e.preventDefault()
-              
+
               if (passwordData.newPassword !== passwordData.confirmPassword) {
                 toast.error("New passwords do not match")
                 return
               }
-              
+
               if (passwordData.newPassword.length < 8) {
                 toast.error("Password must be at least 8 characters")
                 return
               }
-              
+
               setIsSavingPassword(true)
               try {
                 // TODO: Implement actual password change API call
@@ -538,11 +677,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
             <div className="flex justify-end">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
+                  <Button variant="destructive" size="lg" className="w-full sm:w-auto">
                     Delete account
                   </Button>
                 </AlertDialogTrigger>
