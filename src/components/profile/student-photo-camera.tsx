@@ -19,19 +19,20 @@ export function StudentPhotoCamera({ token, onCaptured }: StudentPhotoCameraProp
   const [ready, setReady] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [complete, setComplete] = useState(false)
-  const [linkStatus, setLinkStatus] = useState<"checking" | "valid" | "expired">("checking")
+  const [linkStatus, setLinkStatus] = useState<"checking" | "valid" | "expired" | "error">("checking")
 
   useEffect(() => {
     let cancelled = false
     const check = async () => {
       try {
-        await apiFetch("/students/photo-capture/status", {
-          headers: { "X-Capture-Token": token },
+        await apiFetch(`/students/photo-capture/status?check=${Date.now()}`, {
+          headers: { "X-Capture-Token": token, "Cache-Control": "no-store" },
         })
         if (!cancelled) setLinkStatus("valid")
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          setLinkStatus("expired")
+          const message = error instanceof Error ? error.message : ""
+          setLinkStatus(message.includes("invalid or expired") ? "expired" : "error")
           streamRef.current?.getTracks().forEach((track) => track.stop())
           streamRef.current = null
         }
@@ -147,6 +148,9 @@ export function StudentPhotoCamera({ token, onCaptured }: StudentPhotoCameraProp
   if (linkStatus === "checking") return <p role="status">Checking photo link…</p>
   if (linkStatus === "expired") {
     return <p role="alert">This photo link has expired or was already used. Generate a new link from your student profile.</p>
+  }
+  if (linkStatus === "error") {
+    return <p role="alert">Could not check this photo link. Check your connection and refresh this page.</p>
   }
 
   return (

@@ -76,6 +76,11 @@ async function methodHandler(
   // This is critical for axios to capture the error details
   const responseHeaders = new Headers(backendRes.headers)
 
+  if (resolvedParams.slug.join("/") === "students/photo-capture/status") {
+    responseHeaders.set("Cache-Control", "no-store")
+    responseHeaders.set("Vary", "X-Capture-Token")
+  }
+
   // Ensure content-type is set for error responses
   if (backendRes.status >= 400 && !responseHeaders.get("content-type")) {
     responseHeaders.set("content-type", "application/json; charset=utf-8")
