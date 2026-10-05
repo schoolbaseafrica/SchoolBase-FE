@@ -187,17 +187,19 @@ export default function FaceAttendancePage() {
                     stopCamera()
                   }}
                 >
-                  <option value="">Select an approved student</option>
-                  {readyStudents.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name} ({student.registrationNumber})
+                  <option value="">Select a student</option>
+                  {students.map((student) => (
+                    <option key={student.id} value={student.id} disabled={!student.faceReady}>
+                      {student.name} ({student.registrationNumber}){student.faceReady ? "" : " — photo approval needed"}
                     </option>
                   ))}
                 </select>
               </label>
-              {readyStudents.length === 0 && (
-                <p>No students have an approved face photo yet.</p>
-              )}
+              {students.length === 0 ? (
+                <p>No students are enrolled in this class for the active session.</p>
+              ) : readyStudents.length === 0 ? (
+                <p>No students have an approved face photo yet. An admin must approve each photo before face check-in.</p>
+              ) : null}
               {studentId && (
                 <div className="space-y-4">
                   {cameraReady && (
