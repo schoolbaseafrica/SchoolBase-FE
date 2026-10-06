@@ -8,7 +8,7 @@ const isInternalApiPath = (path: string): boolean => path.startsWith("/api/")
 const normalizeBackendPath = (path: string): string => {
   const trimmedBase = API_BASE_URL?.replace(/\/+$/, "") ?? ""
   const trimmedPath = path.replace(/^\/+/, "")
-  
+
   // Add /api/v1 prefix if API_BASE_URL doesn't already include it
   // Check if base URL ends with /api/v1 (with or without trailing slash)
   const baseHasApiV1 = trimmedBase.match(/\/api\/v1\/?$/)
@@ -54,16 +54,18 @@ const api = axios.create({
   withCredentials: true,
   validateStatus: (status) => status >= 200 && status < 400,
   // Ensure error responses are properly parsed
-  transformResponse: [(data) => {
-    if (typeof data === 'string') {
-      try {
-        return JSON.parse(data)
-      } catch {
-        return data
+  transformResponse: [
+    (data) => {
+      if (typeof data === "string") {
+        try {
+          return JSON.parse(data)
+        } catch {
+          return data
+        }
       }
-    }
-    return data
-  }],
+      return data
+    },
+  ],
 })
 
 const navigateTo = (path: string) => {
@@ -88,7 +90,7 @@ export async function apiFetch<TResponse>(
   }
 
   const url = resolveRequestUrl(path, proxy)
-  
+
   // Use plain axios (no baseURL) for:
   // 1. Proxy requests (go to Next.js proxy routes)
   // 2. Internal Next.js API routes (paths starting with /api/)
@@ -107,70 +109,10 @@ export async function apiFetch<TResponse>(
       return undefined as TResponse
     }
 
-    // Log fee details API responses for debugging
-    if (url.includes("/fees/student/")) {
-      console.log("[apiFetch] Fee details API response:", {
-        url,
-        status: res.status,
-        hasData: !!res.data,
-        dataKeys: res.data ? Object.keys(res.data) : [],
-        dataStructure: res.data
-          ? {
-              status_code: (res.data as any)?.status_code,
-              message: (res.data as any)?.message,
-              hasNestedData: !!(res.data as any)?.data,
-              nestedDataKeys: (res.data as any)?.data
-                ? Object.keys((res.data as any).data)
-                : [],
-              fullResponse: JSON.parse(JSON.stringify(res.data)), // Deep clone
-            }
-          : null,
-      })
-    }
-
     return res.data as TResponse
   } catch (err) {
     // Network or backend errors
     if (err instanceof AxiosError) {
-      // Always log error details for upload requests to help debug
-      const isUploadRequest = err.config?.url?.includes('/upload') || err.config?.method === 'POST' && err.config?.data instanceof FormData
-      if (isUploadRequest) {
-        // Try to extract error message from various possible response structures
-        let errorMessage = 'Unknown error'
-        let errorData = err.response?.data
-        
-        // Force stringify to see full object structure
-        let errorDataString = 'No data'
-        try {
-          if (errorData) {
-            if (typeof errorData === 'string') {
-              errorDataString = errorData
-              errorMessage = errorData
-            } else if (typeof errorData === 'object') {
-              errorDataString = JSON.stringify(errorData, null, 2)
-              errorMessage = errorData.message || errorData.error || errorData.detail || errorDataString
-            } else {
-              errorDataString = String(errorData)
-              errorMessage = errorDataString
-            }
-          }
-        } catch (stringifyError) {
-          errorDataString = `Error stringifying: ${stringifyError}`
-        }
-        
-        console.error('[apiFetch] Upload error details:', {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          dataType: typeof errorData,
-          errorMessage: errorMessage,
-          dataFull: errorDataString,
-          url: err.config?.url,
-          method: err.config?.method,
-        })
-        
-        // Also log the raw response data separately for clarity
-        console.error('[apiFetch] Raw response data:', errorData)
-      }
       // Check if school exists before redirecting to login
       // If school doesn't exist, redirect to setup instead
       if (err.response?.status === 401 || err.response?.status === 409) {
@@ -194,7 +136,7 @@ export async function apiFetch<TResponse>(
           const currentPath =
             typeof window !== "undefined" ? window.location.pathname : ""
           const isAutoLoginPage = currentPath === "/parent/auto-login"
-          
+
           // Don't redirect if we're on the auto-login page - let the page handle auth flow
           if (!isAutoLoginPage) {
             const isSuperAdminRoute = currentPath.startsWith("/super-admin")

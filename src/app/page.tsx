@@ -26,6 +26,7 @@ export default async function RootPage() {
     const headersList = await headers()
     const hostname =
       headersList.get("x-forwarded-host") || headersList.get("host") || "localhost"
+    const hostWithoutPort = hostname.replace(/:\d+$/, "")
     const protocol = headersList.get("x-forwarded-proto") || "https"
 
     // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
@@ -33,17 +34,21 @@ export default async function RootPage() {
 
     // Priority 2: Construct from request hostname
     if (!baseUrl) {
-      if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+      if (
+        hostWithoutPort &&
+        hostWithoutPort !== "localhost" &&
+        !hostWithoutPort.startsWith("127.0.0.1")
+      ) {
         // For multi-school: prepend 'api.' to hostname
         // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
-        if (hostname.startsWith("api.")) {
-          baseUrl = `${protocol}://${hostname}`
+        if (hostWithoutPort.startsWith("api.")) {
+          baseUrl = `${protocol}://${hostWithoutPort}`
         } else {
-          baseUrl = `${protocol}://api.${hostname}`
+          baseUrl = `${protocol}://api.${hostWithoutPort}`
         }
       } else {
         // Localhost fallback
-        baseUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
+        baseUrl = `${protocol}://${hostWithoutPort}:${process.env.BACKEND_PORT || 3008}`
       }
     }
 

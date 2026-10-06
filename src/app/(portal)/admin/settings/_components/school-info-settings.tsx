@@ -51,254 +51,841 @@ interface SchoolData {
 // African countries with their states/provinces/regions
 const AFRICAN_COUNTRIES: Record<string, string[]> = {
   Nigeria: [
-    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe",
-    "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara",
-    "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau",
-    "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
+    "Abia",
+    "Adamawa",
+    "Akwa Ibom",
+    "Anambra",
+    "Bauchi",
+    "Bayelsa",
+    "Benue",
+    "Borno",
+    "Cross River",
+    "Delta",
+    "Ebonyi",
+    "Edo",
+    "Ekiti",
+    "Enugu",
+    "FCT",
+    "Gombe",
+    "Imo",
+    "Jigawa",
+    "Kaduna",
+    "Kano",
+    "Katsina",
+    "Kebbi",
+    "Kogi",
+    "Kwara",
+    "Lagos",
+    "Nasarawa",
+    "Niger",
+    "Ogun",
+    "Ondo",
+    "Osun",
+    "Oyo",
+    "Plateau",
+    "Rivers",
+    "Sokoto",
+    "Taraba",
+    "Yobe",
+    "Zamfara",
   ],
   "South Africa": [
-    "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo",
-    "Mpumalanga", "Northern Cape", "North West", "Western Cape"
+    "Eastern Cape",
+    "Free State",
+    "Gauteng",
+    "KwaZulu-Natal",
+    "Limpopo",
+    "Mpumalanga",
+    "Northern Cape",
+    "North West",
+    "Western Cape",
   ],
   Kenya: [
-    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
-    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
-    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
-    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
-    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
-    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
-    "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
+    "Baringo",
+    "Bomet",
+    "Bungoma",
+    "Busia",
+    "Elgeyo-Marakwet",
+    "Embu",
+    "Garissa",
+    "Homa Bay",
+    "Isiolo",
+    "Kajiado",
+    "Kakamega",
+    "Kericho",
+    "Kiambu",
+    "Kilifi",
+    "Kirinyaga",
+    "Kisii",
+    "Kisumu",
+    "Kitui",
+    "Kwale",
+    "Laikipia",
+    "Lamu",
+    "Machakos",
+    "Makueni",
+    "Mandera",
+    "Marsabit",
+    "Meru",
+    "Migori",
+    "Mombasa",
+    "Murang'a",
+    "Nairobi",
+    "Nakuru",
+    "Nandi",
+    "Narok",
+    "Nyamira",
+    "Nyandarua",
+    "Nyeri",
+    "Samburu",
+    "Siaya",
+    "Taita-Taveta",
+    "Tana River",
+    "Tharaka-Nithi",
+    "Trans Nzoia",
+    "Turkana",
+    "Uasin Gishu",
+    "Vihiga",
+    "Wajir",
+    "West Pokot",
   ],
   Ghana: [
-    "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", "Greater Accra",
-    "North East", "Northern", "Oti", "Savannah", "Upper East", "Upper West",
-    "Volta", "Western", "Western North"
+    "Ahafo",
+    "Ashanti",
+    "Bono",
+    "Bono East",
+    "Central",
+    "Eastern",
+    "Greater Accra",
+    "North East",
+    "Northern",
+    "Oti",
+    "Savannah",
+    "Upper East",
+    "Upper West",
+    "Volta",
+    "Western",
+    "Western North",
   ],
   Ethiopia: [
-    "Addis Ababa", "Afar", "Amhara", "Benishangul-Gumuz", "Dire Dawa", "Gambela",
-    "Harari", "Oromia", "Somali", "SNNPR", "Tigray"
+    "Addis Ababa",
+    "Afar",
+    "Amhara",
+    "Benishangul-Gumuz",
+    "Dire Dawa",
+    "Gambela",
+    "Harari",
+    "Oromia",
+    "Somali",
+    "SNNPR",
+    "Tigray",
   ],
   Tanzania: [
-    "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi",
-    "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Mjini Magharibi",
-    "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pemba North", "Pemba South",
-    "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu", "Singida", "Songwe",
-    "Tabora", "Tanga", "Unguja North", "Unguja South"
+    "Arusha",
+    "Dar es Salaam",
+    "Dodoma",
+    "Geita",
+    "Iringa",
+    "Kagera",
+    "Katavi",
+    "Kigoma",
+    "Kilimanjaro",
+    "Lindi",
+    "Manyara",
+    "Mara",
+    "Mbeya",
+    "Mjini Magharibi",
+    "Morogoro",
+    "Mtwara",
+    "Mwanza",
+    "Njombe",
+    "Pemba North",
+    "Pemba South",
+    "Pwani",
+    "Rukwa",
+    "Ruvuma",
+    "Shinyanga",
+    "Simiyu",
+    "Singida",
+    "Songwe",
+    "Tabora",
+    "Tanga",
+    "Unguja North",
+    "Unguja South",
   ],
   Uganda: [
-    "Abim", "Adjumani", "Agago", "Alebtong", "Amolatar", "Amudat", "Amuria",
-    "Amuru", "Apac", "Arua", "Budaka", "Bududa", "Bugiri", "Buhweju", "Buikwe",
-    "Bukedea", "Bukomansimbi", "Bukwo", "Bulambuli", "Buliisa", "Bundibugyo",
-    "Bushenyi", "Busia", "Butaleja", "Butambala", "Butebo", "Buvuma", "Buyende",
-    "Central", "Eastern", "Northern", "Western"
+    "Abim",
+    "Adjumani",
+    "Agago",
+    "Alebtong",
+    "Amolatar",
+    "Amudat",
+    "Amuria",
+    "Amuru",
+    "Apac",
+    "Arua",
+    "Budaka",
+    "Bududa",
+    "Bugiri",
+    "Buhweju",
+    "Buikwe",
+    "Bukedea",
+    "Bukomansimbi",
+    "Bukwo",
+    "Bulambuli",
+    "Buliisa",
+    "Bundibugyo",
+    "Bushenyi",
+    "Busia",
+    "Butaleja",
+    "Butambala",
+    "Butebo",
+    "Buvuma",
+    "Buyende",
+    "Central",
+    "Eastern",
+    "Northern",
+    "Western",
   ],
   "Côte d'Ivoire": [
-    "Bas-Sassandra", "Comoé", "Denguélé", "Gôh-Djiboua", "Lacs", "Lagunes",
-    "Montagnes", "Sassandra-Marahoué", "Savanes", "Vallée du Bandama", "Woroba",
-    "Yamoussoukro", "Zanzan"
+    "Bas-Sassandra",
+    "Comoé",
+    "Denguélé",
+    "Gôh-Djiboua",
+    "Lacs",
+    "Lagunes",
+    "Montagnes",
+    "Sassandra-Marahoué",
+    "Savanes",
+    "Vallée du Bandama",
+    "Woroba",
+    "Yamoussoukro",
+    "Zanzan",
   ],
   "DR Congo": [
-    "Bas-Uele", "Équateur", "Haut-Katanga", "Haut-Lomami", "Haut-Uele", "Ituri",
-    "Kasaï", "Kasaï-Central", "Kasaï-Oriental", "Kinshasa", "Kongo-Central",
-    "Kwango", "Kwilu", "Lomami", "Lualaba", "Mai-Ndombe", "Maniema", "Mongala",
-    "Nord-Kivu", "Nord-Ubangi", "Sankuru", "Sud-Kivu", "Sud-Ubangi", "Tanganyika",
-    "Tshopo", "Tshuapa"
+    "Bas-Uele",
+    "Équateur",
+    "Haut-Katanga",
+    "Haut-Lomami",
+    "Haut-Uele",
+    "Ituri",
+    "Kasaï",
+    "Kasaï-Central",
+    "Kasaï-Oriental",
+    "Kinshasa",
+    "Kongo-Central",
+    "Kwango",
+    "Kwilu",
+    "Lomami",
+    "Lualaba",
+    "Mai-Ndombe",
+    "Maniema",
+    "Mongala",
+    "Nord-Kivu",
+    "Nord-Ubangi",
+    "Sankuru",
+    "Sud-Kivu",
+    "Sud-Ubangi",
+    "Tanganyika",
+    "Tshopo",
+    "Tshuapa",
   ],
   Cameroon: [
-    "Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest",
-    "South", "Southwest", "West"
+    "Adamawa",
+    "Centre",
+    "East",
+    "Far North",
+    "Littoral",
+    "North",
+    "Northwest",
+    "South",
+    "Southwest",
+    "West",
   ],
   Senegal: [
-    "Dakar", "Diourbel", "Fatick", "Kaffrine", "Kaolack", "Kédougou", "Kolda",
-    "Louga", "Matam", "Saint-Louis", "Sédhiou", "Tambacounda", "Thiès", "Ziguinchor"
+    "Dakar",
+    "Diourbel",
+    "Fatick",
+    "Kaffrine",
+    "Kaolack",
+    "Kédougou",
+    "Kolda",
+    "Louga",
+    "Matam",
+    "Saint-Louis",
+    "Sédhiou",
+    "Tambacounda",
+    "Thiès",
+    "Ziguinchor",
   ],
   Morocco: [
-    "Casablanca-Settat", "Drâa-Tafilalet", "Fès-Meknès", "Guelmim-Oued Noun",
-    "Laâyoune-Sakia El Hamra", "Marrakech-Safi", "Oriental", "Rabat-Salé-Kénitra",
-    "Souss-Massa", "Tanger-Tétouan-Al Hoceïma"
+    "Casablanca-Settat",
+    "Drâa-Tafilalet",
+    "Fès-Meknès",
+    "Guelmim-Oued Noun",
+    "Laâyoune-Sakia El Hamra",
+    "Marrakech-Safi",
+    "Oriental",
+    "Rabat-Salé-Kénitra",
+    "Souss-Massa",
+    "Tanger-Tétouan-Al Hoceïma",
   ],
   Algeria: [
-    "Adrar", "Aïn Defla", "Aïn Témouchent", "Algiers", "Annaba", "Batna", "Béchar",
-    "Béjaïa", "Biskra", "Blida", "Bordj Bou Arréridj", "Bouira", "Boumerdès",
-    "Chlef", "Constantine", "Djelfa", "El Bayadh", "El Oued", "El Tarf", "Ghardaïa",
-    "Guelma", "Illizi", "Jijel", "Khenchela", "Laghouat", "Mascara", "Médéa",
-    "Mila", "Mostaganem", "M'Sila", "Naâma", "Oran", "Ouargla", "Oum El Bouaghi",
-    "Relizane", "Saïda", "Sétif", "Sidi Bel Abbès", "Skikda", "Souk Ahras",
-    "Tamanghasset", "Tébessa", "Tiaret", "Tindouf", "Tipaza", "Tissemsilt",
-    "Tizi Ouzou", "Tlemcen"
+    "Adrar",
+    "Aïn Defla",
+    "Aïn Témouchent",
+    "Algiers",
+    "Annaba",
+    "Batna",
+    "Béchar",
+    "Béjaïa",
+    "Biskra",
+    "Blida",
+    "Bordj Bou Arréridj",
+    "Bouira",
+    "Boumerdès",
+    "Chlef",
+    "Constantine",
+    "Djelfa",
+    "El Bayadh",
+    "El Oued",
+    "El Tarf",
+    "Ghardaïa",
+    "Guelma",
+    "Illizi",
+    "Jijel",
+    "Khenchela",
+    "Laghouat",
+    "Mascara",
+    "Médéa",
+    "Mila",
+    "Mostaganem",
+    "M'Sila",
+    "Naâma",
+    "Oran",
+    "Ouargla",
+    "Oum El Bouaghi",
+    "Relizane",
+    "Saïda",
+    "Sétif",
+    "Sidi Bel Abbès",
+    "Skikda",
+    "Souk Ahras",
+    "Tamanghasset",
+    "Tébessa",
+    "Tiaret",
+    "Tindouf",
+    "Tipaza",
+    "Tissemsilt",
+    "Tizi Ouzou",
+    "Tlemcen",
   ],
   Angola: [
-    "Bengo", "Benguela", "Bié", "Cabinda", "Cuando Cubango", "Cuanza Norte",
-    "Cuanza Sul", "Cunene", "Huambo", "Huíla", "Luanda", "Lunda Norte", "Lunda Sul",
-    "Malanje", "Moxico", "Namibe", "Uíge", "Zaire"
+    "Bengo",
+    "Benguela",
+    "Bié",
+    "Cabinda",
+    "Cuando Cubango",
+    "Cuanza Norte",
+    "Cuanza Sul",
+    "Cunene",
+    "Huambo",
+    "Huíla",
+    "Luanda",
+    "Lunda Norte",
+    "Lunda Sul",
+    "Malanje",
+    "Moxico",
+    "Namibe",
+    "Uíge",
+    "Zaire",
   ],
   Mozambique: [
-    "Cabo Delgado", "Gaza", "Inhambane", "Manica", "Maputo", "Maputo City",
-    "Nampula", "Niassa", "Sofala", "Tete", "Zambézia"
+    "Cabo Delgado",
+    "Gaza",
+    "Inhambane",
+    "Manica",
+    "Maputo",
+    "Maputo City",
+    "Nampula",
+    "Niassa",
+    "Sofala",
+    "Tete",
+    "Zambézia",
   ],
   Madagascar: [
-    "Antananarivo", "Antsiranana", "Fianarantsoa", "Mahajanga", "Toamasina", "Toliara"
+    "Antananarivo",
+    "Antsiranana",
+    "Fianarantsoa",
+    "Mahajanga",
+    "Toamasina",
+    "Toliara",
   ],
   Mali: [
-    "Bamako", "Gao", "Kayes", "Kidal", "Koulikoro", "Ménaka", "Mopti", "Ségou",
-    "Sikasso", "Taoudénit", "Tombouctou"
+    "Bamako",
+    "Gao",
+    "Kayes",
+    "Kidal",
+    "Koulikoro",
+    "Ménaka",
+    "Mopti",
+    "Ségou",
+    "Sikasso",
+    "Taoudénit",
+    "Tombouctou",
   ],
   Burkina_Faso: [
-    "Boucle du Mouhoun", "Cascades", "Centre", "Centre-Est", "Centre-Nord",
-    "Centre-Ouest", "Centre-Sud", "Est", "Hauts-Bassins", "Nord", "Plateau-Central",
-    "Sahel", "Sud-Ouest"
+    "Boucle du Mouhoun",
+    "Cascades",
+    "Centre",
+    "Centre-Est",
+    "Centre-Nord",
+    "Centre-Ouest",
+    "Centre-Sud",
+    "Est",
+    "Hauts-Bassins",
+    "Nord",
+    "Plateau-Central",
+    "Sahel",
+    "Sud-Ouest",
   ],
   Niger: [
-    "Agadez", "Diffa", "Dosso", "Maradi", "Niamey", "Tahoua", "Tillabéri", "Zinder"
+    "Agadez",
+    "Diffa",
+    "Dosso",
+    "Maradi",
+    "Niamey",
+    "Tahoua",
+    "Tillabéri",
+    "Zinder",
   ],
   Chad: [
-    "Bahr el Gazel", "Batha", "Borkou", "Chari-Baguirmi", "Ennedi-Est", "Ennedi-Ouest",
-    "Guéra", "Hadjer-Lamis", "Kanem", "Lac", "Logone Occidental", "Logone Oriental",
-    "Mandoul", "Mayo-Kebbi Est", "Mayo-Kebbi Ouest", "Moyen-Chari", "N'Djamena",
-    "Ouaddaï", "Salamat", "Sila", "Tandjilé", "Tibesti", "Wadi Fira"
+    "Bahr el Gazel",
+    "Batha",
+    "Borkou",
+    "Chari-Baguirmi",
+    "Ennedi-Est",
+    "Ennedi-Ouest",
+    "Guéra",
+    "Hadjer-Lamis",
+    "Kanem",
+    "Lac",
+    "Logone Occidental",
+    "Logone Oriental",
+    "Mandoul",
+    "Mayo-Kebbi Est",
+    "Mayo-Kebbi Ouest",
+    "Moyen-Chari",
+    "N'Djamena",
+    "Ouaddaï",
+    "Salamat",
+    "Sila",
+    "Tandjilé",
+    "Tibesti",
+    "Wadi Fira",
   ],
   Sudan: [
-    "Al Jazirah", "Blue Nile", "Central Darfur", "East Darfur", "Gedaref", "Kassala",
-    "Khartoum", "North Darfur", "North Kordofan", "Northern", "Red Sea", "River Nile",
-    "Sennar", "South Darfur", "South Kordofan", "West Darfur", "West Kordofan",
-    "White Nile"
+    "Al Jazirah",
+    "Blue Nile",
+    "Central Darfur",
+    "East Darfur",
+    "Gedaref",
+    "Kassala",
+    "Khartoum",
+    "North Darfur",
+    "North Kordofan",
+    "Northern",
+    "Red Sea",
+    "River Nile",
+    "Sennar",
+    "South Darfur",
+    "South Kordofan",
+    "West Darfur",
+    "West Kordofan",
+    "White Nile",
   ],
   Tunisia: [
-    "Ariana", "Béja", "Ben Arous", "Bizerte", "Gabès", "Gafsa", "Jendouba",
-    "Kairouan", "Kasserine", "Kébili", "Kef", "Mahdia", "Manouba", "Médenine",
-    "Monastir", "Nabeul", "Sfax", "Sidi Bouzid", "Siliana", "Sousse", "Tataouine",
-    "Tozeur", "Tunis", "Zaghouan"
+    "Ariana",
+    "Béja",
+    "Ben Arous",
+    "Bizerte",
+    "Gabès",
+    "Gafsa",
+    "Jendouba",
+    "Kairouan",
+    "Kasserine",
+    "Kébili",
+    "Kef",
+    "Mahdia",
+    "Manouba",
+    "Médenine",
+    "Monastir",
+    "Nabeul",
+    "Sfax",
+    "Sidi Bouzid",
+    "Siliana",
+    "Sousse",
+    "Tataouine",
+    "Tozeur",
+    "Tunis",
+    "Zaghouan",
   ],
   Libya: [
-    "Al Butnan", "Al Jabal al Akhdar", "Al Jabal al Gharbi", "Al Jafarah",
-    "Al Jufrah", "Al Kufrah", "Al Marj", "Al Marqab", "Al Wahat", "An Nuqat al Khams",
-    "Az Zawiyah", "Benghazi", "Darnah", "Ghat", "Misratah", "Murzuq", "Nalut",
-    "Sabha", "Surt", "Tarabulus", "Wadi al Hayat", "Wadi ash Shati'"
+    "Al Butnan",
+    "Al Jabal al Akhdar",
+    "Al Jabal al Gharbi",
+    "Al Jafarah",
+    "Al Jufrah",
+    "Al Kufrah",
+    "Al Marj",
+    "Al Marqab",
+    "Al Wahat",
+    "An Nuqat al Khams",
+    "Az Zawiyah",
+    "Benghazi",
+    "Darnah",
+    "Ghat",
+    "Misratah",
+    "Murzuq",
+    "Nalut",
+    "Sabha",
+    "Surt",
+    "Tarabulus",
+    "Wadi al Hayat",
+    "Wadi ash Shati'",
   ],
   Egypt: [
-    "Alexandria", "Aswan", "Asyut", "Beheira", "Beni Suef", "Cairo", "Dakahlia",
-    "Damietta", "Faiyum", "Gharbia", "Giza", "Ismailia", "Kafr El Sheikh",
-    "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai", "Port Said",
-    "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"
+    "Alexandria",
+    "Aswan",
+    "Asyut",
+    "Beheira",
+    "Beni Suef",
+    "Cairo",
+    "Dakahlia",
+    "Damietta",
+    "Faiyum",
+    "Gharbia",
+    "Giza",
+    "Ismailia",
+    "Kafr El Sheikh",
+    "Luxor",
+    "Matruh",
+    "Minya",
+    "Monufia",
+    "New Valley",
+    "North Sinai",
+    "Port Said",
+    "Qalyubia",
+    "Qena",
+    "Red Sea",
+    "Sharqia",
+    "Sohag",
+    "South Sinai",
+    "Suez",
   ],
   Zimbabwe: [
-    "Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East",
-    "Mashonaland West", "Masvingo", "Matabeleland North", "Matabeleland South",
-    "Midlands"
+    "Bulawayo",
+    "Harare",
+    "Manicaland",
+    "Mashonaland Central",
+    "Mashonaland East",
+    "Mashonaland West",
+    "Masvingo",
+    "Matabeleland North",
+    "Matabeleland South",
+    "Midlands",
   ],
   Zambia: [
-    "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern",
-    "North-Western", "Southern", "Western"
+    "Central",
+    "Copperbelt",
+    "Eastern",
+    "Luapula",
+    "Lusaka",
+    "Muchinga",
+    "Northern",
+    "North-Western",
+    "Southern",
+    "Western",
   ],
-  Malawi: [
-    "Central Region", "Northern Region", "Southern Region"
-  ],
+  Malawi: ["Central Region", "Northern Region", "Southern Region"],
   Botswana: [
-    "Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North East",
-    "North West", "South East", "Southern"
+    "Central",
+    "Ghanzi",
+    "Kgalagadi",
+    "Kgatleng",
+    "Kweneng",
+    "North East",
+    "North West",
+    "South East",
+    "Southern",
   ],
   Namibia: [
-    "Erongo", "Hardap", "//Karas", "Kavango East", "Kavango West", "Khomas",
-    "Kunene", "Ohangwena", "Omaheke", "Omusati", "Oshana", "Oshikoto", "Otjozondjupa",
-    "Zambezi"
+    "Erongo",
+    "Hardap",
+    "//Karas",
+    "Kavango East",
+    "Kavango West",
+    "Khomas",
+    "Kunene",
+    "Ohangwena",
+    "Omaheke",
+    "Omusati",
+    "Oshana",
+    "Oshikoto",
+    "Otjozondjupa",
+    "Zambezi",
   ],
-  Rwanda: [
-    "Eastern", "Kigali", "Northern", "Southern", "Western"
-  ],
+  Rwanda: ["Eastern", "Kigali", "Northern", "Southern", "Western"],
   Burundi: [
-    "Bubanza", "Bujumbura Mairie", "Bujumbura Rural", "Bururi", "Cankuzo", "Cibitoke",
-    "Gitega", "Karuzi", "Kayanza", "Kirundo", "Makamba", "Muramvya", "Muyinga",
-    "Mwaro", "Ngozi", "Rumonge", "Rutana", "Ruyigi"
+    "Bubanza",
+    "Bujumbura Mairie",
+    "Bujumbura Rural",
+    "Bururi",
+    "Cankuzo",
+    "Cibitoke",
+    "Gitega",
+    "Karuzi",
+    "Kayanza",
+    "Kirundo",
+    "Makamba",
+    "Muramvya",
+    "Muyinga",
+    "Mwaro",
+    "Ngozi",
+    "Rumonge",
+    "Rutana",
+    "Ruyigi",
   ],
-  "Cape Verde": [
-    "Barlavento Islands", "Sotavento Islands"
-  ],
-  "São Tomé and Príncipe": [
-    "Príncipe", "São Tomé"
-  ],
+  "Cape Verde": ["Barlavento Islands", "Sotavento Islands"],
+  "São Tomé and Príncipe": ["Príncipe", "São Tomé"],
   "Equatorial Guinea": [
-    "Annobón", "Bioko Norte", "Bioko Sur", "Centro Sur", "Kié-Ntem", "Litoral",
-    "Wele-Nzas"
+    "Annobón",
+    "Bioko Norte",
+    "Bioko Sur",
+    "Centro Sur",
+    "Kié-Ntem",
+    "Litoral",
+    "Wele-Nzas",
   ],
   Gabon: [
-    "Estuaire", "Haut-Ogooué", "Moyen-Ogooué", "Ngounié", "Nyanga", "Ogooué-Ivindo",
-    "Ogooué-Lolo", "Ogooué-Maritime", "Woleu-Ntem"
+    "Estuaire",
+    "Haut-Ogooué",
+    "Moyen-Ogooué",
+    "Ngounié",
+    "Nyanga",
+    "Ogooué-Ivindo",
+    "Ogooué-Lolo",
+    "Ogooué-Maritime",
+    "Woleu-Ntem",
   ],
   "Republic of the Congo": [
-    "Bouenza", "Brazzaville", "Cuvette", "Cuvette-Ouest", "Kouilou", "Lékoumou",
-    "Likouala", "Niari", "Plateaux", "Pointe-Noire", "Pool", "Sangha"
+    "Bouenza",
+    "Brazzaville",
+    "Cuvette",
+    "Cuvette-Ouest",
+    "Kouilou",
+    "Lékoumou",
+    "Likouala",
+    "Niari",
+    "Plateaux",
+    "Pointe-Noire",
+    "Pool",
+    "Sangha",
   ],
   "Central African Republic": [
-    "Bamingui-Bangoran", "Bangui", "Basse-Kotto", "Haute-Kotto", "Haut-Mbomou",
-    "Kémo", "Lobaye", "Mambéré-Kadéï", "Mbomou", "Nana-Grébizi", "Nana-Mambéré",
-    "Ombella-M'Poko", "Ouaka", "Ouham", "Ouham-Pendé", "Sangha-Mbaéré", "Vakaga"
+    "Bamingui-Bangoran",
+    "Bangui",
+    "Basse-Kotto",
+    "Haute-Kotto",
+    "Haut-Mbomou",
+    "Kémo",
+    "Lobaye",
+    "Mambéré-Kadéï",
+    "Mbomou",
+    "Nana-Grébizi",
+    "Nana-Mambéré",
+    "Ombella-M'Poko",
+    "Ouaka",
+    "Ouham",
+    "Ouham-Pendé",
+    "Sangha-Mbaéré",
+    "Vakaga",
   ],
-  Togo: [
-    "Centrale", "Kara", "Maritime", "Plateaux", "Savanes"
-  ],
+  Togo: ["Centrale", "Kara", "Maritime", "Plateaux", "Savanes"],
   Benin: [
-    "Alibori", "Atakora", "Atlantique", "Borgou", "Collines", "Couffo", "Donga",
-    "Littoral", "Mono", "Ouémé", "Plateau", "Zou"
+    "Alibori",
+    "Atakora",
+    "Atlantique",
+    "Borgou",
+    "Collines",
+    "Couffo",
+    "Donga",
+    "Littoral",
+    "Mono",
+    "Ouémé",
+    "Plateau",
+    "Zou",
   ],
   Guinea: [
-    "Boké", "Conakry", "Faranah", "Kankan", "Kindia", "Labé", "Mamou", "Nzérékoré"
+    "Boké",
+    "Conakry",
+    "Faranah",
+    "Kankan",
+    "Kindia",
+    "Labé",
+    "Mamou",
+    "Nzérékoré",
   ],
-  "Sierra Leone": [
-    "Eastern", "Northern", "North West", "Southern", "Western Area"
-  ],
+  "Sierra Leone": ["Eastern", "Northern", "North West", "Southern", "Western Area"],
   Liberia: [
-    "Bomi", "Bong", "Gbarpolu", "Grand Bassa", "Grand Cape Mount", "Grand Gedeh",
-    "Grand Kru", "Lofa", "Margibi", "Maryland", "Montserrado", "Nimba", "River Cess",
-    "River Gee", "Sinoe"
+    "Bomi",
+    "Bong",
+    "Gbarpolu",
+    "Grand Bassa",
+    "Grand Cape Mount",
+    "Grand Gedeh",
+    "Grand Kru",
+    "Lofa",
+    "Margibi",
+    "Maryland",
+    "Montserrado",
+    "Nimba",
+    "River Cess",
+    "River Gee",
+    "Sinoe",
   ],
   "Guinea-Bissau": [
-    "Bafatá", "Biombo", "Bissau", "Bolama", "Cacheu", "Gabú", "Oio", "Quinara", "Tombali"
+    "Bafatá",
+    "Biombo",
+    "Bissau",
+    "Bolama",
+    "Cacheu",
+    "Gabú",
+    "Oio",
+    "Quinara",
+    "Tombali",
   ],
   Gambia: [
-    "Banjul", "Central River", "Lower River", "North Bank", "Upper River", "West Coast"
+    "Banjul",
+    "Central River",
+    "Lower River",
+    "North Bank",
+    "Upper River",
+    "West Coast",
   ],
   Mauritania: [
-    "Adrar", "Assaba", "Brakna", "Dakhlet Nouadhibou", "Gorgol", "Guidimaka",
-    "Hodh Ech Chargui", "Hodh El Gharbi", "Inchiri", "Nouakchott Nord", "Nouakchott Ouest",
-    "Nouakchott Sud", "Tagant", "Tiris Zemmour", "Trarza"
+    "Adrar",
+    "Assaba",
+    "Brakna",
+    "Dakhlet Nouadhibou",
+    "Gorgol",
+    "Guidimaka",
+    "Hodh Ech Chargui",
+    "Hodh El Gharbi",
+    "Inchiri",
+    "Nouakchott Nord",
+    "Nouakchott Ouest",
+    "Nouakchott Sud",
+    "Tagant",
+    "Tiris Zemmour",
+    "Trarza",
   ],
   Eritrea: [
-    "Anseba", "Debub", "Debubawi K'eyih Bahri", "Gash-Barka", "Ma'akel", "Semenawi K'eyih Bahri"
+    "Anseba",
+    "Debub",
+    "Debubawi K'eyih Bahri",
+    "Gash-Barka",
+    "Ma'akel",
+    "Semenawi K'eyih Bahri",
   ],
-  Djibouti: [
-    "Ali Sabieh", "Arta", "Dikhil", "Djibouti", "Obock", "Tadjourah"
-  ],
+  Djibouti: ["Ali Sabieh", "Arta", "Dikhil", "Djibouti", "Obock", "Tadjourah"],
   Somalia: [
-    "Awdal", "Bakool", "Banaadir", "Bari", "Bay", "Galguduud", "Gedo", "Hiiraan",
-    "Jubbada Dhexe", "Jubbada Hoose", "Mudug", "Nugaal", "Sanaag", "Shabeellaha Dhexe",
-    "Shabeellaha Hoose", "Sool", "Togdheer", "Woqooyi Galbeed"
+    "Awdal",
+    "Bakool",
+    "Banaadir",
+    "Bari",
+    "Bay",
+    "Galguduud",
+    "Gedo",
+    "Hiiraan",
+    "Jubbada Dhexe",
+    "Jubbada Hoose",
+    "Mudug",
+    "Nugaal",
+    "Sanaag",
+    "Shabeellaha Dhexe",
+    "Shabeellaha Hoose",
+    "Sool",
+    "Togdheer",
+    "Woqooyi Galbeed",
   ],
   "South Sudan": [
-    "Central Equatoria", "Eastern Equatoria", "Jonglei", "Lakes", "Northern Bahr el Ghazal",
-    "Unity", "Upper Nile", "Warrap", "Western Bahr el Ghazal", "Western Equatoria"
+    "Central Equatoria",
+    "Eastern Equatoria",
+    "Jonglei",
+    "Lakes",
+    "Northern Bahr el Ghazal",
+    "Unity",
+    "Upper Nile",
+    "Warrap",
+    "Western Bahr el Ghazal",
+    "Western Equatoria",
   ],
-  Comoros: [
-    "Anjouan", "Grande Comore", "Mohéli"
-  ],
+  Comoros: ["Anjouan", "Grande Comore", "Mohéli"],
   Mauritius: [
-    "Agalega Islands", "Black River", "Flacq", "Grand Port", "Moka", "Pamplemousses",
-    "Plaines Wilhems", "Port Louis", "Rivière du Rempart", "Rodrigues", "Savanne"
+    "Agalega Islands",
+    "Black River",
+    "Flacq",
+    "Grand Port",
+    "Moka",
+    "Pamplemousses",
+    "Plaines Wilhems",
+    "Port Louis",
+    "Rivière du Rempart",
+    "Rodrigues",
+    "Savanne",
   ],
   Seychelles: [
-    "Anse aux Pins", "Anse Boileau", "Anse Etoile", "Anse Royale", "Anse Volbert",
-    "Au Cap", "Baie Lazare", "Baie Sainte Anne", "Beau Vallon", "Bel Air", "Bel Ombre",
-    "Cascade", "Glacis", "Grand'Anse", "Grand'Anse", "La Digue", "La Rivière Anglaise",
-    "Les Mamelles", "Mont Buxton", "Mont Fleuri", "Plaisance", "Pointe La Rue",
-    "Port Glaud", "Roche Caiman", "Saint Louis", "Takamaka"
+    "Anse aux Pins",
+    "Anse Boileau",
+    "Anse Etoile",
+    "Anse Royale",
+    "Anse Volbert",
+    "Au Cap",
+    "Baie Lazare",
+    "Baie Sainte Anne",
+    "Beau Vallon",
+    "Bel Air",
+    "Bel Ombre",
+    "Cascade",
+    "Glacis",
+    "Grand'Anse",
+    "Grand'Anse",
+    "La Digue",
+    "La Rivière Anglaise",
+    "Les Mamelles",
+    "Mont Buxton",
+    "Mont Fleuri",
+    "Plaisance",
+    "Pointe La Rue",
+    "Port Glaud",
+    "Roche Caiman",
+    "Saint Louis",
+    "Takamaka",
   ],
   Lesotho: [
-    "Berea", "Butha-Buthe", "Leribe", "Mafeteng", "Maseru", "Mohale's Hoek",
-    "Mokhotlong", "Qacha's Nek", "Quthing", "Thaba-Tseka"
+    "Berea",
+    "Butha-Buthe",
+    "Leribe",
+    "Mafeteng",
+    "Maseru",
+    "Mohale's Hoek",
+    "Mokhotlong",
+    "Qacha's Nek",
+    "Quthing",
+    "Thaba-Tseka",
   ],
-  Eswatini: [
-    "Hhohho", "Lubombo", "Manzini", "Shiselweni"
-  ],
+  Eswatini: ["Hhohho", "Lubombo", "Manzini", "Shiselweni"],
 }
 
 // Get states for a country
@@ -312,7 +899,7 @@ export const SchoolInfoSettings = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { loadConfig, school } = useSchoolStore()
+  const { loadConfig } = useSchoolStore()
 
   const [formData, setFormData] = useState({
     schoolName: "",
@@ -445,9 +1032,9 @@ export const SchoolInfoSettings = () => {
               // Construct backend URL from current origin (same as config-loader)
               const protocol = window.location.protocol
               const hostname = window.location.hostname
-              
+
               let backendHostname: string
-              
+
               if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
                 // Check if hostname already starts with 'api.'
                 if (hostname.startsWith("api.")) {
@@ -460,10 +1047,10 @@ export const SchoolInfoSettings = () => {
               } else {
                 backendHostname = hostname
               }
-              
+
               const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
               // Ensure proper path concatenation - add leading slash if missing
-              logoUrl = logoUrl.startsWith("/") 
+              logoUrl = logoUrl.startsWith("/")
                 ? `${backendOrigin}${logoUrl}`
                 : `${backendOrigin}/${logoUrl}`
             }
@@ -533,10 +1120,16 @@ export const SchoolInfoSettings = () => {
         formDataToSend.append("secondary_color", formData.secondaryColor)
       if (formData.accentColor)
         formDataToSend.append("accent_color", formData.accentColor)
-      
+
       // Add activity log retention days
-      if (formData.activityLogRetentionDays !== null && formData.activityLogRetentionDays !== undefined) {
-        formDataToSend.append("activity_log_retention_days", formData.activityLogRetentionDays.toString())
+      if (
+        formData.activityLogRetentionDays !== null &&
+        formData.activityLogRetentionDays !== undefined
+      ) {
+        formDataToSend.append(
+          "activity_log_retention_days",
+          formData.activityLogRetentionDays.toString()
+        )
       } else {
         // Send null/empty to indicate "keep forever"
         formDataToSend.append("activity_log_retention_days", "")
@@ -544,18 +1137,38 @@ export const SchoolInfoSettings = () => {
 
       // Add ID Format Configuration
       if (formData.schoolCode) formDataToSend.append("school_code", formData.schoolCode)
-      if (formData.studentIdFormat) formDataToSend.append("student_id_format", formData.studentIdFormat)
-      if (formData.studentIdPrefix) formDataToSend.append("student_id_prefix", formData.studentIdPrefix)
-      formDataToSend.append("allow_manual_student_ids", formData.allowManualStudentIds ? "true" : "false")
-      if (formData.teacherIdFormat) formDataToSend.append("teacher_id_format", formData.teacherIdFormat)
-      if (formData.teacherIdPrefix) formDataToSend.append("teacher_id_prefix", formData.teacherIdPrefix)
-      formDataToSend.append("allow_manual_teacher_ids", formData.allowManualTeacherIds ? "true" : "false")
-      if (formData.parentIdFormat) formDataToSend.append("parent_id_format", formData.parentIdFormat)
-      if (formData.parentIdPrefix) formDataToSend.append("parent_id_prefix", formData.parentIdPrefix)
-      formDataToSend.append("allow_manual_parent_ids", formData.allowManualParentIds ? "true" : "false")
-      if (formData.staffIdFormat) formDataToSend.append("staff_id_format", formData.staffIdFormat)
-      if (formData.staffIdPrefix) formDataToSend.append("staff_id_prefix", formData.staffIdPrefix)
-      formDataToSend.append("allow_manual_staff_ids", formData.allowManualStaffIds ? "true" : "false")
+      if (formData.studentIdFormat)
+        formDataToSend.append("student_id_format", formData.studentIdFormat)
+      if (formData.studentIdPrefix)
+        formDataToSend.append("student_id_prefix", formData.studentIdPrefix)
+      formDataToSend.append(
+        "allow_manual_student_ids",
+        formData.allowManualStudentIds ? "true" : "false"
+      )
+      if (formData.teacherIdFormat)
+        formDataToSend.append("teacher_id_format", formData.teacherIdFormat)
+      if (formData.teacherIdPrefix)
+        formDataToSend.append("teacher_id_prefix", formData.teacherIdPrefix)
+      formDataToSend.append(
+        "allow_manual_teacher_ids",
+        formData.allowManualTeacherIds ? "true" : "false"
+      )
+      if (formData.parentIdFormat)
+        formDataToSend.append("parent_id_format", formData.parentIdFormat)
+      if (formData.parentIdPrefix)
+        formDataToSend.append("parent_id_prefix", formData.parentIdPrefix)
+      formDataToSend.append(
+        "allow_manual_parent_ids",
+        formData.allowManualParentIds ? "true" : "false"
+      )
+      if (formData.staffIdFormat)
+        formDataToSend.append("staff_id_format", formData.staffIdFormat)
+      if (formData.staffIdPrefix)
+        formDataToSend.append("staff_id_prefix", formData.staffIdPrefix)
+      formDataToSend.append(
+        "allow_manual_staff_ids",
+        formData.allowManualStaffIds ? "true" : "false"
+      )
 
       // Add logo file if provided
       if (logoFile) {
@@ -633,9 +1246,9 @@ export const SchoolInfoSettings = () => {
           if (!logoUrl.startsWith("http")) {
             const protocol = window.location.protocol
             const hostname = window.location.hostname
-            
+
             let backendHostname: string
-            
+
             if (hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
               // Check if hostname already starts with 'api.'
               if (hostname.startsWith("api.")) {
@@ -648,10 +1261,10 @@ export const SchoolInfoSettings = () => {
             } else {
               backendHostname = hostname
             }
-            
+
             const backendOrigin = `${protocol}//${backendHostname}${hostname === "localhost" ? `:${process.env.NEXT_PUBLIC_BACKEND_PORT || 3008}` : ""}`
             // Ensure proper path concatenation - add leading slash if missing
-            logoUrl = logoUrl.startsWith("/") 
+            logoUrl = logoUrl.startsWith("/")
               ? `${backendOrigin}${logoUrl}`
               : `${backendOrigin}/${logoUrl}`
           }
@@ -688,7 +1301,7 @@ export const SchoolInfoSettings = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">School Information</h2>
         <p className="text-muted-foreground">Manage your school information.</p>
@@ -748,7 +1361,7 @@ export const SchoolInfoSettings = () => {
               <Label htmlFor="primaryColor">
                 Primary Brand Color <span className="text-red-500">*</span>
               </Label>
-              
+
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
@@ -762,7 +1375,7 @@ export const SchoolInfoSettings = () => {
                       }
                       className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                         formData.primaryColor.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                          ? "scale-110 border-gray-900 ring-1 ring-gray-400 ring-offset-1"
                           : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
@@ -801,7 +1414,7 @@ export const SchoolInfoSettings = () => {
 
             <div className="space-y-2">
               <Label htmlFor="secondaryColor">Secondary Brand Color</Label>
-              
+
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
@@ -814,8 +1427,9 @@ export const SchoolInfoSettings = () => {
                         setFormData((prev) => ({ ...prev, secondaryColor: color.value }))
                       }
                       className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
-                        formData.secondaryColor?.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                        formData.secondaryColor?.toUpperCase() ===
+                        color.value.toUpperCase()
+                          ? "scale-110 border-gray-900 ring-1 ring-gray-400 ring-offset-1"
                           : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
@@ -854,7 +1468,7 @@ export const SchoolInfoSettings = () => {
 
             <div className="space-y-2">
               <Label htmlFor="accentColor">Accent Color</Label>
-              
+
               {/* Predefined color swatches */}
               <div className="mb-3">
                 <p className="text-muted-foreground mb-2 text-xs">Quick select:</p>
@@ -868,7 +1482,7 @@ export const SchoolInfoSettings = () => {
                       }
                       className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                         formData.accentColor?.toUpperCase() === color.value.toUpperCase()
-                          ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                          ? "scale-110 border-gray-900 ring-1 ring-gray-400 ring-offset-1"
                           : "border-gray-300 hover:border-gray-500"
                       }`}
                       style={{ backgroundColor: color.value }}
@@ -938,7 +1552,7 @@ export const SchoolInfoSettings = () => {
               <Label>
                 Address <span className="text-red-500">*</span>
               </Label>
-              
+
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
@@ -946,21 +1560,25 @@ export const SchoolInfoSettings = () => {
                     <Select
                       value={formData.country}
                       onValueChange={(value) =>
-                        setFormData((prev) => ({ 
-                          ...prev, 
+                        setFormData((prev) => ({
+                          ...prev,
                           country: value,
-                          state: "" // Reset state when country changes
+                          state: "", // Reset state when country changes
                         }))
                       }
                     >
-                      <SelectTrigger className="w-full h-11 rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20">
+                      <SelectTrigger className="h-11 w-full rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:outline-none">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] rounded-md border shadow-lg">
                         {Object.keys(AFRICAN_COUNTRIES)
                           .sort()
                           .map((country) => (
-                            <SelectItem key={country} value={country} className="cursor-pointer">
+                            <SelectItem
+                              key={country}
+                              value={country}
+                              className="cursor-pointer"
+                            >
                               {country}
                             </SelectItem>
                           ))}
@@ -977,23 +1595,30 @@ export const SchoolInfoSettings = () => {
                       onValueChange={(value) =>
                         setFormData((prev) => ({ ...prev, state: value }))
                       }
-                      disabled={!formData.country || getStatesForCountry(formData.country).length === 0}
+                      disabled={
+                        !formData.country ||
+                        getStatesForCountry(formData.country).length === 0
+                      }
                       required
                     >
-                      <SelectTrigger className="w-full h-11 rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 disabled:bg-gray-50 disabled:cursor-not-allowed">
-                        <SelectValue 
+                      <SelectTrigger className="h-11 w-full rounded-md border border-[#E0E0E0] bg-white px-3 py-2 text-sm focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50">
+                        <SelectValue
                           placeholder={
-                            !formData.country 
-                              ? "Select country first" 
+                            !formData.country
+                              ? "Select country first"
                               : getStatesForCountry(formData.country).length === 0
-                              ? "No states available"
-                              : "Select state/province"
-                          } 
+                                ? "No states available"
+                                : "Select state/province"
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] rounded-md border shadow-lg">
                         {getStatesForCountry(formData.country).map((state) => (
-                          <SelectItem key={state} value={state} className="cursor-pointer">
+                          <SelectItem
+                            key={state}
+                            value={state}
+                            className="cursor-pointer"
+                          >
                             {state}
                           </SelectItem>
                         ))}
@@ -1037,10 +1662,11 @@ export const SchoolInfoSettings = () => {
                 <Label htmlFor="activityLogRetention">
                   Activity Log Retention Period
                 </Label>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Set how long to keep activity logs. Logs older than this period will be automatically deleted. Leave empty to keep logs forever.
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Set how long to keep activity logs. Cleanup runs when you save and once
+                  a day; leave empty to keep logs forever.
                 </p>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <Input
@@ -1054,26 +1680,30 @@ export const SchoolInfoSettings = () => {
                         const value = e.target.value
                         setFormData((prev) => ({
                           ...prev,
-                          activityLogRetentionDays: value === "" ? null : parseInt(value, 10) || 0,
+                          activityLogRetentionDays:
+                            value === "" ? null : parseInt(value, 10) || 0,
                         }))
                       }}
                       className="max-w-xs"
                     />
                     <span className="text-muted-foreground text-sm">
-                      {formData.activityLogRetentionDays === null || formData.activityLogRetentionDays === undefined
+                      {formData.activityLogRetentionDays === null ||
+                      formData.activityLogRetentionDays === undefined
                         ? "Keep forever"
                         : formData.activityLogRetentionDays === 0
-                        ? "Delete immediately"
-                        : `Keep for ${formData.activityLogRetentionDays} day${formData.activityLogRetentionDays !== 1 ? "s" : ""}`}
+                          ? "Delete on the next cleanup"
+                          : `Keep for ${formData.activityLogRetentionDays} day${formData.activityLogRetentionDays !== 1 ? "s" : ""}`}
                     </span>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 30 }))}
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, activityLogRetentionDays: 30 }))
+                      }
                       className="text-xs"
                     >
                       30 days
@@ -1082,7 +1712,9 @@ export const SchoolInfoSettings = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 90 }))}
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, activityLogRetentionDays: 90 }))
+                      }
                       className="text-xs"
                     >
                       90 days
@@ -1091,7 +1723,12 @@ export const SchoolInfoSettings = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 180 }))}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          activityLogRetentionDays: 180,
+                        }))
+                      }
                       className="text-xs"
                     >
                       180 days
@@ -1100,7 +1737,12 @@ export const SchoolInfoSettings = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: 365 }))}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          activityLogRetentionDays: 365,
+                        }))
+                      }
                       className="text-xs"
                     >
                       1 year
@@ -1109,7 +1751,12 @@ export const SchoolInfoSettings = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setFormData((prev) => ({ ...prev, activityLogRetentionDays: null }))}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          activityLogRetentionDays: null,
+                        }))
+                      }
                       className="text-xs"
                     >
                       Forever
@@ -1123,18 +1770,15 @@ export const SchoolInfoSettings = () => {
             <div className="space-y-4 border-t pt-6">
               <div>
                 <Label>ID Format Configuration</Label>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Configure custom ID formats for auto-generation, or use your existing IDs by enabling manual entry. 
-                  <strong> Format configuration is optional</strong> - if you leave it empty, you can use any existing ID format from your system. 
-                  Simply enable "Allow Manual IDs" and enter your existing IDs when creating users or importing from CSV.
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Configure student and teacher numbers. Use manual entry for existing
+                  numbers, or leave the format empty for the default generated pattern.
                 </p>
               </div>
 
               {/* School Code (Shared) */}
               <div className="space-y-2">
-                <Label htmlFor="schoolCode">
-                  School Code
-                </Label>
+                <Label htmlFor="schoolCode">School Code</Label>
                 <Input
                   id="schoolCode"
                   name="schoolCode"
@@ -1145,25 +1789,22 @@ export const SchoolInfoSettings = () => {
                   className="max-w-xs"
                 />
                 <p className="text-muted-foreground text-xs">
-                  School abbreviation/code used in ID formats with {'{SCHOOL_CODE}'} placeholder (max 20 characters)
+                  School abbreviation/code used in ID formats with {"{SCHOOL_CODE}"}{" "}
+                  placeholder (max 20 characters)
                 </p>
               </div>
 
               {/* Tabs for different user types */}
               <Tabs defaultValue="students" className="w-full">
-                <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
+                <TabsList className="grid h-auto w-full grid-cols-2">
                   <TabsTrigger value="students">Students</TabsTrigger>
                   <TabsTrigger value="teachers">Teachers</TabsTrigger>
-                  <TabsTrigger value="parents">Parents</TabsTrigger>
-                  <TabsTrigger value="staff">Staff</TabsTrigger>
                 </TabsList>
 
                 {/* Students Tab */}
                 <TabsContent value="students" className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="studentIdFormat">
-                      Student ID Format (Optional)
-                    </Label>
+                    <Label htmlFor="studentIdFormat">Student ID Format (Optional)</Label>
                     <Input
                       id="studentIdFormat"
                       name="studentIdFormat"
@@ -1173,15 +1814,15 @@ export const SchoolInfoSettings = () => {
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Placeholders: {'{YEAR}'}, {'{YEAR_SHORT}'}, {'{SEQUENCE}'}, {'{SEQUENCE:N}'}, {'{PREFIX}'}, {'{SCHOOL_CODE}'}. 
-                      <strong> Leave empty to use any existing ID format</strong> - just enable "Allow Manual IDs" below and enter your existing IDs directly.
+                      <strong>Optional:</strong> Placeholders: {"{YEAR}"},{" "}
+                      {"{YEAR_SHORT}"}, {"{SEQUENCE}"}, {"{SEQUENCE:N}"}, {"{PREFIX}"},{" "}
+                      {"{SCHOOL_CODE}"}. Include one sequence placeholder. Leave empty for
+                      the default pattern.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="studentIdPrefix">
-                      Student ID Prefix
-                    </Label>
+                    <Label htmlFor="studentIdPrefix">Student ID Prefix</Label>
                     <Input
                       id="studentIdPrefix"
                       name="studentIdPrefix"
@@ -1192,7 +1833,7 @@ export const SchoolInfoSettings = () => {
                       className="max-w-xs"
                     />
                     <p className="text-muted-foreground text-xs">
-                      Default prefix used with {'{PREFIX}'} placeholder (default: STU)
+                      Default prefix used with {"{PREFIX}"} placeholder (default: STU)
                     </p>
                   </div>
 
@@ -1202,14 +1843,22 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Student IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        <strong>Enable this to use your existing student ID format.</strong> When enabled, you can enter any student ID format directly when creating students or importing from CSV. Perfect for schools migrating from existing systems.
+                        <strong>
+                          Enable this to use your existing student ID format.
+                        </strong>{" "}
+                        When enabled, you can enter any student ID format directly when
+                        creating students or importing from CSV. Perfect for schools
+                        migrating from existing systems.
                       </p>
                     </div>
                     <Switch
                       id="allowManualStudentIds"
                       checked={formData.allowManualStudentIds}
                       onCheckedChange={(checked) =>
-                        setFormData((prev) => ({ ...prev, allowManualStudentIds: checked }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          allowManualStudentIds: checked,
+                        }))
                       }
                     />
                   </div>
@@ -1218,9 +1867,7 @@ export const SchoolInfoSettings = () => {
                 {/* Teachers Tab */}
                 <TabsContent value="teachers" className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="teacherIdFormat">
-                      Teacher ID Format (Optional)
-                    </Label>
+                    <Label htmlFor="teacherIdFormat">Teacher ID Format (Optional)</Label>
                     <Input
                       id="teacherIdFormat"
                       name="teacherIdFormat"
@@ -1230,14 +1877,14 @@ export const SchoolInfoSettings = () => {
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Leave empty to use any existing ID format - enable "Allow Manual IDs" below to enter existing IDs directly.
+                      <strong>Optional:</strong> Format pattern for auto-generating new
+                      IDs. Leave empty to use any existing ID format - enable &quot;Allow
+                      Manual IDs&quot; below to enter existing IDs directly.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="teacherIdPrefix">
-                      Teacher ID Prefix
-                    </Label>
+                    <Label htmlFor="teacherIdPrefix">Teacher ID Prefix</Label>
                     <Input
                       id="teacherIdPrefix"
                       name="teacherIdPrefix"
@@ -1248,7 +1895,7 @@ export const SchoolInfoSettings = () => {
                       className="max-w-xs"
                     />
                     <p className="text-muted-foreground text-xs">
-                      Default prefix used with {'{PREFIX}'} placeholder (default: EMP)
+                      Default prefix used with {"{PREFIX}"} placeholder (default: EMP)
                     </p>
                   </div>
 
@@ -1258,14 +1905,18 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Teacher IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        <strong>Enable this to use your existing teacher ID format.</strong> When enabled, you can enter any teacher ID format directly when creating teachers or importing from CSV.
+                        Enable this to enter an existing employment ID when creating a
+                        teacher.
                       </p>
                     </div>
                     <Switch
                       id="allowManualTeacherIds"
                       checked={formData.allowManualTeacherIds}
                       onCheckedChange={(checked) =>
-                        setFormData((prev) => ({ ...prev, allowManualTeacherIds: checked }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          allowManualTeacherIds: checked,
+                        }))
                       }
                     />
                   </div>
@@ -1274,9 +1925,7 @@ export const SchoolInfoSettings = () => {
                 {/* Parents Tab */}
                 <TabsContent value="parents" className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="parentIdFormat">
-                      Parent ID Format (Optional)
-                    </Label>
+                    <Label htmlFor="parentIdFormat">Parent ID Format (Optional)</Label>
                     <Input
                       id="parentIdFormat"
                       name="parentIdFormat"
@@ -1286,14 +1935,13 @@ export const SchoolInfoSettings = () => {
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Format pattern with placeholders. Leave empty if parent IDs are not needed.
+                      Format pattern with placeholders. Leave empty if parent IDs are not
+                      needed.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentIdPrefix">
-                      Parent ID Prefix
-                    </Label>
+                    <Label htmlFor="parentIdPrefix">Parent ID Prefix</Label>
                     <Input
                       id="parentIdPrefix"
                       name="parentIdPrefix"
@@ -1304,7 +1952,7 @@ export const SchoolInfoSettings = () => {
                       className="max-w-xs"
                     />
                     <p className="text-muted-foreground text-xs">
-                      Default prefix used with {'{PREFIX}'} placeholder (default: PAR)
+                      Default prefix used with {"{PREFIX}"} placeholder (default: PAR)
                     </p>
                   </div>
 
@@ -1314,14 +1962,21 @@ export const SchoolInfoSettings = () => {
                         Allow Manual Parent IDs
                       </Label>
                       <p className="text-muted-foreground text-xs">
-                        <strong>Enable this to use your existing parent ID format.</strong> When enabled, you can enter any parent ID format directly when creating parents or importing from CSV.
+                        <strong>
+                          Enable this to use your existing parent ID format.
+                        </strong>{" "}
+                        When enabled, you can enter any parent ID format directly when
+                        creating parents or importing from CSV.
                       </p>
                     </div>
                     <Switch
                       id="allowManualParentIds"
                       checked={formData.allowManualParentIds}
                       onCheckedChange={(checked) =>
-                        setFormData((prev) => ({ ...prev, allowManualParentIds: checked }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          allowManualParentIds: checked,
+                        }))
                       }
                     />
                   </div>
@@ -1330,9 +1985,7 @@ export const SchoolInfoSettings = () => {
                 {/* Staff Tab */}
                 <TabsContent value="staff" className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="staffIdFormat">
-                      Staff ID Format (Optional)
-                    </Label>
+                    <Label htmlFor="staffIdFormat">Staff ID Format (Optional)</Label>
                     <Input
                       id="staffIdFormat"
                       name="staffIdFormat"
@@ -1342,14 +1995,14 @@ export const SchoolInfoSettings = () => {
                       maxLength={100}
                     />
                     <p className="text-muted-foreground text-xs">
-                      <strong>Optional:</strong> Format pattern for auto-generating new IDs. Leave empty to use any existing ID format - enable "Allow Manual IDs" below to enter existing IDs directly.
+                      <strong>Optional:</strong> Format pattern for auto-generating new
+                      IDs. Leave empty to use any existing ID format - enable &quot;Allow
+                      Manual IDs&quot; below to enter existing IDs directly.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="staffIdPrefix">
-                      Staff ID Prefix
-                    </Label>
+                    <Label htmlFor="staffIdPrefix">Staff ID Prefix</Label>
                     <Input
                       id="staffIdPrefix"
                       name="staffIdPrefix"
@@ -1360,17 +2013,17 @@ export const SchoolInfoSettings = () => {
                       className="max-w-xs"
                     />
                     <p className="text-muted-foreground text-xs">
-                      Default prefix used with {'{PREFIX}'} placeholder (default: STF)
+                      Default prefix used with {"{PREFIX}"} placeholder (default: STF)
                     </p>
                   </div>
 
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <Label htmlFor="allowManualStaffIds">
-                        Allow Manual Staff IDs
-                      </Label>
+                      <Label htmlFor="allowManualStaffIds">Allow Manual Staff IDs</Label>
                       <p className="text-muted-foreground text-xs">
-                        <strong>Enable this to use your existing staff ID format.</strong> When enabled, you can enter any staff ID format directly when creating staff or importing from CSV.
+                        <strong>Enable this to use your existing staff ID format.</strong>{" "}
+                        When enabled, you can enter any staff ID format directly when
+                        creating staff or importing from CSV.
                       </p>
                     </div>
                     <Switch

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies as getCookies } from "next/headers"
 import { splitCookiesString } from "set-cookie-parser"
+import { isBinaryProxyResponse } from "@/lib/proxy-media-type"
 
 /* Helpers */
 /**
@@ -13,6 +14,7 @@ const getBackendBaseUrl = (req: Request): string => {
   const url = new URL(req.url)
   const hostname =
     req.headers.get("x-forwarded-host") || req.headers.get("host") || url.hostname
+  const hostWithoutPort = hostname.replace(/:\d+$/, "")
   const protocol = req.headers.get("x-forwarded-proto") || url.protocol.replace(":", "")
 
   // Priority 1: Runtime environment variable (without NEXT_PUBLIC_ prefix)
@@ -29,16 +31,20 @@ const getBackendBaseUrl = (req: Request): string => {
   // For multi-school deployment, prepend 'api.' to the hostname
   // e.g., stpaul.schoolbase.africa -> api.stpaul.schoolbase.africa
   // e.g., demo.schoolbase.africa -> api.demo.schoolbase.africa
-  if (hostname && hostname !== "localhost" && !hostname.startsWith("127.0.0.1")) {
+  if (
+    hostWithoutPort &&
+    hostWithoutPort !== "localhost" &&
+    !hostWithoutPort.startsWith("127.0.0.1")
+  ) {
     // Check if hostname already starts with 'api.'
-    if (hostname.startsWith("api.")) {
+    if (hostWithoutPort.startsWith("api.")) {
       // Already an API domain, use as-is
-      const backendUrl = `${protocol}://${hostname}`
+      const backendUrl = `${protocol}://${hostWithoutPort}`
       return backendUrl
     }
 
     // Prepend 'api.' to the hostname
-    const backendHostname = `api.${hostname}`
+    const backendHostname = `api.${hostWithoutPort}`
     const backendUrl = `${protocol}://${backendHostname}`
     return backendUrl
   }
@@ -53,7 +59,7 @@ const getBackendBaseUrl = (req: Request): string => {
   }
 
   // Fallback for localhost or single-domain setups
-  const fallbackUrl = `${protocol}://${hostname}:${process.env.BACKEND_PORT || process.env.PORT || 3008}`
+  const fallbackUrl = `${protocol}://${hostWithoutPort}:${process.env.BACKEND_PORT || 3008}`
   return fallbackUrl
 }
 
@@ -193,11 +199,10 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     }
 
     const responseContentType = backendRes.headers.get("content-type") ?? ""
-    const isBinaryResponse =
-      responseContentType.startsWith("audio/") ||
-      responseContentType.startsWith("video/") ||
-      responseContentType.startsWith("image/") ||
-      responseContentType === "application/octet-stream"
+    const isBinaryResponse = isBinaryProxyResponse(
+      responseContentType,
+      backendRes.headers.get("content-disposition") ?? ""
+    )
     const responseBody = isBinaryResponse
       ? await backendRes.arrayBuffer()
       : await backendRes.text()

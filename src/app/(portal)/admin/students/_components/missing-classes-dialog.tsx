@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,10 @@ export function MissingClassesDialog({
   const [isCreating, setIsCreating] = useState(false)
   const createClassMutation = useCreateClass()
 
+  useEffect(() => {
+    if (open) setSelectedClasses(new Set(missingClasses.map((_, index) => index)))
+  }, [open, missingClasses])
+
   const handleToggleClass = (index: number) => {
     setSelectedClasses((prev) => {
       const newSet = new Set(prev)
@@ -80,8 +84,10 @@ export function MissingClassesDialog({
       )
       onClassesCreated()
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to create some classes")
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create some classes"
+      )
     } finally {
       setIsCreating(false)
     }
@@ -94,10 +100,7 @@ export function MissingClassesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-2xl"
-        aria-describedby="missing-classes-description"
-      >
+      <DialogContent className="max-w-2xl" aria-describedby="missing-classes-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500" />
@@ -127,6 +130,7 @@ export function MissingClassesDialog({
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => handleToggleClass(index)}
+                    onClick={(event) => event.stopPropagation()}
                     className={`mt-0.5 ${
                       isSelected ? "border-green-600 bg-green-600" : ""
                     }`}
@@ -149,8 +153,8 @@ export function MissingClassesDialog({
           <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
             <p className="text-sm text-blue-700">
               <strong>Note:</strong> Classes will be created in the current active
-              academic session. Students assigned to classes you choose not to create
-              will be uploaded without class assignments and can be assigned later.
+              academic session. Students assigned to classes you choose not to create will
+              be uploaded without class assignments and can be assigned later.
             </p>
           </div>
         </div>

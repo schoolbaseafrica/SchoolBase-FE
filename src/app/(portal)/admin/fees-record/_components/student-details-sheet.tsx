@@ -1,11 +1,13 @@
 import React, { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { ArrowDown, Edit2 } from "lucide-react"
-import { FeePayment } from "@/lib/fees"
+import { ArrowDown, Download, Edit2 } from "lucide-react"
+import { FeePayment, StudentFeeDetailsResponse } from "@/lib/fees"
 import { useStudentFeeDetails } from "../_hooks/use-student-fee-details"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EditPaymentDialog } from "./edit-payment-dialog"
+import { apiFetch } from "@/lib/api/client"
+import { toast } from "sonner"
 
 interface StudentDetailsSheetProps {
   open: boolean
@@ -19,14 +21,41 @@ const StudentDetailsSheet = ({
   student,
 }: StudentDetailsSheetProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false)
   const isPending = !student?.student_id || !student?.fee_component_id
+
+  const downloadReceipt = async () => {
+    if (!student?.receipt_url) return
+    setDownloadingReceipt(true)
+    try {
+      const blob = await apiFetch<Blob>(`/fee-payments/${student.id}/receipt`, {
+        method: "GET",
+        responseType: "blob",
+      })
+      const objectUrl = URL.createObjectURL(blob)
+      const extension =
+        blob.type === "application/pdf"
+          ? "pdf"
+          : blob.type === "image/png"
+            ? "png"
+            : "jpg"
+      const link = document.createElement("a")
+      link.href = objectUrl
+      link.download = `receipt-${student.id}.${extension}`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
+    } catch {
+      toast.error("Could not download this receipt")
+    } finally {
+      setDownloadingReceipt(false)
+    }
+  }
 
   const { data, isLoading, error } = useStudentFeeDetails({
     studentId: student?.student_id ?? undefined,
     termId: student?.term_id ?? undefined,
     sessionId: student?.session_id ?? undefined,
   })
-
 
   // Handle different response structures
   // Backend returns: { message, data: StudentFeeDetailsResponse }
@@ -36,38 +65,50 @@ const StudentDetailsSheet = ({
     if (!data) {
       return null
     }
-    
+
     // Try different possible structures
     // 1. Double-nested: { status_code, message, data: { data: StudentFeeDetailsResponse } }
-    if (data && typeof data === 'object' && 'data' in data) {
-      const firstLevel = (data as any).data
-      if (firstLevel && typeof firstLevel === 'object' && 'data' in firstLevel) {
+    if (data && typeof data === "object" && "data" in data) {
+      const firstLevel = (data as { data?: unknown }).data
+      if (firstLevel && typeof firstLevel === "object" && "data" in firstLevel) {
         const secondLevel = firstLevel.data
-        if (secondLevel && typeof secondLevel === 'object') {
+        if (secondLevel && typeof secondLevel === "object") {
           // Check for key indicators of StudentFeeDetailsResponse
-          if ('student_info' in secondLevel || 'fee_breakdown' in secondLevel || 'payment_history' in secondLevel) {
-            return secondLevel
+          if (
+            "student_info" in secondLevel ||
+            "fee_breakdown" in secondLevel ||
+            "payment_history" in secondLevel
+          ) {
+            return secondLevel as StudentFeeDetailsResponse
           }
         }
       }
-      
+
       // 2. Single-nested: { status_code, message, data: StudentFeeDetailsResponse }
       const nestedData = firstLevel
-      if (nestedData && typeof nestedData === 'object' && !Array.isArray(nestedData)) {
+      if (nestedData && typeof nestedData === "object" && !Array.isArray(nestedData)) {
         // Check for key indicators of StudentFeeDetailsResponse
-        if ('student_info' in nestedData || 'fee_breakdown' in nestedData || 'payment_history' in nestedData) {
-          return nestedData
+        if (
+          "student_info" in nestedData ||
+          "fee_breakdown" in nestedData ||
+          "payment_history" in nestedData
+        ) {
+          return nestedData as StudentFeeDetailsResponse
         }
       }
     }
-    
+
     // 3. If data itself is StudentFeeDetailsResponse (direct return)
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      if ('student_info' in data || 'fee_breakdown' in data || 'payment_history' in data) {
-        return data as any
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      if (
+        "student_info" in data ||
+        "fee_breakdown" in data ||
+        "payment_history" in data
+      ) {
+        return data as unknown as StudentFeeDetailsResponse
       }
     }
-    
+
     return null
   }, [data])
 
@@ -81,30 +122,46 @@ const StudentDetailsSheet = ({
             <SheetTitle className="text-xl font-bold text-gray-900">
               {isPending ? "Payment Details" : "Students Fees Details"}
             </SheetTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditDialogOpen(true)}
-              className="shrink-0"
-              aria-label="Edit payment"
-            >
-              <Edit2 className="h-4 w-4 mr-1" />
-              {isPending ? "Reconcile" : "Edit"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {student.receipt_url && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={downloadingReceipt}
+                  onClick={downloadReceipt}
+                >
+                  <Download className="mr-1 size-4" />
+                  {downloadingReceipt ? "Downloading" : "Receipt"}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditDialogOpen(true)}
+                className="shrink-0"
+                aria-label="Edit payment"
+              >
+                <Edit2 className="mr-1 h-4 w-4" />
+                {isPending ? "Reconcile" : "Edit"}
+              </Button>
+            </div>
           </SheetHeader>
 
           {isPending ? (
             <div className="space-y-6 pb-10">
               <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
                 <p className="text-sm font-medium text-amber-800">Pending / Unassigned</p>
-                <p className="text-xs text-amber-700 mt-1">
-                  This payment is not yet linked to a student or fee. Use <strong>Reconcile</strong> to assign it.
+                <p className="mt-1 text-xs text-amber-700">
+                  This payment is not yet linked to a student or fee. Use{" "}
+                  <strong>Reconcile</strong> to assign it.
                 </p>
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Amount paid</span>
-                  <span className="font-semibold">₦{Number(student.amount_paid).toLocaleString()}</span>
+                  <span className="font-semibold">
+                    ₦{Number(student.amount_paid).toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Date</span>
@@ -112,7 +169,9 @@ const StudentDetailsSheet = ({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Method</span>
-                  <span className="capitalize">{(student.payment_method ?? "").replace("_", " ")}</span>
+                  <span className="capitalize">
+                    {(student.payment_method ?? "").replace("_", " ")}
+                  </span>
                 </div>
                 {student.bank_name && (
                   <div className="flex justify-between text-sm">
@@ -123,7 +182,9 @@ const StudentDetailsSheet = ({
                 {student.transaction_id && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Transaction ID</span>
-                    <span className="font-mono text-xs break-all">{student.transaction_id}</span>
+                    <span className="font-mono text-xs break-all">
+                      {student.transaction_id}
+                    </span>
                   </div>
                 )}
                 {student.invoice_number && (
@@ -133,174 +194,224 @@ const StudentDetailsSheet = ({
                   </div>
                 )}
                 {student.description && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Notes</p>
+                  <div className="border-t border-gray-100 pt-2">
+                    <p className="mb-1 text-xs text-gray-500">Notes</p>
                     <p className="text-sm text-gray-900">{student.description}</p>
                   </div>
                 )}
               </div>
             </div>
           ) : isLoading ? (
-          <div className="space-y-8">
-            <div className="flex gap-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-24" />
+            <div className="space-y-8">
+              <div className="flex gap-4">
+                <Skeleton className="h-20 w-20 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
               </div>
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-40 w-full" />
             </div>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        ) : error ? (
-          <div className="flex h-full flex-col items-center justify-center space-y-4 text-gray-500">
-            <p className="text-lg font-semibold">Error loading details</p>
-            <p className="text-sm">{error instanceof Error ? error.message : "Unknown error"}</p>
-            {student && (
-              <div className="mt-4 rounded-lg border border-gray-200 p-4 text-left">
-                <p className="text-sm font-medium text-gray-900">Payment Information:</p>
-                <p className="text-xs text-gray-600">Student ID: {student.student_id ?? "—"}</p>
-                <p className="text-xs text-gray-600">Term ID: {student.term_id ?? "—"}</p>
-                <p className="text-xs text-gray-600">Session ID: {student.session_id ?? "—"}</p>
+          ) : error ? (
+            <div className="flex h-full flex-col items-center justify-center space-y-4 text-gray-500">
+              <p className="text-lg font-semibold">Error loading details</p>
+              <p className="text-sm">
+                {error instanceof Error ? error.message : "Unknown error"}
+              </p>
+              {student && (
+                <div className="mt-4 rounded-lg border border-gray-200 p-4 text-left">
+                  <p className="text-sm font-medium text-gray-900">
+                    Payment Information:
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Student ID: {student.student_id ?? "—"}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Term ID: {student.term_id ?? "—"}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Session ID: {student.session_id ?? "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : details ? (
+            <div className="space-y-8 pb-10">
+              {/* Profile Section */}
+              <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
+                <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-gray-100 shadow-sm">
+                  <span className="text-2xl font-bold text-gray-500">
+                    {details.student_info?.first_name?.[0] || "?"}
+                    {details.student_info?.last_name?.[0] || ""}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {details.student_info?.first_name && details.student_info?.last_name
+                      ? `${details.student_info.first_name} ${details.student_info.last_name}`
+                      : "Unknown Student"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    ID: {details.student_info?.registration_number || "N/A"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-gray-600 sm:justify-start">
+                    <span>Session: {details.student_info?.session || "N/A"}</span>
+                    <span>Class: {details.student_info?.class || "N/A"}</span>
+                    <span>Term: {details.student_info?.term || "N/A"}</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        ) : details ? (
-          <div className="space-y-8 pb-10">
-            {/* Profile Section */}
-            <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left">
-              <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-gray-100 shadow-sm">
-                <span className="text-2xl font-bold text-gray-500">
-                  {details.student_info?.first_name?.[0] || "?"}
-                  {details.student_info?.last_name?.[0] || ""}
-                </span>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-gray-200 p-3 text-center">
+                  <p className="text-xs font-medium text-gray-600">Total Fees</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900">
+                    ₦
+                    {(details.fee_breakdown || [])
+                      .reduce(
+                        (acc: number, curr: { amount?: number }) =>
+                          acc + (curr.amount || 0),
+                        0
+                      )
+                      .toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-green-200 p-3 text-center">
+                  <p className="text-xs font-medium text-gray-600">Total Paid</p>
+                  <p className="mt-1 text-sm font-bold text-green-500">
+                    ₦
+                    {(details.fee_breakdown || [])
+                      .reduce(
+                        (acc: number, curr: { amount_paid?: number }) =>
+                          acc + (curr.amount_paid || 0),
+                        0
+                      )
+                      .toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-red-200 p-3 text-center">
+                  <p className="text-xs font-medium text-gray-600">Unpaid</p>
+                  <p className="mt-1 text-sm font-bold text-red-500">
+                    ₦
+                    {(details.fee_breakdown || [])
+                      .reduce(
+                        (acc: number, curr: { outstanding_amount?: number }) =>
+                          acc + (curr.outstanding_amount || 0),
+                        0
+                      )
+                      .toLocaleString()}
+                  </p>
+                </div>
               </div>
+
+              {/* Payment Breakdown */}
               <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {details.student_info?.first_name && details.student_info?.last_name
-                    ? `${details.student_info.first_name} ${details.student_info.last_name}`
-                    : "Unknown Student"}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  ID: {details.student_info?.registration_number || "N/A"}
-                </p>
-                <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-gray-600 sm:justify-start">
-                  <span>Session: {details.student_info?.session || "N/A"}</span>
-                  <span>Class: {details.student_info?.class || "N/A"}</span>
-                  <span>Term: {details.student_info?.term || "N/A"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border border-gray-200 p-3 text-center">
-                <p className="text-xs font-medium text-gray-600">Total Fees</p>
-                <p className="mt-1 text-sm font-bold text-gray-900">
-                  ₦
-                  {(details.fee_breakdown || [])
-                    .reduce((acc: number, curr: { amount?: number }) => acc + (curr.amount || 0), 0)
-                    .toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-lg border border-green-200 p-3 text-center">
-                <p className="text-xs font-medium text-gray-600">Total Paid</p>
-                <p className="mt-1 text-sm font-bold text-green-500">
-                  ₦
-                  {(details.fee_breakdown || [])
-                    .reduce((acc: number, curr: { amount_paid?: number }) => acc + (curr.amount_paid || 0), 0)
-                    .toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-lg border border-red-200 p-3 text-center">
-                <p className="text-xs font-medium text-gray-600">Unpaid</p>
-                <p className="mt-1 text-sm font-bold text-red-500">
-                  ₦
-                  {(details.fee_breakdown || [])
-                    .reduce((acc: number, curr: { outstanding_amount?: number }) => acc + (curr.outstanding_amount || 0), 0)
-                    .toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Payment Breakdown */}
-            <div>
-              <h4 className="mb-4 text-lg font-bold text-gray-900">Payment Breakdown</h4>
-              <div className="rounded-lg border border-gray-100">
-                <div className="grid grid-cols-3 border-b border-gray-100 bg-white p-3 text-xs font-semibold text-gray-900">
-                  <span>Fee</span>
-                  <span className="text-center">Amount</span>
-                  <span className="text-right">Status</span>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {(details.fee_breakdown || []).map((item: { component_name?: string; amount?: number; status?: string }, i: number) => (
-                    <div key={i} className="grid grid-cols-3 items-center p-4 text-sm">
-                      <span className="text-gray-600">{item.component_name || "N/A"}</span>
-                      <span className="text-center font-medium text-gray-900">
-                        ₦{(item.amount || 0).toLocaleString()}
-                      </span>
-                      <div className="text-right">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                            item.status === "PAID"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "PARTIALLY_PAID"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-red-100 text-red-700"
-                          }`}
+                <h4 className="mb-4 text-lg font-bold text-gray-900">
+                  Payment Breakdown
+                </h4>
+                <div className="rounded-lg border border-gray-100">
+                  <div className="grid grid-cols-3 border-b border-gray-100 bg-white p-3 text-xs font-semibold text-gray-900">
+                    <span>Fee</span>
+                    <span className="text-center">Amount</span>
+                    <span className="text-right">Status</span>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {(details.fee_breakdown || []).map(
+                      (
+                        item: {
+                          component_name?: string
+                          amount?: number
+                          status?: string
+                        },
+                        i: number
+                      ) => (
+                        <div
+                          key={i}
+                          className="grid grid-cols-3 items-center p-4 text-sm"
                         >
-                          {item.status?.replace("_", " ") || "N/A"}
+                          <span className="text-gray-600">
+                            {item.component_name || "N/A"}
+                          </span>
+                          <span className="text-center font-medium text-gray-900">
+                            ₦{(item.amount || 0).toLocaleString()}
+                          </span>
+                          <div className="text-right">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                item.status === "PAID"
+                                  ? "bg-green-100 text-green-700"
+                                  : item.status === "PARTIALLY_PAID"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {item.status?.replace("_", " ") || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    )}
+                    {(!details.fee_breakdown || details.fee_breakdown.length === 0) && (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        No fee breakdown available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment History */}
+              <div>
+                <h4 className="mb-4 text-lg font-bold text-gray-900">Payment History</h4>
+                <div className="space-y-6">
+                  {(details.payment_history || []).map(
+                    (
+                      item: {
+                        fee_component?: string
+                        payment_date?: string | Date
+                        payment_method?: string
+                        amount_paid?: number
+                      },
+                      i: number
+                    ) => (
+                      <div key={i} className="flex items-start justify-between">
+                        <div className="flex gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
+                            <ArrowDown className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900">
+                              {item.fee_component || "N/A"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {item.payment_date
+                                ? new Date(item.payment_date).toLocaleDateString()
+                                : "N/A"}{" "}
+                              via {item.payment_method?.replace("_", " ") || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-green-500">
+                          ₦{(item.amount_paid || 0).toLocaleString()}
                         </span>
                       </div>
-                    </div>
-                  ))}
-                  {(!details.fee_breakdown || details.fee_breakdown.length === 0) && (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      No fee breakdown available
+                    )
+                  )}
+                  {(!details.payment_history || details.payment_history.length === 0) && (
+                    <div className="text-center text-sm text-gray-500">
+                      No payment history available
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
-            {/* Payment History */}
-            <div>
-              <h4 className="mb-4 text-lg font-bold text-gray-900">Payment History</h4>
-              <div className="space-y-6">
-                {(details.payment_history || []).map((item: { fee_component?: string; payment_date?: string | Date; payment_method?: string; amount_paid?: number }, i: number) => (
-                  <div key={i} className="flex items-start justify-between">
-                    <div className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
-                        <ArrowDown className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{item.fee_component || "N/A"}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.payment_date
-                            ? new Date(item.payment_date).toLocaleDateString()
-                            : "N/A"}{" "}
-                          via {item.payment_method?.replace("_", " ") || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-green-500">
-                      ₦{(item.amount_paid || 0).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-                {(!details.payment_history || details.payment_history.length === 0) && (
-                  <div className="text-center text-sm text-gray-500">
-                    No payment history available
-                  </div>
-                )}
-              </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-gray-500">
+              No details found.
             </div>
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center text-gray-500">
-            No details found.
-          </div>
-        )}
+          )}
         </SheetContent>
       </Sheet>
 

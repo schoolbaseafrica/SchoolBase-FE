@@ -2,7 +2,7 @@ import { apiFetch } from "./client"
 
 export interface GenerateAccessLinkRequest {
   parent_id: string
-  expires_in_hours?: number | null
+  expires_in_hours?: number
   is_single_use?: boolean
   metadata?: Record<string, unknown>
 }
@@ -29,10 +29,6 @@ export interface ValidateAccessLinkResponse {
   message: string
   status_code: number
   data: {
-    access_token: string
-    refresh_token: string
-    session_id: string
-    session_expires_at: string
     user: {
       id: string
       email: string
@@ -113,9 +109,7 @@ export const ParentAccessLinksAPI = {
    * Validate and use an access link (Public endpoint)
    * Uses a dedicated Next.js API route that doesn't add auth headers
    */
-  validate: async (
-    token: string
-  ): Promise<ValidateAccessLinkResponse> => {
+  validate: async (token: string): Promise<ValidateAccessLinkResponse> => {
     return apiFetch<ValidateAccessLinkResponse>(
       `/api/parent-access-links/validate`,
       {

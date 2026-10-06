@@ -4,7 +4,13 @@ import { useEffect, useState, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Loader2, AlertCircle, CheckCircle2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,13 +25,15 @@ export default function ParentAutoLoginPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const clearAuth = useAuthStore((state) => state.clearAuth)
-  
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "password_reset">("loading")
+
+  const [status, setStatus] = useState<
+    "loading" | "success" | "error" | "password_reset"
+  >("loading")
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [magicLinkToken, setMagicLinkToken] = useState<string | null>(null)
   const [resetToken, setResetToken] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>("")
-  
+
   // Password reset form state
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -36,7 +44,7 @@ export default function ParentAutoLoginPage() {
     confirmPassword?: string
   }>({})
   const [isResetting, setIsResetting] = useState(false)
-  
+
   // Use refs to track state that should prevent re-validation
   const hasValidatedRef = useRef(false)
   const isPasswordResetModeRef = useRef(false)
@@ -46,7 +54,7 @@ export default function ParentAutoLoginPage() {
   // Single effect to handle token extraction and validation
   useEffect(() => {
     // Get token from URL
-    const token = searchParams.get("token")
+    const token = window.location.hash.slice(1) || searchParams.get("token")
 
     // If no token, show error (only if we haven't started validation)
     if (!token) {
@@ -61,6 +69,7 @@ export default function ParentAutoLoginPage() {
     if (!initialTokenRef.current) {
       initialTokenRef.current = token
       setMagicLinkToken(token)
+      window.history.replaceState(null, "", window.location.pathname)
     }
 
     // CRITICAL: If we're in password reset mode, NEVER validate again
@@ -84,26 +93,19 @@ export default function ParentAutoLoginPage() {
     // All guards passed - start validation
     hasValidatedRef.current = true
     validationInProgressRef.current = true
-    
-    console.log("[Auto-login] Starting validation", {
-      tokenPreview: token.substring(0, 10) + "...",
-    })
-    
+
     validateLink(token)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]) // Only depend on searchParams - refs handle state tracking
 
   const validateLink = async (token: string) => {
     try {
-      console.log("[Auto-login] Starting validation with token:", token.substring(0, 10) + "...")
-      
       // Clear any existing auth state
       clearAuth()
       queryClient.clear()
 
       console.log("[Auto-login] Calling validate API...")
       const response = await ParentAccessLinksAPI.validate(token)
-      console.log("[Auto-login] Validate response:", response)
 
       // Mark validation as complete
       validationInProgressRef.current = false
@@ -120,7 +122,9 @@ export default function ParentAutoLoginPage() {
         }
 
         // Password already reset or not required - proceed with auto-login
-        console.log("[Auto-login] Validation successful, cookies should be set in response")
+        console.log(
+          "[Auto-login] Validation successful, cookies should be set in response"
+        )
         isPasswordResetModeRef.current = false // Clear password reset mode flag
         setStatus("success")
 
@@ -144,7 +148,7 @@ export default function ParentAutoLoginPage() {
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Clear previous errors
     setPasswordErrors({})
 
@@ -171,7 +175,9 @@ export default function ParentAutoLoginPage() {
     }
 
     if (!resetToken) {
-      setPasswordErrors({ newPassword: "Reset token is missing. Please contact support." })
+      setPasswordErrors({
+        newPassword: "Reset token is missing. Please contact support.",
+      })
       return
     }
 
@@ -201,7 +207,10 @@ export default function ParentAutoLoginPage() {
       }
     } catch (error) {
       console.error("Password reset error:", error)
-      const message = error instanceof Error ? error.message : "Failed to set password. Please try again."
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to set password. Please try again."
       setPasswordErrors({ newPassword: message })
       toast.error(message)
       setIsResetting(false)
@@ -224,9 +233,9 @@ export default function ParentAutoLoginPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                <div className="h-full w-full animate-pulse bg-accent" />
+                <div className="bg-accent h-full w-full animate-pulse" />
               </div>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-center text-sm">
                 This may take a few seconds
               </p>
             </div>
@@ -246,7 +255,8 @@ export default function ParentAutoLoginPage() {
               Set Your Password
             </CardTitle>
             <CardDescription>
-              Hello {userName}! Before accessing your parent portal, please set your password.
+              Hello {userName}! Before accessing your parent portal, please set your
+              password.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -267,7 +277,7 @@ export default function ParentAutoLoginPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isResetting}
                   >
@@ -277,7 +287,7 @@ export default function ParentAutoLoginPage() {
                 {passwordErrors.newPassword && (
                   <p className="text-sm text-red-600">{passwordErrors.newPassword}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Must be at least 8 characters with uppercase, lowercase, and number
                 </p>
               </div>
@@ -298,7 +308,7 @@ export default function ParentAutoLoginPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     disabled={isResetting}
                   >
@@ -336,9 +346,7 @@ export default function ParentAutoLoginPage() {
               <AlertCircle className="h-5 w-5" />
               Access Link Invalid
             </CardTitle>
-            <CardDescription>
-              We couldn't validate your access link
-            </CardDescription>
+            <CardDescription>We couldn&apos;t validate your access link</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert variant="destructive">
@@ -374,15 +382,15 @@ export default function ParentAutoLoginPage() {
             Access Granted
           </CardTitle>
           <CardDescription>
-            You're being redirected to your parent portal...
+            You&apos;re being redirected to your parent portal...
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-accent" />
+              <Loader2 className="text-accent h-8 w-8 animate-spin" />
             </div>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-center text-sm">
               Please wait while we redirect you
             </p>
           </div>

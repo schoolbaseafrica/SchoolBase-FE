@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { proxyAuthRequest } from "../../auth/_proxy"
+import { isBinaryProxyResponse } from "@/lib/proxy-media-type"
 
 async function methodHandler(
   req: Request,
@@ -15,10 +16,10 @@ async function methodHandler(
 
   const contentType = backendRes.headers.get("content-type") ?? ""
   if (
-    contentType.startsWith("audio/") ||
-    contentType.startsWith("video/") ||
-    contentType.startsWith("image/") ||
-    contentType === "application/octet-stream"
+    isBinaryProxyResponse(
+      contentType,
+      backendRes.headers.get("content-disposition") ?? ""
+    )
   ) {
     const body = await backendRes.arrayBuffer()
     const mediaHeaders = new Headers()
@@ -26,7 +27,10 @@ async function methodHandler(
     mediaHeaders.set("Content-Length", String(body.byteLength))
     mediaHeaders.set(
       "Cache-Control",
-      backendRes.headers.get("cache-control") ?? "private, max-age=300"
+      backendRes.headers.get("cache-control") ??
+        (/\battachment\b/i.test(backendRes.headers.get("content-disposition") ?? "")
+          ? "private, no-store"
+          : "private, max-age=300")
     )
     mediaHeaders.set(
       "Content-Disposition",

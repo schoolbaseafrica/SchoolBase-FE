@@ -32,6 +32,7 @@ export default function BulkStudentUploadDialog({
   const [file, setFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
+  const [uploadIssues, setUploadIssues] = useState<string[]>([])
   const [showMissingClassesDialog, setShowMissingClassesDialog] = useState(false)
   const [validationData, setValidationData] = useState<{
     missing_classes: Array<{ name: string; arm?: string; student_count: number }>
@@ -42,8 +43,17 @@ export default function BulkStudentUploadDialog({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
+      setFile(null)
+      setUploadIssues([])
+      setValidationData(null)
       if (selectedFile.type !== "text/csv" && !selectedFile.name.endsWith(".csv")) {
         toast.error("Please select a CSV file")
+        e.target.value = ""
+        return
+      }
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("CSV files must be 5 MB or smaller")
+        e.target.value = ""
         return
       }
       setFile(selectedFile)
@@ -72,8 +82,8 @@ export default function BulkStudentUploadDialog({
 
       // No missing classes, proceed with upload
       await performUpload()
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to validate CSV")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to validate CSV")
       setIsValidating(false)
     }
   }
@@ -85,29 +95,39 @@ export default function BulkStudentUploadDialog({
     try {
       const response = await StudentsAPI.bulkUpload(file)
       const result = response.data
+      setUploadIssues(
+        result.results
+          .filter((item) => item.error)
+          .map((item) => `${item.email || "Row"}: ${item.error}`)
+      )
 
-      if (result.failed === 0) {
+      const hasIssues = result.results.some((item) => item.error)
+      if (result.failed === 0 && !hasIssues) {
         toast.success(`Successfully uploaded ${result.successful} students`)
       } else {
         toast.warning(
-          `Upload completed: ${result.successful} successful, ${result.failed} failed`
+          `Upload completed: ${result.successful} created, ${result.failed} failed${hasIssues ? ". Review the row issues below." : ""}`
         )
       }
 
       // Invalidate students queries to refetch the list
       queryClient.invalidateQueries({ queryKey: ["students"] })
-      
+
       onSuccess?.()
-      setTimeout(() => {
-        setOpen(false)
+      if (result.failed === 0 && !hasIssues) {
+        setTimeout(() => {
+          setOpen(false)
+          setFile(null)
+          setValidationData(null)
+          if (fileInputRef.current) fileInputRef.current.value = ""
+        }, 2000)
+      } else {
         setFile(null)
         setValidationData(null)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ""
-        }
-      }, 2000)
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to upload students")
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload students")
     } finally {
       setIsLoading(false)
     }
@@ -125,6 +145,8 @@ export default function BulkStudentUploadDialog({
 
   const handleClose = () => {
     setFile(null)
+    setUploadIssues([])
+    setValidationData(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -132,8 +154,11 @@ export default function BulkStudentUploadDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent 
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : handleClose())}
+    >
+      <DialogContent
         className="max-h-[90vh] max-w-2xl overflow-y-auto"
         aria-describedby="bulk-upload-students-description"
       >
@@ -142,13 +167,30 @@ export default function BulkStudentUploadDialog({
           <DialogDescription id="bulk-upload-students-description">
             Upload a CSV file to create multiple students at once.
             <br />
-            <strong>Expected format:</strong> First Name, Last Name, Middle Name (optional), Email, Phone, Registration Number, Date of Birth, Gender, Home Address (optional), Password, Class (optional), Arm (optional)
+            <strong>Expected format:</strong> First Name, Last Name, Middle Name
+            (optional), Email, Phone, Registration Number, Date of Birth, Gender, Home
+            Address (optional), Password, Class (optional), Arm (optional)
             <br />
-            <strong>Note:</strong> All fields except Middle Name, Home Address, Class, and Arm are required. If Class is provided, students will be assigned to that class. If the class doesn't exist, you'll be prompted to create it.
+            <strong>Note:</strong> Registration Number, Middle Name, Home Address, Class,
+            and Arm are optional. If Class is provided, students will be assigned to that
+            class when it exists. Missing classes can be created or skipped.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {uploadIssues.length > 0 && (
+            <div
+              role="alert"
+              className="border-destructive/30 bg-destructive/5 max-h-40 overflow-y-auto rounded-xl border p-3 text-sm"
+            >
+              <p className="font-semibold">Rows needing attention</p>
+              <ul className="mt-2 list-inside list-disc">
+                {uploadIssues.map((issue, index) => (
+                  <li key={index}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="csv-file">CSV File</Label>
             <div className="flex items-center gap-2">
@@ -193,7 +235,9 @@ export default function BulkStudentUploadDialog({
             Cancel
           </Button>
           <Button onClick={handleUpload} disabled={!file || isLoading || isValidating}>
-            {(isLoading || isValidating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {(isLoading || isValidating) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {isValidating ? "Validating..." : "Upload Students"}
           </Button>
         </DialogFooter>

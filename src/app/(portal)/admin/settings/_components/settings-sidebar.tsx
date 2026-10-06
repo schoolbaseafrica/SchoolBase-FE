@@ -58,11 +58,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
   const ActiveIcon = activeItem.icon
 
   return (
-    <div className="border-border h-fit w-full shrink-0 space-y-6 rounded-xl bg-white lg:w-64 lg:border lg:p-4">
+    <div className="border-border/80 h-fit w-full shrink-0 space-y-6 rounded-2xl bg-white lg:w-64 lg:border lg:p-3 lg:shadow-[0_2px_16px_rgba(24,24,27,0.035)]">
       {/* Desktop View */}
       <div className="hidden lg:block">
-        <h2 className="text-foreground mb-4 text-lg font-bold">Settings</h2>
-        <nav className="divide-y">
+        <h2 className="text-foreground px-3 pt-2 pb-3 text-sm font-semibold">Settings</h2>
+        <nav className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = activeTab === item.id
@@ -71,9 +71,9 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
                 key={item.id}
                 href={`/admin/settings?tab=${item.id}`}
                 className={cn(
-                  "flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
                   isActive
-                    ? "text-accent border-l-accent border-l-2"
+                    ? "bg-accent/8 text-accent"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >

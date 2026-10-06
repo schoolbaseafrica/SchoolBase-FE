@@ -18,13 +18,15 @@ import {
 } from "@/components/ui/table"
 import { Loader2, ArrowLeft, Calendar, Search } from "lucide-react"
 import { useDailyAttendance } from "@/app/(portal)/admin/attendance/_hooks/use-attendance-admin"
+import { formatAttendanceTime } from "@/lib/attendance-time"
+import { format } from "date-fns"
 
 const ViewAttendancePage = () => {
   const params = useParams()
   const router = useRouter()
   const classId = params.classId as string
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [search, setSearch] = useState("")
 
   const { data: attendanceData, isLoading } = useDailyAttendance(classId, selectedDate)
@@ -189,8 +191,12 @@ const ViewAttendancePage = () => {
                             {formatStatus(student.status)}
                           </span>
                         </TableCell>
-                        <TableCell>{student.check_in_time || "-"}</TableCell>
-                        <TableCell>{student.check_out_time || "-"}</TableCell>
+                        <TableCell>
+                          {formatAttendanceTime(student.check_in_time)}
+                        </TableCell>
+                        <TableCell>
+                          {formatAttendanceTime(student.check_out_time)}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {student.notes || "-"}
                         </TableCell>

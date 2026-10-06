@@ -14,8 +14,19 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   const activeTab = tab || "school-info"
 
   return (
-    <div className="mx-auto p-4 sm:p-6">
-      <div className="flex flex-col gap-8 lg:flex-row">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mb-8 max-w-3xl">
+        <p className="text-accent mb-2 text-xs font-semibold tracking-[0.18em] uppercase">
+          Administration
+        </p>
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
+          School settings
+        </h1>
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
+          Manage school details, your public website, attendance and account preferences.
+        </p>
+      </div>
+      <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         <aside className="h-fit shrink-0 lg:sticky lg:top-6 lg:w-64">
           <SettingsSidebar activeTab={activeTab} />
         </aside>

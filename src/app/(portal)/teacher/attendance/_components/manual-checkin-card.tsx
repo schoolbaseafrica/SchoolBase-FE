@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
   Card,
   CardContent,
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { useManualCheckIn } from "../_hooks/use-teacher-attendance"
+import { format } from "date-fns"
 
 interface ManualCheckInCardProps {
   hasCheckedIn: boolean
@@ -21,7 +22,13 @@ interface ManualCheckInCardProps {
 
 const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) => {
   const [reason, setReason] = useState("")
+  const [now, setNow] = useState(() => new Date())
   const { mutate: checkIn, isPending } = useManualCheckIn()
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const handleCheckIn = () => {
     if (!reason.trim()) {
@@ -29,21 +36,13 @@ const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) =
     }
 
     const now = new Date()
-    const date = now.toISOString().split("T")[0] // YYYY-MM-DD
-    const check_in_time = now.toTimeString().split(" ")[0] // HH:MM:SS
-
-    // Debug logging
-    // console.log("📤 Submitting check-in:")
-    // console.log("  Date:", date)
-    // console.log("  Time:", check_in_time)
-    // console.log("  Reason:", reason.trim())
-    // console.log("  Payload:", { date, check_in_time, reason: reason.trim() })
+    const date = format(now, "yyyy-MM-dd")
+    const check_in_time = format(now, "HH:mm:ss")
 
     checkIn(
       { date, check_in_time, reason: reason.trim() },
       {
         onSuccess: () => {
-          // console.log("✅ Check-in successful, clearing form")
           setReason("")
         },
         onError: (error) => {
@@ -53,14 +52,14 @@ const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) =
     )
   }
 
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = now.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   })
 
-  const currentTime = new Date().toLocaleTimeString("en-US", {
+  const currentTime = now.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   })

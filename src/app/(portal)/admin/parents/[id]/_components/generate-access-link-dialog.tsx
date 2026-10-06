@@ -1,7 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Check, Loader2, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react"
+import {
+  Copy,
+  Check,
+  Loader2,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,7 +39,7 @@ export function GenerateAccessLinkDialog({
   const [open, setOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedLink, setGeneratedLink] = useState<string | null>(null)
-  const [expiresInHours, setExpiresInHours] = useState<number | null>(null) // null = never expires
+  const [expiresInHours, setExpiresInHours] = useState(24)
   const [isSingleUse, setIsSingleUse] = useState(true)
   const [copied, setCopied] = useState(false)
   const [requiresPasswordReset, setRequiresPasswordReset] = useState(false)
@@ -50,15 +57,14 @@ export function GenerateAccessLinkDialog({
 
       setGeneratedLink(response.data.link)
       setRequiresPasswordReset(response.data.requires_password_reset)
-      toast.success("Access link generated", {
-        description: "The access link has been created and emailed to the parent.",
-      })
+      toast.success("Access link generated. Copy it to share with the parent.")
 
       // Invalidate access links list query
       queryClient.invalidateQueries({ queryKey: ["parent-access-links", parentId] })
     } catch (error) {
       toast.error("Error", {
-        description: error instanceof Error ? error.message : "Failed to generate access link",
+        description:
+          error instanceof Error ? error.message : "Failed to generate access link",
       })
     } finally {
       setIsGenerating(false)
@@ -75,7 +81,7 @@ export function GenerateAccessLinkDialog({
         description: "Access link copied to clipboard",
       })
       setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "Failed to copy link",
       })
@@ -87,7 +93,7 @@ export function GenerateAccessLinkDialog({
     if (!newOpen) {
       // Reset state when dialog closes
       setGeneratedLink(null)
-      setExpiresInHours(null)
+      setExpiresInHours(24)
       setIsSingleUse(true)
       setCopied(false)
       setRequiresPasswordReset(false)
@@ -118,24 +124,23 @@ export function GenerateAccessLinkDialog({
               <Input
                 id="expires-in-hours"
                 type="number"
-                min="0"
-                max="8760"
-                value={expiresInHours === null ? "" : expiresInHours}
+                min="1"
+                max="168"
+                value={expiresInHours}
                 onChange={(e) => {
-                  const value = e.target.value
-                  setExpiresInHours(value === "" || value === "0" ? null : Number(value))
+                  setExpiresInHours(Number(e.target.value))
                 }}
-                placeholder="Leave empty for never expires"
+                placeholder="24"
               />
-              <p className="text-xs text-muted-foreground">
-                Leave empty or set to 0 for non-expiring link (default). Max: 8760 hours (1 year)
+              <p className="text-muted-foreground text-xs">
+                Choose 1 to 168 hours. The default is 24 hours.
               </p>
             </div>
 
             <div className="flex items-center justify-between space-x-2">
               <div className="space-y-0.5">
                 <Label htmlFor="single-use">Single-use link</Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Link can only be used once (recommended for security)
                 </p>
               </div>
@@ -150,18 +155,19 @@ export function GenerateAccessLinkDialog({
           <div className="space-y-4 py-4">
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle>Email Sent!</AlertTitle>
+              <AlertTitle>Link ready</AlertTitle>
               <AlertDescription>
-                The access link has been emailed to the parent. They can also use the link below.
+                Copy this link and share it securely with the parent.
               </AlertDescription>
             </Alert>
-            
+
             {requiresPasswordReset && (
-              <Alert variant="default" className="bg-blue-50 border-blue-200">
+              <Alert variant="default" className="border-blue-200 bg-blue-50">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertTitle className="text-blue-900">Password Reset Required</AlertTitle>
                 <AlertDescription className="text-blue-800">
-                  The parent will need to set their password before accessing the portal. This will happen automatically when they click the link.
+                  The parent will need to set their password before accessing the portal.
+                  This will happen automatically when they click the link.
                 </AlertDescription>
               </Alert>
             )}
@@ -169,11 +175,7 @@ export function GenerateAccessLinkDialog({
             <div className="space-y-2">
               <Label>Access Link</Label>
               <div className="flex items-center gap-2">
-                <Input
-                  value={generatedLink}
-                  readOnly
-                  className="font-mono text-sm"
-                />
+                <Input value={generatedLink} readOnly className="font-mono text-sm" />
                 <Button
                   variant="outline"
                   size="icon"
@@ -187,10 +189,12 @@ export function GenerateAccessLinkDialog({
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                This link {expiresInHours === null ? "never expires" : `expires in ${expiresInHours} hour${expiresInHours !== 1 ? 's' : ''}`}. 
-                {isSingleUse ? " It can only be used once." : " It can be used multiple times."}
-                {" The parent has also received this link via email."}
+              <p className="text-muted-foreground text-xs">
+                This link expires in {expiresInHours} hour
+                {expiresInHours !== 1 ? "s" : ""}.
+                {isSingleUse
+                  ? " It can only be used once."
+                  : " It can be used multiple times."}
               </p>
             </div>
           </div>
@@ -202,7 +206,15 @@ export function GenerateAccessLinkDialog({
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleGenerate} disabled={isGenerating}>
+              <Button
+                onClick={handleGenerate}
+                disabled={
+                  isGenerating ||
+                  !Number.isInteger(expiresInHours) ||
+                  expiresInHours < 1 ||
+                  expiresInHours > 168
+                }
+              >
                 {isGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
