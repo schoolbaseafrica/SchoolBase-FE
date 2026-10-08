@@ -1,11 +1,6 @@
 import { apiFetch } from "./api/client"
 
-type ResponsePack<T> = {
-  data: T
-  message: string
-}
-
-export type ActivityAction = "CREATE" | "UPDATE" | "DELETE"
+export type ActivityAction = string
 
 export interface ActivityLog {
   id: string
@@ -46,7 +41,47 @@ export interface ActivityLogsListResponse {
   }
 }
 
+export interface ActivityLogFilterOptions {
+  entity_types: string[]
+  actions: string[]
+}
+
+const actionLabels: Record<string, string> = {
+  ASSIGN_OWNER: "Assign owner",
+  TRANSFER_OWNER: "Transfer owner",
+  UPDATE_RETENTION: "Change retention",
+  DEACTIVATE: "Deactivate",
+  ACTIVATE: "Activate",
+  PUBLISH: "Publish",
+  MARK: "Mark attendance",
+  RECORD: "Record payment",
+}
+
+const entityLabels: Record<string, string> = {
+  school: "School",
+  user: "User",
+  CBT_EXAM: "CBT exam",
+  CLASSROOM_ATTENDANCE: "Classroom attendance",
+}
+
+export const activityActionLabel = (action: string) =>
+  actionLabels[action] ??
+  action
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^./, (c) => c.toUpperCase())
+
+export const activityEntityLabel = (entity: string) =>
+  entityLabels[entity] ??
+  entity
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^./, (c) => c.toUpperCase())
+
 export const ActivityLogsAPI = {
+  getFilterOptions: () =>
+    apiFetch<ActivityLogFilterOptions>("/activity-logs/filter-options", {}, true),
   getAll: (params?: GetActivityLogsParams) =>
     apiFetch<ActivityLogsListResponse>(
       "/activity-logs",

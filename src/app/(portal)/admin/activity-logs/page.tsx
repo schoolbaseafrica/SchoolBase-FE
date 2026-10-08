@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useGetActivityLogs } from "./_hooks/use-activity-logs"
 import { ActivityLogsTable } from "./_components/activity-logs-table"
 import { ActivityLogsFilters } from "./_components/activity-logs-filters"
@@ -24,7 +24,7 @@ export default function ActivityLogsPage() {
   const [actionFilter, setActionFilter] = useState<ActivityAction | "all">("all")
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
-  
+
   // Construct params object to ensure proper query key serialization
   const queryParams = {
     page,
@@ -40,7 +40,7 @@ export default function ActivityLogsPage() {
 
   const logs = data?.data || []
   const pagination = data?.pagination
-  
+
   // Track the last page we scrolled for to avoid duplicate scrolls
   const lastScrolledPageRef = useRef<number | null>(null)
 
@@ -51,7 +51,7 @@ export default function ActivityLogsPage() {
   // 4. We haven't already scrolled for this page
   useEffect(() => {
     const currentPaginationPage = pagination?.page || page
-    
+
     // Only scroll if:
     // - We have pagination data
     // - The pagination page matches the current page (data is synced)
@@ -72,7 +72,7 @@ export default function ActivityLogsPage() {
       // Mark that we've scrolled for this page
       lastScrolledPageRef.current = page
     }
-  }, [page, isLoading, logs.length, pagination?.page])
+  }, [page, isLoading, logs.length, pagination])
 
   // Reset scroll tracking when filters or limit change (which resets to page 1)
   useEffect(() => {
@@ -92,26 +92,29 @@ export default function ActivityLogsPage() {
     setPage(1) // Reset to page 1 when limit changes
   }
 
-  const handleFiltersChange = (filters: {
-    user?: string
-    entityType?: string
-    action?: ActivityAction | "all"
-    startDate?: string
-    endDate?: string
-  }) => {
-    setUserFilter(filters.user || "")
-    setEntityTypeFilter(filters.entityType || "all")
-    setActionFilter(filters.action || "all")
-    setStartDate(filters.startDate || "")
-    setEndDate(filters.endDate || "")
-    setPage(1) // Reset to page 1 when filters change
-  }
+  const handleFiltersChange = useCallback(
+    (filters: {
+      user?: string
+      entityType?: string
+      action?: ActivityAction | "all"
+      startDate?: string
+      endDate?: string
+    }) => {
+      setUserFilter(filters.user || "")
+      setEntityTypeFilter(filters.entityType || "all")
+      setActionFilter(filters.action || "all")
+      setStartDate(filters.startDate || "")
+      setEndDate(filters.endDate || "")
+      setPage(1) // Reset to page 1 when filters change
+    },
+    []
+  )
 
   return (
     <div className="mx-auto p-4 sm:p-6">
       <DashboardTitle
         heading="Activity Log"
-        description="Track user actions and changes across the system"
+        description="Review recorded school actions and changes"
       />
 
       <ActivityLogsFilters
@@ -126,8 +129,14 @@ export default function ActivityLogsPage() {
       />
 
       <div className="mt-6">
+        {!isLoading && !isError && pagination && (
+          <p className="text-muted-foreground mb-3 text-sm">
+            {pagination.total} recorded {pagination.total === 1 ? "action" : "actions"}
+          </p>
+        )}
         <ActivityLogsTable
           logs={logs}
+          offset={(page - 1) * limit}
           isLoading={isLoading}
           isError={isError}
           error={error?.message}
@@ -137,7 +146,7 @@ export default function ActivityLogsPage() {
       {pagination && (
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Label htmlFor="rows-per-page" className="text-sm text-muted-foreground">
+            <Label htmlFor="rows-per-page" className="text-muted-foreground text-sm">
               Rows per page:
             </Label>
             <Select value={limit.toString()} onValueChange={handleLimitChange}>

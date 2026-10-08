@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -10,7 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { ActivityAction } from "@/lib/activity-logs"
+import {
+  ActivityAction,
+  ActivityLogsAPI,
+  activityActionLabel,
+  activityEntityLabel,
+} from "@/lib/activity-logs"
 import { X } from "lucide-react"
 
 interface ActivityLogsFiltersProps {
@@ -30,38 +36,20 @@ interface ActivityLogsFiltersProps {
   }
 }
 
-const entityTypes = [
-  "Student",
-  "Teacher",
-  "Parent",
-  "Class",
-  "Subject",
-  "Room",
-  "AcademicSession",
-  "AcademicTerm",
-  "Fee",
-  "Payment",
-  "Attendance",
-  "Result",
-  "Timetable",
-  "School",
-]
-
-const actionOptions: { value: ActivityAction | "all"; label: string }[] = [
-  { value: "all", label: "All Actions" },
-  { value: "CREATE", label: "Create" },
-  { value: "UPDATE", label: "Update" },
-  { value: "DELETE", label: "Delete" },
-]
-
 export function ActivityLogsFilters({
   onFiltersChange,
   initialFilters = {},
 }: ActivityLogsFiltersProps) {
   const [entityType, setEntityType] = useState(initialFilters.entityType || "all")
-  const [action, setAction] = useState<ActivityAction | "all">(initialFilters.action || "all")
+  const [action, setAction] = useState<ActivityAction | "all">(
+    initialFilters.action || "all"
+  )
   const [startDate, setStartDate] = useState(initialFilters.startDate || "")
   const [endDate, setEndDate] = useState(initialFilters.endDate || "")
+  const options = useQuery({
+    queryKey: ["activity-log-filter-options"],
+    queryFn: ActivityLogsAPI.getFilterOptions,
+  })
 
   useEffect(() => {
     onFiltersChange({
@@ -72,7 +60,11 @@ export function ActivityLogsFilters({
     })
   }, [entityType, action, startDate, endDate, onFiltersChange])
 
-  const hasFilters = (entityType && entityType !== "all") || (action && action !== "all") || startDate || endDate
+  const hasFilters =
+    (entityType && entityType !== "all") ||
+    (action && action !== "all") ||
+    startDate ||
+    endDate
 
   const clearFilters = () => {
     setEntityType("all")
@@ -82,10 +74,10 @@ export function ActivityLogsFilters({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4">
+    <div className="border-border bg-card flex flex-col gap-4 rounded-xl border p-4 shadow-sm">
       <div className="flex flex-wrap items-end gap-4">
         <div className="min-w-[180px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="text-foreground mb-2 block text-sm font-medium">
             Entity Type
           </label>
           <Select value={entityType} onValueChange={setEntityType}>
@@ -94,9 +86,9 @@ export function ActivityLogsFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Entity Types</SelectItem>
-              {entityTypes.map((type) => (
+              {(options.data?.entity_types ?? []).map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {activityEntityLabel(type)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -104,7 +96,7 @@ export function ActivityLogsFilters({
         </div>
 
         <div className="min-w-[150px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700">Action</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Action</label>
           <Select
             value={action}
             onValueChange={(value) => setAction(value as ActivityAction | "all")}
@@ -113,9 +105,10 @@ export function ActivityLogsFilters({
               <SelectValue placeholder="All Actions" />
             </SelectTrigger>
             <SelectContent>
-              {actionOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              <SelectItem value="all">All Actions</SelectItem>
+              {(options.data?.actions ?? []).map((action) => (
+                <SelectItem key={action} value={action}>
+                  {activityActionLabel(action)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -123,7 +116,7 @@ export function ActivityLogsFilters({
         </div>
 
         <div className="min-w-[180px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="text-foreground mb-2 block text-sm font-medium">
             Start Date
           </label>
           <Input
@@ -134,7 +127,7 @@ export function ActivityLogsFilters({
         </div>
 
         <div className="min-w-[180px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="text-foreground mb-2 block text-sm font-medium">
             End Date
           </label>
           <Input
@@ -152,6 +145,9 @@ export function ActivityLogsFilters({
           </Button>
         )}
       </div>
+      {options.isError && (
+        <p className="text-destructive text-sm">Could not load filter choices.</p>
+      )}
     </div>
   )
 }
