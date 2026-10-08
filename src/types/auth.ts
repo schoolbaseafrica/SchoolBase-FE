@@ -3,12 +3,6 @@ export interface LoginPayload {
   password: string
 }
 
-export interface SignUpPayload {
-  fullName: string
-  email: string
-  password: string
-}
-
 export type AuthUser = Record<string, unknown>
 
 export interface AuthApiResponse<Data = unknown> {

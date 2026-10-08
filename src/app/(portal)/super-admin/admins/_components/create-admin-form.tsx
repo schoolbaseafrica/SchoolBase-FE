@@ -22,8 +22,7 @@ export function CreateAdminForm() {
       first_name: "",
       last_name: "",
       email: "",
-      phone: "",
-      password: "",
+      setupSecret: "",
     },
   })
 
@@ -35,14 +34,13 @@ export function CreateAdminForm() {
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
-        phone: data.phone || undefined,
-        password: data.password || undefined,
+        setupSecret: data.setupSecret,
       },
       {
         onSuccess: () => {
           // Show success toast
-          toast.success("Admin account created successfully", {
-            description: "An email with login credentials has been sent to the admin's email address.",
+          toast.success("First admin invitation sent", {
+            description: "The admin can choose a password using the email link.",
             duration: 5000,
           })
           // Clear the form on success
@@ -50,8 +48,7 @@ export function CreateAdminForm() {
             first_name: "",
             last_name: "",
             email: "",
-            phone: "",
-            password: "",
+            setupSecret: "",
           })
         },
         onError: (error) => {
@@ -94,28 +91,16 @@ export function CreateAdminForm() {
           {...register("email")}
           error={errors.email?.message}
         />
-        <FormField
-          label="Phone Number"
-          type="tel"
-          placeholder="Enter phone number (optional)"
-          required={false}
-          className="font-outfit h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px]"
-          {...register("phone")}
-          error={errors.phone?.message}
-        />
         <div>
           <FormField
-            label="Password"
+            label="Setup secret"
             type="password"
-            placeholder="Enter password (optional - will be auto-generated if not provided)"
-            required={false}
+            placeholder="Enter the temporary secret from Coolify"
+            required={true}
             className="font-outfit h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px]"
-            {...register("password")}
-            error={errors.password?.message}
+            {...register("setupSecret")}
+            error={errors.setupSecret?.message}
           />
-          <p className="mt-1 text-xs text-gray-500">
-            If no password is provided, a secure random password will be generated and sent via email.
-          </p>
         </div>
       </div>
       <Button
@@ -123,9 +108,8 @@ export function CreateAdminForm() {
         disabled={isPending}
         className="bg-accent hover:bg-accent/90 w-full text-white"
       >
-        {isPending ? "Creating..." : "Create Admin Account"}
+        {isPending ? "Sending..." : "Invite First Admin"}
       </Button>
     </form>
   )
 }
-

@@ -38,7 +38,10 @@ export function useLogout() {
   const isSuperAdminRoute = pathname?.startsWith("/super-admin")
 
   return useMutation({
-    mutationFn: isSuperAdminRoute ? SuperAdminAPI.logout : sendLogoutRequest,
+    mutationFn: async () => {
+      if (isSuperAdminRoute) await SuperAdminAPI.logout()
+      else await sendLogoutRequest()
+    },
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: USER_DATA_KEY })
       queryClient.removeQueries({ queryKey: SUPERADMIN_DATA_KEY })

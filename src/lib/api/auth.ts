@@ -2,7 +2,6 @@ import { apiFetch } from "./client"
 import type {
   AuthApiResponse,
   LoginPayload,
-  SignUpPayload,
   UserProfileResponse,
   LoginResponse,
 } from "@/types/auth"
@@ -43,17 +42,6 @@ export const loginUsingEmail = (payload: {
   )
 }
 
-export const signUp = (payload: SignUpPayload): Promise<AuthApiResponse<null>> => {
-  return apiFetch<AuthApiResponse<null>>(
-    "/api/auth/signup",
-    {
-      method: "POST",
-      data: payload,
-    },
-    true // use proxy
-  )
-}
-
 // Get current user profile
 export const getProfile = async (): Promise<UserProfileResponse> => {
   const res = await apiFetch<AuthApiResponse<UserProfileResponse>>(
@@ -72,20 +60,6 @@ export const refresh = (): Promise<RefreshResponse> => {
       method: "POST",
     },
     false // Don't use proxy - use specific Next.js route at /api/auth/refresh
-  )
-}
-
-// ------------------------------
-// Activate Account
-// ------------------------------
-
-export const activateAccount = (userID: string): Promise<AuthApiResponse<null>> => {
-  return apiFetch<AuthApiResponse<null>>(
-    `/auth/users/${userID}activate-account`,
-    {
-      method: "PATCH",
-    },
-    true // use proxy
   )
 }
 

@@ -59,7 +59,7 @@ export function SchoolInfoForm({
         Add your school&apos;s branding and contact information
       </p>
 
-      <ProgressIndicator key="progress" currentStep={2} />
+      <ProgressIndicator key="progress" currentStep={1} />
 
       <div className="animate-onrender mb-8 space-y-6">
         <div>
@@ -112,7 +112,7 @@ export function SchoolInfoForm({
           <label className="mb-2 block text-sm font-medium text-gray-700">
             Primary Brand Color <span className="text-accent">*</span>
           </label>
-          
+
           {/* Predefined color swatches */}
           <div className="mb-3">
             <p className="mb-2 text-xs text-gray-500">Quick select:</p>
@@ -124,7 +124,7 @@ export function SchoolInfoForm({
                   onClick={() => handleChange("school", "brandColor", color.value)}
                   className={`h-5 w-5 rounded border-2 transition-all hover:scale-110 ${
                     formData.school.brandColor.toUpperCase() === color.value.toUpperCase()
-                      ? "border-gray-900 ring-1 ring-offset-1 ring-gray-400 scale-110"
+                      ? "scale-110 border-gray-900 ring-1 ring-gray-400 ring-offset-1"
                       : "border-gray-300 hover:border-gray-500"
                   }`}
                   style={{ backgroundColor: color.value }}

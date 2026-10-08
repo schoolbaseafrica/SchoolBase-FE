@@ -15,7 +15,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ParentAccessLinksAPI } from "@/lib/api/parent-access-links"
-import { sendResetPasswordRequest } from "@/lib/api/auth"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/store/auth-store"
 import { toast } from "sonner"
@@ -31,7 +30,6 @@ export default function ParentAutoLoginPage() {
   >("loading")
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [magicLinkToken, setMagicLinkToken] = useState<string | null>(null)
-  const [resetToken, setResetToken] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>("")
 
   // Password reset form state
@@ -112,9 +110,8 @@ export default function ParentAutoLoginPage() {
 
       if (response.data) {
         // Check if password reset is required
-        if (response.data.requires_password_reset && response.data.reset_token) {
+        if (response.data.requires_password_reset) {
           console.log("[Auto-login] Password reset required")
-          setResetToken(response.data.reset_token)
           setUserName(`${response.data.user.first_name} ${response.data.user.last_name}`)
           isPasswordResetModeRef.current = true // Mark as in password reset mode
           setStatus("password_reset")
@@ -174,9 +171,9 @@ export default function ParentAutoLoginPage() {
       return
     }
 
-    if (!resetToken) {
+    if (!magicLinkToken) {
       setPasswordErrors({
-        newPassword: "Reset token is missing. Please contact support.",
+        newPassword: "Access link is missing. Please contact your school.",
       })
       return
     }
@@ -184,27 +181,11 @@ export default function ParentAutoLoginPage() {
     setIsResetting(true)
 
     try {
-      await sendResetPasswordRequest({
-        token: resetToken,
-        newPassword: newPassword,
-      })
+      await ParentAccessLinksAPI.completeSetup(magicLinkToken, newPassword)
 
       toast.success("Password set successfully! Logging you in...")
-
-      // After successful password reset, validate the magic link again to log in
-      if (magicLinkToken) {
-        // Reset the flags to allow re-validation after password reset
-        isPasswordResetModeRef.current = false
-        hasValidatedRef.current = false
-        validationInProgressRef.current = false
-        // Wait a moment for the backend to process the password reset
-        setTimeout(async () => {
-          validationInProgressRef.current = true
-          await validateLink(magicLinkToken)
-        }, 1000)
-      } else {
-        setIsResetting(false)
-      }
+      setStatus("success")
+      window.location.replace("/parent")
     } catch (error) {
       console.error("Password reset error:", error)
       const message =

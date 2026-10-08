@@ -37,7 +37,6 @@ export interface ValidateAccessLinkResponse {
       role: string[]
     }
     requires_password_reset?: boolean
-    reset_token?: string
   }
 }
 
@@ -117,6 +116,17 @@ export const ParentAccessLinksAPI = {
         data: { token },
       },
       false // Use internal Next.js API route, not proxy
+    )
+  },
+
+  completeSetup: async (
+    token: string,
+    newPassword: string
+  ): Promise<ValidateAccessLinkResponse> => {
+    return apiFetch<ValidateAccessLinkResponse>(
+      "/api/parent-access-links/complete-setup",
+      { method: "POST", data: { token, newPassword } },
+      false
     )
   },
 }

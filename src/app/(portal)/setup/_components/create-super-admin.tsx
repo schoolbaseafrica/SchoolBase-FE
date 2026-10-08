@@ -14,9 +14,12 @@ interface PasswordRequirementProps {
 
 interface AdminAccountFormProps {
   formData: FormData
+  setupSecret: string
+  onSetupSecretChange: (value: string) => void
   updateFormData: (section: keyof FormData, field: string, value: string) => void
   onSubmit: () => void
   onCancel: () => void
+  canGoBack?: boolean
 }
 
 const adminSchema = z
@@ -43,9 +46,12 @@ const adminSchema = z
 
 export function AdminAccountForm({
   formData,
+  setupSecret,
+  onSetupSecretChange,
   updateFormData,
   onSubmit,
   onCancel,
+  canGoBack = true,
 }: AdminAccountFormProps) {
   const [errors, setErrors] = useState<Errors>({})
   const [showPassword, setShowPassword] = useState(false)
@@ -76,6 +82,14 @@ export function AdminAccountForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
+    if (!setupSecret.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        setupSecret: "Enter the one-time setup secret from Coolify",
+      }))
+      return
+    }
+
     const result = adminSchema.safeParse(formData.admin)
 
     if (!result.success) {
@@ -101,9 +115,22 @@ export function AdminAccountForm({
         Set up your super administrator account
       </p>
 
-      <ProgressIndicator key="progress" currentStep={3} />
+      <ProgressIndicator key="progress" currentStep={2} />
 
       <div className="animate-onrender mb-6 space-y-6">
+        <FormField
+          name="setup-secret"
+          label="One-time setup secret"
+          required
+          type="password"
+          error={errors.setupSecret}
+          value={setupSecret}
+          onChange={(event) => {
+            onSetupSecretChange(event.target.value)
+            setErrors((previous) => ({ ...previous, setupSecret: undefined }))
+          }}
+          placeholder="Enter the secret configured in Coolify"
+        />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <FormField
             name="admin-firstName"
@@ -200,10 +227,12 @@ export function AdminAccountForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_2fr] gap-2 md:grid-cols-2 md:gap-4">
-        <Button onClick={onCancel} variant="outline" className="px-4 py-3">
-          Back
-        </Button>
+      <div className="grid gap-2 md:grid-cols-2 md:gap-4">
+        {canGoBack && (
+          <Button onClick={onCancel} variant="outline" className="px-4 py-3">
+            Back
+          </Button>
+        )}
         <Button type="submit" className="px-4 py-3">
           Submit & Continue
         </Button>

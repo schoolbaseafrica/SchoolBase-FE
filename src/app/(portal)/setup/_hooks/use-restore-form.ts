@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FormData } from "../_types/setup"
 
 const DB_NAME = "SchoolSetupDB"
@@ -65,21 +65,17 @@ function idbDelete(key: string): Promise<void> {
 
 // ---------- Hook ----------
 export function useSetupWizardPersistence(defaultFormData: FormData) {
+  const defaults = useRef(defaultFormData)
   const [formData, setFormData] = useState<FormData>(defaultFormData)
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
 
   // Infer which step should be active based on filled fields
   function calculateStep(data: FormData): number {
-    const { database, school, admin } = data
-
-    // Add null/undefined checks to prevent errors with corrupted IndexedDB data
-    const dbComplete =
-      database?.host && database?.name && database?.username && database?.password
-    if (!dbComplete) return 0
+    const { school, admin } = data
 
     const schoolComplete = school?.name && school?.phone && school?.address
-    if (!schoolComplete) return 2
+    if (!schoolComplete) return 1
 
     const adminComplete =
       admin?.firstName &&
@@ -87,9 +83,9 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
       admin?.email &&
       admin?.password &&
       admin?.confirmPassword
-    if (!adminComplete) return 3
+    if (!adminComplete) return 2
 
-    return 3 // admin step; installation is next
+    return 2
   }
 
   // Load from IndexedDB on mount
@@ -99,9 +95,12 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
       if (stored) {
         // Validate stored data structure to prevent errors with corrupted data
         const validatedData: FormData = {
-          database: stored.database || defaultFormData.database,
-          school: stored.school || defaultFormData.school,
-          admin: stored.admin || defaultFormData.admin,
+          school: stored.school || defaults.current.school,
+          admin: {
+            ...(stored.admin || defaults.current.admin),
+            password: "",
+            confirmPassword: "",
+          },
         }
         setFormData(validatedData)
         setCurrentStep(calculateStep(validatedData))
@@ -116,7 +115,10 @@ export function useSetupWizardPersistence(defaultFormData: FormData) {
     async function save() {
       if (isLoaded) {
         try {
-          await idbSet(KEY, formData)
+          await idbSet(KEY, {
+            ...formData,
+            admin: { ...formData.admin, password: "", confirmPassword: "" },
+          })
         } catch (error) {
           console.error("Failed to save form data to IndexedDB:", error)
         }

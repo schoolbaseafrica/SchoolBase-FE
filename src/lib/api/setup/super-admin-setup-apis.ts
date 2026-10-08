@@ -61,41 +61,19 @@ export interface SchoolInstallResponse {
 // DATABASE CREATION
 // ---------------------
 
-export interface DatabaseCreateRequest {
-  database_name: string
-  database_host: string
-  database_port: number
-  database_type: string
-  database_username: string
-  database_password: string
-}
-
-export interface DatabaseCreateResponse {
-  status_code: number
-  message: string
-  data: {
-    id: string
-    database_name: string
-    database_host: string
-    database_username: string
-    database_port: number
-    created_at: string
-    updated_at: string
-  }
-}
-
 // -----------------------------------------
 //        SETUP WIZARD API REQUESTS
 // -----------------------------------------
 
 export const SetupWizardAPI = {
   // Super Admin Signup
-  createSuperAdmin: (data: SuperAdminSignupData) =>
+  createSuperAdmin: (data: SuperAdminSignupData, setupSecret: string) =>
     apiFetch<SuperAdminResponse>(
       "/superadmin",
       {
         method: "POST",
         data,
+        headers: { "X-Initial-Setup-Secret": setupSecret },
       },
       true
     ),
@@ -112,7 +90,7 @@ export const SetupWizardAPI = {
     ),
 
   // Install School
-  installSchool: (data: SchoolInstallRequest) => {
+  installSchool: (data: SchoolInstallRequest, setupSecret: string) => {
     // Create FormData for file upload
     const formData = new FormData()
     formData.append("name", data.name)
@@ -144,20 +122,10 @@ export const SetupWizardAPI = {
       {
         method: "POST",
         data: formData,
+        headers: { "X-Initial-Setup-Secret": setupSecret },
         // Don't set Content-Type - client.ts will handle FormData correctly
       },
       true
     )
   },
-
-  // Create Database
-  createDatabase: (data: DatabaseCreateRequest) =>
-    apiFetch<DatabaseCreateResponse>(
-      "/database",
-      {
-        method: "POST",
-        data,
-      },
-      true
-    ),
 }

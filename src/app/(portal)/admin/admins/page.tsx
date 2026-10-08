@@ -5,6 +5,7 @@ import { useGetAdminsPage } from "./_hooks/use-admins"
 import { useAdminsStore } from "@/store/admins-store"
 import { useShallow } from "zustand/react/shallow"
 import { useRouter } from "next/navigation"
+import { FirstOwnerCard } from "./_components/first-owner-card"
 
 export default function AdminsPage() {
   const router = useRouter()
@@ -47,22 +48,25 @@ export default function AdminsPage() {
     filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
   return (
-    <UsersView
-      isLoading={admins.isLoading}
-      isError={admins.isError}
-      error={admins.error?.message}
-      users={admins.data?.data ?? []}
-      userType="admins"
-      searchQuery={filters.search}
-      statusFilter={currentStatusFilter}
-      currentPage={filters.page}
-      pageSize={filters.limit}
-      totalPages={admins.data?.total_pages ?? 1}
-      totalItems={admins.data?.total ?? 0}
-      onSearchChange={handleSearchChange}
-      onStatusFilterChange={handleStatusFilterChange}
-      onPageChange={handlePageChange}
-      onAddUser={handleAddAdmin}
-    />
+    <>
+      <FirstOwnerCard />
+      <UsersView
+        isLoading={admins.isLoading}
+        isError={admins.isError}
+        error={admins.error?.message}
+        users={admins.data?.data ?? []}
+        userType="admins"
+        searchQuery={filters.search}
+        statusFilter={currentStatusFilter}
+        currentPage={filters.page}
+        pageSize={filters.limit}
+        totalPages={admins.data?.total_pages ?? 1}
+        totalItems={admins.data?.total ?? 0}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
+        onPageChange={handlePageChange}
+        onAddUser={handleAddAdmin}
+      />
+    </>
   )
 }

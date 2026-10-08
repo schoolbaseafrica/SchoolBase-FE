@@ -373,14 +373,16 @@ export function UserDetailsSheet({
                   Edit
                 </Button>
               )}
-              <Button
-                onClick={() => setDeleteDialogOpen(true)}
-                variant="outline"
-                className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
+              {userType !== "admins" && (
+                <Button
+                  onClick={() => setDeleteDialogOpen(true)}
+                  variant="outline"
+                  className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
               <Button
                 onClick={() => onOpenChange(false)}
                 variant="ghost"

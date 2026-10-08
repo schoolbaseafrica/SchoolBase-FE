@@ -8,22 +8,13 @@ export interface CreateAdminData {
   first_name: string
   last_name: string
   email: string
-  phone?: string
-  password?: string
+  setupSecret: string
 }
 
 export interface CreateAdminResponse {
   message: string
-  status_code: number
   data: {
-    id: string
-    first_name: string
-    last_name: string
     email: string
-    phone: string
-    is_active: boolean
-    is_verified: boolean
-    created_at: string
   }
 }
 
@@ -63,10 +54,14 @@ export const SuperAdminAPI = {
   // Create Admin Account
   createAdmin: (data: CreateAdminData) =>
     apiFetch<CreateAdminResponse>(
-      "/superadmin/admins",
+      "/auth/invites/bootstrap-admin",
       {
         method: "POST",
-        data,
+        headers: { "X-Initial-Setup-Secret": data.setupSecret },
+        data: {
+          email: data.email,
+          full_name: `${data.first_name} ${data.last_name}`.trim(),
+        },
       },
       true // Use proxy route
     ),
@@ -81,4 +76,3 @@ export const SuperAdminAPI = {
       false // Don't use proxy - use specific Next.js route at /api/auth/superadmin/logout
     ),
 }
-

@@ -4,7 +4,6 @@ import { createContext, useContext, useState, useEffect } from "react"
 import { WelcomeScreen } from "./welcome-screen"
 import Image from "next/image"
 import { InstallationStep } from "../_types/setup"
-import { DatabaseConfigForm } from "./database-configuration"
 import { SchoolInfoForm } from "./school-info"
 import { AdminAccountForm } from "./create-super-admin"
 import { useSetupWizardPersistence } from "../_hooks/use-restore-form"
@@ -18,15 +17,15 @@ export default function SchoolSetupWizard() {
   const [isInstalling, setIsInstalling] = useState<boolean>(false)
   const [installProgress, setInstallProgress] = useState<number>(0)
   const [installationSteps, setInstallationSteps] = useState<InstallationStep[]>([
-    { label: "Validating Account Information", completed: false },
-    { label: "Creating Database Schema", completed: false },
-    { label: "Installing Core Modules", completed: false },
-    { label: "Configuring Your School Profile", completed: false },
-    { label: "Finalizing Setup", completed: false },
+    { label: "Validating setup secret", completed: false },
+    { label: "Saving school details", completed: false },
+    { label: "Creating the first superadmin", completed: false },
   ])
   const [isComplete, setIsComplete] = useState<boolean>(false)
   const [error, setError] = useState("")
   const [isLoadingExistingData, setIsLoadingExistingData] = useState(true)
+  const [setupSecret, setSetupSecret] = useState("")
+  const [schoolInstalled, setSchoolInstalled] = useState(false)
 
   const {
     formData,
@@ -37,7 +36,6 @@ export default function SchoolSetupWizard() {
     clearStorage,
     setFormData,
   } = useSetupWizardPersistence({
-    database: { name: "", host: "", username: "", type: "", password: "", port: 5432 },
     school: { logo: null, name: "", brandColor: "#DA3743", phone: "", address: "" },
     admin: {
       firstName: "",
@@ -73,9 +71,12 @@ export default function SchoolSetupWizard() {
             typeof schoolData?.installation_completed
           )
 
-          // Pre-populate form if school data exists (regardless of installation_completed status)
-          // This allows users to see/edit existing data if they reach the setup page
+          // A saved school can be resumed if superadmin creation failed.
           if (schoolData && schoolData.id) {
+            if (schoolData.installation_completed === true) {
+              setSchoolInstalled(true)
+              setCurrentStep(2)
+            }
             console.log("[SetupWizard] Loading existing school data to populate form:", {
               name: schoolData.name,
               address: schoolData.address,
@@ -113,13 +114,8 @@ export default function SchoolSetupWizard() {
               return updated
             })
 
-            if (schoolData.installation_completed !== true) {
-              toast.info("Existing school data loaded. Please complete the setup.")
-            } else {
-              toast.info(
-                "Existing school data loaded. You can review or update the information."
-              )
-            }
+            if (schoolData.installation_completed === true)
+              toast.info("School details are saved. Complete the superadmin account.")
           } else {
             console.log("[SetupWizard] No valid school data found")
           }
@@ -140,10 +136,10 @@ export default function SchoolSetupWizard() {
 
       return () => clearTimeout(timer)
     }
-  }, [isLoaded, setFormData]) // Added setFormData back to dependencies
+  }, [isLoaded, setFormData, setCurrentStep])
 
   async function handleNext(): Promise<void> {
-    if (currentStep < 3) {
+    if (currentStep < 2) {
       setCurrentStep((prev) => prev + 1)
     } else {
       await handleInstallation()
@@ -151,90 +147,49 @@ export default function SchoolSetupWizard() {
   }
 
   async function handleInstallation(): Promise<void> {
+    if (!setupSecret.trim()) {
+      setError("Enter the one-time setup secret from Coolify")
+      return
+    }
     setIsInstalling(true)
     setInstallProgress(0)
     setError("")
-
-    const steps = [...installationSteps]
-
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    const steps = installationSteps.map((step) => ({ ...step, completed: false }))
     steps[0].completed = true
     setInstallationSteps([...steps])
-    setInstallProgress((1 / steps.length) * 100)
+    setInstallProgress(100 / steps.length)
 
     try {
-      await stepApiCall(
-        SetupWizardAPI.createDatabase({
-          database_name: formData.database.name,
-          database_host: formData.database.host,
-          database_type: formData.database.type,
-          database_port: Number(formData.database.port),
-          database_username: formData.database.username,
-          database_password: formData.database.password,
-        }),
-        1
-      )
-
-      await stepApiCall(
-        SetupWizardAPI.installSchool({
-          name: formData.school.name,
-          address: formData.school.address,
-          email: formData.admin.email,
-          phone: formData.school.phone,
-          logo: formData.school.logo, // Now properly sent as FormData file
-          primary_color: formData.school.brandColor,
-          // secondary_color: "#FFFFFF",
-          // accent_color: "#000000",
-          // Include admin details for first admin creation
-          admin_first_name: formData.admin.firstName,
-          admin_last_name: formData.admin.lastName,
-          admin_password: formData.admin.password,
-        }),
-        2
-      )
-
-      // Create super admin (this may fail if installation is already complete or super admin exists)
-      // We catch the error and continue if it's a known non-fatal issue
-      try {
-        await stepApiCall(
-          SetupWizardAPI.createSuperAdmin({
-            school_name: formData.school.name,
-            first_name: formData.admin.firstName,
-            last_name: formData.admin.lastName,
+      if (!schoolInstalled) {
+        await SetupWizardAPI.installSchool(
+          {
+            name: formData.school.name,
+            address: formData.school.address,
             email: formData.admin.email,
-            password: formData.admin.password,
-            confirm_password: formData.admin.confirmPassword,
-          }),
-          3
+            phone: formData.school.phone,
+            logo: formData.school.logo,
+            primary_color: formData.school.brandColor,
+          },
+          setupSecret
         )
-      } catch (superAdminError: any) {
-        // If super admin creation fails due to database error, already exists, or installation complete,
-        // treat it as a non-fatal error and continue (the installation is still successful)
-        const errorMessage = superAdminError?.message || String(superAdminError) || ""
-        const isNonFatalError =
-          errorMessage.toLowerCase().includes("already exists") ||
-          errorMessage.toLowerCase().includes("installation") ||
-          errorMessage.toLowerCase().includes("database operation failed") ||
-          errorMessage.toLowerCase().includes("duplicate") ||
-          superAdminError?.response?.status === 500
-
-        if (isNonFatalError) {
-          console.warn(
-            "[SetupWizard] Super admin creation failed (non-fatal), continuing:",
-            errorMessage
-          )
-          // Mark step as complete anyway since installation succeeded
-          const currentSteps = [...installationSteps]
-          if (currentSteps[3]) {
-            currentSteps[3].completed = true
-            setInstallationSteps([...currentSteps])
-            setInstallProgress((4 / currentSteps.length) * 100)
-          }
-        } else {
-          // Re-throw if it's a different error that we should handle
-          throw superAdminError
-        }
+        setSchoolInstalled(true)
       }
+
+      steps[1].completed = true
+      setInstallationSteps([...steps])
+      setInstallProgress((2 / steps.length) * 100)
+
+      await SetupWizardAPI.createSuperAdmin(
+        {
+          school_name: formData.school.name,
+          first_name: formData.admin.firstName,
+          last_name: formData.admin.lastName,
+          email: formData.admin.email,
+          password: formData.admin.password,
+          confirm_password: formData.admin.confirmPassword,
+        },
+        setupSecret
+      )
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred."
@@ -244,45 +199,24 @@ export default function SchoolSetupWizard() {
       return
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    steps.slice(-1)[0].completed = true
+    steps[2].completed = true
     setInstallationSteps([...steps])
-    setInstallProgress((1 / steps.length) * 100)
+    setInstallProgress(100)
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
     setIsComplete(true)
     clearStorage()
-  }
-
-  async function stepApiCall(
-    apiCall: Promise<unknown>,
-    stepIndex: number
-  ): Promise<void> {
-    const dbKey = `extra-${stepIndex}`
-
-    try {
-      await apiCall
-      const steps = [...installationSteps]
-      steps[stepIndex].completed = true
-      setInstallationSteps([...steps])
-      setInstallProgress(((1 + stepIndex) / steps.length) * 100)
-      updateForm("extra", dbKey, "done") // incase of 409 error
-    } catch (error) {
-      if (error instanceof Error) {
-        const accountExists = error?.message?.includes("already exists")
-        const isARetry = formData.extra?.[dbKey] === "done"
-        if (accountExists && isARetry) {
-          return
-        }
-      }
-      throw error
-    }
+    setSetupSecret("")
   }
 
   function handleBack(): void {
-    if (currentStep > 0) {
+    if (!schoolInstalled && currentStep > 0) {
       setCurrentStep((prev) => prev - 1)
     }
+  }
+
+  function selectSetupStep(step: number): void {
+    if (schoolInstalled && step < 2) return
+    setCurrentStep(step)
   }
 
   if (!isLoaded || isLoadingExistingData) {
@@ -290,7 +224,7 @@ export default function SchoolSetupWizard() {
   }
 
   return (
-    <SetupStepProvider value={setCurrentStep}>
+    <SetupStepProvider value={selectSetupStep}>
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-3xl">
           <div className="mb-2 flex items-center justify-center">
@@ -309,14 +243,6 @@ export default function SchoolSetupWizard() {
 
           {currentStep === 0 && <WelcomeScreen onStart={handleNext} />}
           {currentStep === 1 && (
-            <DatabaseConfigForm
-              formData={formData}
-              updateFormData={updateForm}
-              onSubmit={handleNext}
-              onCancel={handleBack}
-            />
-          )}
-          {currentStep === 2 && (
             <SchoolInfoForm
               formData={formData}
               updateFormData={updateForm}
@@ -324,12 +250,15 @@ export default function SchoolSetupWizard() {
               onCancel={handleBack}
             />
           )}
-          {currentStep === 3 && !isInstalling && (
+          {currentStep === 2 && !isInstalling && (
             <AdminAccountForm
               formData={formData}
+              setupSecret={setupSecret}
+              onSetupSecretChange={setSetupSecret}
               updateFormData={updateForm}
               onSubmit={handleInstallation}
               onCancel={handleBack}
+              canGoBack={!schoolInstalled}
             />
           )}
           {isInstalling && !isComplete && (

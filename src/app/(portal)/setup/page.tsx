@@ -6,8 +6,8 @@ import SchoolSetupWizard from "./_components/setup-wizard"
 export const dynamic = "force-dynamic"
 
 /**
- * Setup page - Checks if installation is already complete
- * If complete, redirects to super admin login
+ * Redirect only after the first superadmin exists. A failed final setup step
+ * must leave the school able to resume onboarding.
  */
 export default async function SetupPage() {
   // Check if installation is already complete
@@ -49,7 +49,7 @@ export default async function SetupPage() {
 
     // Normalize: remove trailing slashes and /api/v1 if present
     const normalizedBaseUrl = baseUrl.replace(/\/+$/, "").replace(/\/api\/v1\/?$/, "")
-    const response = await fetch(`${normalizedBaseUrl}/api/v1/school`, {
+    const response = await fetch(`${normalizedBaseUrl}/api/v1/school/setup-status`, {
       method: "GET",
       cache: "no-store",
       headers: {
@@ -59,16 +59,16 @@ export default async function SetupPage() {
 
     if (response.ok) {
       const responseData = await response.json()
-      // Backend may wrap in {status_code, message, data} or return directly
       const data = responseData?.data || responseData
-      // If installation is complete, redirect to super admin login
-      if (data?.installation_completed === true) {
+      if (data?.phases?.superadmin?.completed === true) {
         redirect("/super-admin/login")
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const digest =
+      error && typeof error === "object" && "digest" in error ? String(error.digest) : ""
     // Don't log redirect errors - they're expected Next.js behavior
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+    if (digest.startsWith("NEXT_REDIRECT")) {
       throw error // Re-throw redirect errors so Next.js can handle them
     }
     // If check fails (backend not available), allow setup to proceed

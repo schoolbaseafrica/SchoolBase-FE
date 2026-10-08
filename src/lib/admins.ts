@@ -28,7 +28,32 @@ export interface AdminsListResponse {
   total_pages: number
 }
 
+export interface FirstOwner {
+  owner_user_id: string | null
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+}
+
 export const AdminsAPI = {
+  getFirstOwner: () => apiFetch<ResponsePack<FirstOwner>>("/users/owner"),
+
+  assignFirstOwner: (ownerUserId: string) =>
+    apiFetch<ResponsePack<FirstOwner>>("/users/owner", {
+      method: "POST",
+      data: { owner_user_id: ownerUserId },
+    }),
+
+  setAdminActive: (id: string, isActive: boolean) =>
+    apiFetch<ResponsePack<User>>(
+      `/users/admins/${id}/status`,
+      {
+        method: "PATCH",
+        data: { is_active: isActive },
+      },
+      true
+    ),
+
   getAll: (params?: GetAdminsParams) =>
     apiFetch<AdminsListResponse>(
       "/users/admins",

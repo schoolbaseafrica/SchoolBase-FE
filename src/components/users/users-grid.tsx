@@ -217,13 +217,15 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                           Edit
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteClick(user)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
+                      {!isAdmin && (
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(user)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -301,7 +303,13 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteConfirm}
           title={
-            isTeacher ? "Delete Teacher" : isStudent ? "Delete Student" : isAdmin ? "Delete Admin" : "Delete Parent"
+            isTeacher
+              ? "Delete Teacher"
+              : isStudent
+                ? "Delete Student"
+                : isAdmin
+                  ? "Delete Admin"
+                  : "Delete Parent"
           }
           description={
             isTeacher
