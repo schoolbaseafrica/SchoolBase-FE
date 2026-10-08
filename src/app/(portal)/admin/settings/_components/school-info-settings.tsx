@@ -1136,19 +1136,15 @@ export const SchoolInfoSettings = () => {
       }
 
       // Add ID Format Configuration
-      if (formData.schoolCode) formDataToSend.append("school_code", formData.schoolCode)
-      if (formData.studentIdFormat)
-        formDataToSend.append("student_id_format", formData.studentIdFormat)
-      if (formData.studentIdPrefix)
-        formDataToSend.append("student_id_prefix", formData.studentIdPrefix)
+      formDataToSend.append("school_code", formData.schoolCode.trim())
+      formDataToSend.append("student_id_format", formData.studentIdFormat.trim())
+      formDataToSend.append("student_id_prefix", formData.studentIdPrefix.trim() || "STU")
       formDataToSend.append(
         "allow_manual_student_ids",
         formData.allowManualStudentIds ? "true" : "false"
       )
-      if (formData.teacherIdFormat)
-        formDataToSend.append("teacher_id_format", formData.teacherIdFormat)
-      if (formData.teacherIdPrefix)
-        formDataToSend.append("teacher_id_prefix", formData.teacherIdPrefix)
+      formDataToSend.append("teacher_id_format", formData.teacherIdFormat.trim())
+      formDataToSend.append("teacher_id_prefix", formData.teacherIdPrefix.trim() || "EMP")
       formDataToSend.append(
         "allow_manual_teacher_ids",
         formData.allowManualTeacherIds ? "true" : "false"
