@@ -44,6 +44,12 @@ export const AdminsAPI = {
       data: { owner_user_id: ownerUserId },
     }),
 
+  transferOwner: (newOwnerUserId: string) =>
+    apiFetch<ResponsePack<FirstOwner>>("/users/owner/transfer", {
+      method: "POST",
+      data: { new_owner_user_id: newOwnerUserId },
+    }),
+
   setAdminActive: (id: string, isActive: boolean) =>
     apiFetch<ResponsePack<User>>(
       `/users/admins/${id}/status`,

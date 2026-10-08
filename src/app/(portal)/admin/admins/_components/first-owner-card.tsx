@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { AdminsAPI } from "@/lib/admins"
+import { OwnerTransferControls } from "./owner-transfer-controls"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { Button } from "@/components/ui/button"
@@ -168,6 +169,7 @@ export function FirstOwnerCard() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <OwnerTransferControls ownerId={currentOwner.owner_user_id} />
           </>
         )}
       </section>
