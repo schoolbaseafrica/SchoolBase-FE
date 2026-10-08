@@ -169,20 +169,20 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
           return (
             <Card
               key={user.id}
-              className="cursor-pointer transition-shadow hover:shadow-md"
+              className="border-border/80 min-w-0 cursor-pointer bg-white transition-shadow hover:shadow-md"
               onClick={() => handleViewClick(user)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={user.avatar} alt={getFullName(user)} />
                       <AvatarFallback>
                         {getInitials(user.first_name, user.last_name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="font-semibold">{getFullName(user)}</h3>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold break-words">{getFullName(user)}</h3>
                       <div className="mt-1 flex items-center gap-1">
                         <span className="text-muted-foreground text-sm">
                           {isTeacher
@@ -236,9 +236,11 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                         <p className="text-muted-foreground">Relationship:</p>
                         <p className="text-right font-medium">{user.role}</p>
                       </div>
-                      <div className="flex items-center justify-between pb-2">
+                      <div className="flex min-w-0 items-start justify-between gap-3 pb-2">
                         <p className="text-muted-foreground">Email:</p>
-                        <p className="text-right font-medium">{user.email}</p>
+                        <p className="min-w-0 text-right font-medium break-all">
+                          {user.email}
+                        </p>
                       </div>
                     </>
                   )}
@@ -282,7 +284,7 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                   )}
                   <div className="flex items-center justify-between pb-2">
                     <p className="text-muted-foreground">Phone No:</p>
-                    <p className="font-medium">{user.phone}</p>
+                    <p className="font-medium break-words">{user.phone}</p>
                   </div>
                   {isParent && (
                     <div className="flex items-center justify-between pb-2">

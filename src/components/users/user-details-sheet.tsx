@@ -188,7 +188,7 @@ export function UserDetailsSheet({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full overflow-y-auto p-8 sm:max-w-lg">
+        <SheetContent className="w-full overflow-y-auto p-5 sm:max-w-lg sm:p-8">
           <SheetHeader className="flex flex-row items-center justify-between">
             <SheetTitle className="text-xl">
               {userType === "teachers"
@@ -202,18 +202,18 @@ export function UserDetailsSheet({
             </SheetTitle>
           </SheetHeader>
 
-          <div className="mt-6 space-y-6">
+          <div className="mt-6 min-w-0 space-y-6">
             {/* Profile Section */}
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={user.avatar} alt={getFullName()} />
                 <AvatarFallback>
                   {getInitials(user.first_name, user.last_name)}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold">{getFullName()}</h3>
-                {userType !== "admins" && (
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold break-words">{getFullName()}</h3>
+                {(userType === "teachers" || userType === "students") && (
                   <p className="text-sm text-gray-600">
                     {userType === "teachers"
                       ? "Employee ID"
@@ -232,14 +232,14 @@ export function UserDetailsSheet({
             {/* Details Section */}
             <div className="space-y-4">
               <h4 className="font-medium text-gray-900">Personal Information</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid min-w-0 grid-cols-2 gap-4">
+                <div className="col-span-2 min-w-0">
                   <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium">{user.email}</p>
+                  <p className="font-medium break-all">{user.email}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-gray-600">Phone</p>
-                  <p className="font-medium">{user.phone}</p>
+                  <p className="font-medium break-words">{user.phone}</p>
                 </div>
                 {user.gender && (
                   <div>
@@ -260,7 +260,7 @@ export function UserDetailsSheet({
               {user.home_address && (
                 <div>
                   <p className="text-sm text-gray-600">Address</p>
-                  <p className="font-medium">{user.home_address}</p>
+                  <p className="font-medium break-words">{user.home_address}</p>
                 </div>
               )}
 
@@ -346,7 +346,7 @@ export function UserDetailsSheet({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 pt-4">
+            <div className="flex flex-col gap-2 border-t pt-5">
               {userType === "parents" && (
                 <>
                   <GenerateAccessLinkDialog
@@ -355,7 +355,7 @@ export function UserDetailsSheet({
                   />
                   <Button
                     onClick={handleLinkStudent}
-                    variant="outline"
+                    variant="secondary"
                     className="w-full justify-start"
                   >
                     <LinkIcon className="mr-2 h-4 w-4" />
@@ -366,7 +366,7 @@ export function UserDetailsSheet({
               {userType !== "admins" && (
                 <Button
                   onClick={handleEdit}
-                  variant="outline"
+                  variant="secondary"
                   className="w-full justify-start"
                 >
                   <Edit3 className="mr-2 h-4 w-4" />
@@ -376,8 +376,8 @@ export function UserDetailsSheet({
               {userType !== "admins" && (
                 <Button
                   onClick={() => setDeleteDialogOpen(true)}
-                  variant="outline"
-                  className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/5 hover:text-destructive w-full justify-start"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
