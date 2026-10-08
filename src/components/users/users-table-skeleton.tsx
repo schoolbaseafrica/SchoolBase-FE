@@ -16,16 +16,13 @@ interface UsersTableSkeletonProps {
   rows?: number
 }
 
-export function UsersTableSkeleton({
-  userType,
-  rows = 10,
-}: UsersTableSkeletonProps) {
+export function UsersTableSkeleton({ userType, rows = 10 }: UsersTableSkeletonProps) {
   const isTeacher = userType === "teachers"
   const isStudent = userType === "students"
   const isParent = userType === "parents"
 
   return (
-    <div className="rounded-md border">
+    <div className="border-border/80 overflow-x-auto rounded-2xl border bg-white shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>

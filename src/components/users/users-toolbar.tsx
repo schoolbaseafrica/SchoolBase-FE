@@ -35,7 +35,13 @@ export function UsersToolbar({
   const isTeacher = userType === "teachers"
   const isStudent = userType === "students"
   const isAdmin = userType === "admins"
-  const title = isTeacher ? "Teachers" : isStudent ? "Students" : isAdmin ? "Admins" : "Parents"
+  const title = isTeacher
+    ? "Teachers"
+    : isStudent
+      ? "Students"
+      : isAdmin
+        ? "Admins"
+        : "Parents"
   const description = isTeacher
     ? "Manage your teaching staff"
     : isStudent
@@ -91,14 +97,15 @@ export function UsersToolbar({
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="placeholder:text-muted-foreground/70 h-11 rounded-lg border bg-white pl-11 text-base sm:w-auto lg:w-[272px]"
+            className="placeholder:text-muted-foreground/70 h-11 rounded-xl border bg-white pl-11 text-base sm:w-auto lg:w-[272px]"
           />
         </div>
         <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
-              className={`h-12 justify-between rounded-lg border font-normal transition-colors ${open ? "bg-red-100" : ""}`}
+              variant="secondary"
+              aria-label="Filter users by status"
+              className={`h-11 justify-between font-medium transition-colors ${open ? "bg-accent/10 text-accent" : ""}`}
             >
               <ListFilter className="text-muted-foreground hidden h-4 w-4 lg:block" />
               {open ? (

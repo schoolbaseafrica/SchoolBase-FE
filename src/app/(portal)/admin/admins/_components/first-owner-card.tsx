@@ -3,12 +3,14 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { ShieldCheck } from "lucide-react"
 
 import { AdminsAPI } from "@/lib/admins"
 import { OwnerTransferControls } from "./owner-transfer-controls"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { extractErrorMessage } from "@/lib/error-handler"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   AlertDialog,
@@ -30,18 +32,10 @@ import {
 
 export function FirstOwnerCard() {
   const queryClient = useQueryClient()
+  const viewer = useAuthUser()
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<{ id: string; name: string } | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [statusSearch, setStatusSearch] = useState("")
-  const [selectedAdmin, setSelectedAdmin] = useState<{
-    id: string
-    name: string
-    is_active: boolean
-  } | null>(null)
-  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false)
-  const viewer = useAuthUser()
-
   const owner = useQuery({
     queryKey: ["first-school-owner"],
     queryFn: () => AdminsAPI.getFirstOwner(),
@@ -61,186 +55,114 @@ export function FirstOwnerCard() {
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   })
-  const isOwner = Boolean(
-    owner.data?.data.owner_user_id && owner.data.data.owner_user_id === viewer.data?.id
-  )
-  const admins = useQuery({
-    queryKey: ["owner-admin-access", statusSearch],
-    queryFn: () => AdminsAPI.getAll({ limit: 100, search: statusSearch || undefined }),
-    enabled: isOwner,
-  })
-  const setAccess = useMutation({
-    mutationFn: (admin: { id: string; is_active: boolean }) =>
-      AdminsAPI.setAdminActive(admin.id, !admin.is_active),
-    onSuccess: async () => {
-      toast.success(selectedAdmin?.is_active ? "Admin deactivated" : "Admin reactivated")
-      setSelectedAdmin(null)
-      await queryClient.invalidateQueries({ queryKey: ["owner-admin-access"] })
-      await queryClient.invalidateQueries({ queryKey: ["admins"] })
-    },
-    onError: (error) => toast.error(extractErrorMessage(error)),
-  })
 
   if (owner.isLoading) return null
   if (owner.isError) {
     return (
-      <p className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <p className="mx-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
         Unable to load school owner status.
       </p>
     )
   }
 
   const currentOwner = owner.data?.data
+  const isOwner = currentOwner?.owner_user_id === viewer.data?.id
   if (currentOwner?.owner_user_id) {
     return (
-      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="font-semibold">School owner</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          {currentOwner.first_name} {currentOwner.last_name} · {currentOwner.email}
-        </p>
-        {isOwner && (
-          <>
-            <h3 className="mt-5 font-medium">Admin access</h3>
-            <p className="mt-1 text-sm text-slate-600">
-              Deactivation ends current sessions. Reactivated admins must sign in again.
-            </p>
-            <Input
-              className="mt-3 max-w-sm"
-              value={statusSearch}
-              onChange={(event) => setStatusSearch(event.target.value)}
-              placeholder="Search admins"
-              aria-label="Search admin access"
-            />
-            {admins.isError && (
-              <p className="mt-2 text-sm text-red-700">Unable to load admins.</p>
-            )}
-            <div className="mt-3 space-y-2">
-              {admins.data?.data.map((admin) => (
-                <div
-                  key={admin.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-                >
-                  <span className="text-sm">
-                    {admin.first_name} {admin.last_name} · {admin.email}
-                    <span className="ml-2 text-slate-500">
-                      {admin.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </span>
-                  {admin.id !== currentOwner.owner_user_id && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedAdmin({
-                          id: admin.id,
-                          name: `${admin.first_name} ${admin.last_name}`,
-                          is_active: admin.is_active,
-                        })
-                        setStatusConfirmOpen(true)
-                      }}
-                    >
-                      {admin.is_active ? "Deactivate" : "Reactivate"}
-                    </Button>
-                  )}
-                </div>
-              ))}
+      <Card className="mx-4 mt-5 gap-0 py-0 sm:mx-6">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="bg-accent/10 text-accent rounded-xl p-2">
+              <ShieldCheck className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-semibold">School owner</h2>
+              <p className="text-muted-foreground text-sm break-all">
+                {currentOwner.first_name} {currentOwner.last_name} · {currentOwner.email}
+              </p>
+              {isOwner && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Manage admin access from the list below.
+                </p>
+              )}
             </div>
-            <AlertDialog open={statusConfirmOpen} onOpenChange={setStatusConfirmOpen}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {selectedAdmin?.is_active ? "Deactivate" : "Reactivate"}{" "}
-                    {selectedAdmin?.name}?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {selectedAdmin?.is_active
-                      ? "Their existing access and refresh sessions will end immediately."
-                      : "They can sign in again with their existing credentials."}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    disabled={setAccess.isPending}
-                    onClick={() => selectedAdmin && setAccess.mutate(selectedAdmin)}
-                  >
-                    Confirm
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <OwnerTransferControls ownerId={currentOwner.owner_user_id} />
-          </>
-        )}
-      </section>
+          </div>
+          {isOwner && <OwnerTransferControls ownerId={currentOwner.owner_user_id} />}
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <section className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-5">
-      <h2 className="font-semibold text-slate-900">Assign the first school owner</h2>
-      <p className="mt-1 text-sm text-slate-700">
-        The school should choose an existing admin. The owner will control future admin
-        deactivation and ownership transfer. This first assignment can only be made once.
-      </p>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search admins by name or email"
-          aria-label="Search eligible admins"
-          className="bg-white sm:max-w-72"
-        />
-        <Select
-          value={selected?.id}
-          onValueChange={(id) => {
-            const admin = candidates.data?.data.find((item) => item.id === id)
-            if (admin) setSelected({ id, name: `${admin.first_name} ${admin.last_name}` })
-          }}
-        >
-          <SelectTrigger className="w-full bg-white sm:w-72">
-            <SelectValue placeholder="Choose an admin" />
-          </SelectTrigger>
-          <SelectContent>
-            {candidates.data?.data.map((admin) => (
-              <SelectItem key={admin.id} value={admin.id}>
-                {admin.first_name} {admin.last_name} · {admin.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          disabled={!selected || assign.isPending}
-          onClick={() => setConfirmOpen(true)}
-        >
-          Assign owner
-        </Button>
-      </div>
-      {candidates.isError && (
-        <p className="mt-2 text-sm text-red-700">Unable to load eligible admins.</p>
-      )}
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Assign {selected?.name} as school owner?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Confirm this choice with the school. The owner will have authority over
-              admin access, and this first assignment cannot be repeated. All admins will
-              be notified.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={!selected || assign.isPending}
-              onClick={() => selected && assign.mutate(selected.id)}
-            >
-              Confirm owner
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </section>
+    <Card className="mx-4 mt-5 border-amber-200 bg-amber-50 py-0 sm:mx-6">
+      <CardContent className="space-y-4 p-5">
+        <div>
+          <h2 className="font-semibold">Assign the first school owner</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            The school should choose an existing active admin. This first assignment can
+            only be made once.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search admins by name or email"
+            aria-label="Search eligible admins"
+            className="bg-white sm:max-w-72"
+          />
+          <Select
+            value={selected?.id}
+            onValueChange={(id) => {
+              const admin = candidates.data?.data.find((item) => item.id === id)
+              if (admin)
+                setSelected({ id, name: `${admin.first_name} ${admin.last_name}` })
+            }}
+          >
+            <SelectTrigger className="w-full bg-white sm:w-72">
+              <SelectValue placeholder="Choose an admin" />
+            </SelectTrigger>
+            <SelectContent>
+              {candidates.data?.data.map((admin) => (
+                <SelectItem key={admin.id} value={admin.id}>
+                  {admin.first_name} {admin.last_name} · {admin.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            disabled={!selected || assign.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            Assign owner
+          </Button>
+        </div>
+        {candidates.isError && (
+          <p className="text-sm text-red-700">Unable to load eligible admins.</p>
+        )}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Assign {selected?.name} as school owner?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Confirm this choice with the school. The owner will control admin access,
+                and this first assignment cannot be repeated.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!selected || assign.isPending}
+                onClick={() => selected && assign.mutate(selected.id)}
+              >
+                Confirm owner
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   )
 }

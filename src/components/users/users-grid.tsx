@@ -26,6 +26,8 @@ import { apiFetch } from "@/lib/api/client"
 interface UsersGridProps {
   users: User[]
   userType: UserType
+  onToggleAdminAccess?: (user: User) => void
+  ownerUserId?: string | null
 }
 
 interface Subject {
@@ -60,7 +62,12 @@ interface ApiResponse {
   data: PaginatedResponse
 }
 
-export function UsersGrid({ users, userType }: UsersGridProps) {
+export function UsersGrid({
+  users,
+  userType,
+  onToggleAdminAccess,
+  ownerUserId,
+}: UsersGridProps) {
   const deleteTeacherMutation = useDeleteTeacher()
   const deleteStudentMutation = useDeleteStudent()
   const deleteParentMutation = useDeleteParent()
@@ -211,6 +218,11 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                           Link Student
                         </DropdownMenuItem>
                       )}
+                      {isAdmin && onToggleAdminAccess && user.id !== ownerUserId && (
+                        <DropdownMenuItem onClick={() => onToggleAdminAccess(user)}>
+                          {user.is_active ? "Deactivate" : "Reactivate"}
+                        </DropdownMenuItem>
+                      )}
                       {!isAdmin && (
                         <DropdownMenuItem onClick={() => handleEditClick(user)}>
                           <Edit3 className="mr-2 h-4 w-4" />
@@ -232,10 +244,6 @@ export function UsersGrid({ users, userType }: UsersGridProps) {
                 <div className="mt-4 grid grid-cols-1 gap-2 text-sm">
                   {isParent && (
                     <>
-                      <div className="flex items-center justify-between pb-2">
-                        <p className="text-muted-foreground">Relationship:</p>
-                        <p className="text-right font-medium">{user.role}</p>
-                      </div>
                       <div className="flex min-w-0 items-start justify-between gap-3 pb-2">
                         <p className="text-muted-foreground">Email:</p>
                         <p className="min-w-0 text-right font-medium break-all">

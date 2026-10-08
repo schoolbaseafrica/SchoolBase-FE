@@ -31,6 +31,8 @@ interface UsersViewProps {
   totalPages?: number
   totalItems?: number
   onAddUser?: () => void
+  onToggleAdminAccess?: (user: User) => void
+  ownerUserId?: string | null
 }
 
 export function UsersView({
@@ -49,6 +51,8 @@ export function UsersView({
   totalPages,
   totalItems,
   onAddUser,
+  onToggleAdminAccess,
+  ownerUserId,
 }: UsersViewProps) {
   const router = useRouter()
   const navigate = () => router.push(`/admin/${userType}/new`)
@@ -80,11 +84,18 @@ export function UsersView({
               userType={userType}
               currentPage={currentPage}
               itemsPerPage={pageSize}
+              onToggleAdminAccess={onToggleAdminAccess}
+              ownerUserId={ownerUserId}
             />
           </div>
 
           <div className="block md:hidden">
-            <UsersGrid users={users} userType={userType} />
+            <UsersGrid
+              users={users}
+              userType={userType}
+              onToggleAdminAccess={onToggleAdminAccess}
+              ownerUserId={ownerUserId}
+            />
           </div>
 
           {users.length > 0 && (

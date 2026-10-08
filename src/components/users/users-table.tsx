@@ -29,6 +29,8 @@ interface UsersTableProps {
   userType: UserType
   currentPage: number
   itemsPerPage: number
+  onToggleAdminAccess?: (user: User) => void
+  ownerUserId?: string | null
 }
 
 export function UsersTable({
@@ -36,6 +38,8 @@ export function UsersTable({
   userType,
   currentPage,
   itemsPerPage,
+  onToggleAdminAccess,
+  ownerUserId,
 }: UsersTableProps) {
   const deleteTeacherMutation = useDeleteTeacher()
   const deleteStudentMutation = useDeleteStudent()
@@ -70,20 +74,24 @@ export function UsersTable({
 
   // Fetch class assignments for all teachers
   const [teacherClassesMap, setTeacherClassesMap] = useState<Record<string, string[]>>({})
-  
+
   useEffect(() => {
     if (isTeacher && users.length > 0) {
       // Fetch classes for all teachers in parallel
       Promise.all(
         users.map(async (teacher) => {
           try {
-            const response = await ClassesAPI.getClassesByTeacher(teacher.teacher_id || teacher.id)
+            const response = await ClassesAPI.getClassesByTeacher(
+              teacher.teacher_id || teacher.id
+            )
             // Response structure: ResponsePack<{ id: string; name: string; arm?: string; ... }[]>
             // So response.data is the array directly
             const classes = response.data || []
             return {
               teacherId: teacher.teacher_id || teacher.id,
-              classNames: classes.map((cls) => `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`),
+              classNames: classes.map(
+                (cls) => `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`
+              ),
             }
           } catch (error) {
             console.error(`Error fetching classes for teacher ${teacher.id}:`, error)
@@ -153,13 +161,19 @@ export function UsersTable({
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="border-border/80 overflow-x-auto rounded-2xl border bg-white shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-16">S/N</TableHead>
             <TableHead>
-              {isTeacher ? "Teacher" : isStudent ? "Student" : isAdmin ? "Admin" : "Parent"}
+              {isTeacher
+                ? "Teacher"
+                : isStudent
+                  ? "Student"
+                  : isAdmin
+                    ? "Admin"
+                    : "Parent"}
             </TableHead>
             {isParent && <TableHead>Email</TableHead>}
             {isParent && <TableHead>Address</TableHead>}
@@ -175,7 +189,7 @@ export function UsersTable({
             {isStudent && <TableHead>Address</TableHead>}
             <TableHead>Status</TableHead>
             <TableHead>Phone Number</TableHead>
-            <TableHead className="w-28">Actions</TableHead>
+            <TableHead className="min-w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -214,7 +228,9 @@ export function UsersTable({
               {isStudent && (
                 <>
                   <TableCell>
-                    {user.class || <span className="text-muted-foreground">Not assigned</span>}
+                    {user.class || (
+                      <span className="text-muted-foreground">Not assigned</span>
+                    )}
                   </TableCell>
                   <TableCell>{user.home_address}</TableCell>
                 </>
@@ -245,6 +261,15 @@ export function UsersTable({
                       title="Link student"
                     >
                       <LinkIcon className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {isAdmin && onToggleAdminAccess && user.id !== ownerUserId && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onToggleAdminAccess(user)}
+                    >
+                      {user.is_active ? "Deactivate" : "Reactivate"}
                     </Button>
                   )}
                   {/* <Button
@@ -278,7 +303,13 @@ export function UsersTable({
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteConfirm}
           title={
-            isTeacher ? "Delete Teacher" : isStudent ? "Delete Student" : isAdmin ? "Delete Admin" : "Delete Parent"
+            isTeacher
+              ? "Delete Teacher"
+              : isStudent
+                ? "Delete Student"
+                : isAdmin
+                  ? "Delete Admin"
+                  : "Delete Parent"
           }
           description={
             isTeacher
