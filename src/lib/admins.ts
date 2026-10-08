@@ -35,8 +35,23 @@ export interface FirstOwner {
   email: string | null
 }
 
+export interface OwnerOverview {
+  session: { id: string; name: string }
+  term_id: string | null
+  active_admins: number
+  inactive_admins: number
+  enrolled_students: number
+  results_generated: number
+  attendance_records: number
+  absence_late_records: number
+  recent_activity_events: number
+}
+
 export const AdminsAPI = {
   getFirstOwner: () => apiFetch<ResponsePack<FirstOwner>>("/users/owner"),
+
+  getOwnerOverview: (params: { session_id: string; term_id?: string }) =>
+    apiFetch<ResponsePack<OwnerOverview>>("/users/owner/overview", { params }),
 
   assignFirstOwner: (ownerUserId: string) =>
     apiFetch<ResponsePack<FirstOwner>>("/users/owner", {

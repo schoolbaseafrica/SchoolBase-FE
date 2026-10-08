@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { usePathname } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import {
   GraduationCap,
@@ -43,6 +44,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import Logo from "@/components/logo"
+import { useAuthUser } from "@/hooks/use-auth-user"
+import { AdminsAPI } from "@/lib/admins"
 
 // Menu items
 const mainItems = [
@@ -114,6 +117,14 @@ const bottomItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const viewer = useAuthUser()
+  const owner = useQuery({
+    queryKey: ["first-school-owner"],
+    queryFn: () => AdminsAPI.getFirstOwner(),
+  })
+  const isOwner = Boolean(
+    viewer.data?.id && viewer.data.id === owner.data?.data.owner_user_id
+  )
   const { isMobile, setOpenMobile, state } = useSidebar()
   const [openItems, setOpenItems] = useState<string[]>([])
 
@@ -134,7 +145,24 @@ export function AdminSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-3">
-              {mainItems.map((item) => {
+              {(isOwner
+                ? [
+                    {
+                      title: "Owner overview",
+                      url: "/admin/owner",
+                      icon: School,
+                      exactMatch: true,
+                    },
+                    {
+                      title: "Operations",
+                      url: "/admin/operations",
+                      icon: Menu,
+                      exactMatch: true,
+                    },
+                    ...mainItems.slice(1),
+                  ]
+                : mainItems
+              ).map((item) => {
                 const hasSubItems = "subItems" in item && item.subItems
 
                 let isActive: boolean
