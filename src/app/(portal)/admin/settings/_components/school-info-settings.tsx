@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,8 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { apiFetch } from "@/lib/api/client"
+import { AdminsAPI } from "@/lib/admins"
+import { useAuthUser } from "@/hooks/use-auth-user"
 import { useSchoolStore } from "@/store/use-school-store"
 
 interface SchoolData {
@@ -896,6 +899,16 @@ const getStatesForCountry = (country: string): string[] => {
 export const SchoolInfoSettings = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingRetention, setIsSavingRetention] = useState(false)
+  const [savedRetentionDays, setSavedRetentionDays] = useState<number | null>(null)
+  const viewer = useAuthUser()
+  const owner = useQuery({
+    queryKey: ["first-school-owner"],
+    queryFn: () => AdminsAPI.getFirstOwner(),
+  })
+  const isOwner = Boolean(
+    viewer.data?.id && owner.data?.data.owner_user_id === viewer.data.id
+  )
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1022,6 +1035,7 @@ export const SchoolInfoSettings = () => {
             staffIdPrefix: schoolData.staff_id_prefix || "STF",
             allowManualStaffIds: schoolData.allow_manual_staff_ids ?? true,
           })
+          setSavedRetentionDays(schoolData.activity_log_retention_days ?? null)
 
           // Set logo preview if logo URL exists
           if (schoolData.logo_url) {
@@ -1121,20 +1135,6 @@ export const SchoolInfoSettings = () => {
       if (formData.accentColor)
         formDataToSend.append("accent_color", formData.accentColor)
 
-      // Add activity log retention days
-      if (
-        formData.activityLogRetentionDays !== null &&
-        formData.activityLogRetentionDays !== undefined
-      ) {
-        formDataToSend.append(
-          "activity_log_retention_days",
-          formData.activityLogRetentionDays.toString()
-        )
-      } else {
-        // Send null/empty to indicate "keep forever"
-        formDataToSend.append("activity_log_retention_days", "")
-      }
-
       // Add ID Format Configuration
       formDataToSend.append("school_code", formData.schoolCode.trim())
       formDataToSend.append("student_id_format", formData.studentIdFormat.trim())
@@ -1218,7 +1218,7 @@ export const SchoolInfoSettings = () => {
           city: parsedCity,
           streetAddress: parsedStreet,
           email: updatedSchool.email || formData.email,
-          activityLogRetentionDays: updatedSchool.activity_log_retention_days ?? null,
+          activityLogRetentionDays: formData.activityLogRetentionDays,
           // ID Format Configuration
           schoolCode: updatedSchool.school_code || "",
           studentIdFormat: updatedSchool.student_id_format || "",
@@ -1282,6 +1282,29 @@ export const SchoolInfoSettings = () => {
       toast.error(errorMessage)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleSaveRetention = async () => {
+    if (!isOwner) return
+    const days = formData.activityLogRetentionDays
+    if (days !== null && (!Number.isSafeInteger(days) || days < 1)) {
+      toast.error("Enter a positive number of days or choose Forever")
+      return
+    }
+    setIsSavingRetention(true)
+    try {
+      await apiFetch(
+        "/school/activity-log-retention",
+        { method: "PATCH", data: { activity_log_retention_days: days } },
+        true
+      )
+      setSavedRetentionDays(days)
+      toast.success("Activity log retention updated")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update retention")
+    } finally {
+      setIsSavingRetention(false)
     }
   }
 
@@ -1659,8 +1682,9 @@ export const SchoolInfoSettings = () => {
                   Activity Log Retention Period
                 </Label>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  Set how long to keep activity logs. Cleanup runs when you save and once
-                  a day; leave empty to keep logs forever.
+                  Logs are kept forever by default. Only the school owner can change this
+                  period. If a period is set, older logs are permanently deleted during
+                  the next daily cleanup.
                 </p>
 
                 <div className="space-y-4">
@@ -1669,15 +1693,15 @@ export const SchoolInfoSettings = () => {
                       id="activityLogRetention"
                       name="activityLogRetention"
                       type="number"
-                      min="0"
+                      min="1"
+                      disabled={!isOwner || isSavingRetention}
                       placeholder="Days (e.g., 90) or leave empty for forever"
                       value={formData.activityLogRetentionDays ?? ""}
                       onChange={(e) => {
                         const value = e.target.value
                         setFormData((prev) => ({
                           ...prev,
-                          activityLogRetentionDays:
-                            value === "" ? null : parseInt(value, 10) || 0,
+                          activityLogRetentionDays: value === "" ? null : Number(value),
                         }))
                       }}
                       className="max-w-xs"
@@ -1686,15 +1710,14 @@ export const SchoolInfoSettings = () => {
                       {formData.activityLogRetentionDays === null ||
                       formData.activityLogRetentionDays === undefined
                         ? "Keep forever"
-                        : formData.activityLogRetentionDays === 0
-                          ? "Delete on the next cleanup"
-                          : `Keep for ${formData.activityLogRetentionDays} day${formData.activityLogRetentionDays !== 1 ? "s" : ""}`}
+                        : `Keep for ${formData.activityLogRetentionDays} day${formData.activityLogRetentionDays !== 1 ? "s" : ""}`}
                     </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
+                      disabled={!isOwner || isSavingRetention}
                       variant="outline"
                       size="sm"
                       onClick={() =>
@@ -1706,6 +1729,7 @@ export const SchoolInfoSettings = () => {
                     </Button>
                     <Button
                       type="button"
+                      disabled={!isOwner || isSavingRetention}
                       variant="outline"
                       size="sm"
                       onClick={() =>
@@ -1717,6 +1741,7 @@ export const SchoolInfoSettings = () => {
                     </Button>
                     <Button
                       type="button"
+                      disabled={!isOwner || isSavingRetention}
                       variant="outline"
                       size="sm"
                       onClick={() =>
@@ -1731,6 +1756,7 @@ export const SchoolInfoSettings = () => {
                     </Button>
                     <Button
                       type="button"
+                      disabled={!isOwner || isSavingRetention}
                       variant="outline"
                       size="sm"
                       onClick={() =>
@@ -1745,6 +1771,7 @@ export const SchoolInfoSettings = () => {
                     </Button>
                     <Button
                       type="button"
+                      disabled={!isOwner || isSavingRetention}
                       variant="outline"
                       size="sm"
                       onClick={() =>
@@ -1758,6 +1785,22 @@ export const SchoolInfoSettings = () => {
                       Forever
                     </Button>
                   </div>
+                  {isOwner ? (
+                    <Button
+                      type="button"
+                      onClick={handleSaveRetention}
+                      disabled={
+                        isSavingRetention ||
+                        formData.activityLogRetentionDays === savedRetentionDays
+                      }
+                    >
+                      {isSavingRetention ? "Saving..." : "Save retention period"}
+                    </Button>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      Only the school owner can adjust retention.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
