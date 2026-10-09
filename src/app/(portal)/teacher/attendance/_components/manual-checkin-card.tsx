@@ -10,12 +10,17 @@ import { useManualCheckIn } from "../_hooks/use-teacher-attendance"
 
 interface ManualCheckInCardProps {
   hasCheckedIn: boolean
+  hasPendingRequest: boolean
 }
 
-export default function ManualCheckInCard({ hasCheckedIn }: ManualCheckInCardProps) {
+export default function ManualCheckInCard({
+  hasCheckedIn,
+  hasPendingRequest,
+}: ManualCheckInCardProps) {
   const [reason, setReason] = useState("")
   const [now, setNow] = useState(() => new Date())
   const { mutate: checkIn, isPending } = useManualCheckIn()
+  const outsideCheckInHours = now.getHours() < 7 || now.getHours() >= 17
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000)
@@ -23,7 +28,7 @@ export default function ManualCheckInCard({ hasCheckedIn }: ManualCheckInCardPro
   }, [])
 
   const handleCheckIn = () => {
-    if (!reason.trim()) return
+    if (!reason.trim() || outsideCheckInHours) return
     const currentTime = new Date()
     checkIn(
       {
@@ -54,6 +59,19 @@ export default function ManualCheckInCard({ hasCheckedIn }: ManualCheckInCardPro
         <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
           <span>You have checked in for today.</span>
+        </div>
+      ) : hasPendingRequest ? (
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <Clock3 className="mt-0.5 size-5 shrink-0" />
+          <span>Your check-in request is awaiting admin review.</span>
+        </div>
+      ) : outsideCheckInHours ? (
+        <div className="bg-muted/40 text-foreground mt-5 flex items-start gap-3 rounded-xl border border-[var(--portal-line)] p-4 text-sm">
+          <Clock3 className="mt-0.5 size-5 shrink-0" />
+          <span>
+            Check-in is available from 7:00 AM to 5:00 PM. Please contact an administrator
+            if you need to correct an attendance record.
+          </span>
         </div>
       ) : (
         <div className="mt-5 max-w-2xl space-y-3">

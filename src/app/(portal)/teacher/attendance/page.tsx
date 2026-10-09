@@ -27,6 +27,7 @@ const TeacherAttendance = () => {
   const { data: checkInStatus, isLoading: statusLoading } = useGetTodayCheckInStatus()
 
   const hasCheckedIn = checkInStatus?.has_attendance || false
+  const hasPendingRequest = checkInStatus?.has_pending_request || false
   const isClassTeacher = assignedClasses && assignedClasses.length > 0
 
   return (
@@ -70,7 +71,10 @@ const TeacherAttendance = () => {
             <Loader2 className="size-4 animate-spin" /> Loading your check-in…
           </div>
         ) : (
-          <ManualCheckInCard hasCheckedIn={hasCheckedIn} />
+          <ManualCheckInCard
+            hasCheckedIn={hasCheckedIn}
+            hasPendingRequest={hasPendingRequest}
+          />
         )}
       </section>
     </div>
