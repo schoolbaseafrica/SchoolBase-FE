@@ -207,8 +207,8 @@ export function TeacherResultsView({
         />
       ) : noSubjectsForClass ? (
         <InfoState
-          title="No Subjects Assigned"
-          message="You are not assigned to teach any subjects in this class. Please select a different class or contact the administrator."
+          title="No subjects assigned to you"
+          message="This class is assigned to you, but none of its subjects are assigned to you for result entry. Ask an administrator to assign you to a subject in Class Management."
           variant="warning"
         />
       ) : !selectedClass ? (

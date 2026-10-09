@@ -12,6 +12,7 @@ import {
 } from "../_hooks/use-results"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { ErrorState } from "../_components/ui/error-state"
+import { InfoState } from "../_components/ui/info-state"
 import { SkeletonLoader } from "../_components/ui/skeleton-loader"
 import { Button } from "@/components/ui/button"
 import { Home, Loader2 } from "lucide-react"
@@ -154,22 +155,24 @@ export default function TeacherResultsPage() {
     )
   }
 
-  // Show error if teacher is not assigned to any classes
+  // A teacher may have classes in other academic sessions.
   if (isNotAssigned) {
+    const sessionName = period.sessions.find((item) => item.id === period.sessionId)?.name
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-        <ErrorState
-          title="No Classes Assigned"
-          message="You are not assigned to any classes. Please contact the administrator to be assigned to a class before you can manage results."
-          icon="book"
-          action={
-            <Link href="/teacher">
-              <Button variant="outline">
-                <Home className="mr-2 h-4 w-4" />
-                Go to Teacher Dashboard
-              </Button>
-            </Link>
-          }
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="portal-reveal max-w-3xl">
+          <p className="portal-section-label mb-2">Academic records</p>
+          <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
+            Results
+          </h1>
+          <p className="text-muted-foreground mt-3 text-sm">
+            Enter and manage grades for your assigned subjects.
+          </p>
+        </div>
+        <AcademicPeriodSelector scope="teacher-results" allowWholeSession={false} />
+        <InfoState
+          title="No classes in this session"
+          message={`You have no class assignment${sessionName ? ` in ${sessionName}` : " for this session"}. Choose another session above, or ask an administrator to check your class assignment.`}
         />
       </div>
     )
