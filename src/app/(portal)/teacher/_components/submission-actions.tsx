@@ -233,7 +233,6 @@ export function SubmissionActions({
         <Button
           onClick={handleSubmitForApproval}
           disabled={submitMutation.isPending || !canSubmit}
-          className="bg-[#da3743]"
         >
           {submitMutation.isPending ? "Submitting..." : "Submit for Approval"}
         </Button>

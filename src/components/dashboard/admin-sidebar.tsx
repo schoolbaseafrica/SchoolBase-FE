@@ -202,7 +202,7 @@ export function AdminSidebar() {
                             asChild
                             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 ${
                               isActive || hasActiveChild
-                                ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
+                                ? "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
                                 : "text-gray-700 hover:bg-gray-100"
                             }`}
                           >
@@ -253,7 +253,7 @@ export function AdminSidebar() {
                       asChild
                       className={`rounded-xl px-3 py-2.5 ${
                         isActive
-                          ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -285,7 +285,7 @@ export function AdminSidebar() {
                     asChild
                     className={`rounded-xl px-3 py-2.5 ${
                       isActive
-                        ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
+                        ? "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >

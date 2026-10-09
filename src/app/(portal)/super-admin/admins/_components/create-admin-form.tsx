@@ -103,11 +103,7 @@ export function CreateAdminForm() {
           />
         </div>
       </div>
-      <Button
-        type="submit"
-        disabled={isPending}
-        className="bg-accent hover:bg-accent/90 w-full text-white"
-      >
+      <Button type="submit" disabled={isPending} className="w-full">
         {isPending ? "Sending..." : "Invite First Admin"}
       </Button>
     </form>

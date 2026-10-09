@@ -24,18 +24,17 @@ export function CreateAdminSuccess({
           <h2 className="font-outfit text-2xl leading-6 font-semibold text-[#2d2d2d]">
             {title}
           </h2>
-          <p className="font-outfit text-sm leading-none font-normal text-[#535353] max-w-md">
+          <p className="font-outfit max-w-md text-sm leading-none font-normal text-[#535353]">
             {subtitle}
           </p>
         </div>
       </div>
       <Button
         onClick={() => router.push("/super-admin/admins")}
-        className="bg-accent hover:bg-accent/90 mt-[60px] min-w-[200px] text-white"
+        className="mt-[60px] min-w-[200px]"
       >
         Back to Admins
       </Button>
     </div>
   )
 }
-

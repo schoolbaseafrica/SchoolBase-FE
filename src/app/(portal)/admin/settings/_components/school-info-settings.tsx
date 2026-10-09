@@ -22,6 +22,10 @@ import { apiFetch } from "@/lib/api/client"
 import { AdminsAPI } from "@/lib/admins"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { useSchoolStore } from "@/store/use-school-store"
+import { BrandColorPreview } from "./brand-color-preview"
+
+const colorPickerValue = (value: string) =>
+  /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#c7363f"
 
 interface SchoolData {
   id: string
@@ -1130,10 +1134,8 @@ export const SchoolInfoSettings = () => {
       if (formData.phone) formDataToSend.append("phone", formData.phone)
       if (formData.primaryColor)
         formDataToSend.append("primary_color", formData.primaryColor)
-      if (formData.secondaryColor)
-        formDataToSend.append("secondary_color", formData.secondaryColor)
-      if (formData.accentColor)
-        formDataToSend.append("accent_color", formData.accentColor)
+      formDataToSend.append("secondary_color", formData.secondaryColor)
+      formDataToSend.append("accent_color", formData.accentColor)
 
       // Add ID Format Configuration
       formDataToSend.append("school_code", formData.schoolCode.trim())
@@ -1411,7 +1413,7 @@ export const SchoolInfoSettings = () => {
                   <input
                     type="color"
                     name="primaryColor"
-                    value={formData.primaryColor}
+                    value={colorPickerValue(formData.primaryColor)}
                     onChange={handleChange}
                     className="absolute -top-2 -left-2 h-16 w-20 cursor-pointer border-0 p-0"
                   />
@@ -1427,12 +1429,25 @@ export const SchoolInfoSettings = () => {
                 />
               </div>
               <p className="text-muted-foreground text-sm">
-                This color will be used throughout your portal interface
+                Main buttons and active navigation use this color.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="secondaryColor">Secondary Brand Color</Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="secondaryColor">Secondary Brand Color</Label>
+                {formData.secondaryColor && (
+                  <button
+                    type="button"
+                    className="text-accent text-xs font-medium hover:underline"
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, secondaryColor: "" }))
+                    }
+                  >
+                    Use primary
+                  </button>
+                )}
+              </div>
 
               {/* Predefined color swatches */}
               <div className="mb-3">
@@ -1465,7 +1480,9 @@ export const SchoolInfoSettings = () => {
                   <input
                     type="color"
                     name="secondaryColor"
-                    value={formData.secondaryColor || "#8B5CF6"}
+                    value={colorPickerValue(
+                      formData.secondaryColor || formData.primaryColor
+                    )}
                     onChange={handleChange}
                     className="absolute -top-2 -left-2 h-16 w-20 cursor-pointer border-0 p-0"
                   />
@@ -1475,18 +1492,30 @@ export const SchoolInfoSettings = () => {
                   name="secondaryColor"
                   value={formData.secondaryColor}
                   onChange={handleChange}
-                  placeholder="#8B5CF6"
+                  placeholder="Uses primary when empty"
                   className="flex-1"
                   pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$"
                 />
               </div>
               <p className="text-muted-foreground text-sm">
-                Secondary color for accents and highlights
+                Supporting controls and section labels use this color. Leave empty to
+                follow primary.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="accentColor">Accent Color</Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="accentColor">Accent Color</Label>
+                {formData.accentColor && (
+                  <button
+                    type="button"
+                    className="text-accent text-xs font-medium hover:underline"
+                    onClick={() => setFormData((prev) => ({ ...prev, accentColor: "" }))}
+                  >
+                    Use primary
+                  </button>
+                )}
+              </div>
 
               {/* Predefined color swatches */}
               <div className="mb-3">
@@ -1518,7 +1547,9 @@ export const SchoolInfoSettings = () => {
                   <input
                     type="color"
                     name="accentColor"
-                    value={formData.accentColor || "#36D399"}
+                    value={colorPickerValue(
+                      formData.accentColor || formData.primaryColor
+                    )}
                     onChange={handleChange}
                     className="absolute -top-2 -left-2 h-16 w-20 cursor-pointer border-0 p-0"
                   />
@@ -1528,15 +1559,22 @@ export const SchoolInfoSettings = () => {
                   name="accentColor"
                   value={formData.accentColor}
                   onChange={handleChange}
-                  placeholder="#36D399"
+                  placeholder="Uses primary when empty"
                   className="flex-1"
                   pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$"
                 />
               </div>
               <p className="text-muted-foreground text-sm">
-                Accent color for special UI elements
+                Icons, focus rings and highlights use this color. Leave empty to follow
+                primary.
               </p>
             </div>
+
+            <BrandColorPreview
+              primary={formData.primaryColor}
+              secondary={formData.secondaryColor}
+              accent={formData.accentColor}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="phone">
@@ -2078,11 +2116,7 @@ export const SchoolInfoSettings = () => {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button
-                type="submit"
-                className="bg-accent hover:bg-accent/90 w-full text-white lg:w-fit"
-                disabled={isSaving}
-              >
+              <Button type="submit" className="w-full lg:w-fit" disabled={isSaving}>
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

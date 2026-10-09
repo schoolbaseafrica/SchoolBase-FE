@@ -32,7 +32,7 @@ export default function ProgressIndicator({ currentStep }: ProgressIndicatorProp
                 step.completed
                   ? "bg-green-500 text-white"
                   : currentStep === step.number
-                    ? "bg-accent h-8 w-8 text-base text-white"
+                    ? "bg-accent text-accent-foreground h-8 w-8 text-base"
                     : "bg-gray-300 text-gray-600"
               )}
             >

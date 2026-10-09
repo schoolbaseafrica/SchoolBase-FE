@@ -121,11 +121,7 @@ export function InviteUserForm() {
           error={errors.email?.message}
         />
       </div>
-      <Button
-        type="submit"
-        disabled={isPending}
-        className="bg-accent hover:bg-accent/90 w-full text-white"
-      >
+      <Button type="submit" disabled={isPending} className="w-full">
         {isPending ? "Sending..." : "Send Invitation"}
       </Button>
     </form>

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { useSchoolStore } from "@/store/use-school-store"
+import { readableTextOn } from "@/lib/brand-colors"
 
 export function BrandThemeUpdater() {
   const brand = useSchoolStore((state) => state.school.brand)
@@ -22,21 +23,26 @@ export function BrandThemeUpdater() {
     }
 
     const root = document.documentElement
+    const primary = brand.primary
+    const secondary = secondaryColor || primary
+    const accent = accentColor || primary
     const palette: Record<string, string> = {
-      "--accent": accentColor || brand.primary,
-      "--accent-foreground": brand.onPrimary,
-      "--primary": brand.primary,
+      "--accent": accent,
+      "--accent-hover": brand.accentHover || brand.primaryHover,
+      "--accent-foreground": readableTextOn(accent),
+      "--primary": primary,
       "--primary-hover": brand.primaryHover,
-      "--secondary": secondaryColor || brand.primary,
+      "--primary-foreground": readableTextOn(primary),
+      "--secondary": secondary,
       "--secondary-hover": brand.secondaryHover || brand.primaryHover,
-      "--secondary-foreground": brand.onPrimary,
+      "--secondary-foreground": readableTextOn(secondary),
       "--text-primary": brand.text,
       "--text-secondary": brand.mutedText,
       "--tint": brand.tint,
       "--sidebar": brand.surface,
       "--sidebar-foreground": brand.text,
-      "--sidebar-primary": brand.primary,
-      "--sidebar-primary-foreground": brand.onPrimary,
+      "--sidebar-primary": primary,
+      "--sidebar-primary-foreground": readableTextOn(primary),
       "--sidebar-accent": brand.tint,
       "--sidebar-accent-foreground": brand.primary,
     }
@@ -44,7 +50,15 @@ export function BrandThemeUpdater() {
     Object.entries(palette).forEach(([key, value]) => {
       root.style.setProperty(key, value)
     })
-  }, [brand, schoolName, primaryColor, primaryHover, secondaryColor, accentColor, isConfigLoading])
+  }, [
+    brand,
+    schoolName,
+    primaryColor,
+    primaryHover,
+    secondaryColor,
+    accentColor,
+    isConfigLoading,
+  ])
 
   return null
 }

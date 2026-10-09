@@ -429,7 +429,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-accent hover:bg-accent/90 w-full text-white sm:w-auto"
+                className="w-full sm:w-auto"
                 disabled={isSaving || !!phoneError}
               >
                 {isSaving ? (
@@ -653,7 +653,7 @@ export const ProfileSettings = ({ role }: ProfileSettingsProps) => {
               <Button
                 type="submit"
                 size="lg"
-                className="bg-accent hover:bg-accent/90 w-full text-white sm:w-auto"
+                className="w-full sm:w-auto"
                 disabled={isSavingPassword}
               >
                 {isSavingPassword ? (

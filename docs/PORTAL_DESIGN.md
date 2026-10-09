@@ -10,8 +10,10 @@ marketing content into school workflows.
 - Use the light portal canvas, white cards, thin `--portal-line` borders, and
   generous space between sections. Keep dense records in tables where they are
   easier to scan.
-- Use `--accent` and `--primary` for the school's actions and active navigation;
-  rely on the runtime school brand rather than hard-coded red values.
+- Use primary for main buttons and active navigation, secondary for supporting
+  controls and section labels, and accent for icons, focus rings, and
+  highlights. The Settings preview shows these roles before saving. Each color
+  comes from the runtime school brand rather than a hard-coded palette.
 - Use the shared `Button`, `Card`, and `Input` components so corners, focus
   states, shadows, and hover feedback stay consistent.
 - Use the small `portal-section-label` above a clear page heading. The label

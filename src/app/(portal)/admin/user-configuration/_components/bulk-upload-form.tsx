@@ -158,7 +158,7 @@ export function BulkUploadForm() {
             <div className="text-sm text-gray-400">Or</div>
             <Button
               type="button"
-              className="bg-accent hover:bg-accent/90 z-20 text-white"
+              className="z-20"
               onClick={() => inputRef.current?.click()}
             >
               Upload (CSV)
@@ -231,7 +231,7 @@ export function BulkUploadForm() {
             )}
 
             <Button
-              className="bg-accent hover:bg-accent/90 w-full text-white"
+              className="w-full"
               onClick={handleSendInvitations}
               disabled={
                 parsedData.length === 0 || errors.length > 0 || !userType || isPending

@@ -143,11 +143,7 @@ export const PasswordSettings = () => {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button
-                type="submit"
-                className="bg-accent hover:bg-accent/90 w-full text-white lg:w-fit"
-                disabled={isSaving}
-              >
+              <Button type="submit" className="w-full lg:w-fit" disabled={isSaving}>
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

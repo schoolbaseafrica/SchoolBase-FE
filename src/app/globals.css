@@ -94,6 +94,7 @@ html {
   --muted: #f5f7f6;
   --muted-foreground: oklch(0.553 0.013 58.071);
   --accent: #da3743;
+  --accent-hover: #c72f3a;
   --accent-foreground: oklch(0.216 0.006 56.043);
   --tint: #fbebec;
   --destructive: oklch(0.577 0.245 27.325);
@@ -167,11 +168,22 @@ html {
 }
 
 .portal-section-label {
-  color: var(--accent);
+  color: var(--foreground);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.portal-section-label::before {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.5rem;
+  border: 1px solid var(--portal-line);
+  border-radius: 999px;
+  background: var(--secondary);
+  content: "";
 }
 
 @media (prefers-reduced-motion: no-preference) {

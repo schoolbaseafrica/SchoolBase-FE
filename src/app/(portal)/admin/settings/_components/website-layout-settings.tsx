@@ -102,7 +102,9 @@ export function WebsiteLayoutSettings() {
                   <span
                     className={cn(
                       "rounded-lg p-2",
-                      isSelected ? "bg-accent text-white" : "bg-gray-100 text-gray-600"
+                      isSelected
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-gray-100 text-gray-600"
                     )}
                   >
                     <Icon className="h-5 w-5" />
