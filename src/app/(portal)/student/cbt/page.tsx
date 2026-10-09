@@ -14,6 +14,7 @@ import { CbtAPI, CbtExamSummary } from "@/lib/cbt"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 import { extractErrorMessage } from "@/lib/error-handler"
+import { DownloadCbtResultButton } from "./_components/download-result-button"
 
 function availability(exam: CbtExamSummary) {
   if (exam.availableTo) return `Closes ${format(new Date(exam.availableTo), "PPp")}`
@@ -138,7 +139,7 @@ export default function StudentCbtPage() {
                     </div>
                     <p className="text-xs text-slate-500">{availability(exam)}</p>
                     {visibleResult && (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+                      <div className="border-accent/20 bg-accent/5 rounded-xl border p-3 text-sm">
                         <p className="text-xs font-medium text-emerald-700">
                           Available result
                         </p>
@@ -146,6 +147,12 @@ export default function StudentCbtPage() {
                           {visibleResult.percentage}%
                         </p>
                       </div>
+                    )}
+                    {visibleResult && (
+                      <DownloadCbtResultButton
+                        examName={exam.name}
+                        attempt={visibleResult}
+                      />
                     )}
                     <Button
                       className="w-full"
