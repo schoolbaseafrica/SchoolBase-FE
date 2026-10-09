@@ -1,36 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { TimetableAPI, CreateSchedulePayload } from "@/lib/timetable"
 import { toast } from "sonner"
-import { useTimetableStore } from "@/store/timetable-store"
-import { useEffect } from "react"
 import { extractErrorMessage } from "@/lib/error-handler"
 
 export const useClassTimetable = (classId: string) => {
-  const setTimetable = useTimetableStore((state) => state.setTimetable)
-  const setLoading = useTimetableStore((state) => state.setLoading)
-  // const setError = useTimetableStore((state) => state.setError)
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ["timetable", classId],
     queryFn: async () => {
-      setLoading(true)
-      try {
-        const res = await TimetableAPI.getClassTimetable(classId)
-        return res.data
-      } finally {
-        setLoading(false)
-      }
+      const res = await TimetableAPI.getClassTimetable(classId)
+      return res.data
     },
     enabled: !!classId,
   })
-
-  useEffect(() => {
-    if (query.data?.schedules && classId) {
-      setTimetable(classId, query.data.schedules)
-    }
-  }, [query.data, classId, setTimetable])
-
-  return query
 }
 
 export const useCreateSchedule = () => {

@@ -49,16 +49,18 @@ export default function MobileTimetableView({
   return (
     <div className="flex flex-col gap-4">
       {/* Day Selector */}
-      <div className="scrollbar-hide flex w-full overflow-x-auto rounded-lg border border-[#E4E7EC] bg-white p-1">
+      <div className="scrollbar-hide bg-muted/30 flex w-full overflow-x-auto rounded-xl border border-[var(--portal-line)] p-1">
         {DAYS.map((day) => (
           <button
             key={day}
+            type="button"
+            aria-pressed={selectedDay === day}
             onClick={() => setSelectedDay(day)}
             className={cn(
               "flex-1 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all",
               selectedDay === day
-                ? "bg-[#DA3743] text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-white"
             )}
           >
             {day.slice(0, 3)}
@@ -77,23 +79,34 @@ export default function MobileTimetableView({
           return (
             <div
               key={time}
+              role={schedule && !readonly ? "button" : undefined}
+              tabIndex={schedule && !readonly ? 0 : undefined}
               onClick={() => schedule && !readonly && onEdit(schedule)}
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget || !schedule || readonly) return
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  onEdit(schedule)
+                }
+              }}
               className={cn(
-                "group relative flex flex-col gap-3 rounded-lg border p-4 shadow-sm transition-all",
+                "group relative flex flex-col gap-3 rounded-xl border p-4 shadow-sm transition-all",
                 schedule
                   ? !readonly
-                    ? "cursor-pointer border-[#E4E7EC] bg-white hover:border-[#DA3743] hover:shadow-md"
-                    : "border-[#E4E7EC] bg-white"
-                  : "border-dashed border-gray-200 bg-gray-50/50"
+                    ? "hover:border-accent/50 cursor-pointer border-[var(--portal-line)] bg-white hover:shadow-md"
+                    : "border-[var(--portal-line)] bg-white"
+                  : "bg-muted/30 border-dashed border-[var(--portal-line)]"
               )}
             >
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-gray-500">{timeRange}</span>
+                  <span className="text-muted-foreground text-xs font-medium">
+                    {timeRange}
+                  </span>
                   <h3
                     className={cn(
                       "font-semibold",
-                      schedule ? "text-[#2d2d2d]" : "text-gray-400 italic"
+                      schedule ? "text-foreground" : "text-muted-foreground italic"
                     )}
                   >
                     {schedule
@@ -104,25 +117,23 @@ export default function MobileTimetableView({
                   </h3>
                 </div>
                 {schedule && !readonly && (
-                  <button className="rounded-full bg-gray-100 p-2 text-gray-500 transition-colors group-hover:bg-[#DA3743] group-hover:text-white">
-                    <Pencil className="h-4 w-4" />
-                  </button>
+                  <Pencil aria-hidden="true" className="text-accent size-4" />
                 )}
               </div>
 
               {schedule && schedule.period_type !== "BREAK" && (
-                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                <div className="flex items-center justify-between border-t border-[var(--portal-line)] pt-3">
                   <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">Teacher</span>
-                    <span className="text-sm font-medium text-[#2d2d2d]">
+                    <span className="text-muted-foreground text-xs">Teacher</span>
+                    <span className="text-foreground text-sm font-medium">
                       {schedule.teacher?.title} {schedule.teacher?.first_name}{" "}
                       {schedule.teacher?.last_name}
                     </span>
                   </div>
                   {schedule.room && (
                     <div className="flex flex-col items-end">
-                      <span className="text-xs text-gray-500">Room</span>
-                      <span className="text-sm font-medium text-[#2d2d2d]">
+                      <span className="text-muted-foreground text-xs">Room</span>
+                      <span className="text-foreground text-sm font-medium">
                         {schedule.room.name}
                       </span>
                     </div>
@@ -136,7 +147,7 @@ export default function MobileTimetableView({
                     event.stopPropagation()
                     onOpenClassroom(schedule)
                   }}
-                  className="flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:border-red-500 hover:text-red-600"
+                  className="text-foreground hover:border-accent/40 hover:text-accent flex items-center justify-center gap-2 rounded-lg border border-[var(--portal-line)] px-3 py-2 text-sm font-medium"
                 >
                   <BookOpen className="h-4 w-4" />
                   Open classroom

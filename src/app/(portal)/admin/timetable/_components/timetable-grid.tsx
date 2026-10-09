@@ -1,10 +1,8 @@
 "use client"
 
 import { Schedule } from "@/lib/timetable"
-import { useTimetableStore } from "@/store/timetable-store"
 import { BookOpen, Pencil } from "lucide-react"
 import { useState } from "react"
-import { useShallow } from "zustand/react/shallow"
 import { useClassTimetable } from "../_hooks/use-timetable"
 import EditScheduleModal from "./edit-schedule-modal"
 import MobileTimetableView from "./mobile-timetable-view"
@@ -40,30 +38,30 @@ export default function TimetableGrid({
   readonly = false,
   onOpenClassroom,
 }: TimetableGridProps) {
-  // 1. Fetch
-  useClassTimetable(classId)
-
-  // 2. Select from store
-  const { schedules, isLoading } = useTimetableStore(
-    useShallow((state) => ({
-      schedules: state.schedules,
-      isLoading: state.isLoading,
-    }))
-  )
-
-  // Note: Local store might have data from previous class if not identifying by classId
-  // The store stores 'currentClassId'.
-  // However, useClassTimetable sets the store for this classId.
-  // We should verify currentClassId in store matches classId, or just trust the fetch cycle.
+  const timetable = useClassTimetable(classId)
+  const schedules = timetable.data?.schedules ?? []
 
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
-  if (isLoading) {
+  if (timetable.isPending) {
     return <TimetableLoading />
   }
 
-  // const schedules = data?.schedules || []  <-- Replaced by store selection
+  if (timetable.isError) {
+    return (
+      <div className="border-destructive/20 bg-destructive/5 text-foreground rounded-2xl border p-6 text-sm">
+        <p className="font-semibold">Timetable could not be loaded.</p>
+        <button
+          type="button"
+          onClick={() => void timetable.refetch()}
+          className="text-primary mt-3 font-semibold hover:underline"
+        >
+          Try again
+        </button>
+      </div>
+    )
+  }
 
   const getScheduleForSlot = (day: string, time: string) => {
     return schedules.find(
@@ -80,18 +78,18 @@ export default function TimetableGrid({
   return (
     <>
       {/* Desktop View */}
-      <div className="hidden w-full min-[834px]:block min-[834px]:max-w-[calc(100vw-18rem)]">
-        <div className="overflow-x-auto rounded-xl border border-[#2D2D2D4D] bg-white">
+      <div className="hidden w-full min-[834px]:block">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--portal-line)] bg-white">
           <table className="w-full min-w-[500px] border-collapse">
             <thead>
               <tr>
-                <th className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-2.5 py-4 text-left text-xs font-medium text-[#535353]">
+                <th className="bg-muted/50 text-muted-foreground border-r border-b border-[var(--portal-line)] px-2.5 py-4 text-left text-xs font-semibold">
                   Time
                 </th>
                 {DAYS.map((day) => (
                   <th
                     key={day}
-                    className="border-r border-b border-[#2D2D2D4D] bg-[#F9FAFB] px-2.5 py-4 text-center text-xs font-medium text-[#535353] last:border-r-0"
+                    className="bg-muted/50 text-muted-foreground border-r border-b border-[var(--portal-line)] px-2.5 py-4 text-center text-xs font-semibold last:border-r-0"
                   >
                     {day}
                   </th>
@@ -100,8 +98,11 @@ export default function TimetableGrid({
             </thead>
             <tbody>
               {TIME_SLOTS.map((time) => (
-                <tr key={time} className="border-b border-[#2D2D2D4D] last:border-0">
-                  <td className="border-r px-2.5 py-4 text-sm font-medium whitespace-nowrap text-[#535353]">
+                <tr
+                  key={time}
+                  className="border-b border-[var(--portal-line)] last:border-0"
+                >
+                  <td className="text-muted-foreground border-r border-[var(--portal-line)] px-2.5 py-4 text-sm font-medium whitespace-nowrap">
                     {formatTime(time)}
                   </td>
                   {DAYS.map((day) => {
@@ -109,35 +110,45 @@ export default function TimetableGrid({
                     return (
                       <td
                         key={`${day}-${time}`}
-                        className="border-r px-2 py-2 last:border-r-0"
+                        className="border-r border-[var(--portal-line)] px-2 py-2 last:border-r-0"
                       >
                         {schedule ? (
                           <div
+                            role={readonly ? undefined : "button"}
+                            tabIndex={readonly ? undefined : 0}
                             onClick={() => handleEdit(schedule)}
-                            className={`group relative flex flex-col gap-1 rounded border-l-4 border-[#2d2d2d] bg-[#EEEEEE] p-3 py-2 pr-1 text-xs transition-colors ${
-                              !readonly ? "cursor-pointer hover:bg-gray-200" : ""
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault()
+                                handleEdit(schedule)
+                              }
+                            }}
+                            className={`group border-l-accent bg-accent/5 relative flex flex-col gap-1 rounded-xl border border-l-4 border-[var(--portal-line)] p-3 text-xs transition-colors ${
+                              !readonly ? "hover:bg-accent/10 cursor-pointer" : ""
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <span className="font-semibold text-[#2d2d2d]">
+                              <span className="text-foreground font-semibold">
                                 {schedule.period_type === "BREAK"
                                   ? "BREAK"
                                   : schedule.subject?.name}
                               </span>
                               {!readonly && (
-                                <button className="invisible rounded-full p-1 group-hover:visible hover:bg-gray-300">
-                                  <Pencil className="h-3 w-3 text-gray-500" />
-                                </button>
+                                <Pencil
+                                  aria-hidden="true"
+                                  className="text-muted-foreground size-3"
+                                />
                               )}
                             </div>
                             {schedule.period_type !== "BREAK" && (
-                              <span className="text-wrap text-[#2d2d2d]">
+                              <span className="text-foreground text-wrap">
                                 {schedule.teacher?.title} {schedule.teacher?.first_name}{" "}
                                 {schedule.teacher?.last_name}
                               </span>
                             )}
                             {schedule.room && (
-                              <span className="text-[10px] text-gray-500">
+                              <span className="text-muted-foreground text-[10px]">
                                 Room: {schedule.room.name}
                               </span>
                             )}
@@ -148,7 +159,7 @@ export default function TimetableGrid({
                                   event.stopPropagation()
                                   onOpenClassroom(schedule)
                                 }}
-                                className="mt-1 flex items-center gap-1 self-start rounded border border-gray-300 bg-white px-2 py-1 text-[10px] font-medium hover:border-red-500 hover:text-red-600"
+                                className="text-foreground hover:border-accent/40 hover:text-accent mt-1 flex items-center gap-1 self-start rounded-lg border border-[var(--portal-line)] bg-white px-2 py-1 text-[10px] font-medium"
                               >
                                 <BookOpen className="h-3 w-3" />
                                 Classroom

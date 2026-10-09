@@ -11,12 +11,12 @@ interface LoadingProps {
 
 export default function TimetableLoading({
   size = 60,
-  color = "#DA3743",
+  color = "var(--primary)",
   text = "Loading timetable...",
   showText = true,
 }: LoadingProps) {
   return (
-    <div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-4 rounded-lg border border-[#E0E0E0] bg-white">
+    <div className="flex min-h-72 w-full flex-col items-center justify-center gap-4 rounded-2xl border border-[var(--portal-line)] bg-white">
       <div className="relative" style={{ width: size, height: size }}>
         <svg
           xmlns="http://www.w3.org/2000/svg"

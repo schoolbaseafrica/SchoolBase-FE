@@ -326,11 +326,7 @@ export default function EditScheduleModal({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="w-full bg-[#DA3743] hover:bg-[#DA3743]/90 sm:flex-1"
-              disabled={isPending}
-            >
+            <Button type="submit" className="w-full sm:flex-1" disabled={isPending}>
               {isPending ? "Saving..." : "Save Changes"}
             </Button>
           </div>
