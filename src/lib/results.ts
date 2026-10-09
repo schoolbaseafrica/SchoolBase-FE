@@ -508,57 +508,53 @@ export const ResultsAPI = {
       "/classes/teacher/assigned",
       { params: sessionId ? { session_id: sessionId } : undefined },
       true
-    )
-      .then((response) => {
-        const classItems = extractData(response)
+    ).then((response) => {
+      const classItems = extractData(response)
 
-        // Transform the response to match your Class interface
-        return classItems.map((classItem) => ({
-          id: classItem.id,
-          name: `${classItem.name} ${classItem.arm}`,
-          level: classItem.name.includes("SS") ? "Senior Secondary" : "Junior Secondary",
-          academic_session_id: classItem.academicSession.id,
-        }))
-      })
-      .catch((error) => {
-        console.error("Error fetching classes:", error)
-        return []
-      })
+      // Transform the response to match your Class interface
+      return classItems.map((classItem) => ({
+        id: classItem.id,
+        name: `${classItem.name} ${classItem.arm}`,
+        level: classItem.name.includes("SS") ? "Senior Secondary" : "Junior Secondary",
+        academic_session_id: classItem.academicSession.id,
+      }))
+    })
   },
 
   // the getSubjects function to properly handle class and teacher filtering:
-  getSubjects: (classId?: string, teacherId?: string): Promise<Subject[]> => {
+  getSubjects: async (classId?: string, teacherId?: string): Promise<Subject[]> => {
     const params = new URLSearchParams()
     if (teacherId) params.append("teacher_id", teacherId)
     if (classId) params.append("class_id", classId)
+    const subjectMap = new Map<string, Subject>()
+    const pageSize = 100
+    let page = 1
+    let total = 0
 
-    return apiFetch<ResponsePack<ClassSubjectsResponsePayload>>(
-      `/class-subjects?${params.toString()}`,
-      {},
-      true
-    )
-      .then((response) => {
-        const backendData = extractData(response)
-        const items = backendData.payload ?? []
-
-        // Use a Map to ensure unique subjects by ID
-        const subjectMap = new Map<string, Subject>()
-
-        items.forEach((item) => {
-          if (!subjectMap.has(item.subject.id)) {
-            subjectMap.set(item.subject.id, {
-              id: item.subject.id,
-              name: item.subject.name,
-            })
-          }
-        })
-
-        return Array.from(subjectMap.values())
+    do {
+      params.set("page", String(page))
+      params.set("limit", String(pageSize))
+      const response = await apiFetch<ResponsePack<ClassSubjectsResponsePayload>>(
+        `/class-subjects?${params.toString()}`,
+        {},
+        true
+      )
+      const backendData = extractData(response)
+      const items = backendData.payload ?? []
+      total = backendData.paginationMeta?.total ?? items.length
+      items.forEach((item) => {
+        if (!subjectMap.has(item.subject.id)) {
+          subjectMap.set(item.subject.id, {
+            id: item.subject.id,
+            name: item.subject.name,
+          })
+        }
       })
-      .catch((err) => {
-        console.error("Failed to fetch subjects:", err)
-        return []
-      })
+      if (items.length === 0) break
+      page += 1
+    } while ((page - 1) * pageSize < total)
+
+    return Array.from(subjectMap.values())
   },
   // Get active term
   getTerms: (sessionId?: string): Promise<Term[]> => {
@@ -619,35 +615,30 @@ export const ResultsAPI = {
           student_id: string
         }>
       >
-    >(`classes/${classId}/students`, {}, true)
-      .then((response) => {
-        const studentData = ensureArray<{
-          enrollment_date: string
-          is_active: boolean
-          name: string
-          registration_number: string
-          student_id: string
-        }>(extractData(response))
+    >(`classes/${classId}/students`, {}, true).then((response) => {
+      const studentData = ensureArray<{
+        enrollment_date: string
+        is_active: boolean
+        name: string
+        registration_number: string
+        student_id: string
+      }>(extractData(response))
 
-        const students: Student[] = studentData.map((item) => {
-          const nameParts = item.name.split(" ")
-          const firstName = nameParts[0] || ""
-          const lastName = nameParts.slice(1).join(" ") || ""
+      const students: Student[] = studentData.map((item) => {
+        const nameParts = item.name.split(" ")
+        const firstName = nameParts[0] || ""
+        const lastName = nameParts.slice(1).join(" ") || ""
 
-          return {
-            id: item.student_id,
-            first_name: firstName,
-            last_name: lastName,
-            registration_number: item.registration_number,
-          }
-        })
-
-        return students
+        return {
+          id: item.student_id,
+          first_name: firstName,
+          last_name: lastName,
+          registration_number: item.registration_number,
+        }
       })
-      .catch((error) => {
-        console.error("Error fetching students:", error)
-        return []
-      })
+
+      return students
+    })
   },
 
   // Create new submission (draft)
@@ -735,7 +726,7 @@ export const ResultsAPI = {
       })
       .catch((error) => {
         console.error("Error fetching teacher submissions:", error)
-        return []
+        throw error
       })
   },
 

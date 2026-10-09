@@ -16,10 +16,18 @@ import { StudentsTable } from "./students-table"
 import { SubmissionActions } from "./submission-actions"
 import { Loader2 } from "lucide-react"
 import { InfoState } from "./ui/info-state"
+import { ErrorState } from "./ui/error-state"
+import { Button } from "@/components/ui/button"
 
 interface TeacherResultsViewProps {
   classes: Class[]
   subjects: Subject[]
+  subjectsError: boolean
+  onRetrySubjects: () => void
+  studentsError: boolean
+  onRetryStudents: () => void
+  submissionError: boolean
+  onRetrySubmission: () => void
   terms: Term[]
   students: Student[]
   gradingScale: GradingScale[]
@@ -28,7 +36,6 @@ interface TeacherResultsViewProps {
   selectedTerm: string
   onClassChange: (classId: string) => void
   onSubjectChange: (subjectId: string) => void
-  onTermChange: (termId: string) => void
   isLoadingStudents: boolean
   canShowResults: boolean
   existingSubmission?: GradeSubmission
@@ -48,6 +55,12 @@ const createEmptyGradeEntry = (studentId: string): GradeEntry & { id?: string } 
 export function TeacherResultsView({
   classes = [],
   subjects = [],
+  subjectsError,
+  onRetrySubjects,
+  studentsError,
+  onRetryStudents,
+  submissionError,
+  onRetrySubmission,
   terms = [],
   students = [],
   gradingScale,
@@ -56,7 +69,6 @@ export function TeacherResultsView({
   selectedTerm,
   onClassChange,
   onSubjectChange,
-  onTermChange,
   isLoadingStudents,
   canShowResults,
   existingSubmission,
@@ -147,7 +159,7 @@ export function TeacherResultsView({
   const hasValidGrades = gradeEntries.length > 0
 
   // Check if subjects are available for selected class
-  const noSubjectsForClass = selectedClass && subjects.length === 0
+  const noSubjectsForClass = selectedClass && !subjectsError && subjects.length === 0
 
   // Show loading state when students are loading
   if (isLoadingStudents) {
@@ -156,13 +168,10 @@ export function TeacherResultsView({
         <FilterSection
           classes={classes}
           subjects={subjects}
-          terms={terms}
           selectedClass={selectedClass}
           selectedSubject={selectedSubject}
-          selectedTerm={selectedTerm}
           onClassChange={onClassChange}
           onSubjectChange={onSubjectChange}
-          onTermChange={onTermChange}
         />
         <div className="rounded-lg border bg-white p-8">
           <div className="flex flex-col items-center justify-center">
@@ -180,43 +189,62 @@ export function TeacherResultsView({
       <FilterSection
         classes={classes}
         subjects={subjects}
-        terms={terms}
         selectedClass={selectedClass}
         selectedSubject={selectedSubject}
-        selectedTerm={selectedTerm}
         onClassChange={onClassChange}
         onSubjectChange={onSubjectChange}
-        onTermChange={onTermChange}
       />
 
-      {/* Warning for no subjects */}
-      {noSubjectsForClass && (
+      {subjectsError ? (
+        <ErrorState
+          title="Could not load subject assignments"
+          message="Try again. If this continues, ask your administrator to check your teacher profile and subject assignments."
+          action={
+            <Button variant="outline" onClick={onRetrySubjects}>
+              Try again
+            </Button>
+          }
+        />
+      ) : noSubjectsForClass ? (
         <InfoState
           title="No Subjects Assigned"
           message="You are not assigned to teach any subjects in this class. Please select a different class or contact the administrator."
           variant="warning"
         />
-      )}
-
-      {/* Info Messages */}
-      {selectedClass && !selectedSubject && !selectedTerm && (
+      ) : !selectedClass ? (
         <InfoState
-          title="Select Subject and Term"
-          message="All students in this class are displayed. Select a subject and term to enter grades."
+          title="Choose a class"
+          message="Select one of your assigned classes to begin entering results."
           variant="info"
         />
-      )}
-
-      {selectedClass && (selectedSubject || selectedTerm) && !canShowResults && (
+      ) : !selectedSubject ? (
         <InfoState
-          title="Incomplete Selection"
-          message="Please select both a subject and term to enter grades."
-          variant="warning"
+          title="Choose a subject"
+          message="Select the subject you teach in this class to see its grade entry table."
+          variant="info"
         />
-      )}
+      ) : !selectedTerm ? (
+        <InfoState
+          title="Choose a term"
+          message="Select an academic term in the period selector above to enter grades for this subject."
+          variant="info"
+        />
+      ) : studentsError ? (
+        <ErrorState
+          title="Could not load students"
+          message="Try loading the class roster again before entering grades."
+          action={<Button onClick={onRetryStudents}>Try again</Button>}
+        />
+      ) : submissionError ? (
+        <ErrorState
+          title="Could not load saved grades"
+          message="Try again before editing. Your existing grades must be loaded to avoid overwriting them."
+          action={<Button onClick={onRetrySubmission}>Try again</Button>}
+        />
+      ) : null}
 
       {/* Only show grading scale and actions when all filters are selected */}
-      {canShowResults && (
+      {canShowResults && !studentsError && !submissionError && (
         <>
           <GradingScaleCard gradingScale={gradingScale} />
 
@@ -234,7 +262,7 @@ export function TeacherResultsView({
       )}
 
       {/* Class Info - Show Academic Session */}
-      {canShowResults && (
+      {canShowResults && !studentsError && !submissionError && (
         <div className="rounded-lg border bg-white p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -289,8 +317,8 @@ export function TeacherResultsView({
         </div>
       )}
 
-      {/* Show students table if class is selected */}
-      {selectedClass && (
+      {/* Grade editing is available only for a valid class, subject, and term. */}
+      {canShowResults && !studentsError && !submissionError && (
         <StudentsTable
           students={students}
           grades={allGrades}

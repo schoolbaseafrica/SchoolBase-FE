@@ -177,6 +177,7 @@ export function StudentsTable({
 
       {selectedStudent && (
         <GradeFormDialog
+          key={`${filterKey}-${selectedStudent.id}`}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           student={selectedStudent}

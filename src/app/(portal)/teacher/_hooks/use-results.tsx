@@ -21,18 +21,13 @@ export function useGetSubjects(classId?: string, teacherId?: string) {
   const queryFn = async () => {
     if (!classId) return []
 
-    try {
-      return ResultsAPI.getSubjects(classId, teacherId)
-    } catch (error) {
-      console.error("Error fetching subjects:", error)
-      throw error
-    }
+    return ResultsAPI.getSubjects(classId, teacherId)
   }
 
   return useQuery({
     queryKey: [...RESULTS_KEY, "subjects", classId, teacherId],
     queryFn,
-    enabled: !!classId,
+    enabled: !!classId && !!teacherId,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
@@ -72,10 +67,10 @@ export function useGetStudents(classId?: string, subjectId?: string) {
   return useQuery({
     queryKey: [...RESULTS_KEY, "students", classId, subjectId],
     queryFn: () => {
-      if (!classId) return Promise.resolve([])
+      if (!classId || !subjectId) return Promise.resolve([])
       return ResultsAPI.getStudentsForGradeEntry(classId)
     },
-    enabled: !!classId,
+    enabled: !!classId && !!subjectId,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })

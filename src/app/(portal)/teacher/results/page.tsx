@@ -49,37 +49,51 @@ export default function TeacherResultsPage() {
     isLoading: isLoadingClasses,
     error: classesError,
   } = useGetClasses(period.sessionId)
+  const effectiveClass = classes.some((item) => item.id === selectedClass)
+    ? selectedClass
+    : ""
 
-  const { data: subjects = [], isLoading: isLoadingSubjects } = useGetSubjects(
-    selectedClass,
-    teacher?.teacher_id
-  )
+  const {
+    data: subjects = [],
+    isLoading: isLoadingSubjects,
+    isError: subjectsError,
+    refetch: refetchSubjects,
+  } = useGetSubjects(effectiveClass, teacher?.teacher_id)
+  const effectiveSubject = subjects.some((item) => item.id === selectedSubject)
+    ? selectedSubject
+    : ""
 
   const { data: terms = [], isLoading: isLoadingTerms } = useGetTerms(period.sessionId)
+  const effectiveTerm = terms.some((item) => item.id === selectedTerm) ? selectedTerm : ""
 
-  const { data: students = [], isLoading: isLoadingStudents } = useGetStudents(
-    selectedClass,
-    selectedSubject
-  )
+  const {
+    data: students = [],
+    isLoading: isLoadingStudents,
+    isError: studentsError,
+    refetch: refetchStudents,
+  } = useGetStudents(effectiveClass, effectiveSubject)
 
   const { data: gradingScale = [] } = useGetGradingScale()
 
-  const { data: existingSubmission, isLoading: isLoadingSubmission } =
-    useGetSubmissionByFilters(selectedClass, selectedSubject, selectedTerm)
+  const {
+    data: existingSubmission,
+    isLoading: isLoadingSubmission,
+    isError: submissionError,
+    refetch: refetchSubmission,
+  } = useGetSubmissionByFilters(effectiveClass, effectiveSubject, effectiveTerm)
 
-  // Handle class change with subject/term reset and persistence
+  // Handle class change with subject reset and persistence. The period selector owns the term.
   const handleClassChange = (classId: string) => {
     setSelectedClass(classId)
     if (typeof window !== "undefined") {
       localStorage.setItem("results_selectedClass", classId)
     }
 
-    // Reset subject and term when class changes
+    // A subject assignment belongs to the selected class.
     setSelectedSubject("")
 
     if (typeof window !== "undefined") {
       localStorage.setItem("results_selectedSubject", "")
-      localStorage.setItem("results_selectedTerm", "")
     }
   }
 
@@ -91,34 +105,19 @@ export default function TeacherResultsPage() {
     }
   }
 
-  // Handle term change with persistence
-  const handleTermChange = (termId: string) => {
-    period.setTerm(termId)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("results_selectedTerm", termId)
-    }
-  }
-
-  // Use useMemo for derived state
-  const canShowResults = useMemo(() => {
-    return Boolean(selectedClass && selectedSubject && selectedTerm)
-  }, [selectedClass, selectedSubject, selectedTerm])
-
-  // const showAllStudents = useMemo(() => {
-  //   return !!selectedClass
-  // }, [selectedClass])
+  const canShowResults = Boolean(effectiveClass && effectiveSubject && effectiveTerm)
 
   // Get academic session ID from selected class
   const academicSessionId = useMemo(() => {
-    const selectedClassObj = classes.find((c) => c.id === selectedClass)
+    const selectedClassObj = classes.find((c) => c.id === effectiveClass)
     const classWithSession = selectedClassObj as Class & { academic_session_id?: string }
     return classWithSession?.academic_session_id || ""
-  }, [classes, selectedClass])
+  }, [classes, effectiveClass])
 
   // Check if teacher is assigned to any classes
   const isNotAssigned = useMemo(() => {
-    return !isLoadingClasses && classes.length === 0
-  }, [classes, isLoadingClasses])
+    return !isLoadingClasses && !classesError && classes.length === 0
+  }, [classes, isLoadingClasses, classesError])
 
   // Show loading state for initial auth
   if (isLoadingAuth) {
@@ -206,32 +205,46 @@ export default function TeacherResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Result Management</h1>
-          <p className="text-gray-600">Enter and manage student results</p>
-        </div>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="portal-reveal max-w-3xl">
+        <p className="portal-section-label mb-2">Academic records</p>
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
+          Results
+        </h1>
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
+          Enter and manage grades for your assigned subjects.
+        </p>
+      </div>
+      <div>
         <AcademicPeriodSelector scope="teacher-results" allowWholeSession={false} />
 
-        <TeacherResultsView
-          classes={classes}
-          subjects={subjects}
-          terms={terms}
-          students={students}
-          gradingScale={gradingScale}
-          selectedClass={selectedClass}
-          selectedSubject={selectedSubject}
-          selectedTerm={selectedTerm}
-          onClassChange={handleClassChange}
-          onSubjectChange={handleSubjectChange}
-          onTermChange={handleTermChange}
-          isLoadingStudents={isLoadingStudents || isLoadingSubmission}
-          canShowResults={canShowResults}
-          existingSubmission={existingSubmission || undefined}
-          // showAllStudents={showAllStudents}
-          academicSessionId={academicSessionId}
-        />
+        <section className="portal-reveal rounded-[1.5rem] border border-[var(--portal-line)] bg-white p-4 shadow-sm sm:p-6">
+          <TeacherResultsView
+            key={`${effectiveClass}:${effectiveSubject}:${effectiveTerm}`}
+            classes={classes}
+            subjects={subjects}
+            subjectsError={
+              subjectsError || Boolean(effectiveClass && !teacher?.teacher_id)
+            }
+            onRetrySubjects={() => void refetchSubjects()}
+            studentsError={studentsError}
+            onRetryStudents={() => void refetchStudents()}
+            submissionError={submissionError}
+            onRetrySubmission={() => void refetchSubmission()}
+            terms={terms}
+            students={students}
+            gradingScale={gradingScale}
+            selectedClass={effectiveClass}
+            selectedSubject={effectiveSubject}
+            selectedTerm={effectiveTerm}
+            onClassChange={handleClassChange}
+            onSubjectChange={handleSubjectChange}
+            isLoadingStudents={isLoadingStudents || isLoadingSubmission}
+            canShowResults={canShowResults}
+            existingSubmission={existingSubmission || undefined}
+            academicSessionId={academicSessionId}
+          />
+        </section>
       </div>
     </div>
   )

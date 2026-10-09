@@ -11,8 +11,8 @@ interface InfoStateProps {
 
 export function InfoState({ title, message, variant = "info" }: InfoStateProps) {
   const variantStyles = {
-    info: "border-red-200 bg-red-50 text-red-500",
-    warning: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    info: "border-[var(--portal-line)] bg-muted/40 text-foreground",
+    warning: "border-amber-200 bg-amber-50 text-amber-900",
   }
 
   return (
