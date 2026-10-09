@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, AlertCircle } from "lucide-react"
+import { ChevronDown, AlertCircle, CalendarDays } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
@@ -80,91 +80,106 @@ export default function TeacherTimetablePage() {
   const selectedClass = classesArray.find((cls) => cls.id === effectiveClassId)
   const classDisplayName = selectedClass
     ? `${selectedClass.name}${selectedClass.arm ? ` ${selectedClass.arm}` : ""}`
-    : "Select Class"
+    : "Select class"
 
   return (
-    <div className="flex h-full flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-[#2d2d2d]">Timetable</h1>
-        <p className="text-sm text-[#666666]">View schedules for your assigned classes</p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="portal-reveal max-w-3xl">
+        <p className="portal-section-label mb-2">Academic planning</p>
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
+          Timetable
+        </h1>
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
+          Review schedules for your assigned classes in the selected academic session.
+        </p>
       </div>
 
       <AcademicPeriodSelector scope="teacher-timetable" sessionOnly />
 
-      {/* Loading State */}
-      {isLoadingClasses && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-500">Loading classes...</span>
-        </div>
-      )}
-
-      {/* Error State */}
-      {!isLoadingClasses && classesError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load your assigned classes. Please try again later.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Content */}
-      {!isLoadingClasses && !classesError && (
-        <div className="flex max-w-7xl flex-col gap-4">
-          {/* Class Selector */}
-          {classesArray.length > 0 ? (
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="w-full md:w-auto">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="text-accent border-accent flex w-full justify-between px-8 text-sm font-bold"
+      <section className="portal-reveal overflow-hidden rounded-[1.5rem] border border-[var(--portal-line)] bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-6 space-y-2">
+          <p className="text-foreground text-sm font-semibold">Class schedule</p>
+          <p className="text-muted-foreground text-sm">
+            Choose a class to view its timetable and open a virtual classroom.
+          </p>
+          <div className="pt-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between gap-4 sm:w-auto sm:min-w-64"
+                  disabled={isLoadingClasses || !!classesError || !classesArray.length}
+                >
+                  <span className="truncate">
+                    {isLoadingClasses
+                      ? "Loading classes..."
+                      : classesError
+                        ? "Classes unavailable"
+                        : classesArray.length
+                          ? classDisplayName
+                          : "No assigned classes"}
+                  </span>
+                  <ChevronDown className="text-muted-foreground size-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-60">
+                {classesArray.map((cls) => {
+                  const displayName = `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`
+                  return (
+                    <DropdownMenuItem
+                      key={cls.id}
+                      onClick={() => setSelectedClassId(cls.id)}
                     >
-                      {classDisplayName}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-[240px]">
-                    {classesArray.map((cls) => {
-                      const displayName = `${cls.name}${cls.arm ? ` ${cls.arm}` : ""}`
-                      return (
-                        <DropdownMenuItem
-                          key={cls.id}
-                          onClick={() => setSelectedClassId(cls.id)}
-                        >
-                          {displayName}
-                        </DropdownMenuItem>
-                      )
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                You are not assigned to any classes yet. Contact your administrator.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Timetable Grid */}
-          {effectiveClassId ? (
-            <TimetableGrid
-              classId={effectiveClassId}
-              readonly
-              onOpenClassroom={openClassroom}
-            />
-          ) : classesArray.length > 0 ? (
-            <div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-gray-500">
-              Please select a class to view its timetable
-            </div>
-          ) : null}
+                      {displayName}
+                    </DropdownMenuItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      )}
+
+        {classesError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load your assigned classes. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isLoadingClasses && !classesError && effectiveClassId ? (
+          <TimetableGrid
+            classId={effectiveClassId}
+            readonly
+            onOpenClassroom={openClassroom}
+          />
+        ) : (
+          <div className="bg-muted/40 flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--portal-line)] p-8 text-center">
+            <span className="bg-accent/10 text-accent mb-4 flex size-12 items-center justify-center rounded-2xl">
+              {isLoadingClasses ? (
+                <Loader2 className="size-6 animate-spin" />
+              ) : (
+                <CalendarDays className="size-6" />
+              )}
+            </span>
+            <p className="text-foreground font-semibold">
+              {isLoadingClasses
+                ? "Loading classes"
+                : classesError
+                  ? "Classes could not be loaded"
+                  : classesArray.length
+                    ? "Choose a class"
+                    : "No assigned classes"}
+            </p>
+            <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+              {classesArray.length
+                ? "Select a class above to see its weekly schedule."
+                : "Ask your administrator to assign you to a class in this session."}
+            </p>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
