@@ -99,6 +99,7 @@ export function StudentResultsView({
           <DownloadButton
             result={currentResult}
             studentId={studentId}
+            studentName={studentName}
             className={currentResult.class_name || "Class"}
             term={activeTerm.name}
           />

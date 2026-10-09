@@ -6,8 +6,10 @@ import { useStudentAuth } from "@/hooks/use-auth-user"
 import { useGetStudentResults } from "./_hooks/use-student-results"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { useRouter } from "next/navigation"
 
 export default function StudentResultsPage() {
+  const router = useRouter()
   const period = useAcademicPeriod("student-results")
   // Get current student from auth
   const {
@@ -29,20 +31,6 @@ export default function StudentResultsPage() {
 
   const isLoading = isLoadingAuth || period.isLoading || isLoadingResults
   const error = authError || resultsError
-
-  // Debug logging
-  console.log("[StudentResultsPage] State:", {
-    studentId,
-    studentName,
-    isLoadingAuth,
-    isLoadingResults,
-    isLoading,
-    authError,
-    resultsError,
-    activeTerm: period.term,
-    resultsCount: results?.length || 0,
-    results,
-  })
 
   // Transform term data
   const transformedTerm = period.term
@@ -73,7 +61,7 @@ export default function StudentResultsPage() {
         isEmpty={false}
         emptyTitle=""
         emptyDescription=""
-        onRetry={() => (window.location.href = "/dashboard")}
+        onRetry={() => router.push("/dashboard")}
       >
         {/* Add children prop to fix TypeScript error */}
         <div></div>
