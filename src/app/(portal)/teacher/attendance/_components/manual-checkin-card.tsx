@@ -1,26 +1,18 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { format } from "date-fns"
+import { CheckCircle2, Clock3, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { useManualCheckIn } from "../_hooks/use-teacher-attendance"
-import { format } from "date-fns"
 
 interface ManualCheckInCardProps {
   hasCheckedIn: boolean
 }
 
-const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) => {
+export default function ManualCheckInCard({ hasCheckedIn }: ManualCheckInCardProps) {
   const [reason, setReason] = useState("")
   const [now, setNow] = useState(() => new Date())
   const { mutate: checkIn, isPending } = useManualCheckIn()
@@ -31,303 +23,60 @@ const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) =
   }, [])
 
   const handleCheckIn = () => {
-    if (!reason.trim()) {
-      return
-    }
-
-    const now = new Date()
-    const date = format(now, "yyyy-MM-dd")
-    const check_in_time = format(now, "HH:mm:ss")
-
+    if (!reason.trim()) return
+    const currentTime = new Date()
     checkIn(
-      { date, check_in_time, reason: reason.trim() },
       {
-        onSuccess: () => {
-          setReason("")
-        },
-        onError: (error) => {
-          console.error("❌ Check-in failed:", error)
-        },
-      }
+        date: format(currentTime, "yyyy-MM-dd"),
+        check_in_time: format(currentTime, "HH:mm:ss"),
+        reason: reason.trim(),
+      },
+      { onSuccess: () => setReason("") }
     )
   }
 
-  const today = now.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-
-  const currentTime = now.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Clock className="text-accent h-5 w-5" />
-          Manual Check-in
-        </CardTitle>
-        <CardDescription className="text-sm">
-          Record your attendance for {today}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        {hasCheckedIn ? (
-          <div className="flex items-start gap-4 rounded-lg border border-green-200 bg-green-50 p-4">
-            <CheckCircle2 className="h-6 w-6 shrink-0 text-green-600" />
-            <div>
-              <p className="font-semibold text-green-800">You are all set!</p>
-              <p className="mt-1 text-sm text-green-600">
-                You have already checked in for today. Have a great day!
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm font-medium text-gray-700">
-                  Date
-                </Label>
-                <Input
-                  id="date"
-                  type="text"
-                  value={today}
-                  disabled
-                  className="bg-gray-50 text-gray-600"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time" className="text-sm font-medium text-gray-700">
-                  Current Time
-                </Label>
-                <Input
-                  id="time"
-                  type="text"
-                  value={currentTime}
-                  disabled
-                  className="bg-gray-50 text-gray-600"
-                />
-              </div>
-            </div>
+    <div className="portal-reveal rounded-[1.5rem] border border-[var(--portal-line)] bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-foreground text-base font-semibold">Your check-in</h3>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Record your attendance for today.
+          </p>
+        </div>
+        <span className="text-muted-foreground inline-flex items-center gap-2 text-sm">
+          <Clock3 className="size-4" />
+          {format(now, "EEEE, MMMM d, yyyy · h:mm a")}
+        </span>
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reason" className="text-sm font-medium text-gray-700">
-                Reason for Check-in <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="reason"
-                placeholder="Please provide a reason for your check-in (e.g., On duty, Meeting, Training, etc.)"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="min-h-[120px] resize-none"
-                disabled={isPending}
-              />
-              <p className="text-xs text-gray-500">
-                This information will be recorded with your attendance.
-              </p>
-            </div>
-
-            <Button
-              onClick={handleCheckIn}
-              disabled={!reason.trim() || isPending}
-              className="w-full"
-              size="lg"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Checking in...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Check In Now
-                </>
-              )}
-            </Button>
-
-            {!reason.trim() && (
-              <p className="text-center text-xs text-gray-500">
-                Please enter a reason to enable check-in
-              </p>
+      {hasCheckedIn ? (
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+          <span>You have checked in for today.</span>
+        </div>
+      ) : (
+        <div className="mt-5 max-w-2xl space-y-3">
+          <Label htmlFor="teacher-checkin-reason">Reason for check-in</Label>
+          <Textarea
+            id="teacher-checkin-reason"
+            placeholder="For example: On duty, meeting, or training"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            rows={2}
+            className="min-h-20 resize-y"
+            disabled={isPending}
+          />
+          <Button onClick={handleCheckIn} disabled={!reason.trim() || isPending}>
+            {isPending ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="mr-2 size-4" />
             )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+            {isPending ? "Checking in…" : "Check in"}
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
-
-export default ManualCheckInCard
-// "use client"
-
-// import React, { useState } from "react"
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "@/components/ui/card"
-// import { Button } from "@/components/ui/button"
-// import { Input } from "@/components/ui/input"
-// import { Label } from "@/components/ui/label"
-// import { Textarea } from "@/components/ui/textarea"
-// import { Clock, CheckCircle2, Loader2 } from "lucide-react"
-// import { useManualCheckIn } from "../_hooks/use-teacher-attendance"
-
-// interface ManualCheckInCardProps {
-//   hasCheckedIn: boolean
-// }
-
-// const ManualCheckInCard: React.FC<ManualCheckInCardProps> = ({ hasCheckedIn }) => {
-//   const [reason, setReason] = useState("")
-//   const { mutate: checkIn, isPending } = useManualCheckIn()
-
-//   const handleCheckIn = () => {
-//     if (!reason.trim()) {
-//       return
-//     }
-
-//     const now = new Date()
-//     const date = now.toISOString().split("T")[0] // YYYY-MM-DD
-//     const check_in_time = now.toTimeString().split(" ")[0] // HH:MM:SS
-
-//     // Debug logging
-//     // console.log("📤 Submitting check-in:")
-//     // console.log("  Date:", date)
-//     // console.log("  Time:", check_in_time)
-//     // console.log("  Reason:", reason.trim())
-//     // console.log("  Payload:", { date, check_in_time, reason: reason.trim() })
-
-//     checkIn(
-//       { date, check_in_time, reason: reason.trim() },
-//       {
-//         onSuccess: () => {
-//           // console.log("✅ Check-in successful, clearing form")
-//           setReason("")
-//         },
-//         onError: (error) => {
-//           console.error("❌ Check-in failed:", error)
-//         },
-//       }
-//     )
-//   }
-
-//   const today = new Date().toLocaleDateString("en-US", {
-//     weekday: "long",
-//     year: "numeric",
-//     month: "long",
-//     day: "numeric",
-//   })
-
-//   const currentTime = new Date().toLocaleTimeString("en-US", {
-//     hour: "2-digit",
-//     minute: "2-digit",
-//   })
-
-//   return (
-//     <Card className="overflow-hidden">
-//       <CardHeader className="">
-//         <CardTitle className="flex items-center gap-2 text-lg">
-//           <Clock className="text-accent h-5 w-5" />
-//           Manual Check-in
-//         </CardTitle>
-//         <CardDescription className="text-sm">
-//           Record your attendance for {today}
-//         </CardDescription>
-//       </CardHeader>
-//       <CardContent className="space-y-4 pt-6">
-//         {hasCheckedIn ? (
-//           <div className="flex items-start gap-4 rounded-lg border border-green-200 bg-green-50 p-4">
-//             <CheckCircle2 className="h-6 w-6 shrink-0 text-green-600" />
-//             <div>
-//               <p className="font-semibold text-green-800">You are all set!</p>
-//               <p className="mt-1 text-sm text-green-600">
-//                 You have already checked in for today. Have a great day!
-//               </p>
-//             </div>
-//           </div>
-//         ) : (
-//           <>
-//             <div className="grid gap-4 sm:grid-cols-2">
-//               <div className="space-y-2">
-//                 <Label htmlFor="date" className="text-sm font-medium text-gray-700">
-//                   Date
-//                 </Label>
-//                 <Input
-//                   id="date"
-//                   type="text"
-//                   value={today}
-//                   disabled
-//                   className="bg-gray-50 text-gray-600"
-//                 />
-//               </div>
-//               <div className="space-y-2">
-//                 <Label htmlFor="time" className="text-sm font-medium text-gray-700">
-//                   Current Time
-//                 </Label>
-//                 <Input
-//                   id="time"
-//                   type="text"
-//                   value={currentTime}
-//                   disabled
-//                   className="bg-gray-50 text-gray-600"
-//                 />
-//               </div>
-//             </div>
-
-//             <div className="space-y-2">
-//               <Label htmlFor="reason" className="text-sm font-medium text-gray-700">
-//                 Reason for Check-in <span className="text-red-500">*</span>
-//               </Label>
-//               <Textarea
-//                 id="reason"
-//                 placeholder="Please provide a reason for your check-in (e.g., On duty, Meeting, Training, etc.)"
-//                 value={reason}
-//                 onChange={(e) => setReason(e.target.value)}
-//                 className="min-h-[120px] resize-none"
-//                 disabled={isPending}
-//               />
-//               <p className="text-xs text-gray-500">
-//                 This information will be recorded with your attendance.
-//               </p>
-//             </div>
-
-//             <Button
-//               onClick={handleCheckIn}
-//               disabled={!reason.trim() || isPending}
-//               className="w-full"
-//               size="lg"
-//             >
-//               {isPending ? (
-//                 <>
-//                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-//                   Checking in...
-//                 </>
-//               ) : (
-//                 <>
-//                   <CheckCircle2 className="mr-2 h-5 w-5" />
-//                   Check In Now
-//                 </>
-//               )}
-//             </Button>
-
-//             {!reason.trim() && (
-//               <p className="text-center text-xs text-gray-500">
-//                 Please enter a reason to enable check-in
-//               </p>
-//             )}
-//           </>
-//         )}
-//       </CardContent>
-//     </Card>
-//   )
-// }
-
-// export default ManualCheckInCard
