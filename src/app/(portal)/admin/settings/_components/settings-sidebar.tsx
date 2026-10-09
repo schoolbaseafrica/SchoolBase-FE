@@ -15,6 +15,7 @@ import {
   FileText,
   Image as ImageIcon,
   ScanFace,
+  Smartphone,
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -46,6 +47,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
       id: "attendance",
       label: "Attendance Methods",
       icon: ScanFace,
+    },
+    {
+      id: "mobile-app",
+      label: "Mobile App",
+      icon: Smartphone,
     },
     {
       id: "legal",

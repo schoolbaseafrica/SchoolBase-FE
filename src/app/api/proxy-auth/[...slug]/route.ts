@@ -21,10 +21,10 @@ async function methodHandler(
       backendRes.headers.get("content-disposition") ?? ""
     )
   ) {
-    const body = await backendRes.arrayBuffer()
     const mediaHeaders = new Headers()
     mediaHeaders.set("Content-Type", contentType || "application/octet-stream")
-    mediaHeaders.set("Content-Length", String(body.byteLength))
+    const contentLength = backendRes.headers.get("content-length")
+    if (contentLength) mediaHeaders.set("Content-Length", contentLength)
     mediaHeaders.set(
       "Cache-Control",
       backendRes.headers.get("cache-control") ??
@@ -36,7 +36,7 @@ async function methodHandler(
       "Content-Disposition",
       backendRes.headers.get("content-disposition") ?? "inline"
     )
-    return new NextResponse(body, {
+    return new NextResponse(backendRes.body, {
       status: backendRes.status,
       headers: mediaHeaders,
     })

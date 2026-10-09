@@ -4,6 +4,7 @@ import { LegalSettings } from "./_components/legal-settings"
 import { SchoolInfoSettings } from "./_components/school-info-settings"
 import { LandingPageSettings } from "./_components/landing-page-settings"
 import { AttendanceMethodSettings } from "./_components/attendance-method-settings"
+import { MobileAppSettings } from "./_components/mobile-app-settings"
 
 interface PageProps {
   searchParams: Promise<{ tab?: string }>
@@ -36,6 +37,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
           {activeTab === "landing-page" && <LandingPageSettings />}
           {activeTab === "notifications" && <NotificationSettings />}
           {activeTab === "attendance" && <AttendanceMethodSettings />}
+          {activeTab === "mobile-app" && <MobileAppSettings />}
           {activeTab === "legal" && <LegalSettings />}
         </main>
       </div>

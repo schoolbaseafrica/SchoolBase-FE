@@ -203,9 +203,7 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
       responseContentType,
       backendRes.headers.get("content-disposition") ?? ""
     )
-    const responseBody = isBinaryResponse
-      ? await backendRes.arrayBuffer()
-      : await backendRes.text()
+    const responseBody = isBinaryResponse ? backendRes.body : await backendRes.text()
 
     const responseHeaders = new Headers()
     responseHeaders.set(
