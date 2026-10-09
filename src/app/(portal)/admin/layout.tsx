@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <UserProvider>
         <SidebarProvider>
           <AdminSidebar />
-          <main className="mt-[50px] h-full max-w-full min-w-0 flex-1 overflow-x-clip bg-white">
+          <main className="portal-shell max-w-full min-w-0 flex-1 overflow-x-clip">
             <DashboardHeader />
             <PageViewTracker />
             {children}

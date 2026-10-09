@@ -75,11 +75,12 @@ export function UsersToolbar({
         : "All Parents"
 
   return (
-    <div className="mt-2 mb-6 space-y-6">
+    <div className="portal-reveal mb-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
+          <p className="portal-section-label">School directory</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
         </div>
         <Button
           onClick={onAddUser}
@@ -90,14 +91,14 @@ export function UsersToolbar({
           {addButtonText}
         </Button>
       </div>
-      <div className="flex flex-row gap-3 sm:flex-row">
+      <div className="flex flex-row gap-3 rounded-[1.25rem] border border-[var(--portal-line)] bg-white p-3 shadow-[0_8px_28px_rgba(21,38,29,0.035)]">
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2" />
           <Input
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="placeholder:text-muted-foreground/70 h-11 rounded-xl border bg-white pl-11 text-base sm:w-auto lg:w-[272px]"
+            className="placeholder:text-muted-foreground/70 h-11 rounded-2xl border bg-white pl-11 text-base sm:w-auto lg:w-[320px]"
           />
         </div>
         <DropdownMenu open={open} onOpenChange={setOpen}>

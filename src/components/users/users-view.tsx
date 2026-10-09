@@ -58,7 +58,7 @@ export function UsersView({
   const navigate = () => router.push(`/admin/${userType}/new`)
 
   return (
-    <div className="mx-auto p-4 sm:p-6">
+    <div className="mx-auto max-w-[1500px] p-4 sm:p-6 sm:pt-9">
       <UsersToolbar
         userType={userType}
         searchQuery={searchQuery}
@@ -78,7 +78,7 @@ export function UsersView({
         />
       ) : (
         <>
-          <div className="hidden md:block">
+          <div className="portal-reveal hidden md:block">
             <UsersTable
               users={users}
               userType={userType}
@@ -89,7 +89,7 @@ export function UsersView({
             />
           </div>
 
-          <div className="block md:hidden">
+          <div className="portal-reveal block md:hidden">
             <UsersGrid
               users={users}
               userType={userType}
@@ -110,7 +110,7 @@ export function UsersView({
           )}
 
           {users.length === 0 && (
-            <div className="py-12 text-center">
+            <div className="portal-reveal rounded-[1.25rem] border border-[var(--portal-line)] bg-white px-6 py-16 text-center">
               <p className="text-muted-foreground">No {userType} found.</p>
             </div>
           )}

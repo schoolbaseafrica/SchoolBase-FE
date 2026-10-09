@@ -8,7 +8,7 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
   return (
     <SidebarProvider defaultOpen={false}>
       <StaffSidebar />
-      <main className="min-h-screen max-w-full min-w-0 flex-1 overflow-x-clip pt-10 lg:pt-20">
+      <main className="portal-shell max-w-full min-w-0 flex-1 overflow-x-clip">
         <DashboardHeader />
         {children}
       </main>

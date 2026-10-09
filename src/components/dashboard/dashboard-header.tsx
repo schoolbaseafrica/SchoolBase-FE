@@ -1,10 +1,20 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { NotificationsDrawer } from "@/components/notifications/notification-drawer"
+import { PortalScrollMotion } from "@/components/dashboard/portal-scroll-motion"
 
 const DashboardHeader = () => {
   const { state, isMobile, openMobile } = useSidebar()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 16)
+    update()
+    window.addEventListener("scroll", update, { passive: true })
+    return () => window.removeEventListener("scroll", update)
+  }, [])
 
   // Desktop: show trigger when collapsed
   const showDesktopTrigger = !isMobile && state === "collapsed"
@@ -15,47 +25,25 @@ const DashboardHeader = () => {
   const showTrigger = showDesktopTrigger || showMobileTrigger
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-50 flex h-[60px] w-full items-center justify-between border-b bg-white px-4">
-      <div className="relative z-50">{showTrigger && <SidebarTrigger />}</div>
-
-      <aside className="flex items-center gap-4 rounded-full border bg-gray-50">
-        <NotificationsDrawer />
-      </aside>
+    <header className="sticky top-0 z-40 w-full bg-[var(--portal-canvas)]/90 px-4 py-3 backdrop-blur-md sm:px-6">
+      <PortalScrollMotion />
+      <div
+        className={`flex h-14 items-center justify-between rounded-2xl border border-[var(--portal-line)] bg-white px-4 transition-shadow duration-300 ${
+          scrolled
+            ? "shadow-[0_14px_32px_rgba(21,38,29,0.12)]"
+            : "shadow-[0_8px_24px_rgba(21,38,29,0.045)]"
+        }`}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          {showTrigger && <SidebarTrigger className="shrink-0" />}
+          <span className="portal-section-label truncate">SchoolBase workspace</span>
+        </div>
+        <aside className="flex shrink-0 items-center rounded-full border border-[var(--portal-line)] bg-white">
+          <NotificationsDrawer />
+        </aside>
+      </div>
     </header>
   )
 }
 
 export default DashboardHeader
-// "use client"
-
-// import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
-// import { BellIcon } from "lucide-react"
-// import { Button } from "../ui/button"
-
-// const DashboardHeader = () => {
-//   const { state, isMobile, openMobile } = useSidebar()
-
-//   // Desktop: show trigger when collapsed
-//   const showDesktopTrigger = !isMobile && state === "collapsed"
-
-//   // Mobile: show trigger when mobile sidebar is closed
-//   const showMobileTrigger = isMobile && !openMobile
-
-//   const showTrigger = showDesktopTrigger || showMobileTrigger
-
-//   return (
-//     // <header className="fixed top-0 right-0 left-0 z-50 flex h-[72px] w-full items-center justify-between border-b bg-white px-4">
-//     <header className="fixed top-0 right-0 left-0 z-50 flex h-[50px] w-full items-center justify-between bg-white px-4">
-//       <div className="relative z-50">{showTrigger && <SidebarTrigger />}</div>
-
-//       <aside className="flex items-center gap-4">
-//         <Button variant="ghost" size="icon" className="relative">
-//           <BellIcon className="text-text-secondary size-5" />
-//           <span className="bg-accent absolute top-0 right-0.5 h-1.5 w-1.5 rounded-full"></span>
-//         </Button>
-//       </aside>
-//     </header>
-//   )
-// }
-
-// export default DashboardHeader

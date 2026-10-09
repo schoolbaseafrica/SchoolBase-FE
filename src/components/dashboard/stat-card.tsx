@@ -23,7 +23,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ stats, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="mt-[33px] grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="portal-reveal mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="p-4">
             <div className="mb-3 flex items-center gap-2">
@@ -41,38 +41,29 @@ const StatCard: React.FC<StatCardProps> = ({ stats, isLoading }) => {
   }
 
   return (
-    <div className="mt-[33px] grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="portal-reveal mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
       {stats.map((stat, index) => {
         const Icon = stat.icon
 
         return (
-          <Card key={index} className="flex flex-col justify-between p-4">
+          <Card
+            key={index}
+            className="flex flex-col justify-between p-5 transition-[box-shadow,transform] hover:-translate-y-1 hover:shadow-lg"
+          >
             {/* --- ICON + TITLE --- */}
-            <div className="mb-3 flex items-center gap-2">
+            <div className="mb-4 flex items-center gap-3">
               {/* Mobile Icon */}
-              <Icon className="text-accent text-xl lg:hidden" />
+              <span className="bg-accent/10 text-accent flex size-10 shrink-0 items-center justify-center rounded-2xl">
+                <Icon className="size-5" />
+              </span>
 
-              {/* Desktop Icon */}
-              <Icon className="text-accent hidden text-2xl lg:block" />
-
-              <p className="text-text-secondary text-sm font-medium lg:text-xl">
-                {stat.name}
-              </p>
+              <p className="text-muted-foreground text-sm font-medium">{stat.name}</p>
             </div>
 
             {/* --- QUANTITY --- */}
             <div className="mb-3">
-              <p className="text-primary text-[28px] leading-[30px] font-semibold">
+              <p className="text-foreground text-[28px] leading-[30px] font-semibold tracking-tight sm:text-3xl">
                 {stat.quantity}
-              </p>
-            </div>
-
-            {/* --- FOOTER / PERCENTAGE --- */}
-            <div>
-              <p className="flex items-center gap-1 text-xs text-[#686868]">
-                {/* <MoveUp className="text-secondary size-3" />
-                <span className="text-secondary mr-1">{stat.percentage}%</span>
-                Since this term*/}
               </p>
             </div>
           </Card>

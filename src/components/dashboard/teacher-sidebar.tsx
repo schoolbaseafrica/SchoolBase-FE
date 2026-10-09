@@ -83,7 +83,7 @@ export function TeacherSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`rounded-md px-3 py-2.5 ${
+                      className={`rounded-xl px-3 py-2.5 ${
                         isActive
                           ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"

@@ -8,11 +8,14 @@ const DashboardTitle = ({
   description: string
 }) => {
   return (
-    <section>
-      <h2 className="text-primary pb-3 text-2xl font-bold lg:text-[1.75rem]">
+    <section className="portal-reveal">
+      <p className="portal-section-label mb-2">School operations</p>
+      <h2 className="text-foreground pb-2 text-3xl font-bold tracking-tight sm:text-4xl">
         {heading}
       </h2>
-      <p className="text-text-secondary text-sm lg:text-base">{description}</p>
+      <p className="text-muted-foreground max-w-2xl text-sm leading-6 lg:text-base">
+        {description}
+      </p>
     </section>
   )
 }

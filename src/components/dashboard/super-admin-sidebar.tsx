@@ -129,7 +129,7 @@ export function SuperAdminSidebar() {
                           <CollapsibleTrigger asChild>
                             <SidebarMenuButton
                               asChild
-                              className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 ${
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 ${
                                 isActive || hasActiveChild
                                   ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                                   : "text-gray-700 hover:bg-gray-100"
@@ -163,7 +163,7 @@ export function SuperAdminSidebar() {
                                 <SidebarMenuSubItem key={subItem.title}>
                                   <SidebarMenuSubButton
                                     asChild
-                                    className={`rounded-md px-3 py-2 ${
+                                    className={`rounded-xl px-3 py-2 ${
                                       isSubActive
                                         ? "text-[var(--primary)]"
                                         : "text-gray-600 hover:bg-gray-100"
@@ -187,7 +187,7 @@ export function SuperAdminSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`rounded-md px-3 py-2.5 ${
+                      className={`rounded-xl px-3 py-2.5 ${
                         isActive
                           ? "bg-[var(--primary)] text-[var(--accent-foreground)] hover:bg-[var(--primary)] hover:text-[var(--accent-foreground)]"
                           : "text-gray-700 hover:bg-gray-100"

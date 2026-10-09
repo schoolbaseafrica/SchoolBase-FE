@@ -97,11 +97,13 @@ export default function OwnerOverviewPage() {
   const metricLoading = summary.isLoading || fees.isLoading || period.isLoading
 
   return (
-    <div className="min-w-0 bg-[#FAFAFA] px-4 py-6 sm:px-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto max-w-[1500px] min-w-0 px-4 py-6 sm:px-6 sm:py-10">
+      <div className="portal-reveal mb-6 flex flex-col gap-5 rounded-[1.5rem] border border-[var(--portal-line)] bg-white p-6 shadow-[0_12px_36px_rgba(21,38,29,0.04)] lg:flex-row lg:items-end lg:justify-between lg:p-8">
         <div>
-          <p className="text-accent text-sm font-semibold tracking-wide">SCHOOL OWNER</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">School overview</h1>
+          <p className="portal-section-label">School owner</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            School overview
+          </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
             School performance and access in one place. Open a card to inspect its
             records.
@@ -124,7 +126,7 @@ export default function OwnerOverviewPage() {
 
       <section
         aria-label="School snapshot"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="portal-reveal grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         {[
           {
@@ -157,7 +159,7 @@ export default function OwnerOverviewPage() {
           },
         ].map((item) => (
           <Link key={item.label} href={item.href} className="group min-w-0">
-            <Card className="h-full gap-0 p-5 transition-shadow hover:shadow-md">
+            <Card className="h-full gap-0 p-5 transition-[box-shadow,transform] hover:-translate-y-1 hover:shadow-lg">
               <div className="flex items-start justify-between gap-3">
                 <span className="bg-accent/10 text-accent rounded-xl p-2.5">
                   <item.icon className="size-5" />
@@ -174,7 +176,7 @@ export default function OwnerOverviewPage() {
         ))}
       </section>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+      <div className="portal-reveal mt-5 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Card className="min-w-0 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -241,7 +243,7 @@ export default function OwnerOverviewPage() {
         </Card>
       </div>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+      <div className="portal-reveal mt-5 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Card className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div>

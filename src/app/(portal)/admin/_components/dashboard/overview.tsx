@@ -133,7 +133,7 @@ const Overview = () => {
   )
 
   return (
-    <div className="bg-[#FAFAFA] px-4 pt-4 sm:px-6 sm:pt-6">
+    <div className="mx-auto max-w-[1500px] px-4 pt-6 sm:px-6 sm:pt-9">
       <DashboardTitle
         heading="Dashboard"
         description="Review school activity and performance for one consistent academic period"
@@ -142,13 +142,13 @@ const Overview = () => {
 
       <StatCard stats={dashboardStats} isLoading={isLoading} />
 
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="portal-reveal mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <StudentGrowthChart />
         <FeesReportChart />
       </section>
 
       {/* Today's activities */}
-      <section className="my-6 rounded-2xl border bg-white p-4 shadow-sm lg:p-6">
+      <section className="portal-reveal my-6 rounded-[1.25rem] border border-[var(--portal-line)] bg-white p-4 shadow-[0_8px_28px_rgba(21,38,29,0.035)] lg:p-6">
         <div className="mb-4 flex flex-col justify-between md:flex-row md:items-center">
           <div className="flex items-center gap-2 py-2.5">
             <ActivityIcon className="text-accent size-5" />

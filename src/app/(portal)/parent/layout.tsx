@@ -25,7 +25,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
             <SidebarProvider>
               <ParentSidebar />
               <StudentProvider>
-                <main className="mt-[50px] h-full max-w-full min-w-0 flex-1 overflow-x-clip">
+                <main className="portal-shell max-w-full min-w-0 flex-1 overflow-x-clip">
                   <DashboardHeader />
                   {children}
                 </main>
