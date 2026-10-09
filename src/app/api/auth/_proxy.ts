@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies as getCookies } from "next/headers"
 import { splitCookiesString } from "set-cookie-parser"
 import { isBinaryProxyResponse } from "@/lib/proxy-media-type"
+import { setSessionCookies, type SessionTokens } from "./_session"
 
 /* Helpers */
 /**
@@ -68,14 +69,6 @@ const buildBackendUrl = (req: Request, path: string): string => {
   return `${baseUrl}/${path.replace(/^\/+/, "")}`
 }
 
-const extractAccessTokenFromSetCookie = (
-  setCookieHeader: string | null
-): string | null => {
-  if (!setCookieHeader) return null
-  const match = setCookieHeader.match(/access_token=([^;]+)/)
-  return match ? match[1] : null
-}
-
 /* Forward request */
 const forwardRequest = async (
   backendUrl: string,
@@ -107,33 +100,35 @@ const forwardRequest = async (
 }
 
 /* Attempt Refresh Token */
-const attemptRefresh = async (
-  req: Request
-): Promise<{
-  ok: boolean
-  newAccessToken: string | null
-  refreshResponse: Response | null
-}> => {
+export const attemptRefresh = async (req: Request): Promise<SessionTokens | null> => {
   const refreshUrl = buildBackendUrl(req, "api/v1/auth/refresh")
   const cookieStore = await getCookies()
   const refreshToken = cookieStore.get("refresh_token")?.value
 
-  if (!refreshToken) return { ok: false, newAccessToken: null, refreshResponse: null }
+  if (!refreshToken) return null
 
   try {
     const res = await fetch(refreshUrl, {
       method: "POST",
-      headers: { cookie: `refresh_token=${refreshToken}` },
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
       cache: "no-store",
     })
-    if (!res.ok) return { ok: false, newAccessToken: null, refreshResponse: res }
+    if (!res.ok) return null
 
-    const setCookieHeader = res.headers.get("set-cookie")
-    const newAccessToken = extractAccessTokenFromSetCookie(setCookieHeader)
-    return { ok: true, newAccessToken, refreshResponse: res }
+    const payload = await res.json()
+    const data = payload?.data ?? payload
+    if (
+      !data?.access_token ||
+      !data?.refresh_token ||
+      !data?.session_id ||
+      !data?.session_expires_at
+    )
+      return null
+    return data as SessionTokens
   } catch (err) {
     console.error("[proxy] Error during token refresh:", err)
-    return { ok: false, newAccessToken: null, refreshResponse: null }
+    return null
   }
 }
 
@@ -188,12 +183,23 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
     const accessToken = cookieStore.get("access_token")?.value
     if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`)
 
+    let refreshedSession: SessionTokens | null = null
+    if (!accessToken && cookieStore.get("refresh_token")?.value) {
+      refreshedSession = await attemptRefresh(req)
+      if (refreshedSession)
+        headers.set("Authorization", `Bearer ${refreshedSession.access_token}`)
+    }
     let backendRes = await forwardRequest(backendUrl, req.method, rawBody, headers)
 
-    if (backendRes.status === 401) {
+    if (
+      backendRes.status === 401 &&
+      pathname !== "/api/v1/auth/login" &&
+      !refreshedSession
+    ) {
       const refresh = await attemptRefresh(req)
-      if (refresh.ok && refresh.newAccessToken) {
-        headers.set("Authorization", `Bearer ${refresh.newAccessToken}`)
+      if (refresh) {
+        refreshedSession = refresh
+        headers.set("Authorization", `Bearer ${refresh.access_token}`)
         backendRes = await forwardRequest(backendUrl, req.method, rawBody, headers)
       }
     }
@@ -219,6 +225,8 @@ export const proxyAuthRequest = async (req: Request, pathname: string) => {
       status: backendRes.status,
       headers: responseHeaders,
     })
+
+    if (refreshedSession) setSessionCookies(nextRes, refreshedSession)
 
     const setCookieHeader = backendRes.headers.get("set-cookie")
     if (setCookieHeader) {

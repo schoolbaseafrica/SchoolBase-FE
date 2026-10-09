@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { proxyAuthRequest } from "../_proxy"
+import { setSessionCookies } from "../_session"
 
 export async function POST(req: Request) {
   // Call your backend (backend uses /api/v1 prefix)
@@ -15,54 +16,17 @@ export async function POST(req: Request) {
       session_expires_at,
       user: { id: user_id },
     } = data.data
-    const expiresAt = new Date(session_expires_at)
-
     // Create response with original backend data
     const response = NextResponse.json(data, {
       status: 200,
     })
 
-    const SECURE = process.env.NODE_ENV === "production"
-
-    // Clear previous authentication cookies before setting new ones
-    // This ensures no conflicts when logging in as a different user
-    response.cookies.delete("access_token")
-    response.cookies.delete("refresh_token")
-    response.cookies.delete("session_id")
-    response.cookies.delete("user_id")
-
-    // Set cookies — HTTP-only for security
-    response.cookies.set("access_token", access_token, {
-      httpOnly: true,
-      secure: SECURE,
-      sameSite: "strict",
-      path: "/",
-      expires: expiresAt,
-    })
-
-    response.cookies.set("refresh_token", refresh_token, {
-      httpOnly: true,
-      secure: SECURE,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    })
-
-    // Set cookies — HTTP-only for security
-    response.cookies.set("session_id", session_id, {
-      httpOnly: true,
-      secure: SECURE,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
-    })
-
-    response.cookies.set("user_id", user_id, {
-      httpOnly: true,
-      secure: SECURE,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365 * 10, // 10 years (effectively permanent)
+    setSessionCookies(response, {
+      access_token,
+      refresh_token,
+      session_id,
+      session_expires_at,
+      user_id,
     })
 
     return response

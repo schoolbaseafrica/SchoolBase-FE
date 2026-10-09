@@ -1,5 +1,11 @@
-import { proxyAuthRequest } from "../_proxy"
+import { NextResponse } from "next/server"
+import { attemptRefresh } from "../_proxy"
+import { setSessionCookies } from "../_session"
 
 export async function POST(req: Request) {
-  return proxyAuthRequest(req, "/api/v1/auth/refresh")
+  const session = await attemptRefresh(req)
+  if (!session) return NextResponse.json({ message: "Session expired" }, { status: 401 })
+  const response = NextResponse.json({ data: session })
+  setSessionCookies(response, session)
+  return response
 }
