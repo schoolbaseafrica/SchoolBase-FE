@@ -30,22 +30,14 @@ const TeacherAttendance = () => {
   const isClassTeacher = assignedClasses && assignedClasses.length > 0
 
   return (
-    <div className="space-y-8 px-5 pt-10">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <DashboardTitle
         heading="Attendance"
         description="Take student attendance and record your own check-in"
       />
       <AcademicPeriodSelector scope="teacher-attendance" sessionOnly />
 
-      <section className="space-y-4" aria-labelledby="student-attendance-heading">
-        <div>
-          <h2 id="student-attendance-heading" className="text-xl font-semibold">
-            Student attendance
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Choose your class, then mark students manually or use face check-in.
-          </p>
-        </div>
+      <section aria-label="Student attendance">
         {classesLoading ? (
           <div className="flex items-center gap-2 py-6 text-sm">
             <Loader2 className="size-4 animate-spin" /> Loading assigned classes…
