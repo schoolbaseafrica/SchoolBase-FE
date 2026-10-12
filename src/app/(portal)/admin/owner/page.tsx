@@ -114,6 +114,11 @@ export default function OwnerOverviewPage() {
             Operational dashboard <ArrowRight className="size-4" />
           </Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/owner/inactive-people">
+            Inactive people <ArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
 
       <AcademicPeriodSelector scope={scope} />
