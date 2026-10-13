@@ -9,6 +9,7 @@ import type {
   GradingScale,
   GetGradesParams,
   CreateSubmissionRequest,
+  UpdateSubmissionRequest,
   ReviewActionRequest,
   StudentBasicInfo,
   ParentStudentsResponse,
@@ -681,10 +682,10 @@ export const ResultsAPI = {
   // Update submission after rejection
   updateSubmission: (
     id: string,
-    data: Partial<GradeSubmission>
+    data: UpdateSubmissionRequest
   ): Promise<GradeSubmission> => {
     return apiFetch<ResponsePack<GradeSubmission>>(
-      `/grades/submission/${id}/update`,
+      `/grades/submissions/${id}`,
       {
         method: "PATCH",
         data,
@@ -702,7 +703,7 @@ export const ResultsAPI = {
   },
 
   // Get teacher's submissions with filters
-  getTeacherSubmissions: (params?: GetGradesParams): Promise<GradeSubmission[]> => {
+  getTeacherSubmissions: async (params?: GetGradesParams): Promise<GradeSubmission[]> => {
     const queryParams = new URLSearchParams()
 
     if (params?.class_id) queryParams.append("class_id", params.class_id)
@@ -712,22 +713,27 @@ export const ResultsAPI = {
     if (params?.page) queryParams.append("page", params.page.toString())
     if (params?.limit) queryParams.append("limit", params.limit.toString())
 
-    return apiFetch<ResponsePack<PaginatedSubmissionsResponse>>(
-      `/grades/submissions?${queryParams.toString()}`,
-      {},
-      true
-    )
-      .then((response) => {
+    const submissions: GradeSubmission[] = []
+    let page = params?.page ?? 1
+    try {
+      let hasNext = true
+      while (hasNext) {
+        queryParams.set("page", String(page))
+        const response = await apiFetch<ResponsePack<PaginatedSubmissionsResponse>>(
+          `/grades/submissions?${queryParams.toString()}`,
+          {},
+          true
+        )
         const paginatedData = extractData(response)
-        const backendSubmissions = paginatedData.items || []
-
-        const submissions = backendSubmissions.map(transformBackendSubmission)
-        return submissions
-      })
-      .catch((error) => {
-        console.error("Error fetching teacher submissions:", error)
-        throw error
-      })
+        submissions.push(...(paginatedData.items || []).map(transformBackendSubmission))
+        hasNext = Boolean(paginatedData.meta?.has_next)
+        page += 1
+      }
+      return submissions
+    } catch (error) {
+      console.error("Error fetching teacher submissions:", error)
+      throw error
+    }
   },
 
   // Get specific submission

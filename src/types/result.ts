@@ -116,6 +116,15 @@ export interface CreateSubmissionRequest {
   grades: GradeEntry[]
 }
 
+export interface UpdateSubmissionRequest {
+  grades: Array<{
+    student_id: string
+    ca_score: number | null
+    exam_score: number | null
+    comment?: string | null
+  }>
+}
+
 export interface SubmissionStats {
   total: number
   pending: number

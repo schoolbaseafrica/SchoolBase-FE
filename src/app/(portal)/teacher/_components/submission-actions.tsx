@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GradeEntry, GradeSubmission, Grade } from "@/types/result"
+import { GradeEntry, GradeSubmission } from "@/types/result"
 import { Button } from "@/components/ui/button"
 import {
   useSaveDraft,
@@ -130,13 +130,8 @@ export function SubmissionActions({
               student_id: grade.student_id,
               ca_score: grade.ca_score,
               exam_score: grade.exam_score,
-              total_score: grade.total_score,
-              grade: grade.grade,
               comment: grade.comment,
-              subject_id: subjectId,
-              class_id: classId,
-              term_id: termId,
-            })) as Grade[],
+            })),
           },
         })
       } else {
@@ -201,6 +196,17 @@ export function SubmissionActions({
         const draft = await saveDraftMutation.mutateAsync(submissionData)
         await submitMutation.mutateAsync(draft.id)
       } else {
+        await updateSubmissionMutation.mutateAsync({
+          id: existingSubmission.id,
+          data: {
+            grades: validGrades.map((grade) => ({
+              student_id: grade.student_id,
+              ca_score: grade.ca_score,
+              exam_score: grade.exam_score,
+              comment: grade.comment,
+            })),
+          },
+        })
         await submitMutation.mutateAsync(existingSubmission.id)
       }
 
@@ -212,7 +218,7 @@ export function SubmissionActions({
     }
   }
 
-  const canSubmit =
+  const canEdit =
     !existingSubmission ||
     (existingSubmission.status !== "approved" &&
       existingSubmission.status !== "submitted")
@@ -222,7 +228,9 @@ export function SubmissionActions({
       <div className="flex flex-col gap-4 border-t pt-6 sm:flex-row sm:justify-end">
         <Button
           onClick={handleSaveDraft}
-          disabled={saveDraftMutation.isPending || updateSubmissionMutation.isPending}
+          disabled={
+            !canEdit || saveDraftMutation.isPending || updateSubmissionMutation.isPending
+          }
           variant="outline"
         >
           {saveDraftMutation.isPending || updateSubmissionMutation.isPending
@@ -232,7 +240,9 @@ export function SubmissionActions({
 
         <Button
           onClick={handleSubmitForApproval}
-          disabled={submitMutation.isPending || !canSubmit}
+          disabled={
+            !canEdit || submitMutation.isPending || updateSubmissionMutation.isPending
+          }
         >
           {submitMutation.isPending ? "Submitting..." : "Submit for Approval"}
         </Button>

@@ -2,7 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { ResultsAPI } from "@/lib/results"
-import type { Grade, CreateSubmissionRequest, GradeSubmission } from "@/types/result"
+import type {
+  Grade,
+  CreateSubmissionRequest,
+  UpdateSubmissionRequest,
+} from "@/types/result"
 import { toast } from "sonner"
 import { useAuthUser } from "@/hooks/use-auth-user"
 
@@ -158,7 +162,7 @@ export function useUpdateSubmission() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<GradeSubmission> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateSubmissionRequest }) =>
       ResultsAPI.updateSubmission(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...RESULTS_KEY, "submissions"] })
