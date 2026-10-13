@@ -50,7 +50,8 @@ export default function TeacherCbtMonitorPage() {
           <h1 className="text-2xl font-semibold">Live examination monitor</h1>
           <p className="text-sm text-slate-500">
             Refreshes every 15 seconds. Browser and connection signals are review aids;
-            camera, microphone and screen are not recorded.
+            live camera and microphone are not recorded. Screen clips are recorded when
+            enabled for this exam.
           </p>
         </div>
         <Button asChild variant="outline" className="shrink-0 self-start">
@@ -164,8 +165,8 @@ export default function TeacherCbtMonitorPage() {
               </Button>
             </div>
             <p className="my-4 text-xs text-slate-500">
-              Connection and page-visibility events only. No camera, microphone or screen
-              recording.
+              Connection and page-visibility events only. Screen clips are separate from
+              this activity list; live camera and microphone are not recorded.
             </p>
             <div className="space-y-3">
               {activity.data?.events.map((event) => {
