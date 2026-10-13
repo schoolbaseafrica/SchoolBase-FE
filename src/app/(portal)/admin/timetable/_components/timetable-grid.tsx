@@ -1,6 +1,6 @@
 "use client"
 
-import { Schedule } from "@/lib/timetable"
+import { Schedule, ScheduleOption } from "@/lib/timetable"
 import { BookOpen, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useClassTimetable } from "../_hooks/use-timetable"
@@ -31,12 +31,14 @@ interface TimetableGridProps {
   classId: string
   readonly?: boolean
   onOpenClassroom?: (schedule: Schedule) => void
+  scheduleOptions?: ScheduleOption[]
 }
 
 export default function TimetableGrid({
   classId,
   readonly = false,
   onOpenClassroom,
+  scheduleOptions,
 }: TimetableGridProps) {
   const timetable = useClassTimetable(classId)
   const schedules = timetable.data?.schedules ?? []
@@ -196,6 +198,7 @@ export default function TimetableGrid({
           setEditingSchedule(null)
         }}
         schedule={editingSchedule}
+        scheduleOptions={scheduleOptions}
       />
     </>
   )

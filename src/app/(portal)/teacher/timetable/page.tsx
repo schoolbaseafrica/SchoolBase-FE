@@ -8,10 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, AlertCircle, CalendarDays } from "lucide-react"
+import { ChevronDown, AlertCircle, CalendarDays, Plus } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
+import CreateScheduleModal from "../../admin/timetable/_components/create-schedule-modal"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
@@ -20,12 +21,15 @@ import { Schedule } from "@/lib/timetable"
 import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
 import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
 import { toast } from "sonner"
+import { useQuery } from "@tanstack/react-query"
+import { TimetableAPI } from "@/lib/timetable"
 
 export default function TeacherTimetablePage() {
   const router = useRouter()
   const period = useAcademicPeriod("teacher-timetable")
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [openingScheduleId, setOpeningScheduleId] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
 
   const openClassroom = async (schedule: Schedule) => {
@@ -77,6 +81,16 @@ export default function TeacherTimetablePage() {
   const effectiveClassId = classesArray.some((item) => item.id === selectedClassId)
     ? selectedClassId
     : null
+  const canEditTimetable =
+    !!effectiveClassId &&
+    !!period.sessionId &&
+    period.activeSession?.id === period.sessionId
+  const scheduleOptions = useQuery({
+    queryKey: ["timetable-options", effectiveClassId],
+    queryFn: async () =>
+      (await TimetableAPI.getClassScheduleOptions(effectiveClassId!)).data,
+    enabled: canEditTimetable,
+  })
 
   const selectedClass = classesArray.find((cls) => cls.id === effectiveClassId)
   const classDisplayName = selectedClass
@@ -91,7 +105,8 @@ export default function TeacherTimetablePage() {
           Timetable
         </h1>
         <p className="text-muted-foreground mt-3 text-sm leading-6">
-          Review schedules for your assigned classes in the selected academic session.
+          Review schedules for your assigned classes and manage the current class
+          timetable.
         </p>
       </div>
 
@@ -101,9 +116,10 @@ export default function TeacherTimetablePage() {
         <div className="mb-6 space-y-2">
           <p className="text-foreground text-sm font-semibold">Class schedule</p>
           <p className="text-muted-foreground text-sm">
-            Choose a class to view its timetable and open a virtual classroom.
+            Choose a class to view its timetable, manage lessons, or open a virtual
+            classroom.
           </p>
-          <div className="pt-2">
+          <div className="flex flex-wrap items-end gap-3 pt-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -137,7 +153,21 @@ export default function TeacherTimetablePage() {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
+            {canEditTimetable && (
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="gap-2"
+                disabled={!scheduleOptions.data || scheduleOptions.isError}
+              >
+                <Plus className="size-4" /> Add lesson
+              </Button>
+            )}
           </div>
+          {effectiveClassId && !canEditTimetable && (
+            <p className="text-muted-foreground pt-2 text-xs">
+              Previous and inactive session timetables are read-only.
+            </p>
+          )}
         </div>
 
         {classesError && (
@@ -148,11 +178,20 @@ export default function TeacherTimetablePage() {
             </AlertDescription>
           </Alert>
         )}
+        {canEditTimetable && scheduleOptions.isError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Timetable editing options could not be loaded. Try refreshing the page.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {!isLoadingClasses && !classesError && effectiveClassId ? (
           <TimetableGrid
             classId={effectiveClassId}
-            readonly
+            readonly={!canEditTimetable || !scheduleOptions.data}
+            scheduleOptions={scheduleOptions.data}
             onOpenClassroom={openClassroom}
           />
         ) : (
@@ -181,6 +220,12 @@ export default function TeacherTimetablePage() {
           </div>
         )}
       </section>
+      <CreateScheduleModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        selectedClassId={canEditTimetable ? effectiveClassId : null}
+        scheduleOptions={scheduleOptions.data}
+      />
     </div>
   )
 }

@@ -28,6 +28,11 @@ export interface TimetableResponse {
   schedules: Schedule[]
 }
 
+export interface ScheduleOption {
+  subject: { id: string; name: string }
+  teacher: { id: string; name: string }
+}
+
 export interface CreateSchedulePayload {
   day: string
   start_time: string
@@ -46,6 +51,12 @@ type ResponsePack<T> = {
 }
 
 export const TimetableAPI = {
+  getClassScheduleOptions: (classId: string) =>
+    apiFetch<ResponsePack<ScheduleOption[]>>(
+      `/timetables/class/${classId}/options`,
+      { method: "GET" },
+      true
+    ),
   getClassTimetable: (classId: string) =>
     apiFetch<ResponsePack<TimetableResponse>>(
       `/timetables/class/${classId}`,

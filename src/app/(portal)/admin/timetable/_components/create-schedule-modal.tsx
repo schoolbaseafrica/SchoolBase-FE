@@ -25,6 +25,7 @@ import { useSubjects } from "../_hooks/use-subjects"
 import { useRooms } from "../_hooks/use-rooms"
 import { useQuery } from "@tanstack/react-query"
 import { TeachersAPI } from "@/lib/teachers"
+import { ScheduleOption } from "@/lib/timetable"
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
 const TIME_SLOTS = [
@@ -71,18 +72,22 @@ interface CreateScheduleModalProps {
   isOpen: boolean
   onClose: () => void
   selectedClassId: string | null
+  scheduleOptions?: ScheduleOption[]
 }
 
 export default function CreateScheduleModal({
   isOpen,
   onClose,
   selectedClassId,
+  scheduleOptions,
 }: CreateScheduleModalProps) {
   const { mutate: createSchedule, isPending } = useCreateSchedule()
-  const { data: subjectsData, isLoading: isLoadingSubjects } = useSubjects()
+  const { data: subjectsData, isLoading: isLoadingSubjects } =
+    useSubjects(!scheduleOptions)
   const { data: teachersData, isLoading: isLoadingTeachers } = useQuery({
     queryKey: ["teachers"],
     queryFn: () => TeachersAPI.getAll(),
+    enabled: !scheduleOptions,
   })
 
   const { data: roomsData, isLoading: isLoadingRooms } = useRooms()
@@ -91,6 +96,7 @@ export default function CreateScheduleModal({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -131,7 +137,9 @@ export default function CreateScheduleModal({
     )
   }
 
-  const subjects = subjectsData?.data?.data || []
+  const subjects = scheduleOptions
+    ? scheduleOptions.map((option) => option.subject)
+    : subjectsData?.data?.data || []
   const teachers = teachersData?.data?.data || []
   const rooms = roomsData?.data?.rooms || []
 
@@ -211,9 +219,19 @@ export default function CreateScheduleModal({
                   name="subject_id"
                   render={({ field }) => (
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value)
+                        if (scheduleOptions) {
+                          setValue(
+                            "teacher_id",
+                            scheduleOptions.find((option) => option.subject.id === value)
+                              ?.teacher.id || "",
+                            { shouldValidate: true }
+                          )
+                        }
+                      }}
                       value={field.value}
-                      disabled={isLoadingSubjects}
+                      disabled={isLoadingSubjects && !scheduleOptions}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
@@ -235,38 +253,44 @@ export default function CreateScheduleModal({
                 {renderError(errors.subject_id?.message)}
               </div>
 
-              <div className="w-full">
-                <label className="mb-2 block text-sm font-semibold text-gray-900">
-                  Teacher <span className="text-red-600">*</span>
-                </label>
-                <Controller
-                  control={control}
-                  name="teacher_id"
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLoadingTeachers}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={
-                            isLoadingTeachers ? "Loading teachers..." : "Select teacher"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teachers.map((teacher) => (
-                          <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.first_name} {teacher.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {renderError(errors.teacher_id?.message)}
-              </div>
+              {scheduleOptions ? (
+                <p className="text-muted-foreground text-sm">
+                  The teacher assigned to the selected subject will teach this lesson.
+                </p>
+              ) : (
+                <div className="w-full">
+                  <label className="mb-2 block text-sm font-semibold text-gray-900">
+                    Teacher <span className="text-red-600">*</span>
+                  </label>
+                  <Controller
+                    control={control}
+                    name="teacher_id"
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isLoadingTeachers}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={
+                              isLoadingTeachers ? "Loading teachers..." : "Select teacher"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachers.map((teacher) => (
+                            <SelectItem key={teacher.id} value={teacher.id}>
+                              {teacher.first_name} {teacher.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {renderError(errors.teacher_id?.message)}
+                </div>
+              )}
 
               <div className="w-full">
                 <label className="mb-2 block text-sm font-semibold text-gray-900">
