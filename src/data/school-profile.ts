@@ -162,9 +162,9 @@ export const defaultSchoolProfile: SchoolProfile = {
   description:
     "The modern way schools run in Nigeria. Manage attendance, results, timetables, fees, and NFC — all in one place.",
   logo: {
-    full: "/assets/logo.png",
+    full: "/assets/schoolbase-mark.png",
     mark: "/assets/logo.svg",
-    favicon: "/assets/logo.png",
+    favicon: "/assets/schoolbase-mark.png",
   },
   brand: {
     primary: "#c7363f",

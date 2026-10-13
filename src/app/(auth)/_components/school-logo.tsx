@@ -11,14 +11,14 @@ const SchoolLogo = () => {
   const shortName = useSchoolStore((state) => state.school.shortName)
   const brand = useSchoolStore((state) => state.school.brand)
   const [imageError, setImageError] = useState(false)
-  
+
   // Default logo fallback
-  const defaultLogo = "/assets/logo.png"
-  
+  const defaultLogo = "/assets/schoolbase-mark.png"
+
   // Detect if logo URL is external (backend URL) - disable optimization for external images
   const isExternalLogo =
     logo.full?.startsWith("http://") || logo.full?.startsWith("https://")
-  
+
   // Use logo if available and no error, otherwise use default or SVG
   const logoToUse = logo.full && !imageError ? logo.full : defaultLogo
   const useSvgFallback = imageError || !logo.full || logoToUse === defaultLogo

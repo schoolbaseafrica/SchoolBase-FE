@@ -30,7 +30,9 @@ export function PageTitleFaviconUpdater() {
     const APPLE_ICON_ID = "dynamic-apple-icon"
 
     // Remove only our dynamically added favicons (identified by data attribute)
-    const existingDynamicFavicon = document.querySelector(`link[data-favicon-id="${FAVICON_ID}"]`)
+    const existingDynamicFavicon = document.querySelector(
+      `link[data-favicon-id="${FAVICON_ID}"]`
+    )
     if (existingDynamicFavicon) {
       try {
         existingDynamicFavicon.remove()
@@ -44,11 +46,11 @@ export function PageTitleFaviconUpdater() {
     favicon.rel = "icon"
     favicon.type = "image/png"
     favicon.setAttribute("data-favicon-id", FAVICON_ID)
-    
+
     // Use favicon URL, fallback to logo URL, fallback to default
-    const iconUrl = faviconUrl || logoUrl || "/assets/logo.png"
+    const iconUrl = faviconUrl || logoUrl || "/assets/schoolbase-mark.png"
     favicon.href = iconUrl
-    
+
     // Add cache-busting query parameter for external logos to ensure they refresh
     if (iconUrl.startsWith("http://") || iconUrl.startsWith("https://")) {
       try {
@@ -60,11 +62,13 @@ export function PageTitleFaviconUpdater() {
         favicon.href = iconUrl
       }
     }
-    
+
     document.head.appendChild(favicon)
 
     // Also update Apple touch icon if logo is available
-    const existingDynamicAppleIcon = document.querySelector(`link[data-favicon-id="${APPLE_ICON_ID}"]`)
+    const existingDynamicAppleIcon = document.querySelector(
+      `link[data-favicon-id="${APPLE_ICON_ID}"]`
+    )
     if (existingDynamicAppleIcon) {
       try {
         existingDynamicAppleIcon.remove()
@@ -79,7 +83,7 @@ export function PageTitleFaviconUpdater() {
       appleIcon.sizes = "180x180"
       appleIcon.type = "image/png"
       appleIcon.setAttribute("data-favicon-id", APPLE_ICON_ID)
-      
+
       let appleIconUrl = logoUrl
       if (appleIconUrl.startsWith("http://") || appleIconUrl.startsWith("https://")) {
         try {
@@ -91,7 +95,7 @@ export function PageTitleFaviconUpdater() {
           appleIconUrl = logoUrl
         }
       }
-      
+
       appleIcon.href = appleIconUrl
       document.head.appendChild(appleIcon)
     }

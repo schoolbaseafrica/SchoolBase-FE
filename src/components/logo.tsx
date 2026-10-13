@@ -27,21 +27,13 @@ const Logo: React.FC<LogoProps> = ({
 
   const resolvedIconColor = iconColor ?? brand.primary
   const resolvedTextColor = textColor ?? brand.primary
-  
+
   // Default logo fallback
-  const defaultLogo = "/assets/logo.png"
-  let logoToUse = logo.full || defaultLogo
-  
-  // Add cache-busting query parameter for external logos to ensure they refresh after updates
-  // This prevents Next.js Image component from serving cached versions
-  if (logoToUse && (logoToUse.startsWith("http://") || logoToUse.startsWith("https://"))) {
-    const url = new URL(logoToUse)
-    // Add timestamp-based cache buster (refreshes every minute)
-    // This ensures logo updates are visible within a reasonable time
-    url.searchParams.set("v", Math.floor(Date.now() / 60000).toString())
-    logoToUse = url.toString()
-  }
-  
+  const defaultLogo = "/assets/schoolbase-mark.png"
+  // Uploaded logos use unique MinIO object names, so the URL changes after
+  // each upload without a timestamp added during render.
+  const logoToUse = logo.full || defaultLogo
+
   // Detect if logo URL is external (backend URL) - disable optimization for external images
   const isExternalLogo =
     logo.full?.startsWith("http://") || logo.full?.startsWith("https://")
