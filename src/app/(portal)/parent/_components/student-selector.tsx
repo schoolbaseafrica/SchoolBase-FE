@@ -21,12 +21,14 @@ export const StudentSelector = ({ className }: { className?: string }) => {
       onValueChange={(value) => setSelectedStudentID(value)}
       disabled={studentsData.length === 0}
     >
-      <SelectTrigger className={cn("border-accent text-accent w-30", className)}>
+      <SelectTrigger
+        className={cn("border-accent text-accent w-full max-w-80 sm:w-70", className)}
+      >
         <SelectValue placeholder="Select Student" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="max-w-[90vw]">
         {studentsData.map((s) => (
-          <SelectItem key={s.id} value={s.id}>
+          <SelectItem key={s.id} value={s.id} className="whitespace-normal">
             {s.full_name}
           </SelectItem>
         ))}
