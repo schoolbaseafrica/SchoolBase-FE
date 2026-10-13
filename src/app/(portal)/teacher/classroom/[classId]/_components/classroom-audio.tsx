@@ -880,24 +880,26 @@ export function ClassroomAudio({
       )}
 
       {canManage && (
-        <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg border bg-gray-50/70 sm:ml-auto sm:flex sm:w-fit sm:rounded-full">
-          <div className="flex min-w-0 items-center justify-between gap-2 border-r px-3 py-2 sm:border-r-0 sm:py-1.5">
+        <div className="mt-2 grid grid-cols-1 rounded-lg border bg-gray-50/70 sm:ml-auto sm:flex sm:w-fit sm:rounded-full">
+          <div className="flex min-w-0 items-center justify-between gap-3 border-b px-3 py-2 sm:border-r sm:border-b-0 sm:py-1.5">
             <Label htmlFor="student-microphones" className="text-xs text-gray-600">
               Student microphones
             </Label>
             <Switch
               id="student-microphones"
+              className="shrink-0"
               checked={allowStudentMicrophone}
               disabled={isSavingPermission}
               onCheckedChange={updateStudentMicrophones}
             />
           </div>
-          <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-2 sm:py-1.5">
+          <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-2 sm:py-1.5">
             <Label htmlFor="student-cameras" className="text-xs text-gray-600">
               Student cameras
             </Label>
             <Switch
               id="student-cameras"
+              className="shrink-0"
               checked={allowStudentCamera}
               disabled={isSavingPermission}
               onCheckedChange={updateStudentCameras}
