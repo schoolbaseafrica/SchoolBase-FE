@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
+  Copy,
   FileQuestion,
   Layers3,
   Plus,
@@ -179,6 +180,8 @@ export default function CbtExamBuilderPage() {
     )
 
   const isDraft = exam.data.status === "draft"
+  const canShareEntranceExam =
+    exam.data.examType === "entrance" && exam.data.status === "active"
   const canMonitor = ["active", "closed", "published"].includes(exam.data.status)
   const lifecycleAction = (() => {
     switch (exam.data.status) {
@@ -283,6 +286,34 @@ export default function CbtExamBuilderPage() {
               </p>
             </div>
           </div>
+          {canShareEntranceExam && (
+            <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border bg-slate-50 p-4">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">Applicant examination link</p>
+                <p className="text-sm break-all text-slate-600">/cbt/{examId}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      new URL(`/cbt/${examId}`, window.location.origin).toString()
+                    )
+                    toast.success("Applicant link copied")
+                  } catch {
+                    toast.error("Could not copy the link. Open it and copy the address.")
+                  }
+                }}
+              >
+                <Copy className="mr-2 h-4 w-4" /> Copy link
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/cbt/${examId}`} target="_blank" rel="noopener noreferrer">
+                  Open link
+                </Link>
+              </Button>
+            </div>
+          )}
         </header>
 
         {(exam.data.proctoringMode === "human" || exam.data.proctoringMode === "both") &&
