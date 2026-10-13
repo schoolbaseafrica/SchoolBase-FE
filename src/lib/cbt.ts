@@ -340,6 +340,36 @@ export interface CbtMediaToken {
   expiresInSeconds: number
 }
 
+export interface CbtScreenClip {
+  id: string
+  recordingId: string
+  partNumber: number
+  mimeType: string
+  byteSize: number
+  durationMs: number
+  createdAt: string
+}
+
+export interface CbtScreenClipInput {
+  recordingId: string
+  partNumber: number
+  durationMs: number
+  file: Blob
+}
+
+const screenClipForm = (clip: CbtScreenClipInput) => {
+  const form = new FormData()
+  form.append("recordingId", clip.recordingId)
+  form.append("partNumber", String(clip.partNumber))
+  form.append("durationMs", String(clip.durationMs))
+  form.append(
+    "file",
+    clip.file,
+    `screen-${clip.partNumber}.${clip.file.type === "video/mp4" ? "mp4" : "webm"}`
+  )
+  return form
+}
+
 type ApiEnvelope<T> = { data: T; message?: string; status_code?: number }
 
 function unwrap<T>(response: ApiEnvelope<T> | T): T {
@@ -372,6 +402,12 @@ export const CbtAPI = {
     apiFetch<ApiEnvelope<CbtMediaToken> | CbtMediaToken>(
       `/cbt/student/attempts/${attemptId}/media-token`,
       { method: "POST" }
+    ).then(unwrap),
+
+  uploadScreenClip: (attemptId: string, clip: CbtScreenClipInput) =>
+    apiFetch<ApiEnvelope<CbtScreenClip> | CbtScreenClip>(
+      `/cbt/student/attempts/${attemptId}/screen-clips`,
+      { method: "POST", data: screenClipForm(clip) }
     ).then(unwrap),
 
   saveAnswer: (
@@ -465,6 +501,13 @@ export const CbtAPI = {
     apiFetch<ApiEnvelope<CbtAttemptReview> | CbtAttemptReview>(
       `/cbt/attempts/${attemptId}/review`
     ).then(unwrap),
+
+  getScreenClips: (attemptId: string) =>
+    apiFetch<ApiEnvelope<CbtScreenClip[]> | CbtScreenClip[]>(
+      `/cbt/attempts/${attemptId}/recordings`
+    ).then(unwrap),
+  screenClipUrl: (attemptId: string, clipId: string) =>
+    `/api/proxy-auth/cbt/attempts/${attemptId}/recordings/${clipId}`,
 
   gradeAttemptAnswer: (
     attemptId: string,
@@ -579,6 +622,15 @@ export const PublicCbtAPI = {
       {
         method: "POST",
         headers: { "X-CBT-Access-Token": token },
+      }
+    ).then(unwrap),
+  uploadScreenClip: (attemptId: string, token: string, clip: CbtScreenClipInput) =>
+    apiFetch<ApiEnvelope<CbtScreenClip> | CbtScreenClip>(
+      `/public/cbt/attempts/${attemptId}/screen-clips`,
+      {
+        method: "POST",
+        headers: { "X-CBT-Access-Token": token },
+        data: screenClipForm(clip),
       }
     ).then(unwrap),
   saveAnswer: (

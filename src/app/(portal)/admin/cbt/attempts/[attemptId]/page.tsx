@@ -2,7 +2,15 @@
 
 import { FormEvent, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Activity, ArrowLeft, CheckCircle2, Send, ShieldAlert, X } from "lucide-react"
+import {
+  Activity,
+  ArrowLeft,
+  CheckCircle2,
+  MonitorPlay,
+  Send,
+  ShieldAlert,
+  X,
+} from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
@@ -141,6 +149,10 @@ export default function CbtAttemptReviewPage() {
     queryKey: ["cbt", "attempt-review", attemptId],
     queryFn: () => CbtAPI.getAttemptReview(attemptId),
   })
+  const recordings = useQuery({
+    queryKey: ["cbt", "screen-recordings", attemptId],
+    queryFn: () => CbtAPI.getScreenClips(attemptId),
+  })
   const publish = useMutation({
     mutationFn: () => CbtAPI.publishAttemptResult(attemptId),
     onSuccess: async () => {
@@ -238,8 +250,8 @@ export default function CbtAttemptReviewPage() {
                       <DrawerTitle>Browser activity</DrawerTitle>
                       <DrawerDescription>
                         Connection, page visibility, and examination activity recorded for{" "}
-                        {attempt.candidate.name}. This does not include camera,
-                        microphone, or screen recording.
+                        {attempt.candidate.name}. Camera and screen recordings are
+                        reviewed separately when enabled for this exam.
                       </DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 overflow-y-auto p-4">
@@ -308,6 +320,43 @@ export default function CbtAttemptReviewPage() {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MonitorPlay className="h-5 w-5" /> Screen recordings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {recordings.isLoading ? (
+              <p className="text-sm text-slate-500">Loading clips…</p>
+            ) : recordings.isError ? (
+              <Button variant="outline" onClick={() => void recordings.refetch()}>
+                Retry loading recordings
+              </Button>
+            ) : recordings.data?.length ? (
+              recordings.data.map((clip) => (
+                <div key={clip.id} className="rounded-xl border p-3">
+                  <p className="mb-2 text-sm font-medium">
+                    {new Date(clip.createdAt).toLocaleString()} · Part{" "}
+                    {clip.partNumber + 1} · {Math.round(clip.durationMs / 1000)}s
+                  </p>
+                  <video
+                    controls
+                    preload="none"
+                    className="w-full max-w-2xl rounded-lg bg-slate-950"
+                    src={CbtAPI.screenClipUrl(attemptId, clip.id)}
+                    aria-label={`Screen recording part ${clip.partNumber + 1}`}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">
+                No screen clips have been uploaded for this attempt.
+              </p>
+            )}
           </CardContent>
         </Card>
 

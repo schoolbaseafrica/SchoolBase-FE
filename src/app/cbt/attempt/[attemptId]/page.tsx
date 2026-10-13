@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Check, Clock3, Send } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -13,7 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { CandidateCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
-import { CbtQuestion, PublicCbtAPI } from "@/lib/cbt"
+import {
+  CbtScreenRecording,
+  type CbtScreenRecorderHandle,
+} from "@/components/cbt/cbt-screen-recording"
+import { CbtQuestion, PublicCbtAPI, type CbtScreenClipInput } from "@/lib/cbt"
 
 function QuestionInput({
   question,
@@ -104,6 +108,7 @@ export default function PublicCbtAttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const screenRecorder = useRef<CbtScreenRecorderHandle>(null)
   const [token] = useState(() =>
     typeof window === "undefined"
       ? ""
@@ -121,6 +126,10 @@ export default function PublicCbtAttemptPage() {
   })
   const getCameraToken = useCallback(
     () => PublicCbtAPI.createMediaToken(attemptId, token),
+    [attemptId, token]
+  )
+  const uploadScreenClip = useCallback(
+    (clip: CbtScreenClipInput) => PublicCbtAPI.uploadScreenClip(attemptId, token, clip),
     [attemptId, token]
   )
   useEffect(() => {
@@ -151,7 +160,10 @@ export default function PublicCbtAttemptPage() {
     }
   }, [attemptId, token])
   const submit = useMutation({
-    mutationFn: () => PublicCbtAPI.submitAttempt(attemptId, token),
+    mutationFn: async () => {
+      await screenRecorder.current?.finish()
+      return PublicCbtAPI.submitAttempt(attemptId, token)
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["public-cbt", "attempt", attemptId],
@@ -256,6 +268,14 @@ export default function PublicCbtAttemptPage() {
           attempt.data.exam.proctoringMode === "both"
         }
         getToken={getCameraToken}
+      />
+      <CbtScreenRecording
+        ref={screenRecorder}
+        enabled={
+          attempt.data.exam.proctoringMode === "recorded" ||
+          attempt.data.exam.proctoringMode === "both"
+        }
+        uploadClip={uploadScreenClip}
       />
       <div className="mx-auto max-w-4xl space-y-5">
         <header className="sticky top-0 z-10 flex items-center justify-between rounded-2xl border bg-white/95 p-4 shadow-sm backdrop-blur">

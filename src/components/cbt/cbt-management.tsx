@@ -248,16 +248,15 @@ export function CbtManagement({ examType }: { examType: CbtExamType }) {
                   <select
                     id="proctoringMode"
                     name="proctoringMode"
-                    defaultValue="none"
+                    defaultValue="recorded"
                     className="h-10 w-full rounded-md border bg-white px-3 text-sm"
                   >
-                    <option value="none">Not proctored</option>
-                    <option value="human">Live camera</option>
-                    <option value="recorded">Browser activity</option>
-                    <option value="both">Live camera + browser activity</option>
+                    <option value="recorded">Screen recording</option>
+                    <option value="both">Live proctor + screen recording</option>
                   </select>
                   <p className="text-xs text-slate-500">
-                    Live camera is visible to assigned proctors and is not recorded.
+                    Candidates must share their entire screen. Live camera is visible to
+                    assigned proctors and is not recorded.
                   </p>
                 </div>
                 {!external && (

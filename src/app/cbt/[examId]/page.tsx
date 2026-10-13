@@ -77,10 +77,10 @@ export default function PublicCbtEntryPage() {
                 {exam.data.proctoringMode === "none"
                   ? "Not monitored"
                   : exam.data.proctoringMode === "recorded"
-                    ? "Browser activity monitored"
+                    ? "Screen recording required"
                     : exam.data.proctoringMode === "human"
                       ? "Live camera required"
-                      : "Live camera and browser activity monitored"}
+                      : "Live camera and screen recording required"}
               </span>
             </div>
             <form className="space-y-4" onSubmit={submit}>

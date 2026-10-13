@@ -23,7 +23,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { CandidateCameraMonitoring } from "@/components/cbt/cbt-camera-monitoring"
-import { CbtAPI, CbtQuestion } from "@/lib/cbt"
+import {
+  CbtScreenRecording,
+  type CbtScreenRecorderHandle,
+} from "@/components/cbt/cbt-screen-recording"
+import { CbtAPI, CbtQuestion, type CbtScreenClipInput } from "@/lib/cbt"
 import {
   clearOfflineAnswers,
   getOfflineAnswers,
@@ -155,6 +159,7 @@ export default function CbtAttemptPage() {
   const [now, setNow] = useState(0)
   const hydrated = useRef(false)
   const submitting = useRef(false)
+  const screenRecorder = useRef<CbtScreenRecorderHandle>(null)
   const syncTimers = useRef<Record<string, number>>({})
 
   const attempt = useQuery({
@@ -166,6 +171,10 @@ export default function CbtAttemptPage() {
   const submit = useMutation({ mutationFn: () => CbtAPI.submitAttempt(attemptId) })
   const getCameraToken = useCallback(
     () => CbtAPI.createStudentMediaToken(attemptId),
+    [attemptId]
+  )
+  const uploadScreenClip = useCallback(
+    (clip: CbtScreenClipInput) => CbtAPI.uploadScreenClip(attemptId, clip),
     [attemptId]
   )
 
@@ -322,6 +331,7 @@ export default function CbtAttemptPage() {
           submitting.current = false
           return
         }
+        await screenRecorder.current?.finish()
         await submit.mutateAsync()
         await clearOfflineAnswers(attemptId)
         toast.success("Examination submitted")
@@ -384,6 +394,14 @@ export default function CbtAttemptPage() {
           attempt.data.exam.proctoringMode === "both"
         }
         getToken={getCameraToken}
+      />
+      <CbtScreenRecording
+        ref={screenRecorder}
+        enabled={
+          attempt.data.exam.proctoringMode === "recorded" ||
+          attempt.data.exam.proctoringMode === "both"
+        }
+        uploadClip={uploadScreenClip}
       />
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl min-w-0 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
