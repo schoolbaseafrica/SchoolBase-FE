@@ -16,8 +16,9 @@ export function CtaSection() {
               <p className="text-lg text-white/90">{cta.body}</p>
             </div>
             <Button
+              asChild
               variant="outline"
-              className="border-white text-white hover:bg-white/10"
+              className="border-white bg-white text-slate-950 hover:bg-slate-50 hover:text-slate-950"
             >
               <a href={cta.ctaHref}>{cta.ctaLabel}</a>
             </Button>
