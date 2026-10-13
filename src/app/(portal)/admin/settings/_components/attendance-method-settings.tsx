@@ -95,7 +95,14 @@ export function AttendanceMethodSettings() {
                 className="flex items-center justify-between gap-4 border-b pb-4 last:border-0"
               >
                 <div>
-                  <div className="font-medium">{labels[method]}</div>
+                  <div className="flex items-center gap-2 font-medium">
+                    {labels[method]}
+                    {method === "FACE" && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        New
+                      </span>
+                    )}
+                  </div>
                   {capability?.reason && (
                     <p className="text-muted-foreground text-sm">{capability.reason}</p>
                   )}
