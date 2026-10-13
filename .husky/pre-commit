@@ -1,51 +1,11 @@
 #!/usr/bin/env sh
-
 set -e
 
-echo "🎉 Hey there! Time to make sure your code is looking fresh! 🎉"
-echo ""
+# Check only staged files. A commit hook must not rewrite or stage other work.
+git diff --cached --name-only --diff-filter=ACM -z |
+  xargs -0 -r pnpm exec prettier --check --ignore-unknown
 
-# Check Prettier formatting
-echo "🎨 Let me check if your code is dressed to impress..."
-if ! pnpm run check-format; then
-    echo ""
-    echo "😱 Oops! Your code is looking a bit... chaotic? No worries!"
-    echo "✨ Let me give it a makeover real quick..."
-    pnpm run format
-    git add .
-    echo ""
-    echo "💅 Much better! Your code is now looking fabulous!"
-    echo "📝 Updating your commit with the new look..."
-    git commit --amend --no-edit
-    echo "🎊 All done! Your commit is now looking snazzy!"
-    echo ""
-fi
-
-# Check ESLint
-echo "🧹 Now let's make sure there's no lint in your code (get it? lint? 😏)..."
-if ! pnpm run lint; then
-    echo ""
-    echo "🚫 Nope nope nope! ESLint found some issues!"
-    echo "😤 Your code needs some TLC before it can join the party."
-    echo "🔧 Fix those errors above, add your changes, and try again!"
-    echo ""
-    exit 1
-fi
-echo "✨ Linting check passed! Your code is squeaky clean!"
-
-# Check TypeScript types
-echo "🔮 Time to check if your types are playing nicely together..."
-if ! pnpm run check-types; then
-    echo ""
-    echo "💥 TypeScript is having a meltdown!"
-    echo "🤯 Your types are confused and need some guidance."
-    echo "🛠️  Fix those type errors above and come back when you're ready!"
-    echo ""
-    exit 1
-fi
-echo "🎯 Type check passed! Everything is properly typed!"
-
-echo ""
-echo "🎊🎊🎊 SUCCESS! 🎊🎊🎊"
-echo "🚀 Your code is ready to fly! Go ahead and commit!"
-echo ""
+git diff --cached --name-only --diff-filter=ACM -z -- \
+  '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' |
+  xargs -0 -r pnpm exec eslint
+pnpm run check-types
