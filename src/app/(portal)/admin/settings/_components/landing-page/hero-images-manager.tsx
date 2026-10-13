@@ -19,7 +19,7 @@ interface HeroImagesManagerProps {
 // Default hero images from /public/landing
 const DEFAULT_HERO_IMAGES = [
   "/landing/hero-1.jpeg",
-  "/landing/hero-2.jpeg",
+  "/landing/hero-2.png",
   "/landing/hero-3.jpeg",
 ]
 
@@ -33,13 +33,13 @@ export function HeroImagesManager({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {[0, 1, 2].map((index) => {
         const currentImage = images.find((img) => img.order === index)
         // Use default image if no custom image is set
         const displayImageUrl = currentImage?.url || DEFAULT_HERO_IMAGES[index]
         const isDefault = !currentImage?.url
-        
+
         return (
           <Card key={index} className="overflow-hidden">
             <CardContent className="p-4">
@@ -48,7 +48,7 @@ export function HeroImagesManager({
                   Hero Image {index + 1}
                 </label>
                 {isDefault && (
-                  <p className="text-xs text-gray-500 mt-1">Using default image</p>
+                  <p className="mt-1 text-xs text-gray-500">Using default image</p>
                 )}
               </div>
               <ImageUploaderWithCrop

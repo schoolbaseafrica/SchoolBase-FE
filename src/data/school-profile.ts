@@ -192,7 +192,7 @@ export const defaultSchoolProfile: SchoolProfile = {
         alt: "Students learning together",
       },
       {
-        src: "/landing/hero-2.jpeg",
+        src: "/landing/hero-2.png",
         alt: "Collaborative classroom",
       },
       {

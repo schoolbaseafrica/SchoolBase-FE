@@ -31,16 +31,16 @@ export function HeroSection() {
   // Use images directly from store (which includes merged custom + defaults)
   // The provider merges custom images with defaults, so we should always have 3 images
   const imagesToDisplay = (hero.images || []).slice(0, 3)
-  
+
   // Ensure we have exactly 3 images (fallback to defaults if needed)
   while (imagesToDisplay.length < 3) {
     const defaultIndex = imagesToDisplay.length
     imagesToDisplay.push({
-      src: `/landing/hero-${defaultIndex + 1}.jpeg`,
+      src: `/landing/hero-${defaultIndex + 1}.${defaultIndex === 1 ? "png" : "jpeg"}`,
       alt: `Hero image ${defaultIndex + 1}`,
     })
   }
-  
+
   // Use image src if available and no error
   const getImageSrc = (imageSrc: string, index: number) => {
     if (imageErrors[index] || !imageSrc || imageSrc.trim() === "") {
@@ -86,7 +86,12 @@ export function HeroSection() {
                 priority={imageLayout[index]?.priority}
                 className="object-cover transition-transform duration-500 hover:scale-105"
                 onError={() => handleImageError(index)}
-                unoptimized={imageSrc.startsWith("/landing/") || imageSrc.startsWith("/assets/") || imageSrc.startsWith("http://") || imageSrc.startsWith("https://")}
+                unoptimized={
+                  imageSrc.startsWith("/landing/") ||
+                  imageSrc.startsWith("/assets/") ||
+                  imageSrc.startsWith("http://") ||
+                  imageSrc.startsWith("https://")
+                }
               />
             </div>
           )
