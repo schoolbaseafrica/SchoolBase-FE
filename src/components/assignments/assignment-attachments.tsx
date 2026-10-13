@@ -125,7 +125,7 @@ export function AssignmentAttachments({
                     {formatSize(attachment.size)} · {owner}
                   </span>
                 </a>
-                {attachment.uploadedBy === auth.data?.id && (
+                {canUpload && attachment.uploadedBy === auth.data?.id && (
                   <button
                     type="button"
                     aria-label={`Remove ${attachment.originalName}`}

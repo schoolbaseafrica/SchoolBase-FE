@@ -110,6 +110,7 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
   const overdue = Boolean(
     due && due < new Date() && !["submitted", "graded"].includes(submission?.status ?? "")
   )
+  const closed = assignment.status !== "published" || Boolean(due && due <= new Date())
   const dueSoon = Boolean(
     due &&
       !overdue &&
@@ -145,7 +146,7 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
               {status}
             </Badge>
             {submission?.isLate && <Badge variant="destructive">Late</Badge>}
-            {overdue && <Badge variant="destructive">Overdue</Badge>}
+            {overdue && <Badge variant="destructive">Closed</Badge>}
             {dueSoon && <Badge className="bg-amber-100 text-amber-800">Due soon</Badge>}
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -198,35 +199,41 @@ function StudentAssignmentCard({ assignment }: { assignment: Assignment }) {
                   className="mt-1 min-h-36"
                   value={responseText}
                   onChange={(event) => setResponseText(event.target.value)}
+                  disabled={closed}
                   placeholder="Write your answer here…"
                 />
               </div>
-              <AssignmentAttachments
-                assignmentId={assignment.id}
-                canUpload={assignment.status === "published"}
-              />
+              <AssignmentAttachments assignmentId={assignment.id} canUpload={!closed} />
               {submission?.status === "returned" && submission.feedback && (
                 <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
                   <strong>Teacher feedback:</strong> {submission.feedback}
                 </div>
               )}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => save.mutate("draft")}
-                  disabled={save.isPending}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save draft
-                </Button>
-                <Button
-                  onClick={() => save.mutate("submitted")}
-                  disabled={save.isPending}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  {submission?.status === "submitted" ? "Resubmit" : "Submit"}
-                </Button>
-              </div>
+              {closed && (
+                <p className="text-muted-foreground text-sm" role="status">
+                  This assignment is closed. Your saved work and attachments remain
+                  available to view.
+                </p>
+              )}
+              {!closed && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => save.mutate("draft")}
+                    disabled={save.isPending}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save draft
+                  </Button>
+                  <Button
+                    onClick={() => save.mutate("submitted")}
+                    disabled={save.isPending}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {submission?.status === "submitted" ? "Resubmit" : "Submit"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
