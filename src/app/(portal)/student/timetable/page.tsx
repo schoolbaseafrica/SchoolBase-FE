@@ -115,11 +115,15 @@ export default function StudentTimetablePage() {
                     {daySchedules.map((schedule) => {
                       const liveClassroom = classrooms.data?.find(
                         (room) =>
-                          room.scheduleId === schedule.id && room.status === "live"
+                          room.scheduleId === schedule.id &&
+                          room.status === "live" &&
+                          new Date(room.endsAt).getTime() > Date.now()
                       )
                       const scheduledClassroom = classrooms.data?.find(
                         (room) =>
-                          room.scheduleId === schedule.id && room.status === "scheduled"
+                          room.scheduleId === schedule.id &&
+                          room.status === "scheduled" &&
+                          new Date(room.endsAt).getTime() > Date.now()
                       )
                       return (
                         <div

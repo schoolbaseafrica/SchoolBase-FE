@@ -35,6 +35,7 @@ export default function TeacherTimetablePage() {
       let room = classrooms.data?.find(
         (candidate) =>
           candidate.scheduleId === schedule.id &&
+          new Date(candidate.endsAt).getTime() > Date.now() &&
           (candidate.status === "scheduled" || candidate.status === "live")
       )
       if (!room) {
