@@ -77,7 +77,7 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
                 key={item.id}
                 href={`/admin/settings?tab=${item.id}`}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
+                  "flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-sm leading-5 font-medium transition-colors",
                   isActive
                     ? "bg-accent/8 text-accent"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -85,11 +85,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
               >
                 <Icon
                   className={cn(
-                    "h-4 w-4",
+                    "h-4 w-4 shrink-0",
                     isActive ? "text-accent" : "text-muted-foreground"
                   )}
                 />
-                {item.label}
+                <span className="min-w-0">{item.label}</span>
               </Link>
             )
           })}
@@ -100,12 +100,14 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
       <div className="lg:hidden">
         <Drawer open={isOpen} onOpenChange={setIsOpen}>
           <DrawerTrigger asChild>
-            <button className="flex w-full items-center justify-between rounded-lg border bg-white p-3 shadow-sm">
-              <div className="flex items-center gap-3">
-                <ActiveIcon className="text-accent h-5 w-5" />
-                <span className="text-foreground font-medium">{activeItem.label}</span>
+            <button className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border bg-white p-3 text-left shadow-sm">
+              <div className="flex min-w-0 items-center gap-3">
+                <ActiveIcon className="text-accent h-5 w-5 shrink-0" />
+                <span className="text-foreground min-w-0 leading-5 font-medium">
+                  {activeItem.label}
+                </span>
               </div>
-              <ChevronDown className="text-muted-foreground h-4 w-4" />
+              <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0" />
             </button>
           </DrawerTrigger>
           <DrawerContent>
@@ -122,7 +124,7 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
                     href={`/admin/settings?tab=${item.id}`}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex w-full min-w-0 items-center gap-3 rounded-md px-3 py-2.5 text-sm leading-5 font-medium transition-colors",
                       isActive
                         ? "bg-accent/10 text-accent"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -130,11 +132,11 @@ export const SettingsSidebar = ({ activeTab }: SettingsSidebarProps) => {
                   >
                     <Icon
                       className={cn(
-                        "h-4 w-4",
+                        "h-4 w-4 shrink-0",
                         isActive ? "text-accent" : "text-muted-foreground"
                       )}
                     />
-                    {item.label}
+                    <span className="min-w-0">{item.label}</span>
                   </Link>
                 )
               })}
