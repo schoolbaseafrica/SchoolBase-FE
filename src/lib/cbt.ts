@@ -99,6 +99,15 @@ export interface CbtExamSummary {
   classes?: Array<{ id: string; name: string; arm?: string }>
 }
 
+export interface TeacherExamOption {
+  classId: string
+  className: string
+  arm?: string | null
+  subjectId: string
+  subjectName: string
+  sessionId: string
+}
+
 export interface CbtSavedAnswer {
   id: string
   questionId: string
@@ -496,6 +505,38 @@ export const CbtAPI = {
     apiFetch<ApiEnvelope<TeacherCbtExam[]> | TeacherCbtExam[]>("/cbt/teacher/exams").then(
       unwrap
     ),
+  teacherExamOptions: () =>
+    apiFetch<ApiEnvelope<TeacherExamOption[]> | TeacherExamOption[]>(
+      "/cbt/teacher/exam-options"
+    ).then(unwrap),
+  listTeacherManagedExams: () =>
+    apiFetch<ApiEnvelope<CbtExamSummary[]> | CbtExamSummary[]>(
+      "/cbt/teacher/manage-exams"
+    ).then(unwrap),
+  createTeacherExam: (data: Record<string, unknown>) =>
+    apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>("/cbt/teacher/manage-exams", {
+      method: "POST",
+      data,
+    }).then(unwrap),
+  getTeacherManagedExam: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(
+      `/cbt/teacher/manage-exams/${examId}`
+    ).then(unwrap),
+  addTeacherExamQuestion: (examId: string, data: Record<string, unknown>) =>
+    apiFetch<ApiEnvelope<CbtQuestion> | CbtQuestion>(
+      `/cbt/teacher/manage-exams/${examId}/questions`,
+      { method: "POST", data }
+    ).then(unwrap),
+  updateTeacherExamQuestion: (questionId: string, data: Record<string, unknown>) =>
+    apiFetch<ApiEnvelope<CbtQuestion> | CbtQuestion>(
+      `/cbt/teacher/manage-questions/${questionId}`,
+      { method: "PATCH", data }
+    ).then(unwrap),
+  submitTeacherExamForReview: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtExamSummary> | CbtExamSummary>(
+      `/cbt/teacher/manage-exams/${examId}/submit-review`,
+      { method: "POST" }
+    ).then(unwrap),
   getTeacherExamResults: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
       `/cbt/teacher/exams/${examId}/results`
