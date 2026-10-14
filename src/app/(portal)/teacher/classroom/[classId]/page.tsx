@@ -68,12 +68,12 @@ export default function TeacherClassroomPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   // Desktop chat collapse state
   const [isChatCollapsed, setIsChatCollapsed] = useState(false)
+  const [isStartingClass, setIsStartingClass] = useState(false)
 
   // Sync from API - always update canvas state to see student changes in real-time
   useEffect(() => {
     if (whiteboard) {
       // Always sync canvas state from API to see student drawings
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCanvasState(whiteboard.canvas_state || null)
       setImagesData(whiteboard.images_data || {})
       setVideosData(whiteboard.videos_data || {})
@@ -340,6 +340,26 @@ export default function TeacherClassroomPage() {
     }
   }
 
+  const canStartClass =
+    session.data?.status === "scheduled" &&
+    new Date(session.data.startsAt).getTime() <= Date.now() &&
+    new Date(session.data.endsAt).getTime() > Date.now()
+
+  const handleStartClass = async () => {
+    setIsStartingClass(true)
+    try {
+      await VirtualClassroomAPI.setStatus(classId, "live")
+      await session.refetch()
+      toast.success("Class is live. Students can now join.")
+    } catch (statusError) {
+      toast.error(
+        statusError instanceof Error ? statusError.message : "Could not start class"
+      )
+    } finally {
+      setIsStartingClass(false)
+    }
+  }
+
   const pageError = session.error ?? error
 
   // Check if error is a 403 Forbidden (access denied)
@@ -423,6 +443,20 @@ export default function TeacherClassroomPage() {
           </p>
         </div>
         <div className="flex items-center gap-1 md:gap-3">
+          {session.data?.status === "scheduled" && (
+            <Button
+              size="sm"
+              disabled={!canStartClass || isStartingClass}
+              onClick={handleStartClass}
+              title={
+                canStartClass
+                  ? "Let students into the class"
+                  : "Available during the scheduled lesson"
+              }
+            >
+              {isStartingClass ? "Starting..." : "Start class"}
+            </Button>
+          )}
           {/* Desktop: Show full toggle */}
           <div className="hidden items-center gap-2 md:flex">
             <Users className="h-4 w-4 text-gray-600" />
@@ -437,9 +471,11 @@ export default function TeacherClassroomPage() {
               checked={whiteboard?.allow_student_edit ?? false}
               onCheckedChange={handleToggleStudentEdit}
             />
-            <Button variant="destructive" size="sm" onClick={handleEndClass}>
-              End class
-            </Button>
+            {session.data?.status === "live" && (
+              <Button variant="destructive" size="sm" onClick={handleEndClass}>
+                End class
+              </Button>
+            )}
           </div>
           {/* Mobile: Show compact toggle and chat button */}
           <div className="flex items-center gap-2 md:hidden">
@@ -448,22 +484,36 @@ export default function TeacherClassroomPage() {
               checked={whiteboard?.allow_student_edit ?? false}
               onCheckedChange={handleToggleStudentEdit}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className="h-8 w-8 p-0"
-              title={isChatOpen ? "Close chat" : "Open chat"}
-            >
-              {isChatOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <MessageSquare className="h-4 w-4" />
-              )}
-            </Button>
+            {session.data?.status === "live" && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                  className="h-8 w-8 p-0"
+                  title={isChatOpen ? "Close chat" : "Open chat"}
+                >
+                  {isChatOpen ? (
+                    <X className="h-4 w-4" />
+                  ) : (
+                    <MessageSquare className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleEndClass}>
+                  End
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {session.data?.status === "scheduled" && (
+        <p className="border-b bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Preparation mode. Set up the whiteboard and test your audio or camera now.
+          Students can join only after you start the class during its timetable slot.
+        </p>
+      )}
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
@@ -472,13 +522,15 @@ export default function TeacherClassroomPage() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ClassroomAudio
-            classroomId={classId}
-            canManage={true}
-            allowStudentMicrophone={session.data?.allowStudentMicrophone ?? false}
-            allowStudentCamera={session.data?.allowStudentCamera ?? false}
-            onPermissionChanged={() => void session.refetch()}
-          />
+          {(session.data?.status === "scheduled" || session.data?.status === "live") && (
+            <ClassroomAudio
+              classroomId={classId}
+              canManage={true}
+              allowStudentMicrophone={session.data?.allowStudentMicrophone ?? false}
+              allowStudentCamera={session.data?.allowStudentCamera ?? false}
+              onPermissionChanged={() => void session.refetch()}
+            />
+          )}
           <ClassroomBoardBar
             classroomId={classId}
             activePage={activePage}
@@ -522,17 +574,19 @@ export default function TeacherClassroomPage() {
               />
             </div>
             {/* Chat sidebar - full width on mobile when open, fixed/collapsed width on desktop */}
-            <div
-              className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 min-h-0 flex-shrink-0 overflow-hidden bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
-            >
-              <ClassroomChat
-                classId={classId}
-                isReadOnly={false}
-                isCollapsed={isChatCollapsed}
-                onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
-                showCollapseButton={true}
-              />
-            </div>
+            {session.data?.status === "live" && (
+              <div
+                className={`${isChatOpen ? "block" : "hidden"} md:block ${isChatOpen ? "w-full" : ""} ${isChatCollapsed ? "md:w-12" : "md:w-80"} absolute inset-0 z-10 min-h-0 flex-shrink-0 overflow-hidden bg-white transition-all duration-300 md:relative md:inset-auto md:z-auto md:bg-transparent`}
+              >
+                <ClassroomChat
+                  classId={classId}
+                  isReadOnly={false}
+                  isCollapsed={isChatCollapsed}
+                  onToggleCollapse={() => setIsChatCollapsed(!isChatCollapsed)}
+                  showCollapseButton={true}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

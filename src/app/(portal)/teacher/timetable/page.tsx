@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
-import { Schedule } from "@/lib/timetable"
+import { Schedule, nextClassroomLessonWindow } from "@/lib/timetable"
 import { VirtualClassroomAPI } from "@/lib/virtual-classroom"
 import { useVirtualClassrooms } from "@/hooks/use-virtual-classroom"
 import { toast } from "sonner"
@@ -43,8 +43,7 @@ export default function TeacherTimetablePage() {
           (candidate.status === "scheduled" || candidate.status === "live")
       )
       if (!room) {
-        const startsAt = new Date()
-        const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000)
+        const { startsAt, endsAt } = nextClassroomLessonWindow(schedule)
         room = await VirtualClassroomAPI.create({
           scheduleId: schedule.id,
           sessionId: period.sessionId,
@@ -55,9 +54,6 @@ export default function TeacherTimetablePage() {
           startsAt: startsAt.toISOString(),
           endsAt: endsAt.toISOString(),
         })
-      }
-      if (room.status === "scheduled") {
-        room = await VirtualClassroomAPI.setStatus(room.id, "live")
       }
       router.push(`/teacher/classroom/${room.id}`)
     } catch (error) {
