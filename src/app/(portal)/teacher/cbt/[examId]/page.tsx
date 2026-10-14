@@ -89,6 +89,7 @@ export default function TeacherCbtMonitorPage() {
                 <th className="p-3">Candidate</th>
                 <th className="p-3">State</th>
                 <th className="p-3">Progress</th>
+                <th className="p-3">Score</th>
                 <th className="p-3">Last activity</th>
                 <th className="p-3">Warnings</th>
                 <th className="p-3"></th>
@@ -114,6 +115,15 @@ export default function TeacherCbtMonitorPage() {
                   </td>
                   <td className="p-3">
                     {item.answeredQuestions}/{item.questionCount}
+                  </td>
+                  <td className="p-3">
+                    {item.status !== "submitted"
+                      ? "—"
+                      : item.manualGradingRequired
+                        ? "Awaiting marking"
+                        : item.score === null
+                          ? "Pending"
+                          : `${item.score}/${item.totalMarks}${item.percentage === null ? "" : ` (${item.percentage}%)`}`}
                   </td>
                   <td className="p-3 text-xs">
                     {item.startedAt

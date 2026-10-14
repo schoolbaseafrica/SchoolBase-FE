@@ -228,6 +228,15 @@ export interface CbtProctorExam {
   classes: Array<{ id: string; name: string; arm?: string }>
 }
 
+export interface TeacherCbtExam {
+  id: string
+  name: string
+  status: CbtExamStatus
+  availableFrom: string | null
+  availableTo: string | null
+  subjectId: string | null
+}
+
 export interface CbtAttemptActivity {
   attemptId: string
   candidateName: string
@@ -482,6 +491,14 @@ export const CbtAPI = {
   getProctorExamAttempts: (examId: string) =>
     apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
       `/cbt/proctor/exams/${examId}/attempts`
+    ).then(unwrap),
+  listTeacherExams: () =>
+    apiFetch<ApiEnvelope<TeacherCbtExam[]> | TeacherCbtExam[]>("/cbt/teacher/exams").then(
+      unwrap
+    ),
+  getTeacherExamResults: (examId: string) =>
+    apiFetch<ApiEnvelope<CbtExamAttempts> | CbtExamAttempts>(
+      `/cbt/teacher/exams/${examId}/results`
     ).then(unwrap),
   createProctorMediaToken: (examId: string) =>
     apiFetch<ApiEnvelope<CbtMediaToken> | CbtMediaToken>(

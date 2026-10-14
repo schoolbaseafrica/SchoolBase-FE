@@ -39,6 +39,7 @@ const items = [
   { title: "Assignments", url: "/teacher/assignments", icon: BookOpenCheck },
   { title: "Results", url: "/teacher/results", icon: NotePad },
   { title: "Exam Monitoring", url: "/teacher/cbt", icon: ClipboardCheck },
+  { title: "Exam Scores", url: "/teacher/exam-scores", icon: BookOpenCheck },
 ]
 
 // ----------------------------
