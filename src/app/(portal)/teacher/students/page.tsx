@@ -4,7 +4,6 @@ import React, { useMemo, useState } from "react"
 import DashboardTitle from "@/components/dashboard/dashboard-title"
 import { Loader2, AlertCircle, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
 import { ClassesAPI } from "@/lib/classes"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -25,6 +24,8 @@ import {
 import { format } from "date-fns"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { apiFetch } from "@/lib/api/client"
+import type { TeacherAssignedClass } from "@/lib/teacher-attendance"
 
 interface Student {
   student_id: string
@@ -43,7 +44,16 @@ export default function TeacherStudentsPage() {
     data: assignedClasses,
     isLoading: classesLoading,
     error: classesError,
-  } = useGetTeacherAssignedClasses(period.sessionId)
+  } = useQuery({
+    queryKey: ["teacher-teaching-classes", period.sessionId],
+    queryFn: async () => {
+      const response = await apiFetch<
+        TeacherAssignedClass[] | { data: TeacherAssignedClass[] }
+      >("/classes/teacher/teaching", { params: { session_id: period.sessionId } }, true)
+      return Array.isArray(response) ? response : response.data
+    },
+    enabled: !!period.sessionId,
+  })
 
   const classesArray = useMemo(
     () => (Array.isArray(assignedClasses) ? assignedClasses : []),
