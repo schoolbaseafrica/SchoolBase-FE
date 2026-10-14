@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Edit3, Trash2, Link as LinkIcon, Loader2 } from "lucide-react"
+import { Edit3, Trash2, Link as LinkIcon, Loader2, KeyRound } from "lucide-react"
 import { SnakeUser as User, UserType } from "@/types/user"
 import { useRouter } from "next/navigation"
 import { useDeleteTeacher } from "@/app/(portal)/admin/teachers/_hooks/use-teachers"
@@ -18,6 +18,8 @@ import { useQuery } from "@tanstack/react-query"
 import { apiFetch } from "@/lib/api/client"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { GenerateAccessLinkDialog } from "@/app/(portal)/admin/parents/[id]/_components/generate-access-link-dialog"
+import { StudentsAPI } from "@/lib/students"
+import { toast } from "sonner"
 
 interface UserDetailsSheetProps {
   open: boolean
@@ -76,6 +78,12 @@ export function UserDetailsSheet({
 }: UserDetailsSheetProps) {
   const router = useRouter()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [resetCredentials, setResetCredentials] = useState<{
+    studentId: string
+    registrationNumber: string
+    password: string
+  } | null>(null)
   const { data: authUser } = useAuthUser()
 
   // Fetch subjects for teachers
@@ -187,7 +195,13 @@ export function UserDetailsSheet({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setResetCredentials(null)
+          onOpenChange(nextOpen)
+        }}
+      >
         <SheetContent className="w-full overflow-y-auto p-5 sm:max-w-lg sm:p-8">
           <SheetHeader className="flex flex-row items-center justify-between">
             <SheetTitle className="text-xl">
@@ -347,6 +361,70 @@ export function UserDetailsSheet({
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 border-t pt-5">
+              {userType === "students" && !user.email && (
+                <>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-start"
+                    disabled={resettingPassword}
+                    onClick={async () => {
+                      if (
+                        !window.confirm(
+                          "Generate a new password for this student? Their current password will stop working."
+                        )
+                      )
+                        return
+                      setResettingPassword(true)
+                      try {
+                        const credentials = await StudentsAPI.resetPasswordWithoutEmail(
+                          user.id
+                        )
+                        setResetCredentials({
+                          studentId: user.id,
+                          registrationNumber: credentials.registration_number,
+                          password: credentials.password,
+                        })
+                        toast.success("Student password reset")
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : "Could not reset password"
+                        )
+                      } finally {
+                        setResettingPassword(false)
+                      }
+                    }}
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    {resettingPassword ? "Resetting…" : "Reset password"}
+                  </Button>
+                  {resetCredentials?.studentId === user.id && (
+                    <div className="rounded-xl border bg-slate-50 p-3 text-sm">
+                      <p className="font-medium">
+                        Give these credentials to the student securely. This password is
+                        shown only now.
+                      </p>
+                      <p className="mt-2 break-all">
+                        ID: {resetCredentials.registrationNumber}
+                      </p>
+                      <p className="break-all">Password: {resetCredentials.password}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() =>
+                          void navigator.clipboard.writeText(
+                            `Registration number: ${resetCredentials.registrationNumber}\nPassword: ${resetCredentials.password}`
+                          )
+                        }
+                      >
+                        Copy credentials
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
               {userType === "parents" && (
                 <>
                   <GenerateAccessLinkDialog

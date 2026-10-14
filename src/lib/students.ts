@@ -196,6 +196,13 @@ export const StudentsAPI = {
       true
     ).then((response) => response.data),
 
+  resetPasswordWithoutEmail: (id: string) =>
+    apiFetch<ResponsePack<{ registration_number: string; password: string }>>(
+      `/students/${id}/reset-password-without-email`,
+      { method: "POST" },
+      true
+    ).then((response) => response.data),
+
   update: (id: string, data: UpdateStudentData): Promise<User> =>
     apiFetch<ResponsePack<User>>(
       `/students/${id}`,
