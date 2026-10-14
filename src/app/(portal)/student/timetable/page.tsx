@@ -117,6 +117,7 @@ export default function StudentTimetablePage() {
                         (room) =>
                           room.scheduleId === schedule.id &&
                           room.status === "live" &&
+                          new Date(room.startsAt).getTime() <= Date.now() &&
                           new Date(room.endsAt).getTime() > Date.now()
                       )
                       const scheduledClassroom = classrooms.data?.find(
