@@ -16,7 +16,6 @@ import Image from "next/image"
 import { useAssignTeachersToClassSubject } from "../../class-management/_hooks/use-classes"
 import { useGetTeachers } from "../../teachers/_hooks/use-teachers"
 import { SnakeUser as User } from "@/types/user"
-import { toast } from "sonner"
 
 interface AssignTeacherDialogProps {
   open: boolean
@@ -332,9 +331,9 @@ export default function AssignTeacherDialog({
       })
       setShowSuccessDialog(true)
       setOpen(false)
-    } catch (error) {
-      console.error("Failed to assign teacher:", error)
-      toast.error("Failed to assign teacher. Please try again.")
+    } catch {
+      // The mutation displays the server's actionable reason, including a
+      // conflicting timetable teacher. Keep the selection open for correction.
     }
   }
 
