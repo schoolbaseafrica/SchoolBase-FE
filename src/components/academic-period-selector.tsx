@@ -24,7 +24,7 @@ export function AcademicPeriodSelector({
 
   return (
     <div className="my-4 flex flex-wrap items-end gap-3 rounded-xl border bg-white p-3 shadow-sm">
-      <div className="mr-1 flex items-center gap-2 self-center text-sm font-semibold">
+      <div className="mr-1 flex h-10 items-center gap-2 text-sm font-semibold">
         <CalendarRange className="text-accent size-4" />
         Viewing
       </div>
@@ -80,7 +80,7 @@ export function AcademicPeriodSelector({
         <RotateCcw className="size-4" /> Current period
       </Button>
       {sessionOnly && (
-        <p className="text-muted-foreground self-center text-xs">
+        <p className="text-muted-foreground w-full border-t pt-2 text-xs">
           Class structures are maintained per academic session.
         </p>
       )}
