@@ -116,9 +116,7 @@ export const NewPersonFormBuilder: React.FC<FormBuilderProps> = ({
   const validateField = (name: string, value: string): string | null => {
     const field = config.fields.find((f) => f.name === name)
 
-    if (!value && field?.required) {
-      return "This field is required"
-    }
+    if (!value) return field?.required ? "This field is required" : null
 
     // ✅ AGE VALIDATION (Teacher & Parent only)
     if (field?.type === "date" && field?.minAge) {

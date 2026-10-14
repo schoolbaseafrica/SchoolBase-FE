@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation"
 import { useCreateStudent } from "../../_hooks/use-students"
 import { generateSecurePassword } from "@/lib/utils/password-generator"
 import { useGetClassesInfo } from "@/app/(portal)/admin/class-management/_hooks/use-classes"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+import { Button } from "@/components/ui/button"
 
 const generatePassword = () => {
   return generateSecurePassword(12)
@@ -50,7 +51,7 @@ export const baseStudentFormConfig: NewPersonFormConfig = {
       label: "Email Address",
       type: "email",
       placeholder: "Enter email address",
-      required: true,
+      required: false,
     },
     {
       name: "password",
@@ -100,11 +101,15 @@ export const baseStudentFormConfig: NewPersonFormConfig = {
 
 export default function NewStudentForm() {
   const router = useRouter()
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    registrationNumber: string
+    password: string
+  } | null>(null)
   const createNewStudent = useCreateStudent().mutateAsync
-  
+
   // Fetch classes for class selection
   const { data: classesInfo } = useGetClassesInfo({ includeArchived: false })
-  
+
   // Flatten classes structure for select options
   const classOptions = useMemo(() => {
     if (!classesInfo?.items) return []
@@ -117,23 +122,23 @@ export default function NewStudentForm() {
   }, [classesInfo])
 
   // Create dynamic form config with class field
-  const studentFormConfig: NewPersonFormConfig = useMemo(() => ({
-    ...baseStudentFormConfig,
-    fields: [
-      ...baseStudentFormConfig.fields,
-      {
-        name: "class_id",
-        label: "Class (Optional)",
-        type: "select",
-        required: false,
-        placeholder: "Select a class",
-        options: [
-          { value: "__none__", label: "None (Unassigned)" },
-          ...classOptions,
-        ],
-      },
-    ],
-  }), [classOptions])
+  const studentFormConfig: NewPersonFormConfig = useMemo(
+    () => ({
+      ...baseStudentFormConfig,
+      fields: [
+        ...baseStudentFormConfig.fields,
+        {
+          name: "class_id",
+          label: "Class (Optional)",
+          type: "select",
+          required: false,
+          placeholder: "Select a class",
+          options: [{ value: "__none__", label: "None (Unassigned)" }, ...classOptions],
+        },
+      ],
+    }),
+    [classOptions]
+  )
 
   async function handleCancel() {
     router.push("/admin/students")
@@ -145,24 +150,76 @@ export default function NewStudentForm() {
       last_name: formData.last_name as string,
       middle_name: formData.middle_name as string,
       registration_number: formData.registration_number as string | undefined,
-      email: formData.email as string,
+      email: (formData.email as string)?.trim() || undefined,
       password: formData.password as string,
       gender: formData.gender as string,
       date_of_birth: formData.date_of_birth as string,
       phone: formData.phone as string,
       home_address: formData.home_address as string,
       is_active: true,
-      class_id: formData.class_id && (formData.class_id as string) !== "__none__" 
-        ? (formData.class_id as string) 
-        : undefined,
+      class_id:
+        formData.class_id && (formData.class_id as string) !== "__none__"
+          ? (formData.class_id as string)
+          : undefined,
     }
 
     try {
-      await createNewStudent(newStudent)
-      router.push("/admin/students")
+      const created = await createNewStudent(newStudent)
+      if (newStudent.email) {
+        router.push("/admin/students")
+      } else {
+        setCreatedCredentials({
+          registrationNumber: created.registration_number || "",
+          password: newStudent.password,
+        })
+      }
     } catch (err) {
       throw err
     }
+  }
+
+  if (createdCredentials) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold">Student account created</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Give these credentials to the student securely. They can sign in with the
+          registration number because no email was provided. The password is shown only
+          now.
+        </p>
+        <dl className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4 text-sm">
+          <div>
+            <dt className="text-muted-foreground">Registration number</dt>
+            <dd className="font-semibold break-all">
+              {createdCredentials.registrationNumber}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Password</dt>
+            <dd className="font-semibold break-all">{createdCredentials.password}</dd>
+          </div>
+        </dl>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() =>
+              void navigator.clipboard.writeText(
+                `Registration number: ${createdCredentials.registrationNumber}\nPassword: ${createdCredentials.password}`
+              )
+            }
+          >
+            Copy credentials
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/admin/students")}
+          >
+            Done
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

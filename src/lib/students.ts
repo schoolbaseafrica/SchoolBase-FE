@@ -3,8 +3,9 @@ import { apiFetch } from "./api/client"
 
 export type CreateStudentData = Omit<
   User,
-  "id" | "avatar" | "role" | "employment_id" | "join_date"
+  "id" | "avatar" | "role" | "employment_id" | "join_date" | "email"
 > & {
+  email?: string
   photo?: File
   password: string
   photo_url?: string
