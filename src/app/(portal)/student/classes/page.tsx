@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { BookOpen, CalendarClock, Loader2, Radio, Video } from "lucide-react"
 
@@ -19,11 +20,26 @@ const formatDateTime = (value: string) =>
 
 export default function StudentClassesPage() {
   const router = useRouter()
+  const [now, setNow] = useState<number | null>(null)
+  useEffect(() => {
+    const refresh = () => setNow(Date.now())
+    refresh()
+    const timer = window.setInterval(refresh, 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const period = useAcademicPeriod("student-live-classes")
   const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
   const rooms = (classrooms.data ?? []).filter(
-    (room) => room.status === "live" || room.status === "scheduled"
+    (room) =>
+      (room.status === "live" || room.status === "scheduled") &&
+      (now === null || new Date(room.endsAt).getTime() > now)
   )
+
+  const isLiveNow = (room: (typeof rooms)[number]) =>
+    now !== null &&
+    room.status === "live" &&
+    new Date(room.startsAt).getTime() <= now &&
+    new Date(room.endsAt).getTime() > now
 
   return (
     <div className="min-h-screen space-y-6 bg-gray-50 p-4 md:p-6">
@@ -62,13 +78,22 @@ export default function StudentClassesPage() {
           {rooms.map((room) => (
             <Card
               key={room.id}
-              className={room.status === "live" ? "border-red-200" : ""}
+              className={isLiveNow(room) ? "border-emerald-300 bg-emerald-50/30" : ""}
             >
               <CardHeader className="space-y-3 p-4 md:p-6">
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-                  <CardTitle className="min-w-0 break-words text-lg">{room.title}</CardTitle>
-                  <Badge variant={room.status === "live" ? "default" : "secondary"}>
-                    {room.status === "live" ? "Live now" : "Scheduled"}
+                  <CardTitle className="min-w-0 text-lg break-words">
+                    {room.title}
+                  </CardTitle>
+                  <Badge
+                    variant={isLiveNow(room) ? "default" : "secondary"}
+                    className={
+                      isLiveNow(room)
+                        ? "bg-emerald-600 text-white motion-safe:animate-pulse"
+                        : ""
+                    }
+                  >
+                    {isLiveNow(room) ? "Live now" : "Scheduled"}
                   </Badge>
                 </div>
                 <div className="text-sm text-gray-600">
@@ -76,7 +101,7 @@ export default function StudentClassesPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
-                {room.status === "live" ? (
+                {isLiveNow(room) ? (
                   <Button
                     className="w-full"
                     onClick={() => router.push(`/student/classroom/${room.id}`)}
