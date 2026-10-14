@@ -4,7 +4,7 @@ import { useCallback, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { ArrowLeft, X } from "lucide-react"
+import { ArrowLeft, GripHorizontal, Video, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,14 @@ export default function TeacherCbtMonitorPage() {
   const { examId } = useParams<{ examId: string }>()
   const client = useQueryClient()
   const [attemptId, setAttemptId] = useState<string | null>(null)
+  const [showCameras, setShowCameras] = useState(false)
+  const [cameraPosition, setCameraPosition] = useState({ x: 24, y: 96 })
+  const [dragStart, setDragStart] = useState<{
+    pointerX: number
+    pointerY: number
+    x: number
+    y: number
+  } | null>(null)
   const monitor = useQuery({
     queryKey: ["cbt", "proctor", examId],
     queryFn: () => CbtAPI.getProctorExamAttempts(examId),
@@ -62,7 +70,67 @@ export default function TeacherCbtMonitorPage() {
       </div>
       {(currentExam?.proctoringMode === "human" ||
         currentExam?.proctoringMode === "both") && (
-        <ProctorCameraMonitoring getToken={getCameraToken} />
+        <Button variant="outline" onClick={() => setShowCameras(true)}>
+          <Video className="mr-2 h-4 w-4" /> Open camera monitor
+        </Button>
+      )}
+      {showCameras && (
+        <aside
+          aria-label="Movable camera monitor"
+          className="fixed z-40 flex max-h-[min(70vh,640px)] w-[min(420px,calc(100vw-24px))] flex-col overflow-hidden rounded-xl border bg-white shadow-2xl"
+          style={{ left: cameraPosition.x, top: cameraPosition.y }}
+        >
+          <div
+            className="flex cursor-grab touch-none items-center justify-between border-b bg-slate-50 px-3 py-2 active:cursor-grabbing"
+            onPointerDown={(event) => {
+              if (event.target instanceof Element && event.target.closest("button"))
+                return
+              event.currentTarget.setPointerCapture(event.pointerId)
+              setDragStart({
+                pointerX: event.clientX,
+                pointerY: event.clientY,
+                x: cameraPosition.x,
+                y: cameraPosition.y,
+              })
+            }}
+            onPointerMove={(event) => {
+              if (!dragStart) return
+              setCameraPosition({
+                x: Math.max(
+                  0,
+                  Math.min(
+                    window.innerWidth - Math.min(420, window.innerWidth - 24),
+                    dragStart.x + event.clientX - dragStart.pointerX
+                  )
+                ),
+                y: Math.max(
+                  0,
+                  Math.min(
+                    window.innerHeight - 64,
+                    dragStart.y + event.clientY - dragStart.pointerY
+                  )
+                ),
+              })
+            }}
+            onPointerUp={() => setDragStart(null)}
+            onPointerCancel={() => setDragStart(null)}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <GripHorizontal className="h-4 w-4" /> Drag camera monitor
+            </span>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Close camera monitor"
+              onClick={() => setShowCameras(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="overflow-y-auto p-3">
+            <ProctorCameraMonitoring getToken={getCameraToken} />
+          </div>
+        </aside>
       )}
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
