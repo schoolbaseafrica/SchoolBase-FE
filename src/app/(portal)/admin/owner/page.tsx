@@ -109,16 +109,26 @@ export default function OwnerOverviewPage() {
             records.
           </p>
         </div>
-        <Button asChild variant="secondary">
-          <Link href="/admin/operations">
-            Operational dashboard <ArrowRight className="size-4" />
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/admin/owner/inactive-people">
-            Inactive people <ArrowRight className="size-4" />
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary">
+            <Link href="/admin/operations">
+              Operational dashboard <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/owner/inactive-people">
+              Inactive people <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/settings?tab=notifications">
+              Email summaries{" "}
+              <span className="bg-accent/10 text-accent rounded-full px-2 py-0.5 text-xs">
+                New
+              </span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <AcademicPeriodSelector scope={scope} />

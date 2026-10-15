@@ -1,5 +1,6 @@
 import { SettingsSidebar } from "./_components/settings-sidebar"
 import { NotificationSettings } from "./_components/notification-settings"
+import { OwnerEmailDigestSettings } from "./_components/owner-email-digest-settings"
 import { LegalSettings } from "./_components/legal-settings"
 import { SchoolInfoSettings } from "./_components/school-info-settings"
 import { LandingPageSettings } from "./_components/landing-page-settings"
@@ -35,7 +36,12 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         <main className="min-w-0 flex-1">
           {activeTab === "school-info" && <SchoolInfoSettings />}
           {activeTab === "landing-page" && <LandingPageSettings />}
-          {activeTab === "notifications" && <NotificationSettings />}
+          {activeTab === "notifications" && (
+            <>
+              <NotificationSettings />
+              <OwnerEmailDigestSettings />
+            </>
+          )}
           {activeTab === "attendance" && <AttendanceMethodSettings />}
           {activeTab === "mobile-app" && <MobileAppSettings />}
           {activeTab === "legal" && <LegalSettings />}
