@@ -34,7 +34,12 @@ export const MeetingsAPI = {
     unwrap(
       await apiFetch<
         Pack<{
-          users: Array<{ id: string; name: string; email: string | null; role: string[] }>
+          users: Array<{
+            id: string
+            name: string
+            email: string | null
+            role: string[] | string | null
+          }>
           classes: Array<{ id: string; name: string }>
         }>
       >(`/meetings/invitees?q=${encodeURIComponent(q)}`)

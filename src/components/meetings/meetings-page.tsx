@@ -21,6 +21,7 @@ export function MeetingsPage({ admin = false }: { admin?: boolean }) {
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([])
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
   const [search, setSearch] = useState("")
+  const [searchError, setSearchError] = useState("")
   const [choices, setChoices] = useState<Awaited<
     ReturnType<typeof MeetingsAPI.invitees>
   > | null>(null)
@@ -41,16 +42,27 @@ export function MeetingsPage({ admin = false }: { admin?: boolean }) {
   useEffect(() => {
     if (search.trim().length < 2) {
       setChoices(null)
+      setSearchError("")
       return
     }
     let active = true
     const timer = setTimeout(() => {
       void MeetingsAPI.invitees(search)
         .then((result) => {
-          if (active) setChoices(result)
+          if (!active) return
+          if (!result || !Array.isArray(result.users) || !Array.isArray(result.classes)) {
+            setChoices(null)
+            setSearchError("Could not load invitees. Try searching again.")
+            return
+          }
+          setChoices(result)
+          setSearchError("")
         })
         .catch(() => {
-          if (active) setChoices(null)
+          if (active) {
+            setChoices(null)
+            setSearchError("Could not load invitees. Try searching again.")
+          }
         })
     }, 250)
     return () => {
@@ -198,6 +210,11 @@ export function MeetingsPage({ admin = false }: { admin?: boolean }) {
             A class invitation includes its active students, their parents, and assigned
             class teachers.
           </p>
+          {searchError && (
+            <p role="alert" className="mt-2 text-sm text-red-700">
+              {searchError}
+            </p>
+          )}
           {choices && (
             <div className="mt-2 max-h-48 overflow-auto rounded-xl border p-2 text-sm">
               {choices.users.map((user) => (
@@ -212,7 +229,12 @@ export function MeetingsPage({ admin = false }: { admin?: boolean }) {
                     setSearch("")
                   }}
                 >
-                  {user.name} · {user.role.join(", ")}
+                  {user.name}
+                  {Array.isArray(user.role) && user.role.length > 0
+                    ? ` · ${user.role.join(", ")}`
+                    : typeof user.role === "string" && user.role
+                      ? ` · ${user.role}`
+                      : ""}
                 </button>
               ))}
               {choices.classes.map((item) => (
