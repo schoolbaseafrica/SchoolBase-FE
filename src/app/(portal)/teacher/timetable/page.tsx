@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, AlertCircle, CalendarDays, Plus } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGetTeacherAssignedClasses } from "../attendance/_hooks/use-teacher-attendance"
+import { TeacherAttendanceAPI } from "@/lib/teacher-attendance"
+import { useAuthUser } from "@/hooks/use-auth-user"
 import TimetableGrid from "../../admin/timetable/_components/timetable-grid"
 import CreateScheduleModal from "../../admin/timetable/_components/create-schedule-modal"
 import { Loader2 } from "lucide-react"
@@ -31,6 +33,7 @@ export default function TeacherTimetablePage() {
   const [openingScheduleId, setOpeningScheduleId] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const classrooms = useVirtualClassrooms(period.sessionId, period.termId)
+  const { data: teacher } = useAuthUser()
 
   const openClassroom = async (schedule: Schedule) => {
     if (!period.sessionId || openingScheduleId) return
@@ -63,22 +66,27 @@ export default function TeacherTimetablePage() {
     }
   }
 
-  const {
-    data: assignedClasses,
-    isLoading: isLoadingClasses,
-    error: classesError,
-  } = useGetTeacherAssignedClasses(period.sessionId)
+  const { data: assignedClasses } = useGetTeacherAssignedClasses(period.sessionId)
+  const teachingClasses = useQuery({
+    queryKey: ["teacher-teaching-classes", period.sessionId],
+    queryFn: () => TeacherAttendanceAPI.getTeachingClasses(period.sessionId),
+    enabled: Boolean(period.sessionId),
+  })
+  const isLoadingClasses = teachingClasses.isLoading
+  const classesError = teachingClasses.error
 
-  // Ensure assignedClasses is an array
+  // Show both class teachers and teachers assigned to a subject in the class.
   const classesArray = useMemo(
-    () => (Array.isArray(assignedClasses) ? assignedClasses : []),
-    [assignedClasses]
+    () => (Array.isArray(teachingClasses.data) ? teachingClasses.data : []),
+    [teachingClasses.data]
   )
   const effectiveClassId = classesArray.some((item) => item.id === selectedClassId)
     ? selectedClassId
     : null
   const canEditTimetable =
     !!effectiveClassId &&
+    Array.isArray(assignedClasses) &&
+    assignedClasses.some((item) => item.id === effectiveClassId) &&
     !!period.sessionId &&
     period.activeSession?.id === period.sessionId
   const scheduleOptions = useQuery({
@@ -161,7 +169,8 @@ export default function TeacherTimetablePage() {
           </div>
           {effectiveClassId && !canEditTimetable && (
             <p className="text-muted-foreground pt-2 text-xs">
-              Previous and inactive session timetables are read-only.
+              Only the assigned class teacher can edit the current timetable. Previous and
+              inactive session timetables are read-only.
             </p>
           )}
         </div>
@@ -189,6 +198,7 @@ export default function TeacherTimetablePage() {
             readonly={!canEditTimetable || !scheduleOptions.data}
             scheduleOptions={scheduleOptions.data}
             onOpenClassroom={openClassroom}
+            canOpenClassroom={(schedule) => schedule.teacher?.id === teacher?.teacher_id}
           />
         ) : (
           <div className="bg-muted/40 flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--portal-line)] p-8 text-center">

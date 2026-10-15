@@ -31,6 +31,7 @@ interface TimetableGridProps {
   classId: string
   readonly?: boolean
   onOpenClassroom?: (schedule: Schedule) => void
+  canOpenClassroom?: (schedule: Schedule) => boolean
   scheduleOptions?: ScheduleOption[]
 }
 
@@ -38,6 +39,7 @@ export default function TimetableGrid({
   classId,
   readonly = false,
   onOpenClassroom,
+  canOpenClassroom,
   scheduleOptions,
 }: TimetableGridProps) {
   const timetable = useClassTimetable(classId)
@@ -154,19 +156,21 @@ export default function TimetableGrid({
                                 Room: {schedule.room.name}
                               </span>
                             )}
-                            {onOpenClassroom && schedule.period_type !== "BREAK" && (
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  onOpenClassroom(schedule)
-                                }}
-                                className="text-foreground hover:border-accent/40 hover:text-accent mt-1 flex items-center gap-1 self-start rounded-lg border border-[var(--portal-line)] bg-white px-2 py-1 text-[10px] font-medium"
-                              >
-                                <BookOpen className="h-3 w-3" />
-                                Classroom
-                              </button>
-                            )}
+                            {onOpenClassroom &&
+                              schedule.period_type !== "BREAK" &&
+                              (!canOpenClassroom || canOpenClassroom(schedule)) && (
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    onOpenClassroom(schedule)
+                                  }}
+                                  className="text-foreground hover:border-accent/40 hover:text-accent mt-1 flex items-center gap-1 self-start rounded-lg border border-[var(--portal-line)] bg-white px-2 py-1 text-[10px] font-medium"
+                                >
+                                  <BookOpen className="h-3 w-3" />
+                                  Classroom
+                                </button>
+                              )}
                           </div>
                         ) : (
                           <div className="h-full min-h-[60px] w-full" />
@@ -188,6 +192,7 @@ export default function TimetableGrid({
           onEdit={handleEdit}
           readonly={readonly}
           onOpenClassroom={onOpenClassroom}
+          canOpenClassroom={canOpenClassroom}
         />
       </div>
 

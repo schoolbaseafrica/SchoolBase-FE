@@ -38,6 +38,20 @@ type ResponsePack<T> = {
 }
 
 export const TeacherAttendanceAPI = {
+  getTeachingClasses: async (sessionId?: string): Promise<TeacherAssignedClass[]> => {
+    const response = await apiFetch<
+      TeacherAssignedClass[] | { data: TeacherAssignedClass[] }
+    >(
+      "/classes/teacher/teaching",
+      {
+        method: "GET",
+        params: sessionId ? { session_id: sessionId } : undefined,
+      },
+      true
+    )
+    return Array.isArray(response) ? response : response.data
+  },
+
   // Get classes assigned to teacher
   getAssignedClasses: async (sessionId?: string) => {
     const response = await apiFetch<

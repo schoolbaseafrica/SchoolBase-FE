@@ -10,6 +10,7 @@ interface MobileTimetableViewProps {
   onEdit: (schedule: Schedule) => void
   readonly?: boolean
   onOpenClassroom?: (schedule: Schedule) => void
+  canOpenClassroom?: (schedule: Schedule) => boolean
 }
 
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
@@ -27,6 +28,7 @@ export default function MobileTimetableView({
   onEdit,
   readonly = false,
   onOpenClassroom,
+  canOpenClassroom,
 }: MobileTimetableViewProps) {
   const [selectedDay, setSelectedDay] = useState("MONDAY")
 
@@ -140,19 +142,22 @@ export default function MobileTimetableView({
                   )}
                 </div>
               )}
-              {schedule && schedule.period_type !== "BREAK" && onOpenClassroom && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenClassroom(schedule)
-                  }}
-                  className="text-foreground hover:border-accent/40 hover:text-accent flex items-center justify-center gap-2 rounded-lg border border-[var(--portal-line)] px-3 py-2 text-sm font-medium"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Open classroom
-                </button>
-              )}
+              {schedule &&
+                schedule.period_type !== "BREAK" &&
+                onOpenClassroom &&
+                (!canOpenClassroom || canOpenClassroom(schedule)) && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onOpenClassroom(schedule)
+                    }}
+                    className="text-foreground hover:border-accent/40 hover:text-accent flex items-center justify-center gap-2 rounded-lg border border-[var(--portal-line)] px-3 py-2 text-sm font-medium"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Open classroom
+                  </button>
+                )}
             </div>
           )
         })}
