@@ -20,33 +20,15 @@ export default function ParentDashboard() {
   const studentName = student && `${student.first_name} ${student.last_name}.`
 
   // Fetch real data
-  const {
-    data: studentProfile,
-    isLoading: isLoadingProfile,
-    error: profileError,
-  } = useGetStudentProfile(student?.id)
-  const {
-    data: attendance,
-    isLoading: isLoadingAttendance,
-    error: attendanceError,
-  } = useGetMonthlyAttendance(student?.registration_number)
-  const {
-    data: latestResult,
-    isLoading: isLoadingResult,
-    error: resultError,
-  } = useGetLatestResult(student?.id)
-
-  // Log errors and data for debugging
-  if (profileError) console.error("Dashboard: Profile error:", profileError)
-  if (attendanceError) console.error("Dashboard: Attendance error:", attendanceError)
-  if (resultError) console.error("Dashboard: Result error:", resultError)
-  if (studentProfile)
-    console.log("Dashboard: Student profile data:", {
-      hasClassDetails: !!studentProfile.class_details,
-      classDetails: studentProfile.class_details,
-      hasAcademicDetails: !!studentProfile.academic_details,
-      academicDetails: studentProfile.academic_details,
-    })
+  const { data: studentProfile, isLoading: isLoadingProfile } = useGetStudentProfile(
+    student?.id
+  )
+  const { data: attendance, isLoading: isLoadingAttendance } = useGetMonthlyAttendance(
+    student?.registration_number
+  )
+  const { data: latestResult, isLoading: isLoadingResult } = useGetLatestResult(
+    student?.id
+  )
 
   // Calculate attendance percentage - guard against division by zero
   const attendancePercentage =
@@ -63,8 +45,6 @@ export default function ParentDashboard() {
   // Get term from latest result
   const termName = (latestResult as { term_name?: string })?.term_name || null
 
-  const isLoading = isLoadingProfile || isLoadingAttendance || isLoadingResult
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="mb-2 text-2xl font-semibold">
@@ -72,18 +52,21 @@ export default function ParentDashboard() {
       </h1>
       <p className="mb-6 text-gray-600">Here is your child&apos;s academic report</p>
 
-      <div className="mb-6 flex items-center justify-between space-x-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-6">
         <StudentSelector />
 
-        <div className="flex flex-col items-center space-x-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
           <div>
             <Image
               src={student?.photo_url || "/assets/images/parent.png"}
               alt={studentName || "Student"}
               width={70}
               height={70}
-              className="h-20 w-20 rounded-full object-cover"
-              unoptimized={student?.photo_url?.startsWith("http://") || student?.photo_url?.startsWith("https://")}
+              className="h-14 w-14 rounded-full object-cover"
+              unoptimized={
+                student?.photo_url?.startsWith("http://") ||
+                student?.photo_url?.startsWith("https://")
+              }
             />
           </div>
           <div>
@@ -107,10 +90,10 @@ export default function ParentDashboard() {
 
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Academic Summary */}
-        <div className="min-h-[195px] rounded-xl bg-white p-4 shadow">
+        <div className="min-h-[195px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="lg:flex lg:justify-between">
             <div className="">
-              <h2 className="text-primary text-lg font-semibold">
+              <h2 className="text-lg font-semibold text-slate-900">
                 Academic Result Summary
               </h2>
               {isLoadingResult ? (
@@ -121,12 +104,12 @@ export default function ParentDashboard() {
               ) : latestResult || studentProfile?.academic_details ? (
                 <>
                   {termName && (
-                    <p className="text-primary">
+                    <p className="text-sm text-slate-600">
                       <span className="font-bold">Term:</span> {termName}
                     </p>
                   )}
                   {sessionName && (
-                    <p className="text-primary">
+                    <p className="text-sm text-slate-600">
                       <span className="font-bold">Session:</span> {sessionName}
                     </p>
                   )}
@@ -144,19 +127,19 @@ export default function ParentDashboard() {
                   )}
                 </p>
               )}
-              <p className="text-primary">Overall Grade</p>
+              <p className="text-sm text-slate-500">Overall Grade</p>
             </div>
           </div>
-          <div className="flex justify-center">
-            <Button variant="link" className="text-accent mt-2 text-sm">
-              <Link href="/parent/results">View Full Result →</Link>
+          <div className="mt-4">
+            <Button asChild variant="outline" size="sm" className="rounded-full">
+              <Link href="/parent/results">View full result →</Link>
             </Button>
           </div>
         </div>
 
         {/* Attendance Summary */}
-        <div className="min-h-[195px] rounded-xl bg-white p-4 shadow">
-          <h2 className="text-primary text-lg font-semibold">Attendance Summary</h2>
+        <div className="min-h-[195px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Attendance Summary</h2>
 
           {isLoadingAttendance ? (
             <div className="mt-4 flex justify-between">
@@ -170,14 +153,14 @@ export default function ParentDashboard() {
                 <span className="text-[40px] leading-none text-[#10B981]">
                   {attendancePercentage !== null ? `${attendancePercentage}%` : "N/A"}
                 </span>
-                <span className="text-primary">Present</span>
+                <span className="text-sm text-slate-500">Present</span>
               </p>
               {/* absent days */}
               <p className="flex flex-col items-center justify-center">
-                <span className="text-accent text-[40px] leading-none font-medium">
+                <span className="text-[40px] leading-none font-medium text-slate-800">
                   {attendance.days_absent}
                 </span>
-                <span className="text-primary">Absent Days</span>
+                <span className="text-sm text-slate-500">Absent Days</span>
               </p>
             </div>
           ) : (
@@ -185,27 +168,25 @@ export default function ParentDashboard() {
               <p className="text-gray-500">No attendance data available</p>
             </div>
           )}
-          <div className="flex justify-center">
-            <Button variant="link" className="text-accent mt-2 text-sm">
-              <Link href="/parent/attendance">View Attendance Calendar →</Link>
+          <div className="mt-4">
+            <Button asChild variant="outline" size="sm" className="rounded-full">
+              <Link href="/parent/attendance">View attendance calendar →</Link>
             </Button>
           </div>
         </div>
 
         {/* School Fees */}
-        <div className="min-h-[195px] space-y-[31px] rounded-xl bg-white p-4 shadow">
+        <div className="min-h-[195px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex justify-between">
             <div className="space-x-2">
-              <h2 className="text-primary text-lg leading-5 font-semibold">
-                School Fees
-              </h2>
+              <h2 className="text-lg font-semibold text-slate-900">School Fees</h2>
               {termName && (
-                <p className="text-primary">
+                <p className="text-sm text-slate-600">
                   <span className="font-bold">Term:</span> {termName}
                 </p>
               )}
               {sessionName && (
-                <p className="text-primary">
+                <p className="text-sm text-slate-600">
                   <span className="font-bold">Session:</span> {sessionName}
                 </p>
               )}
@@ -213,19 +194,19 @@ export default function ParentDashboard() {
           </div>
 
           {/* amount */}
-          <div className="space-y-[15px]">
-            <p className="text-primary text-sm text-gray-600">
+          <div className="mt-5">
+            <p className="text-sm text-slate-600">
               View detailed fee information and payment history
             </p>
           </div>
-          <Button className="w-full">
-            <Link href="/parent/fee-management">View Fee Management →</Link>
+          <Button asChild size="sm" className="mt-5 rounded-full px-5">
+            <Link href="/parent/fee-management">View fees →</Link>
           </Button>
         </div>
 
         {/* Upcoming Events */}
-        <div className="min-h-[195px] space-y-6 rounded-xl bg-white p-4 shadow">
-          <h2 className="text-primary text-2xl font-semibold">Upcoming Events</h2>
+        <div className="min-h-[195px] space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Upcoming Events</h2>
           <div className="flex items-center justify-center py-8">
             <p className="text-gray-500">No upcoming events at this time</p>
           </div>

@@ -22,7 +22,10 @@ export const StudentSelector = ({ className }: { className?: string }) => {
       disabled={studentsData.length === 0}
     >
       <SelectTrigger
-        className={cn("border-accent text-accent w-full max-w-80 sm:w-70", className)}
+        className={cn(
+          "w-full max-w-80 rounded-xl border-slate-200 text-slate-900 sm:w-70",
+          className
+        )}
       >
         <SelectValue placeholder="Select Student" />
       </SelectTrigger>
