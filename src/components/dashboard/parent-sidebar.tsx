@@ -3,7 +3,7 @@
 // import { useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Menu, CalendarDays, FileBadge, NotebookTabs } from "lucide-react"
+import { Menu, CalendarDays, FileBadge, NotebookTabs, Video } from "lucide-react"
 import { PiMoneyWavyBold } from "react-icons/pi"
 import NotePad from "../../../public/svgs/note-pad"
 
@@ -31,6 +31,7 @@ const items = [
   { title: "Fees", url: "/parent/fee-management", icon: PiMoneyWavyBold },
   { title: "Results", url: "/parent/results", icon: FileBadge },
   { title: "Timetable", url: "/parent/timetable", icon: CalendarDays },
+  { title: "Meetings · New", url: "/parent/meetings", icon: Video },
   { title: "Attendance", url: "/parent/attendance", icon: NotePad },
   { title: "Assignments", url: "/parent/assignments", icon: NotebookTabs },
 ]

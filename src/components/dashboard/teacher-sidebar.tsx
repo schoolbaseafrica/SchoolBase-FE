@@ -3,7 +3,14 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
-import { Menu, GraduationCap, ClipboardCheck, Radio, BookOpenCheck } from "lucide-react"
+import {
+  Menu,
+  GraduationCap,
+  ClipboardCheck,
+  Radio,
+  BookOpenCheck,
+  Video,
+} from "lucide-react"
 
 import { LuCalendarCheck } from "react-icons/lu"
 import NotePad from "../../../public/svgs/note-pad"
@@ -33,6 +40,7 @@ const items = [
   { title: "Dashboard", url: "/teacher", icon: Menu, exactMatch: true },
 
   { title: "Timetable", url: "/teacher/timetable", icon: LuCalendarCheck },
+  { title: "Meetings · New", url: "/teacher/meetings", icon: Video },
   { title: "Attendance", url: "/teacher/attendance", icon: NotePad },
   { title: "Lesson Attendance", url: "/teacher/classroom-attendance", icon: Radio },
   { title: "Students", url: "/teacher/students", icon: GraduationCap },

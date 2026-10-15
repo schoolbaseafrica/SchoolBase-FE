@@ -102,6 +102,7 @@ const mainItems = [
       { title: "Session", url: "/admin/class-management/session" },
       { title: "Subjects", url: "/admin/class-management/subjects" },
       { title: "Room", url: "/admin/class-management/classrooms" },
+      { title: "Meetings · New", url: "/admin/class-management/meetings" },
       { title: "Promote Students", url: "/admin/class-management/promotion" },
     ],
   },
@@ -177,6 +178,7 @@ export function AdminSidebar() {
                     pathname.startsWith("/admin/class-management/session") ||
                     pathname.startsWith("/admin/class-management/subjects") ||
                     pathname.startsWith("/admin/class-management/classrooms") ||
+                    pathname.startsWith("/admin/class-management/meetings") ||
                     pathname.startsWith("/admin/class-management/promotion")
                 } else {
                   isActive = item.exactMatch

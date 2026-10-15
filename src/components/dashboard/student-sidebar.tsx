@@ -36,6 +36,7 @@ const items = [
   { title: "Results", url: "/student/results", icon: FileBadge },
   { title: "Timetable", url: "/student/timetable", icon: CalendarDays },
   { title: "Live Classes", url: "/student/classes", icon: Video },
+  { title: "Meetings · New", url: "/student/meetings", icon: Video },
   { title: "Examinations", url: "/student/cbt", icon: ClipboardCheck },
   { title: "Assignments", url: "/student/assignments", icon: BookOpenCheck },
   { title: "Attendance", url: "/student/attendance", icon: GraduationCap },
