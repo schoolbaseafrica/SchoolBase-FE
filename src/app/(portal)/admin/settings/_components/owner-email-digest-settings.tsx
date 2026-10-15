@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { AdminsAPI } from "@/lib/admins"
 import { apiFetch } from "@/lib/api/client"
@@ -88,9 +89,7 @@ export function OwnerEmailDigestSettings() {
       <div>
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-semibold tracking-tight">Your school summary</h2>
-          <span className="bg-accent/10 text-accent rounded-full px-2 py-0.5 text-xs font-semibold">
-            New
-          </span>
+          <NewFeatureBadge />
         </div>
         <p className="text-muted-foreground mt-2 text-sm leading-6">
           Get a private email with counts of recorded school activity. Open the linked

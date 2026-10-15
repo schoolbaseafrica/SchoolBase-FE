@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Video, Plus, Search } from "lucide-react"
 import { MeetingsAPI, Meeting } from "@/lib/meetings"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 
 export function MeetingsPage({ admin = false }: { admin?: boolean }) {
   const pathname = usePathname()
@@ -105,10 +106,7 @@ export function MeetingsPage({ admin = false }: { admin?: boolean }) {
             School communication
           </p>
           <h1 className="mt-1 text-3xl font-semibold">
-            Meetings{" "}
-            <span className="rounded-full border px-2 py-1 align-middle text-xs font-medium text-[var(--primary)]">
-              New
-            </span>
+            Meetings <NewFeatureBadge className="ml-1 align-middle" />
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
             Scheduled video meetings for invited members of your school.

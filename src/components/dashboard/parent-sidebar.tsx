@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import Logo from "@/components/logo"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 
 import { SidebarFooterUser } from "../sidebar-footer-user"
 
@@ -31,7 +32,7 @@ const items = [
   { title: "Fees", url: "/parent/fee-management", icon: PiMoneyWavyBold },
   { title: "Results", url: "/parent/results", icon: FileBadge },
   { title: "Timetable", url: "/parent/timetable", icon: CalendarDays },
-  { title: "Meetings · New", url: "/parent/meetings", icon: Video },
+  { title: "Meetings", url: "/parent/meetings", icon: Video, newFeature: true },
   { title: "Attendance", url: "/parent/attendance", icon: NotePad },
   { title: "Assignments", url: "/parent/assignments", icon: NotebookTabs },
 ]
@@ -86,6 +87,7 @@ export function ParentSidebar() {
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="text-sm font-medium">{item.title}</span>
+                        {"newFeature" in item && item.newFeature && <NewFeatureBadge />}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

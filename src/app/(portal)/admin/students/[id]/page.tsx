@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -353,9 +354,7 @@ export default function EditStudentPage() {
             <div>
               <h3 className="text-sm font-semibold text-gray-900">
                 Face attendance photo
-                <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                  New
-                </span>
+                <NewFeatureBadge className="ml-2" />
               </h3>
               <p className="text-sm text-gray-600">
                 Review the student&apos;s captured photo before it can be used for face

@@ -260,3 +260,23 @@ html {
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+@keyframes new-feature-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgb(16 185 129 / 30%);
+  }
+  50% {
+    box-shadow: 0 0 16px rgb(16 185 129 / 70%);
+  }
+}
+
+.new-feature-badge {
+  box-shadow: 0 0 6px rgb(16 185 129 / 30%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .new-feature-badge {
+    animation: new-feature-glow 2.2s ease-in-out infinite;
+  }
+}

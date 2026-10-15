@@ -16,6 +16,7 @@ import {
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { AdminsAPI } from "@/lib/admins"
@@ -122,10 +123,7 @@ export default function OwnerOverviewPage() {
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin/settings?tab=notifications">
-              Email summaries{" "}
-              <span className="bg-accent/10 text-accent rounded-full px-2 py-0.5 text-xs">
-                New
-              </span>
+              Email summaries <NewFeatureBadge />
             </Link>
           </Button>
         </div>

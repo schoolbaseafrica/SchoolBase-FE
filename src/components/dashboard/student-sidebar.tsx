@@ -28,6 +28,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Logo from "@/components/logo"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { SidebarFooterUser } from "../sidebar-footer-user"
 
 // Menu items
@@ -36,7 +37,7 @@ const items = [
   { title: "Results", url: "/student/results", icon: FileBadge },
   { title: "Timetable", url: "/student/timetable", icon: CalendarDays },
   { title: "Live Classes", url: "/student/classes", icon: Video },
-  { title: "Meetings · New", url: "/student/meetings", icon: Video },
+  { title: "Meetings", url: "/student/meetings", icon: Video, newFeature: true },
   { title: "Examinations", url: "/student/cbt", icon: ClipboardCheck },
   { title: "Assignments", url: "/student/assignments", icon: BookOpenCheck },
   { title: "Attendance", url: "/student/attendance", icon: GraduationCap },
@@ -98,6 +99,7 @@ export function StudentSidebar() {
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="text-sm font-medium">{item.title}</span>
+                        {"newFeature" in item && item.newFeature && <NewFeatureBadge />}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

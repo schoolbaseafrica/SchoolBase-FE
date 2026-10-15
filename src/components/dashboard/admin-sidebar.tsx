@@ -44,6 +44,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import Logo from "@/components/logo"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { useAuthUser } from "@/hooks/use-auth-user"
 import { AdminsAPI } from "@/lib/admins"
 
@@ -102,7 +103,7 @@ const mainItems = [
       { title: "Session", url: "/admin/class-management/session" },
       { title: "Subjects", url: "/admin/class-management/subjects" },
       { title: "Room", url: "/admin/class-management/classrooms" },
-      { title: "Meetings · New", url: "/admin/class-management/meetings" },
+      { title: "Meetings", url: "/admin/class-management/meetings", newFeature: true },
       { title: "Promote Students", url: "/admin/class-management/promotion" },
     ],
   },
@@ -237,6 +238,9 @@ export function AdminSidebar() {
                                   >
                                     <Link href={subItem.url} onClick={handleLinkClick}>
                                       <span className="text-sm">{subItem.title}</span>
+                                      {"newFeature" in subItem && subItem.newFeature && (
+                                        <NewFeatureBadge className="ml-2" />
+                                      )}
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>

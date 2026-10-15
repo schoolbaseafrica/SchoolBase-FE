@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { apiFetch } from "@/lib/api/client"
 
 type Method = "NFC" | "FACE" | "FINGERPRINT"
@@ -97,11 +98,7 @@ export function AttendanceMethodSettings() {
                 <div>
                   <div className="flex items-center gap-2 font-medium">
                     {labels[method]}
-                    {method === "FACE" && (
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                        New
-                      </span>
-                    )}
+                    {method === "FACE" && <NewFeatureBadge />}
                   </div>
                   {capability?.reason && (
                     <p className="text-muted-foreground text-sm">{capability.reason}</p>

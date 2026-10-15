@@ -32,6 +32,7 @@ import {
 import { SidebarFooterUser } from "../sidebar-footer-user"
 
 import Logo from "@/components/logo"
+import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 
 // ----------------------------
 // MENU CONFIG
@@ -40,7 +41,7 @@ const items = [
   { title: "Dashboard", url: "/teacher", icon: Menu, exactMatch: true },
 
   { title: "Timetable", url: "/teacher/timetable", icon: LuCalendarCheck },
-  { title: "Meetings · New", url: "/teacher/meetings", icon: Video },
+  { title: "Meetings", url: "/teacher/meetings", icon: Video, newFeature: true },
   { title: "Attendance", url: "/teacher/attendance", icon: NotePad },
   { title: "Lesson Attendance", url: "/teacher/classroom-attendance", icon: Radio },
   { title: "Students", url: "/teacher/students", icon: GraduationCap },
@@ -106,6 +107,7 @@ export function TeacherSidebar() {
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="text-sm font-medium">{item.title}</span>
+                        {"newFeature" in item && item.newFeature && <NewFeatureBadge />}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
