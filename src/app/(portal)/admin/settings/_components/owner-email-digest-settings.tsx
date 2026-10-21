@@ -20,6 +20,8 @@ type Preference = {
   categories: Category[]
   next_due_at: string | null
   last_sent_at: string | null
+  attempts: number
+  mail_configured: boolean
 }
 
 const choices: Array<{ id: Category; label: string; detail: string }> = [
@@ -74,9 +76,11 @@ export function OwnerEmailDigestSettings() {
         },
         true
       ),
-    onSuccess: async () => {
+    onSuccess: async (_response, next) => {
       setDraft(null)
-      toast.success("Owner email summary saved")
+      toast.success(
+        next.enabled ? "Owner email summary scheduled" : "Owner email summary turned off"
+      )
       await queryClient.invalidateQueries({ queryKey: ["owner-email-digest"] })
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
@@ -121,6 +125,12 @@ export function OwnerEmailDigestSettings() {
                   onCheckedChange={(enabled) => setDraft({ ...value, enabled })}
                 />
               </div>
+              {!value.enabled && (
+                <p className="text-muted-foreground text-sm">
+                  Email summaries are off. Turn this on and save to schedule the first
+                  summary for the next 8:00 AM Lagos time.
+                </p>
+              )}
               <div className="space-y-2">
                 <label htmlFor="owner-summary-frequency" className="text-sm font-medium">
                   How often?
@@ -173,7 +183,34 @@ export function OwnerEmailDigestSettings() {
               </fieldset>
               {value.last_sent_at && (
                 <p className="text-muted-foreground text-xs">
-                  Last sent: {new Date(value.last_sent_at).toLocaleString()}
+                  Last sent:{" "}
+                  {new Date(value.last_sent_at).toLocaleString("en-NG", {
+                    timeZone: "Africa/Lagos",
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </p>
+              )}
+              {value.enabled && value.next_due_at && (
+                <p className="text-muted-foreground text-sm">
+                  Next summary:{" "}
+                  {new Date(value.next_due_at).toLocaleString("en-NG", {
+                    timeZone: "Africa/Lagos",
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                  . Enabling this setting does not send an email immediately.
+                </p>
+              )}
+              {value.enabled && value.mail_configured === false && (
+                <p role="alert" className="text-sm text-red-700">
+                  Email delivery is not configured. Ask an administrator to check the
+                  school application’s mail settings.
+                </p>
+              )}
+              {value.enabled && value.attempts > 0 && (
+                <p role="alert" className="text-sm text-amber-800">
+                  The last delivery attempt failed. SchoolBase will retry automatically.
                 </p>
               )}
             </>
