@@ -23,6 +23,7 @@ import { useShallow } from "zustand/react/shallow"
 import { ItemLoader } from "../_components/sub-loader"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { FeeDiscountPanel } from "./_components/fee-discount-panel"
 
 const FeeManagement = () => {
   const period = useAcademicPeriod("admin-fee-management")
@@ -76,6 +77,7 @@ const FeeManagement = () => {
         <CreateComponentButton>Add Fee</CreateComponentButton>
       </div>
       <AcademicPeriodSelector scope="admin-fee-management" />
+      <FeeDiscountPanel sessionId={period.sessionId} termId={period.termId} />
 
       {isLoading ? (
         <ItemLoader item="Fees" />

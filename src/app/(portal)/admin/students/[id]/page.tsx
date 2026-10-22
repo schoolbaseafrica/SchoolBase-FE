@@ -29,6 +29,7 @@ import { baseStudentFormConfig } from "../new/components/new-student-form"
 import { ItemLoader } from "../../_components/sub-loader"
 import AssignClassDialog from "../_components/assign-class-dialog"
 import { useGetClass } from "../../class-management/_hooks/use-classes"
+import { StudentFeeDiscount } from "../_components/student-fee-discount"
 
 export default function EditStudentPage() {
   const { id } = useParams()
@@ -394,6 +395,8 @@ export default function EditStudentPage() {
             </Button>
           )}
         </div>
+
+        <StudentFeeDiscount studentId={id as string} />
 
         {/* NFC Card Assignment Section */}
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">

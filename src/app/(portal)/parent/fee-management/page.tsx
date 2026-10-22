@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
 import { AcademicPeriodSelector } from "@/components/academic-period-selector"
+import { FeeDiscountSummary } from "@/components/fees/fee-discount-summary"
 
 export default function ParentFeeManagementPage() {
   const period = useAcademicPeriod("parent-fees")
@@ -201,6 +202,8 @@ export default function ParentFeeManagementPage() {
             </Card>
           </div>
 
+          {details && <FeeDiscountSummary details={details} />}
+
           {/* Fee Breakdown */}
           <Card>
             <CardHeader>
@@ -217,15 +220,24 @@ export default function ParentFeeManagementPage() {
                   </div>
                   <div className="divide-y divide-gray-200">
                     {details.fee_breakdown.map((item, i) => (
-                      <div key={i} className="grid grid-cols-2 items-start gap-3 p-4 text-sm sm:grid-cols-4 sm:items-center sm:gap-0">
-                        <span className="col-span-2 min-w-0 break-words font-medium text-gray-900 sm:col-span-1">
+                      <div
+                        key={i}
+                        className="grid grid-cols-2 items-start gap-3 p-4 text-sm sm:grid-cols-4 sm:items-center sm:gap-0"
+                      >
+                        <span className="col-span-2 min-w-0 font-medium break-words text-gray-900 sm:col-span-1">
                           {item.component_name}
                         </span>
                         <span className="text-gray-900 sm:text-center">
-                          <span className="block text-xs text-gray-500 sm:hidden">Amount</span>₦{item.amount.toLocaleString()}
+                          <span className="block text-xs text-gray-500 sm:hidden">
+                            Amount
+                          </span>
+                          ₦{item.amount.toLocaleString()}
                         </span>
                         <span className="text-right text-gray-600 sm:text-center">
-                          <span className="block text-xs text-gray-500 sm:hidden">Paid</span>₦{item.amount_paid.toLocaleString()}
+                          <span className="block text-xs text-gray-500 sm:hidden">
+                            Paid
+                          </span>
+                          ₦{item.amount_paid.toLocaleString()}
                         </span>
                         <div className="col-span-2 text-left sm:col-span-1 sm:text-right">
                           <Badge
@@ -278,7 +290,7 @@ export default function ParentFeeManagementPage() {
                             {item.term_label} •{" "}
                             {format(new Date(item.payment_date), "MMM dd, yyyy")}
                           </p>
-                          <p className="mt-1 break-all text-xs text-gray-400">
+                          <p className="mt-1 text-xs break-all text-gray-400">
                             Ref: {item.transaction_reference}
                           </p>
                         </div>

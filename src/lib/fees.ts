@@ -193,10 +193,26 @@ export interface StudentFeeDetailsResponse {
   fee_breakdown: {
     component_name: string
     amount: number
+    discount_amount?: number
+    adjusted_amount?: number
     amount_paid: number
     outstanding_amount: number
     status: "PAID" | "PARTIALLY_PAID" | "OUTSTANDING"
   }[]
+  discount?: {
+    id: string
+    code: string
+    amount: number
+    status: string
+    review_id?: string | null
+  } | null
+  totals?: {
+    original: number
+    discount: number
+    adjusted: number
+    paid: number
+    outstanding: number
+  }
   payment_history: {
     payment_date: string | Date
     amount_paid: number

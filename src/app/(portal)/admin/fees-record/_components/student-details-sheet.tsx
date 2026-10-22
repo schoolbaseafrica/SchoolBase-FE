@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { EditPaymentDialog } from "./edit-payment-dialog"
 import { apiFetch } from "@/lib/api/client"
 import { toast } from "sonner"
+import { FeeDiscountSummary } from "@/components/fees/fee-discount-summary"
 
 interface StudentDetailsSheetProps {
   open: boolean
@@ -305,6 +306,8 @@ const StudentDetailsSheet = ({
                   </p>
                 </div>
               </div>
+
+              <FeeDiscountSummary details={details} />
 
               {/* Payment Breakdown */}
               <div>
