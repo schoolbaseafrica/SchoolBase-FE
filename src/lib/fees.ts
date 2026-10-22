@@ -7,8 +7,9 @@ export interface FeeComponent {
   session: string
   term: string
   frequency: string
-  session_id?: string // Assuming these might be available
-  term_id?: string
+  session_id: string
+  term_id: string | null
+  period_type: "TERM" | "SESSION"
 }
 
 export interface Student {

@@ -4,7 +4,14 @@ import React, { useState } from "react"
 import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { X, CloudUpload, AlertCircleIcon, InfoIcon, XCircle } from "lucide-react"
+import {
+  X,
+  CloudUpload,
+  AlertCircleIcon,
+  Check,
+  ChevronsUpDown,
+  XCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/ui/form-field"
 import {
@@ -15,7 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import { useActiveFees, useCreatePayment, useFeeStudents } from "../_hooks/use-fees"
 import { useAcademicSessions } from "../../../class-management/session/_hooks/use-session"
@@ -48,9 +62,9 @@ const NIGERIAN_BANKS = [
 ]
 
 const formSchema = z.object({
-  studentId: z.string().optional(),
+  studentId: z.string().min(1, "Select a student"),
   invoice: z.string().optional(),
-  feeComponent: z.string().optional(),
+  feeComponent: z.string().min(1, "Select a fee"),
   amountPaid: z.string().min(1, "Amount paid is required"),
   paymentMethod: z.string().min(1, "Payment method is required"),
   bankName: z.string().optional(),
@@ -70,6 +84,8 @@ const AddPaymentForm = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [studentPickerOpen, setStudentPickerOpen] = useState(false)
+  const [studentSearch, setStudentSearch] = useState("")
   const [successData, setSuccessData] = useState<PaymentSuccessData | null>(null)
 
   const {
@@ -78,7 +94,6 @@ const AddPaymentForm = () => {
     control,
     setValue,
     reset,
-    watch,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,10 +110,6 @@ const AddPaymentForm = () => {
 
   const watchFeeComponent = useWatch({ control, name: "feeComponent" })
   const watchPaymentMethod = useWatch({ control, name: "paymentMethod" })
-  const watchStudentId = useWatch({ control, name: "studentId" })
-  
-  // Determine if this is an unreconciled payment
-  const isUnreconciled = !watchFeeComponent || !watchStudentId
 
   // Fetch active fees
   const { data: activeFeesData, isLoading: isActiveFeesLoading } = useActiveFees()
@@ -120,22 +131,36 @@ const AddPaymentForm = () => {
     useFeeStudents(watchFeeComponent)
   const students = useMemo(() => {
     const rawStudents = studentsData?.data?.data || []
-    return rawStudents.filter(
-      (s): s is NonNullable<typeof s> =>
-        s != null &&
-        typeof s === "object" &&
-        "id" in s &&
-        s.id != null &&
-        "name" in s &&
-        s.name != null
-    )
+    return rawStudents
+      .filter(
+        (s): s is NonNullable<typeof s> =>
+          s != null &&
+          typeof s === "object" &&
+          "id" in s &&
+          s.id != null &&
+          "name" in s &&
+          s.name != null
+      )
+      .sort(
+        (left, right) =>
+          left.name.localeCompare(right.name, undefined, { sensitivity: "base" }) ||
+          left.registration_number.localeCompare(right.registration_number)
+      )
   }, [studentsData?.data?.data])
+  const filteredStudents = useMemo(() => {
+    const query = studentSearch.trim().toLocaleLowerCase()
+    return query
+      ? students.filter((student) =>
+          `${student.name} ${student.registration_number}`
+            .toLocaleLowerCase()
+            .includes(query)
+        )
+      : students
+  }, [students, studentSearch])
 
-  // Reset student selection when fee component changes (only if fee was cleared)
+  // A student selected for one fee may not be assigned to another fee.
   React.useEffect(() => {
-    if (!watchFeeComponent) {
-      setValue("studentId", "")
-    }
+    setValue("studentId", "")
   }, [watchFeeComponent, setValue])
 
   // Fetch sessions for ID resolution
@@ -163,17 +188,24 @@ const AddPaymentForm = () => {
   const { mutate: createPayment, isPending: isSubmitting } = useCreatePayment()
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const selectedStudent = values.studentId ? students.find((s) => s.id === values.studentId) : null
+    const selectedStudent = students.find((s) => s.id === values.studentId)
+    if (!selectedStudent) {
+      toast.error("Select a student assigned to this fee")
+      return
+    }
 
     if (!resolvedSessionId) {
       toast.error("Could not resolve Session ID. Please ensure an active session exists.")
       return
     }
 
-    // If fee is selected, validate and resolve term
+    // A session fee is recorded against the current term in its session.
     let termId: string | undefined = undefined
     if (values.feeComponent && selectedFee) {
-      termId = selectedFee.term_id
+      termId = selectedFee.term_id || undefined
+      if (selectedFee.period_type === "SESSION") {
+        termId = sessionTerms?.find((term) => term.isActive)?.id
+      }
       if (!termId && selectedFee.term && sessionTerms) {
         const matchedTerm = sessionTerms.find(
           (t) => t.name.toLowerCase().trim() === selectedFee.term.toLowerCase().trim()
@@ -182,31 +214,26 @@ const AddPaymentForm = () => {
       }
 
       if (!termId) {
-        toast.error("Could not resolve Term ID for this fee")
+        toast.error("Could not find an active term for this fee's session")
         return
       }
     }
 
     // Construct FormData
     const formData = new FormData()
-    
-    if (values.studentId) {
-      formData.append("student_id", values.studentId)
-    }
-    
-    if (values.feeComponent) {
-      formData.append("fee_component_id", values.feeComponent)
-    }
-    
+
+    formData.append("student_id", values.studentId)
+    formData.append("fee_component_id", values.feeComponent)
+
     formData.append("amount_paid", values.amountPaid.replace(/[^0-9.]/g, ""))
     formData.append("payment_method", values.paymentMethod)
     formData.append("payment_date", new Date().toISOString())
     formData.append("session_id", resolvedSessionId)
-    
+
     if (termId) {
       formData.append("term_id", termId)
     }
-    
+
     if (values.invoice) formData.append("invoice_number", values.invoice)
     if (values.bankName && values.paymentMethod === "bank_transfer") {
       formData.append("bank_name", values.bankName)
@@ -218,19 +245,18 @@ const AddPaymentForm = () => {
 
     createPayment(formData, {
       onSuccess: (response) => {
-        const isUnreconciledPayment = !values.studentId || !values.feeComponent
         // The API returns { status_code, message, response: PaymentResponseDto }
         // but the type says ResponsePack<null>, so we need to handle both cases
         const responseData = response as unknown as {
           response?: { transaction_id?: string }
           data?: { transaction_id?: string }
         }
-        const transactionId = 
-          responseData?.response?.transaction_id || 
-          responseData?.data?.transaction_id || 
-          values.invoice || 
+        const transactionId =
+          responseData?.response?.transaction_id ||
+          responseData?.data?.transaction_id ||
+          values.invoice ||
           "N/A"
-        
+
         setSuccessData({
           studentName: selectedStudent?.name || "Unassigned",
           amountPaid: values.amountPaid,
@@ -239,10 +265,6 @@ const AddPaymentForm = () => {
           date: format(new Date(), "dd MMM yyyy h:mm a"),
         })
         setShowSuccessModal(true)
-        
-        if (isUnreconciledPayment) {
-          toast.info("Payment recorded as unreconciled. You can assign it to a student/fee later.")
-        }
       },
     })
   }
@@ -286,22 +308,11 @@ const AddPaymentForm = () => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Info Alert for Unreconciled Payments */}
-        {isUnreconciled && (
-          <Alert className="border-blue-200 bg-blue-50">
-            <InfoIcon className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <strong>Unreconciled Payment Mode:</strong> You can record this payment without assigning a student or fee. 
-              You can assign it later when the details are available.
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Fee Component - Optional */}
+          {/* Fee component */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-900">
-              Fee <span className="text-gray-500 text-xs">(Optional)</span>
+              Fee <span className="text-red-600">*</span>
             </label>
             <div className="relative">
               <Controller
@@ -309,13 +320,15 @@ const AddPaymentForm = () => {
                 name="feeComponent"
                 render={({ field }) => (
                   <>
-                    <Select 
-                      onValueChange={(value) => field.onChange(value || undefined)} 
+                    <Select
+                      onValueChange={(value) => field.onChange(value || undefined)}
                       value={field.value || undefined}
                     >
-                      <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none pr-10">
+                      <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] pr-10 placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none">
                         <SelectValue
-                          placeholder={isActiveFeesLoading ? "Loading fees..." : "Select Fee (Optional)"}
+                          placeholder={
+                            isActiveFeesLoading ? "Loading fees..." : "Select fee"
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -334,7 +347,8 @@ const AddPaymentForm = () => {
                         ) : (
                           feeComponents.map((component) => (
                             <SelectItem key={component.id} value={component.id}>
-                              {component.name} - {component.session || ""} ({component.term || ""})
+                              {component.name} - {component.session || ""} (
+                              {component.term || ""})
                             </SelectItem>
                           ))
                         )}
@@ -344,7 +358,7 @@ const AddPaymentForm = () => {
                       <button
                         type="button"
                         onClick={() => field.onChange(undefined)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                         aria-label="Clear fee selection"
                       >
                         <XCircle className="h-4 w-4" />
@@ -361,10 +375,10 @@ const AddPaymentForm = () => {
             )}
           </div>
 
-          {/* Student Name - Optional */}
+          {/* Search students assigned to the selected fee */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-900">
-              Student Name <span className="text-gray-500 text-xs">(Optional)</span>
+              Student Name <span className="text-red-600">*</span>
             </label>
             <div className="relative">
               <Controller
@@ -372,51 +386,80 @@ const AddPaymentForm = () => {
                 name="studentId"
                 render={({ field }) => (
                   <>
-                    <Select
-                      onValueChange={(value) => field.onChange(value || undefined)}
-                      value={field.value || undefined}
-                      disabled={!!watchFeeComponent && !watchFeeComponent}
+                    <Popover
+                      open={studentPickerOpen}
+                      onOpenChange={(open) => {
+                        setStudentPickerOpen(open)
+                        if (!open) setStudentSearch("")
+                      }}
                     >
-                      <SelectTrigger className="font-outfit focus:ring-accent h-13! w-full rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] placeholder-gray-400 shadow-sm transition-all focus:border-transparent focus:ring-2 focus:outline-none pr-10">
-                        <SelectValue
-                          placeholder={
-                            watchFeeComponent && students.length === 0
-                              ? "No students for this fee"
-                              : isStudentsLoading
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={studentPickerOpen}
+                          disabled={!watchFeeComponent || isStudentsLoading}
+                          className="font-outfit h-13! w-full justify-between rounded-[8px] border-[0.8px] border-[#2D2D2D4D] px-[12px] py-[10px] font-normal shadow-sm"
+                        >
+                          <span className="truncate">
+                            {isStudentsLoading
                               ? "Loading students..."
-                              : "Select Student (Optional)"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isStudentsLoading ? (
-                          <div className="flex items-center justify-center p-4">
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-                          </div>
-                        ) : students.length === 0 && watchFeeComponent ? (
-                          <div className="p-2 text-center text-sm text-gray-500">
-                            No students found for this fee
-                          </div>
-                        ) : students.length === 0 ? (
-                          <div className="p-2 text-center text-sm text-gray-500">
-                            No students available
-                          </div>
-                        ) : (
-                          students.map((student) => (
-                            <SelectItem key={student.id} value={student.id}>
-                              {student.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                              : students.find((student) => student.id === field.value)
+                                  ?.name ||
+                                (watchFeeComponent
+                                  ? "Search student name or ID"
+                                  : "Select a fee first")}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                        align="start"
+                      >
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Search name or student ID..."
+                            value={studentSearch}
+                            onValueChange={setStudentSearch}
+                          />
+                          <CommandList>
+                            {filteredStudents.length === 0 && (
+                              <div className="px-3 py-6 text-center text-sm text-gray-500">
+                                No student assigned to this fee matches your search.
+                              </div>
+                            )}
+                            <CommandGroup>
+                              {filteredStudents.map((student) => (
+                                <CommandItem
+                                  key={student.id}
+                                  value={`${student.name} ${student.registration_number}`}
+                                  onSelect={() => {
+                                    field.onChange(student.id)
+                                    setStudentPickerOpen(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${field.value === student.id ? "opacity-100" : "opacity-0"}`}
+                                  />
+                                  <span>{student.name}</span>
+                                  <span className="ml-auto text-xs text-gray-500">
+                                    {student.registration_number}
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {field.value && (
                       <button
                         type="button"
                         onClick={() => field.onChange(undefined)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Clear student selection"
-                        disabled={!!watchFeeComponent && !watchFeeComponent}
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
@@ -483,7 +526,7 @@ const AddPaymentForm = () => {
           {watchPaymentMethod === "bank_transfer" && (
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-900">
-                Bank Name <span className="text-gray-500 text-xs">(Recommended)</span>
+                Bank Name <span className="text-xs text-gray-500">(Recommended)</span>
               </label>
               <Controller
                 control={control}
@@ -510,7 +553,7 @@ const AddPaymentForm = () => {
         {/* Description Field */}
         <div>
           <label className="mb-2 block text-sm font-semibold text-gray-900">
-            Description/Notes <span className="text-gray-500 text-xs">(Optional)</span>
+            Description/Notes <span className="text-xs text-gray-500">(Optional)</span>
           </label>
           <Textarea
             {...register("description")}
