@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Search, X } from "lucide-react"
 
 import { SuccessModal } from "@/components/dashboard/success-modal"
@@ -30,6 +35,7 @@ import { useGetStudentsWithMeta } from "../../students/_hooks/use-students"
 import { useQueryClient } from "@tanstack/react-query"
 import { CLASS_KEYS } from "../../class-management/_hooks/use-classes"
 import { FeesAPI } from "@/lib/fees-management"
+import { ApplyDiscountAfterFee } from "./apply-discount-after-fee"
 import { z } from "zod"
 
 // ---------------- Zod Schema ----------------
@@ -76,11 +82,11 @@ type FeeComponentFormValues = {
   component_name: string
   description?: string
   amount: string
-    period_type: "TERM" | "SESSION"
-    session_id?: string
-    term_id?: string
-    class_ids: string[]
-    student_ids: string[]
+  period_type: "TERM" | "SESSION"
+  session_id?: string
+  term_id?: string
+  class_ids: string[]
+  student_ids: string[]
 }
 
 // Add onSuccess prop
@@ -90,7 +96,10 @@ interface CreateComponentFormProps {
 }
 
 // ---------------- Component ----------------
-export default function CreateComponentForm({ onSuccess, open }: CreateComponentFormProps) {
+export default function CreateComponentForm({
+  onSuccess,
+  open,
+}: CreateComponentFormProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<string>("")
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([])
@@ -98,6 +107,12 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [studentSearchQuery, setStudentSearchQuery] = useState("")
   const [studentPage, setStudentPage] = useState(1)
+  const [offerDiscount, setOfferDiscount] = useState(false)
+  const [discountStage, setDiscountStage] = useState<{
+    feeId: string
+    sessionId: string
+    termId?: string
+  } | null>(null)
   const queryClient = useQueryClient()
 
   // Sessions
@@ -114,10 +129,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const { data: classes, isLoading: loadingClasses } = useGetClassesInfo()
 
   // Students - fetch with pagination and search
-  const {
-    data: studentsData,
-    isLoading: loadingStudents,
-  } = useGetStudentsWithMeta({
+  const { data: studentsData, isLoading: loadingStudents } = useGetStudentsWithMeta({
     page: studentPage,
     search: studentSearchQuery,
     limit: 100,
@@ -130,10 +142,11 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
     if (open) {
       // Invalidate and refetch classes to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: CLASS_KEYS.all, exact: false })
-      queryClient.refetchQueries({ queryKey: CLASS_KEYS.all, exact: false, type: "active" })
-      // Reset student page when drawer opens
-      setStudentPage(1)
-      setStudentSearchQuery("")
+      queryClient.refetchQueries({
+        queryKey: CLASS_KEYS.all,
+        exact: false,
+        type: "active",
+      })
     }
   }, [open, queryClient])
 
@@ -164,19 +177,17 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
     if (!classes?.items) return []
     return classes.items
       .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
-      .flatMap((clsItem) =>
-        clsItem.classes.filter((cls) => cls?.id).map((cls) => cls.id)
-      )
+      .flatMap((clsItem) => clsItem.classes.filter((cls) => cls?.id).map((cls) => cls.id))
   }, [classes])
 
-  const isAllSelected = allClassIds.length > 0 && selectedClassIds.length === allClassIds.length
-  const isPartiallySelected = selectedClassIds.length > 0 && selectedClassIds.length < allClassIds.length
+  const isAllSelected =
+    allClassIds.length > 0 && selectedClassIds.length === allClassIds.length
 
   // Get class IDs for each stream
   const streamClassIdsMap = React.useMemo(() => {
     const map = new Map<string, string[]>()
     if (!classes?.items) return map
-    
+
     classes.items
       .filter((clsItem) => clsItem?.name && clsItem?.classes?.length)
       .forEach((clsItem) => {
@@ -199,7 +210,9 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const isStreamPartiallySelected = (streamName: string) => {
     const streamClassIds = streamClassIdsMap.get(streamName) || []
     if (streamClassIds.length === 0) return false
-    const selectedCount = streamClassIds.filter((id) => selectedClassIds.includes(id)).length
+    const selectedCount = streamClassIds.filter((id) =>
+      selectedClassIds.includes(id)
+    ).length
     return selectedCount > 0 && selectedCount < streamClassIds.length
   }
 
@@ -275,21 +288,6 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
 
   const periodType = useWatch({ control, name: "period_type" })
 
-  // Reset term/session when period type changes
-  useEffect(() => {
-    if (periodType === "TERM") {
-      setValue("session_id", undefined)
-      if (periodType === "TERM") {
-        // For TERM type, we use selectedSession just to filter terms, not to set session_id
-        // Reset term_id when period type changes to TERM
-        setValue("term_id", undefined)
-      }
-    } else {
-      setValue("term_id", undefined)
-      setSelectedSession("") // Clear the session selector state for TERM filtering
-    }
-  }, [periodType, setValue])
-
   // Reset term when session changes (for TERM period type)
   useEffect(() => {
     if (selectedSession && periodType === "TERM") {
@@ -299,6 +297,8 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
 
   const handleCancel = () => {
     reset()
+    setOfferDiscount(false)
+    setDiscountStage(null)
     setSelectedClassIds([])
     setSelectedStudentIds([])
     setClassSearchQuery("")
@@ -310,7 +310,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
   const onSubmit = async (values: FeeComponentFormValues) => {
     try {
       const hasStudentsToAssign = values.student_ids && values.student_ids.length > 0
-      
+
       // Create the fee first
       const feeResponse = await createComponent.mutateAsync({
         component_name: values.component_name,
@@ -325,7 +325,9 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
       const feeId = feeResponse?.data?.id
       if (!feeId) {
         console.error("Fee created but no ID returned:", feeResponse)
-        toast.error("Fee created but could not retrieve fee ID. Please refresh and check.")
+        toast.error(
+          "Fee created but could not retrieve fee ID. Please refresh and check."
+        )
         return
       }
 
@@ -336,21 +338,21 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             feeId,
             studentIds: values.student_ids,
           })
-          
+
           const assignmentResult = await FeesAPI.assignStudents(feeId, values.student_ids)
-          
+
           console.log("Student assignment result:", assignmentResult)
-          
+
           // Show success message with assignment details
           if (assignmentResult?.data) {
             const { assigned, already_assigned, failed } = assignmentResult.data
-            
+
             // Invalidate the specific fee query to refresh it with new assignments
-            await queryClient.invalidateQueries({ 
+            await queryClient.invalidateQueries({
               queryKey: ["fees", feeId],
-              exact: false 
+              exact: false,
             })
-            
+
             if (assigned > 0) {
               toast.success(
                 `Fee created and assigned to ${assigned} student${assigned > 1 ? "s" : ""}${
@@ -375,30 +377,30 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             // Response structure might be different, still show success
             toast.success("Fee created and students assigned successfully")
             // Invalidate to refresh
-            await queryClient.invalidateQueries({ 
+            await queryClient.invalidateQueries({
               queryKey: ["fees", feeId],
-              exact: false 
+              exact: false,
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Failed to assign students to fee:", error)
           console.error("Error details:", {
             feeId,
             studentIds: values.student_ids,
-            error: error?.response?.data || error?.message,
+            error: extractErrorMessage(error),
           })
-          
+
           // Show error but don't fail the whole operation
           const errorMessage = extractErrorMessage(error)
           toast.error(
             `Fee created successfully, but student assignment failed: ${errorMessage}. You can assign students manually later.`,
             { duration: 6000 }
           )
-          
+
           // Still invalidate to refresh the fee (even if assignment failed)
-          await queryClient.invalidateQueries({ 
+          await queryClient.invalidateQueries({
             queryKey: ["fees", feeId],
-            exact: false 
+            exact: false,
           })
         }
       } else {
@@ -410,15 +412,31 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
       // Invalidate all fee-related queries to ensure UI is up to date
       await queryClient.invalidateQueries({ queryKey: ["fees"], exact: false })
       await queryClient.invalidateQueries({ queryKey: ["fee-payments"], exact: false })
-      
+
+      const discountSessionId =
+        values.period_type === "TERM" ? selectedSession : values.session_id
+      const showDiscountStage =
+        offerDiscount &&
+        !!discountSessionId &&
+        ((values.class_ids?.length ?? 0) > 0 || (values.student_ids?.length ?? 0) > 0)
+
       reset()
       setSelectedClassIds([])
       setSelectedStudentIds([])
       setClassSearchQuery("")
       setStudentSearchQuery("")
       setSelectedSession("")
-      onSuccess?.() // Close the drawer after success
-      setModalOpen(true) // Show success modal
+      setOfferDiscount(false)
+      if (showDiscountStage && discountSessionId) {
+        setDiscountStage({
+          feeId,
+          sessionId: discountSessionId,
+          termId: values.period_type === "TERM" ? values.term_id : undefined,
+        })
+      } else {
+        onSuccess?.()
+        setModalOpen(true)
+      }
     } catch (error) {
       // Error creating fee - this is already handled by the mutation's onError
       console.error("Error in fee creation form:", error)
@@ -430,6 +448,17 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
     console.log("Classes data:", classes)
     console.log("Loading classes:", loadingClasses)
   }, [classes, loadingClasses])
+
+  if (discountStage) {
+    return (
+      <ApplyDiscountAfterFee
+        feeId={discountStage.feeId}
+        sessionId={discountStage.sessionId}
+        termId={discountStage.termId}
+        onDone={handleCancel}
+      />
+    )
+  }
 
   return (
     <>
@@ -465,6 +494,12 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             value={periodType || "TERM"}
             onValueChange={(value: "TERM" | "SESSION") => {
               setValue("period_type", value)
+              setValue("term_id", undefined)
+              if (value === "TERM") {
+                setValue("session_id", undefined)
+              } else {
+                setSelectedSession("")
+              }
             }}
           >
             <SelectTrigger className="w-full">
@@ -527,7 +562,10 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             ) : termsError ? (
               <p className="text-sm text-red-500">Error loading terms</p>
             ) : terms && terms.length > 0 ? (
-              <Select value={termId} onValueChange={(value) => setValue("term_id", value)}>
+              <Select
+                value={termId}
+                onValueChange={(value) => setValue("term_id", value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select term" />
                 </SelectTrigger>
@@ -592,15 +630,17 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             </div>
             {selectedClassIds.length > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {selectedClassIds.length} {selectedClassIds.length === 1 ? "class" : "classes"} selected
+                {selectedClassIds.length}{" "}
+                {selectedClassIds.length === 1 ? "class" : "classes"} selected
               </Badge>
             )}
           </div>
-          
+
           <p className="text-xs text-gray-500">
-            Choose how this fee should be applied. Leave unselected to create an unassigned fee that can be assigned later.
+            Choose how this fee should be applied. Leave unselected to create an
+            unassigned fee that can be assigned later.
           </p>
-          
+
           {loadingClasses ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-sm text-gray-500">Loading classes...</p>
@@ -629,7 +669,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                     }}
                     className="text-xs text-red-600 hover:text-red-700"
                   >
-                    <X className="h-3 w-3 mr-1" />
+                    <X className="mr-1 h-3 w-3" />
                     Clear Selection
                   </Button>
                 )}
@@ -637,7 +677,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
 
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Search classes by name or arm..."
                   value={classSearchQuery}
@@ -648,7 +688,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                   <button
                     type="button"
                     onClick={() => setClassSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -658,15 +698,17 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {/* Selected Classes Summary */}
               {selectedClassIds.length > 0 && !isAllSelected && (
                 <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-xs font-medium text-green-800">Selected Classes:</p>
-                    <Badge variant="outline" className="text-xs bg-white">
+                  <div className="mb-2 flex items-start justify-between">
+                    <p className="text-xs font-medium text-green-800">
+                      Selected Classes:
+                    </p>
+                    <Badge variant="outline" className="bg-white text-xs">
                       {selectedClassIds.length}
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
                     {classes.items
-                      .flatMap((item) => 
+                      .flatMap((item) =>
                         item.classes
                           .filter((cls) => selectedClassIds.includes(cls.id))
                           .map((cls) => ({
@@ -680,11 +722,11 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                         <Badge
                           key={cls.id}
                           variant="secondary"
-                          className="text-xs cursor-pointer hover:bg-green-100"
+                          className="cursor-pointer text-xs hover:bg-green-100"
                           onClick={() => toggleClass(cls.id, false)}
                         >
                           {cls.label}
-                          <X className="h-3 w-3 ml-1" />
+                          <X className="ml-1 h-3 w-3" />
                         </Badge>
                       ))}
                     {selectedClassIds.length > 20 && (
@@ -699,37 +741,51 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {/* Stream Selection - Quick Select */}
               {!isAllSelected && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Quick Select by Stream:</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Quick Select by Stream:
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     {classes.items
                       .filter((clsItem) => {
                         if (!clsItem?.name || !clsItem?.classes?.length) return false
                         if (classSearchQuery) {
                           const query = classSearchQuery.toLowerCase()
-                          return clsItem.name.toLowerCase().includes(query) ||
-                            clsItem.classes.some((c) => c.arm?.toLowerCase().includes(query))
+                          return (
+                            clsItem.name.toLowerCase().includes(query) ||
+                            clsItem.classes.some((c) =>
+                              c.arm?.toLowerCase().includes(query)
+                            )
+                          )
                         }
                         return true
                       })
                       .map((clsItem) => {
                         const streamSelected = isStreamSelected(clsItem.name)
-                        const streamPartiallySelected = isStreamPartiallySelected(clsItem.name)
+                        const streamPartiallySelected = isStreamPartiallySelected(
+                          clsItem.name
+                        )
                         const armCount = clsItem.classes.filter((cls) => cls?.id).length
-                        
+
                         return (
                           <Button
                             key={`stream-btn-${clsItem.name}`}
                             type="button"
-                            variant={streamSelected ? "default" : streamPartiallySelected ? "secondary" : "outline"}
+                            variant={
+                              streamSelected
+                                ? "default"
+                                : streamPartiallySelected
+                                  ? "secondary"
+                                  : "outline"
+                            }
                             size="sm"
-                            onClick={() => handleSelectStream(clsItem.name, !streamSelected)}
+                            onClick={() =>
+                              handleSelectStream(clsItem.name, !streamSelected)
+                            }
                             className="text-xs"
                           >
                             {streamPartiallySelected && "• "}
                             {clsItem.name}
-                            <span className="ml-1 text-xs opacity-75">
-                              ({armCount})
-                            </span>
+                            <span className="ml-1 text-xs opacity-75">({armCount})</span>
                           </Button>
                         )
                       })}
@@ -740,7 +796,9 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {/* Classes by Stream - Accordion */}
               {!isAllSelected && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Select Individual Classes:</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Select Individual Classes:
+                  </Label>
                   <div className="rounded-lg border border-gray-200 bg-white">
                     <Accordion type="multiple" className="w-full">
                       {classes.items
@@ -748,30 +806,47 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                           if (!clsItem?.name || !clsItem?.classes?.length) return false
                           if (classSearchQuery) {
                             const query = classSearchQuery.toLowerCase()
-                            return clsItem.name.toLowerCase().includes(query) ||
-                              clsItem.classes.some((c) => c.arm?.toLowerCase().includes(query))
+                            return (
+                              clsItem.name.toLowerCase().includes(query) ||
+                              clsItem.classes.some((c) =>
+                                c.arm?.toLowerCase().includes(query)
+                              )
+                            )
                           }
                           return true
                         })
                         .map((clsItem) => {
                           const streamSelected = isStreamSelected(clsItem.name)
-                          const selectedCount = clsItem.classes.filter((cls) => 
+                          const selectedCount = clsItem.classes.filter((cls) =>
                             selectedClassIds.includes(cls.id)
                           ).length
-                          const totalCount = clsItem.classes.filter((cls) => cls?.id).length
-                          
+                          const totalCount = clsItem.classes.filter(
+                            (cls) => cls?.id
+                          ).length
+
                           return (
-                            <AccordionItem key={`accordion-${clsItem.name}`} value={clsItem.name} className="border-b last:border-b-0">
+                            <AccordionItem
+                              key={`accordion-${clsItem.name}`}
+                              value={clsItem.name}
+                              className="border-b last:border-b-0"
+                            >
                               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                                <div className="flex items-center justify-between w-full pr-4">
+                                <div className="flex w-full items-center justify-between pr-4">
                                   <div className="flex items-center gap-3">
                                     <Checkbox
                                       checked={streamSelected}
-                                      onCheckedChange={(checked) => handleSelectStream(clsItem.name, checked as boolean)}
+                                      onCheckedChange={(checked) =>
+                                        handleSelectStream(
+                                          clsItem.name,
+                                          checked as boolean
+                                        )
+                                      }
                                       onClick={(e) => e.stopPropagation()}
                                       className="pointer-events-auto"
                                     />
-                                    <span className="font-medium text-sm">{clsItem.name}</span>
+                                    <span className="text-sm font-medium">
+                                      {clsItem.name}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-500">
                                     {selectedCount > 0 && (
@@ -779,7 +854,9 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                                         {selectedCount}/{totalCount}
                                       </Badge>
                                     )}
-                                    <span>{totalCount} {totalCount === 1 ? "arm" : "arms"}</span>
+                                    <span>
+                                      {totalCount} {totalCount === 1 ? "arm" : "arms"}
+                                    </span>
                                   </div>
                                 </div>
                               </AccordionTrigger>
@@ -799,7 +876,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                                       return (
                                         <label
                                           key={cls.id}
-                                          className={`flex items-center gap-2 rounded-md border p-2.5 cursor-pointer transition-all ${
+                                          className={`flex cursor-pointer items-center gap-2 rounded-md border p-2.5 transition-all ${
                                             isSelected
                                               ? "border-green-500 bg-green-50"
                                               : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -807,13 +884,18 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                                         >
                                           <Checkbox
                                             checked={isSelected}
-                                            onCheckedChange={(checked) => toggleClass(cls.id, checked as boolean)}
+                                            onCheckedChange={(checked) =>
+                                              toggleClass(cls.id, checked as boolean)
+                                            }
                                           />
-                                          <span className="text-sm font-medium flex-1">
+                                          <span className="flex-1 text-sm font-medium">
                                             {cls.arm || "Default"}
                                           </span>
                                           {isSelected && (
-                                            <Badge variant="outline" className="text-xs bg-green-100 border-green-300">
+                                            <Badge
+                                              variant="outline"
+                                              className="border-green-300 bg-green-100 text-xs"
+                                            >
                                               ✓
                                             </Badge>
                                           )}
@@ -834,22 +916,26 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {selectedClassIds.length === 0 && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
                   <p className="text-xs text-blue-700">
-                    <span className="font-medium">Unassigned Fee:</span> This fee will be created without any class assignments. You can assign it to specific classes or students later.
+                    <span className="font-medium">Unassigned Fee:</span> This fee will be
+                    created without any class assignments. You can assign it to specific
+                    classes or students later.
                   </p>
                 </div>
               )}
               {isAllSelected && (
                 <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
                   <p className="text-xs text-green-700">
-                    <span className="font-medium">School-wide Fee:</span> This fee will apply to all classes in the school.
+                    <span className="font-medium">School-wide Fee:</span> This fee will
+                    apply to all classes in the school.
                   </p>
                 </div>
               )}
             </div>
           ) : (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm text-gray-600 text-center">
-                No classes available. This fee will be created as unassigned and can be assigned later.
+              <p className="text-center text-sm text-gray-600">
+                No classes available. This fee will be created as unassigned and can be
+                assigned later.
               </p>
             </div>
           )}
@@ -862,20 +948,24 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Label className="text-base font-semibold">Assign to Specific Students</Label>
+              <Label className="text-base font-semibold">
+                Assign to Specific Students
+              </Label>
               <span className="text-xs text-gray-500">(Optional)</span>
             </div>
             {selectedStudentIds.length > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {selectedStudentIds.length} {selectedStudentIds.length === 1 ? "student" : "students"} selected
+                {selectedStudentIds.length}{" "}
+                {selectedStudentIds.length === 1 ? "student" : "students"} selected
               </Badge>
             )}
           </div>
-          
+
           <p className="text-xs text-gray-500">
-            Optionally assign this fee to specific students. This works alongside class assignments - students in selected classes will also get the fee.
+            Optionally assign this fee to specific students. This works alongside class
+            assignments - students in selected classes will also get the fee.
           </p>
-          
+
           {loadingStudents ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-sm text-gray-500">Loading students...</p>
@@ -896,7 +986,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                       }}
                       className="text-xs text-red-600 hover:text-red-700"
                     >
-                      <X className="h-3 w-3 mr-1" />
+                      <X className="mr-1 h-3 w-3" />
                       Clear Selection
                     </Button>
                   )}
@@ -905,7 +995,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
 
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Search students by name or registration number..."
                   value={studentSearchQuery}
@@ -922,7 +1012,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                       setStudentSearchQuery("")
                       setStudentPage(1)
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -932,13 +1022,15 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {/* Selected Students Summary */}
               {selectedStudentIds.length > 0 && (
                 <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-xs font-medium text-green-800">Selected Students:</p>
-                    <Badge variant="outline" className="text-xs bg-white">
+                  <div className="mb-2 flex items-start justify-between">
+                    <p className="text-xs font-medium text-green-800">
+                      Selected Students:
+                    </p>
+                    <Badge variant="outline" className="bg-white text-xs">
                       {selectedStudentIds.length}
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
                     {students
                       .filter((student) => selectedStudentIds.includes(student.id))
                       .slice(0, 20)
@@ -946,12 +1038,13 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                         <Badge
                           key={student.id}
                           variant="secondary"
-                          className="text-xs cursor-pointer hover:bg-green-100"
+                          className="cursor-pointer text-xs hover:bg-green-100"
                           onClick={() => toggleStudent(student.id, false)}
                         >
                           {student.first_name} {student.last_name}
-                          {student.registration_number && ` (${student.registration_number})`}
-                          <X className="h-3 w-3 ml-1" />
+                          {student.registration_number &&
+                            ` (${student.registration_number})`}
+                          <X className="ml-1 h-3 w-3" />
                         </Badge>
                       ))}
                     {selectedStudentIds.length > 20 && (
@@ -966,15 +1059,19 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
               {/* Students List */}
               {students.length > 0 ? (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Select Students:</Label>
-                  <div className="rounded-lg border border-gray-200 bg-white max-h-64 overflow-y-auto">
-                    <div className="p-3 space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Select Students:
+                  </Label>
+                  <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white">
+                    <div className="space-y-2 p-3">
                       {students
                         .filter((student) => {
                           if (studentSearchQuery) {
                             const query = studentSearchQuery.toLowerCase()
-                            const fullName = `${student.first_name} ${student.last_name}`.toLowerCase()
-                            const regNumber = student.registration_number?.toLowerCase() || ""
+                            const fullName =
+                              `${student.first_name} ${student.last_name}`.toLowerCase()
+                            const regNumber =
+                              student.registration_number?.toLowerCase() || ""
                             return fullName.includes(query) || regNumber.includes(query)
                           }
                           return true
@@ -984,7 +1081,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                           return (
                             <label
                               key={student.id}
-                              className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-all ${
+                              className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-all ${
                                 isSelected
                                   ? "border-green-500 bg-green-50"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -992,9 +1089,11 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                             >
                               <Checkbox
                                 checked={isSelected}
-                                onCheckedChange={(checked) => toggleStudent(student.id, checked as boolean)}
+                                onCheckedChange={(checked) =>
+                                  toggleStudent(student.id, checked as boolean)
+                                }
                               />
-                              <div className="flex-1 min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium">
                                     {student.first_name} {student.last_name}
@@ -1006,13 +1105,16 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                                   )}
                                 </div>
                                 {student.class && (
-                                  <p className="text-xs text-gray-500 mt-0.5">
+                                  <p className="mt-0.5 text-xs text-gray-500">
                                     {student.class}
                                   </p>
                                 )}
                               </div>
                               {isSelected && (
-                                <Badge variant="outline" className="text-xs bg-green-100 border-green-300 shrink-0">
+                                <Badge
+                                  variant="outline"
+                                  className="shrink-0 border-green-300 bg-green-100 text-xs"
+                                >
                                   ✓
                                 </Badge>
                               )}
@@ -1041,8 +1143,14 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => setStudentPage((p) => Math.min(studentsData.meta?.total_pages || 1, p + 1))}
-                            disabled={studentPage >= (studentsData.meta?.total_pages || 1)}
+                            onClick={() =>
+                              setStudentPage((p) =>
+                                Math.min(studentsData.meta?.total_pages || 1, p + 1)
+                              )
+                            }
+                            disabled={
+                              studentPage >= (studentsData.meta?.total_pages || 1)
+                            }
                             className="text-xs"
                           >
                             Next
@@ -1054,7 +1162,7 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
                 </div>
               ) : (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm text-gray-600 text-center">
+                  <p className="text-center text-sm text-gray-600">
                     {studentSearchQuery
                       ? "No students found matching your search."
                       : "No students available."}
@@ -1064,6 +1172,22 @@ export default function CreateComponentForm({ onSuccess, open }: CreateComponent
             </div>
           )}
         </div>
+
+        {(selectedClassIds.length > 0 || selectedStudentIds.length > 0) && (
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 text-sm">
+            <Checkbox
+              checked={offerDiscount}
+              onCheckedChange={(checked) => setOfferDiscount(checked === true)}
+            />
+            <span>
+              Apply a student discount after saving this fee
+              <span className="mt-1 block text-xs text-gray-500">
+                You will choose an assigned student and preview the code against their
+                updated total bill before confirming.
+              </span>
+            </span>
+          </label>
+        )}
 
         {/* Buttons */}
         <div className="flex gap-2">

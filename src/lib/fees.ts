@@ -192,6 +192,7 @@ export interface StudentFeeDetailsResponse {
     session: string
   }
   fee_breakdown: {
+    fee_id: string
     component_name: string
     amount: number
     discount_amount?: number

@@ -46,8 +46,8 @@ const FeesRecord = () => {
     const headers = [
       "Student",
       "Fee",
-      "Amount Due",
-      "Amount Paid",
+      "Original Fee",
+      "This Payment",
       "Method",
       "Date",
       "Status",

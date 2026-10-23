@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/table"
 import StudentDetailsSheet from "./student-details-sheet"
 
-import { FeePayment } from "@/lib/fees"
+import { FeePayment, FeesAPI } from "@/lib/fees"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -35,6 +36,46 @@ const FeesTable = ({
 }: FeesTableProps) => {
   const [selectedPayment, setSelectedPayment] = useState<FeePayment | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const billKeys = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          data
+            .filter(
+              (payment) => payment.student_id && payment.term_id && payment.session_id
+            )
+            .map(
+              (payment) =>
+                `${payment.student_id}:${payment.session_id}:${payment.term_id}`
+            )
+        )
+      ),
+    [data]
+  )
+  const billQueries = useQueries({
+    queries: billKeys.map((key) => {
+      const [studentId, sessionId, termId] = key.split(":")
+      return {
+        queryKey: ["student-fee-details", studentId, termId, sessionId],
+        queryFn: () =>
+          FeesAPI.getStudentFeeDetails(studentId, {
+            session_id: sessionId,
+            term_id: termId,
+          }),
+        staleTime: 30_000,
+        retry: 1,
+      }
+    }),
+  })
+  const billByKey = new Map(
+    billKeys.map((key, index) => [key, billQueries[index]?.data?.data])
+  )
+  const feeAmounts = (payment: FeePayment) => {
+    const key = `${payment.student_id}:${payment.session_id}:${payment.term_id}`
+    return billByKey
+      .get(key)
+      ?.fee_breakdown.find((fee) => fee.fee_id === payment.fee_component_id)
+  }
 
   const handleRowClick = (payment: FeePayment) => {
     setSelectedPayment(payment)
@@ -71,13 +112,13 @@ const FeesTable = ({
                   Fee
                 </TableHead>
                 <TableHead className="font-outfit gap-[11.48px] px-[22.97px] py-[11.48px] text-[12px] leading-[18px] font-medium text-[#667085]">
-                  Amount Due
+                  Adjusted Fee
                 </TableHead>
                 <TableHead className="font-outfit gap-[11.48px] px-[22.97px] py-[11.48px] text-[12px] leading-[18px] font-medium text-[#667085]">
-                  Amount Paid
+                  This Payment
                 </TableHead>
                 <TableHead className="font-outfit gap-[11.48px] px-[22.97px] py-[11.48px] text-[12px] leading-[18px] font-medium text-[#667085]">
-                  Balance
+                  Fee Balance
                 </TableHead>
                 <TableHead className="font-outfit gap-[11.48px] px-[22.97px] py-[11.48px] text-[12px] leading-[18px] font-medium text-[#667085]">
                   Method
@@ -86,7 +127,7 @@ const FeesTable = ({
                   Date
                 </TableHead>
                 <TableHead className="font-outfit gap-[11.48px] px-[22.97px] py-[11.48px] text-[12px] leading-[18px] font-medium text-[#667085]">
-                  Status
+                  Payment Status
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -99,11 +140,8 @@ const FeesTable = ({
                 </TableRow>
               ) : (
                 data.map((payment) => {
-                  const amountDue = payment.fee_component?.amount != null
-                    ? parseFloat(String(payment.fee_component.amount))
-                    : 0
+                  const amounts = feeAmounts(payment)
                   const amountPaid = parseFloat(payment.amount_paid)
-                  const balance = amountDue - amountPaid
 
                   return (
                     <TableRow
@@ -136,13 +174,17 @@ const FeesTable = ({
                         {payment.fee_component?.component_name ?? "Unassigned"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
-                        {amountDue > 0 ? `₦${amountDue.toLocaleString()}` : "—"}
+                        {amounts
+                          ? `₦${(amounts.adjusted_amount ?? amounts.amount).toLocaleString()}`
+                          : "—"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
                         ₦{amountPaid.toLocaleString()}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353]">
-                        {amountDue > 0 ? `₦${balance.toLocaleString()}` : "—"}
+                        {amounts
+                          ? `₦${amounts.outstanding_amount.toLocaleString()}`
+                          : "—"}
                       </TableCell>
                       <TableCell className="font-outfit px-[22.97px] py-4 text-[14px] leading-none font-normal tracking-[0.005em] text-[#535353] capitalize">
                         {payment.payment_method?.replace("_", " ") ?? "—"}
@@ -174,11 +216,8 @@ const FeesTable = ({
         {/* Mobile Card View */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:hidden">
           {data.map((payment) => {
-            const amountDue = payment.fee_component?.amount != null
-              ? parseFloat(String(payment.fee_component.amount))
-              : 0
+            const amounts = feeAmounts(payment)
             const amountPaid = parseFloat(payment.amount_paid)
-            const balance = amountDue - amountPaid
 
             return (
               <div
@@ -220,21 +259,25 @@ const FeesTable = ({
 
                   <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-gray-500">Due</span>
+                      <span className="text-xs text-gray-500">Adjusted fee</span>
                       <span className="mt-1 text-sm font-semibold text-gray-900">
-                        ₦{amountDue.toLocaleString()}
+                        {amounts
+                          ? `₦${(amounts.adjusted_amount ?? amounts.amount).toLocaleString()}`
+                          : "—"}
                       </span>
                     </div>
                     <div className="flex flex-col min-[400px]:text-center">
-                      <span className="text-xs text-gray-500">Paid</span>
+                      <span className="text-xs text-gray-500">This payment</span>
                       <span className="mt-1 text-sm font-semibold text-gray-900">
                         ₦{amountPaid.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex flex-col text-left min-[400px]:text-right">
-                      <span className="text-xs text-gray-500">Balance</span>
+                      <span className="text-xs text-gray-500">Fee balance</span>
                       <span className="mt-1 text-sm font-semibold text-red-500">
-                        {amountDue > 0 ? `₦${balance.toLocaleString()}` : "—"}
+                        {amounts
+                          ? `₦${amounts.outstanding_amount.toLocaleString()}`
+                          : "—"}
                       </span>
                     </div>
                   </div>

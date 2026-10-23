@@ -6,12 +6,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
+import { useQueryClient } from "@tanstack/react-query"
 import { apiFetch } from "@/lib/api/client"
 import type { StudentFeeDetailsResponse } from "@/lib/fees"
 import { toast } from "sonner"
 
-export function StudentFeeDiscount({ studentId }: { studentId: string }) {
+export function StudentFeeDiscount({
+  studentId,
+  sessionId,
+  termId,
+}: {
+  studentId: string
+  sessionId?: string
+  termId?: string
+}) {
   const period = useAcademicPeriod("admin-student-discount")
+  const queryClient = useQueryClient()
+  const selectedSessionId = sessionId ?? period.sessionId
+  const selectedTermId = termId ?? period.termId
   const [details, setDetails] = useState<StudentFeeDetailsResponse | null>(null)
   const [code, setCode] = useState("")
   const [preview, setPreview] = useState<{
@@ -24,17 +36,17 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
   const [busy, setBusy] = useState(false)
 
   const refresh = useCallback(async () => {
-    if (!period.sessionId || !period.termId) return
+    if (!selectedSessionId || !selectedTermId) return
     try {
       const response = await apiFetch<{ data: StudentFeeDetailsResponse }>(
-        `/fees/student/${studentId}?session_id=${period.sessionId}&term_id=${period.termId}`
+        `/fees/student/${studentId}?session_id=${selectedSessionId}&term_id=${selectedTermId}`
       )
       setDetails(response.data)
     } catch {
       setDetails(null)
       toast.error("Could not load this student's fees")
     }
-  }, [studentId, period.sessionId, period.termId])
+  }, [studentId, selectedSessionId, selectedTermId])
 
   useEffect(() => {
     setPreview(null)
@@ -43,7 +55,7 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
 
   const apply = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!period.sessionId || !period.termId || !preview) return
+    if (!selectedSessionId || !selectedTermId || !preview) return
     setBusy(true)
     try {
       await apiFetch("/fee-discounts/apply", {
@@ -51,14 +63,17 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
         data: {
           code,
           student_id: studentId,
-          session_id: period.sessionId,
-          term_id: period.termId,
+          session_id: selectedSessionId,
+          term_id: selectedTermId,
         },
       })
       toast.success("Discount applied to student's total bill")
       setCode("")
       setPreview(null)
       await refresh()
+      await queryClient.invalidateQueries({
+        queryKey: ["student-fee-details", studentId],
+      })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not apply discount")
     } finally {
@@ -67,14 +82,14 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
   }
 
   const previewCode = async () => {
-    if (!period.sessionId || !period.termId || !code.trim()) return
+    if (!selectedSessionId || !selectedTermId || !code.trim()) return
     setBusy(true)
     try {
       const params = new URLSearchParams({
         code,
         student_id: studentId,
-        session_id: period.sessionId,
-        term_id: period.termId,
+        session_id: selectedSessionId,
+        term_id: selectedTermId,
       })
       const response = await apiFetch<{ data: NonNullable<typeof preview> }>(
         `/fee-discounts/preview?${params}`
@@ -100,6 +115,9 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
       })
       toast.success("Discount revoked; its audit history is retained")
       await refresh()
+      await queryClient.invalidateQueries({
+        queryKey: ["student-fee-details", studentId],
+      })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not revoke discount")
     } finally {
@@ -118,7 +136,12 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
           Apply one code to this student&apos;s total bill for the selected term.
         </p>
       </div>
-      <AcademicPeriodSelector scope="admin-student-discount" allowWholeSession={false} />
+      {!sessionId && !termId && (
+        <AcademicPeriodSelector
+          scope="admin-student-discount"
+          allowWholeSession={false}
+        />
+      )}
       {totals && (
         <div className="grid gap-2 text-sm sm:grid-cols-5">
           <span>Original: ₦{totals.original.toLocaleString()}</span>
@@ -134,6 +157,8 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
             Code <strong>{details.discount.code}</strong> applied.
             {details.discount.status === "PENDING_REVIEW" &&
               " A bill change is awaiting admin review."}
+            {details.discount.status !== "PENDING_REVIEW" &&
+              " Revoke it before applying another code for this term."}
           </p>
           <Button
             type="button"
@@ -164,7 +189,7 @@ export function StudentFeeDiscount({ studentId }: { studentId: string }) {
           ) : (
             <Button
               type="button"
-              disabled={busy || !period.sessionId || !period.termId}
+              disabled={busy || !selectedSessionId || !selectedTermId}
               onClick={() => void previewCode()}
             >
               Preview

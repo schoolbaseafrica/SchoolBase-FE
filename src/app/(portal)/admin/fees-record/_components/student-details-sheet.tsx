@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { EditPaymentDialog } from "./edit-payment-dialog"
 import { apiFetch } from "@/lib/api/client"
 import { toast } from "sonner"
-import { FeeDiscountSummary } from "@/components/fees/fee-discount-summary"
+import { StudentFeeDiscount } from "../../students/_components/student-fee-discount"
 
 interface StudentDetailsSheetProps {
   open: boolean
@@ -267,7 +267,7 @@ const StudentDetailsSheet = ({
               {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg border border-gray-200 p-3 text-center">
-                  <p className="text-xs font-medium text-gray-600">Total Fees</p>
+                  <p className="text-xs font-medium text-gray-600">Original Fees</p>
                   <p className="mt-1 text-sm font-bold text-gray-900">
                     ₦
                     {(details.fee_breakdown || [])
@@ -307,7 +307,13 @@ const StudentDetailsSheet = ({
                 </div>
               </div>
 
-              <FeeDiscountSummary details={details} />
+              {student.student_id && student.session_id && student.term_id && (
+                <StudentFeeDiscount
+                  studentId={student.student_id}
+                  sessionId={student.session_id}
+                  termId={student.term_id}
+                />
+              )}
 
               {/* Payment Breakdown */}
               <div>
