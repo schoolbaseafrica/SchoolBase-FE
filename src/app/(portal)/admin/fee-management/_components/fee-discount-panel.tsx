@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NewFeatureBadge } from "@/components/ui/new-feature-badge"
 import { toast } from "sonner"
+import { Copy } from "lucide-react"
 
 type Code = {
   id: string
@@ -74,6 +75,15 @@ export function FeeDiscountPanel({
         .join("")
         .toUpperCase()}`
     )
+  }
+
+  const copyCode = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success("Discount code copied")
+    } catch {
+      toast.error("Could not copy discount code")
+    }
   }
 
   const create = async (event: React.FormEvent) => {
@@ -148,7 +158,7 @@ export function FeeDiscountPanel({
     <section className="space-y-5 rounded-xl border bg-white p-5">
       <div>
         <h2 className="text-lg font-semibold">
-          Student bill discounts <NewFeatureBadge />
+          Student fees discounts <NewFeatureBadge />
         </h2>
         <p className="text-sm text-gray-600">
           Create a code for the selected term. Apply it to a student from their profile.
@@ -166,6 +176,17 @@ export function FeeDiscountPanel({
           <Button type="button" variant="outline" onClick={generate}>
             Generate
           </Button>
+          {code && (
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="Copy discount code"
+              title="Copy discount code"
+              onClick={() => void copyCode(code)}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <select
           aria-label="Discount type"
@@ -213,7 +234,16 @@ export function FeeDiscountPanel({
               key={item.id}
               className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm"
             >
-              <strong className="font-mono">{item.code}</strong>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded text-left font-mono font-semibold hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                aria-label={`Copy discount code ${item.code}`}
+                title="Copy discount code"
+                onClick={() => void copyCode(item.code)}
+              >
+                {item.code}
+                <Copy aria-hidden="true" className="h-4 w-4" />
+              </button>
               <span>
                 {item.value}
                 {item.kind === "PERCENT" ? "%" : " ₦"} off total bill
