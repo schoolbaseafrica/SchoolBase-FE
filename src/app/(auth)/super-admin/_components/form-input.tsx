@@ -19,6 +19,7 @@ import { loginSchema, type LoginFormValues } from "@/lib/schemas/auth"
 import { useRouter } from "next/navigation"
 import SchoolLogo from "../../_components/school-logo"
 import { SetupWizardAPI } from "@/lib/api/setup/super-admin-setup-apis"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 
 type LoginField = keyof LoginFormValues
 
@@ -110,6 +111,7 @@ const SuperAdminLoginForm = () => {
 
     try {
       await SetupWizardAPI.login(formData)
+      useAcademicPeriodStore.getState().clearSelections()
 
       if (nextRoute) {
         router.push(nextRoute)

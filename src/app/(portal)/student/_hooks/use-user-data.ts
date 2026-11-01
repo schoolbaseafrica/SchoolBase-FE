@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserData, sendLogoutRequest } from "@/lib/api/auth"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 
 // The main list query key
 const USER_DATA_KEY = ["user"]
@@ -24,6 +25,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: sendLogoutRequest,
     onSuccess: () => {
+      useAcademicPeriodStore.getState().clearSelections()
       // Remove all user-related data instantly
       queryClient.removeQueries({ queryKey: USER_DATA_KEY })
 

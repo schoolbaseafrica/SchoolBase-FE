@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { ParentAccessLinksAPI } from "@/lib/api/parent-access-links"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/store/auth-store"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 import { toast } from "sonner"
 
 export default function ParentAutoLoginPage() {
@@ -119,6 +120,7 @@ export default function ParentAutoLoginPage() {
         }
 
         // Password already reset or not required - proceed with auto-login
+        useAcademicPeriodStore.getState().clearSelections()
         console.log(
           "[Auto-login] Validation successful, cookies should be set in response"
         )
@@ -182,6 +184,7 @@ export default function ParentAutoLoginPage() {
 
     try {
       await ParentAccessLinksAPI.completeSetup(magicLinkToken, newPassword)
+      useAcademicPeriodStore.getState().clearSelections()
 
       toast.success("Password set successfully! Logging you in...")
       setStatus("success")

@@ -11,6 +11,7 @@ type AcademicPeriodState = {
   setPeriod: (scope: string, sessionId: string, termId: string | null) => void
   setTermId: (scope: string, termId: string | null) => void
   reset: (scope: string) => void
+  clearSelections: () => void
 }
 
 export const useAcademicPeriodStore = create<AcademicPeriodState>()(
@@ -37,6 +38,7 @@ export const useAcademicPeriodStore = create<AcademicPeriodState>()(
           delete selections[scope]
           return { selections }
         }),
+      clearSelections: () => set({ selections: {} }),
     }),
     { name: "schoolbase-academic-period" }
   )

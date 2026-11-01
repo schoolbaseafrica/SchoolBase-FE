@@ -1,4 +1,5 @@
 import { apiFetch } from "./client"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 import type {
   AuthApiResponse,
   LoginPayload,
@@ -25,7 +26,10 @@ export const login = (payload: LoginPayload): Promise<LoginResponse> => {
       data: payload,
     },
     false // Don't use proxy - use specific Next.js route at /api/auth/login
-  )
+  ).then((response) => {
+    useAcademicPeriodStore.getState().clearSelections()
+    return response
+  })
 }
 
 export const loginUsingEmail = (payload: {
@@ -39,7 +43,10 @@ export const loginUsingEmail = (payload: {
       data: payload,
     },
     false // Don't use proxy - use specific Next.js route at /api/auth/login
-  )
+  ).then((response) => {
+    useAcademicPeriodStore.getState().clearSelections()
+    return response
+  })
 }
 
 // Get current user profile

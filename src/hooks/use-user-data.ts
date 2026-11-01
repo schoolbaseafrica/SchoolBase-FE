@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getUserData, sendLogoutRequest } from "@/lib/api/auth"
 import { SuperAdminAPI } from "@/lib/api/superadmin"
 import { usePathname } from "next/navigation"
+import { useAcademicPeriodStore } from "@/store/academic-period-store"
 
 const USER_DATA_KEY = ["user"]
 const SUPERADMIN_DATA_KEY = ["superadmin"]
@@ -43,6 +44,7 @@ export function useLogout() {
       else await sendLogoutRequest()
     },
     onSuccess: () => {
+      useAcademicPeriodStore.getState().clearSelections()
       queryClient.removeQueries({ queryKey: USER_DATA_KEY })
       queryClient.removeQueries({ queryKey: SUPERADMIN_DATA_KEY })
 
