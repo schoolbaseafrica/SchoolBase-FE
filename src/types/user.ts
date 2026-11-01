@@ -56,6 +56,7 @@ export interface SnakeUser {
   current_class_id?: string | null
   teacher_id?: string | null
   parent_id?: string | null
+  parent_name?: string | null
   student_id?: string | null
   nfc_card_id?: string | null
   deleted_at?: string | null

@@ -23,6 +23,7 @@ interface SelectedStudent {
 interface LinkStudentsGridProps {
   students: User[]
   selectedStudents: SelectedStudent[]
+  currentParentId: string
   onStudentSelect: (student: User, selected: boolean) => void
   onRelationshipChange: (studentId: string, relationship: string) => void
   isLoading?: boolean
@@ -38,6 +39,7 @@ const relationshipOptions = [
 export default function LinkStudentsGrid({
   students,
   selectedStudents,
+  currentParentId,
   onStudentSelect,
   onRelationshipChange,
   isLoading = false,
@@ -90,6 +92,7 @@ export default function LinkStudentsGrid({
         <StudentItem
           key={std.student.id}
           student={std.student}
+          currentParentId={currentParentId}
           isSelected={true}
           onSelect={onStudentSelect}
           hasDropdownOpen={openDropdowns.has(std.student.id)}
@@ -102,6 +105,7 @@ export default function LinkStudentsGrid({
         <StudentItem
           key={student.id}
           student={student}
+          currentParentId={currentParentId}
           isSelected={false}
           onSelect={onStudentSelect}
         />
@@ -112,6 +116,7 @@ export default function LinkStudentsGrid({
 
 interface StudentItemProps {
   student: User
+  currentParentId: string
   isSelected: boolean
   onSelect: (student: User, selected: boolean) => void
   relationship?: string
@@ -122,6 +127,7 @@ interface StudentItemProps {
 
 const StudentItem = ({
   student,
+  currentParentId,
   isSelected,
   onSelect,
   relationship,
@@ -138,10 +144,13 @@ const StudentItem = ({
   return (
     <Card key={student.id} className={isSelected ? "border-blue-200 bg-blue-50" : ""}>
       <CardContent className="p-2">
-        <label className="flex cursor-pointer items-start gap-3">
+        <label
+          className={`flex items-start gap-3 ${student.parent_id === currentParentId ? "cursor-default" : "cursor-pointer"}`}
+        >
           <div className="flex items-center gap-3">
             <Checkbox
               checked={isSelected}
+              disabled={student.parent_id === currentParentId}
               onCheckedChange={(checked) => onSelect(student, checked as boolean)}
               className="mt-1"
             />
@@ -165,6 +174,15 @@ const StudentItem = ({
               {student.registration_number}
             </p>
             <p className="text-sm text-gray-600">{student.class}</p>
+            <p
+              className={`mt-1 text-xs font-medium ${student.parent_id ? "text-amber-800" : "text-green-800"}`}
+            >
+              {student.parent_id
+                ? student.parent_id === currentParentId
+                  ? "Assigned to this parent"
+                  : `Assigned${student.parent_name ? ` to ${student.parent_name}` : " to another parent"}`
+                : "Unassigned"}
+            </p>
 
             {isSelected && (
               <div className="mt-3">

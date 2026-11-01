@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import EmptyState from "../empty-state"
-import { useGetClassesInfo } from "../../class-management/_hooks/use-classes"
+import { ClassesAPI, type ClassItem } from "@/lib/classes"
 import { ItemLoader } from "../sub-loader"
 import { ItemsError } from "../loading-error"
 import ExistingClasses from "./existing-classes"
-import { useClassesStore, selectClassItems } from "@/store/classes-store"
-import { useShallow } from "zustand/react/shallow"
 import { Button } from "@/components/ui/button"
 import { Archive, RotateCcw } from "lucide-react"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
@@ -18,34 +17,40 @@ const ClassesPageContent = () => {
   const period = useAcademicPeriod("admin-classes")
   const isCurrentSession = period.sessionId === period.activeSession?.id
 
-  // 1. Fetch - include archived if toggle is on
-  // Use high limit to ensure all class arms are loaded (avoid pagination issues)
+  // Each API page contains arm rows before grouping. Fetch every page and merge
+  // groups locally so no class is cut off at a page boundary.
   const {
+    data: classes = [],
     isError,
     error,
     refetch,
-    isLoading: isQueryLoading,
-  } = useGetClassesInfo({
-    includeArchived: showArchived,
-    limit: 1000, // Get all classes/arms at once to avoid missing arms due to pagination
-    page: 1,
-    session_id: period.sessionId,
+    isLoading,
+  } = useQuery({
+    queryKey: ["classes", "management", showArchived, period.sessionId],
+    queryFn: async () => {
+      const grouped = new Map<string, ClassItem>()
+      let page = 1
+      let hasNext = true
+      while (hasNext) {
+        const response = await ClassesAPI.getAll({
+          includeArchived: showArchived,
+          limit: 100,
+          page,
+          session_id: period.sessionId,
+        })
+        for (const item of response.data.items) {
+          const key = `${item.academicSession.id}:${item.name}`
+          const existing = grouped.get(key)
+          if (existing) existing.classes.push(...item.classes)
+          else grouped.set(key, { ...item, classes: [...item.classes] })
+        }
+        hasNext = page * 100 < response.data.pagination.total
+        page += 1
+      }
+      return Array.from(grouped.values())
+    },
+    enabled: !!period.sessionId,
   })
-
-  // 2. Store selection
-  const { classItems, isLoading: isStoreLoading } = useClassesStore(
-    useShallow((state) => ({
-      classItems: selectClassItems(state),
-      isLoading: state.isLoading,
-    }))
-  )
-
-  // No complex filtering logic here yet, passing direct items
-  const classes = classItems
-
-  // Combine loading states
-  // We show loader if query is loading and we have no data yet
-  const isLoading = (isQueryLoading || isStoreLoading) && classes.length === 0
 
   const toggleButton = (
     <Button

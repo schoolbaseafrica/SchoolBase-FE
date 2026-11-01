@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeftIcon, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +12,7 @@ import {
   useGetParent,
   useLinkParentToStudents,
 } from "../../_hooks/use-parents"
-import { useGetStudents } from "@/app/(portal)/admin/students/_hooks/use-students"
+import { StudentsAPI } from "@/lib/students"
 import { SnakeUser as User } from "@/types/user"
 import { toast } from "sonner"
 import LinkStudentsGrid from "./components/link-students-grid"
@@ -30,21 +31,44 @@ export default function LinkParentPage() {
   const [selectedStudents, setSelectedStudents] = useState<SelectedStudent[]>([])
   const [showConfirmation, setShowConfirmation] = useState(false)
 
-  const { data: initLinkedStudents, isLoading: isLoadingLinked } =
-    useGetLinkedStudents(id)
-  const initiallySelected = useMemo(() => {
-    if (!initLinkedStudents) return []
-
-    return initLinkedStudents.map((student) => ({
-      student,
-      relationship: "",
-    }))
-  }, [initLinkedStudents])
-
+  const { isLoading: isLoadingLinked } = useGetLinkedStudents(id)
   const linkParentToStudentsMutation = useLinkParentToStudents(id)
 
   const { data: parent, isLoading: isLoadingParent } = useGetParent(id as string)
-  const { data: allStudents, isLoading: isLoadingStudents } = useGetStudents()
+  const {
+    data: allStudents,
+    isLoading: isLoadingStudents,
+    refetch: refetchStudents,
+  } = useQuery({
+    queryKey: ["students", "available-for-parent-link"],
+    queryFn: async () => {
+      const students: User[] = []
+      let page = 1
+      let total = 0
+      do {
+        const response = await StudentsAPI.getAll({ page, limit: 100 })
+        students.push(...response.data)
+        total = response.meta?.total ?? students.length
+        page += 1
+      } while (students.length < total)
+      return students
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+  })
+
+  const currentSelectedStudents = useMemo(
+    () =>
+      selectedStudents
+        .map((selection) => ({
+          ...selection,
+          student:
+            allStudents?.find((student) => student.id === selection.student.id) ??
+            selection.student,
+        }))
+        .filter((selection) => selection.student.parent_id !== id),
+    [selectedStudents, allStudents, id]
+  )
 
   // Filter students client-side based on search query
   const students = useMemo(() => {
@@ -59,8 +83,13 @@ export default function LinkParentPage() {
   }, [allStudents, searchQuery])
 
   const handleStudentSelect = (student: User, selected: boolean) => {
+    if (student.parent_id === id) return
     if (selected) {
-      setSelectedStudents((prev) => [...prev, { student, relationship: "father" }])
+      setSelectedStudents((prev) =>
+        prev.some((item) => item.student.id === student.id)
+          ? prev
+          : [...prev, { student, relationship: "father" }]
+      )
     } else {
       setSelectedStudents((prev) => prev.filter((s) => s.student.id !== student.id))
     }
@@ -75,29 +104,33 @@ export default function LinkParentPage() {
   }
 
   const handleLinkStudents = async () => {
-    const studentIds = selectedStudents.map((s) => s.student.id)
+    const studentIds = currentSelectedStudents.map((s) => s.student.id)
     try {
-      await linkParentToStudentsMutation.mutateAsync(studentIds)
+      await linkParentToStudentsMutation.mutateAsync({
+        studentIds,
+        allowReassignment: currentSelectedStudents.some(
+          (s) => !!s.student.parent_id && s.student.parent_id !== id
+        ),
+        expectedParentIds: Object.fromEntries(
+          currentSelectedStudents.map((s) => [s.student.id, s.student.parent_id ?? null])
+        ),
+      })
       toast.success(
         `Successfully linked ${selectedStudents.length} student${selectedStudents.length > 1 ? "s" : ""} to parent`
       )
-      router.push(`/admin/parents/${id}`)
-    } catch {
-      toast.error("Failed to link students. Please try again.")
+      setSelectedStudents([])
+      await refetchStudents()
+    } catch (error) {
+      // The mutation displays the API error; keep the confirmation open.
+      throw error
     }
   }
 
   const filteredStudents =
     students?.filter(
       (student) =>
-        !selectedStudents.some((selected) => selected.student.id === student.id)
+        !currentSelectedStudents.some((selected) => selected.student.id === student.id)
     ) || []
-
-  useEffect(() => {
-    if (initiallySelected) {
-      setSelectedStudents(initiallySelected)
-    }
-  }, [initiallySelected])
 
   if (isLoadingParent || isLoadingLinked) {
     return (
@@ -147,7 +180,9 @@ export default function LinkParentPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Link Parent to Student</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Assign Students to Parent
+              </h1>
               <p className="text-gray-600">
                 Linking students to {parent.first_name} {parent.last_name}
               </p>
@@ -167,11 +202,11 @@ export default function LinkParentPage() {
         </div>
 
         {/* Selected Students Summary */}
-        {selectedStudents.length > 0 && (
+        {currentSelectedStudents.length > 0 && (
           <div className="mb-6 flex items-center justify-between rounded-lg bg-blue-50 px-4 py-2">
             <h3 className="font-semibold text-blue-900">
-              {selectedStudents.length} student{selectedStudents.length > 1 ? "s" : ""}{" "}
-              selected for linking
+              {currentSelectedStudents.length} student
+              {currentSelectedStudents.length > 1 ? "s" : ""} selected for linking
             </h3>
             <Button variant="outline" className="mt-2 h-8" onClick={handleClearSelection}>
               <span className="text-sm">Clear Selection</span>
@@ -185,7 +220,8 @@ export default function LinkParentPage() {
           <div className="block lg:hidden">
             <LinkStudentsGrid
               students={filteredStudents}
-              selectedStudents={selectedStudents}
+              selectedStudents={currentSelectedStudents}
+              currentParentId={id}
               onStudentSelect={handleStudentSelect}
               onRelationshipChange={handleRelationshipChange}
               isLoading={isLoadingStudents}
@@ -196,7 +232,8 @@ export default function LinkParentPage() {
           <div className="hidden lg:block">
             <LinkStudentsTable
               students={filteredStudents}
-              selectedStudents={selectedStudents}
+              selectedStudents={currentSelectedStudents}
+              currentParentId={id}
               onStudentSelect={handleStudentSelect}
               onRelationshipChange={handleRelationshipChange}
               isLoading={isLoadingStudents}
@@ -209,10 +246,21 @@ export default function LinkParentPage() {
               Cancel
             </Button>
             <Button
-              onClick={() => setShowConfirmation(true)}
-              disabled={selectedStudents.length === 0}
+              onClick={async () => {
+                const refreshed = await refetchStudents()
+                if (refreshed.isError) {
+                  toast.error("Could not refresh student assignments. Please try again.")
+                  return
+                }
+                setShowConfirmation(true)
+              }}
+              disabled={currentSelectedStudents.length === 0}
             >
-              Link Parent and Students
+              {currentSelectedStudents.some(
+                (s) => s.student.parent_id && s.student.parent_id !== id
+              )
+                ? "Review assignment changes"
+                : "Review student assignment"}
             </Button>
           </div>
         </div>
@@ -223,13 +271,13 @@ export default function LinkParentPage() {
           onOpenChange={setShowConfirmation}
           onConfirm={handleLinkStudents}
           parent={parent}
-          selectedStudents={selectedStudents}
+          selectedStudents={currentSelectedStudents}
         />
       </div>
     </div>
   )
 
   function handleClearSelection() {
-    setSelectedStudents(initiallySelected || [])
+    setSelectedStudents([])
   }
 }

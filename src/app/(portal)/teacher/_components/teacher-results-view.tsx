@@ -320,6 +320,7 @@ export function TeacherResultsView({
       {/* Grade editing is available only for a valid class, subject, and term. */}
       {canShowResults && !studentsError && !submissionError && (
         <StudentsTable
+          key={`${academicSessionId}:${selectedClass}:${selectedSubject}:${selectedTerm}`}
           students={students}
           grades={allGrades}
           onGradeUpdate={handleGradeUpdate}
@@ -328,6 +329,8 @@ export function TeacherResultsView({
           subjectId={selectedSubject}
           termId={selectedTerm}
           academicSessionId={academicSessionId}
+          existingSubmissionId={existingSubmission?.id}
+          submissionStatus={existingSubmission?.status}
         />
       )}
     </div>

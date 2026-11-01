@@ -64,6 +64,14 @@ export default function LinkConfirmationDialog({
             {selectedStudents.length > 1 ? "s" : ""} to {parent.first_name}{" "}
             {parent.last_name}.
           </DialogDescription>
+          {selectedStudents.some(
+            ({ student }) => student.parent_id && student.parent_id !== parent.id
+          ) && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              Reassigning a student removes their link to the previous parent. Confirm
+              only if that change is intended.
+            </p>
+          )}
         </DialogHeader>
 
         <div className="max-h-60 space-y-3 overflow-y-auto py-4">
@@ -79,6 +87,14 @@ export default function LinkConfirmationDialog({
                 <p className="text-sm text-gray-600">
                   {student.registration_number} {/*  • {student.class}  */}
                 </p>
+                {student.parent_id && student.parent_id !== parent.id && (
+                  <p className="text-xs font-medium text-amber-800">
+                    Currently assigned
+                    {student.parent_name
+                      ? ` to ${student.parent_name}`
+                      : " to another parent"}
+                  </p>
+                )}
               </div>
               <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
                 {relationshipLabels[relationship] || relationship}
@@ -102,7 +118,7 @@ export default function LinkConfirmationDialog({
                 Linking...
               </>
             ) : (
-              `Link ${selectedStudents.length} Student${selectedStudents.length > 1 ? "s" : ""}`
+              `Confirm ${selectedStudents.length} Assignment${selectedStudents.length > 1 ? "s" : ""}`
             )}
           </Button>
         </DialogFooter>

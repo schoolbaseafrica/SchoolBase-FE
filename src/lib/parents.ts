@@ -78,12 +78,17 @@ export const ParentsAPI = {
       true
     ),
 
-  linkToStudents: (id: string, student_ids: string[]) =>
+  linkToStudents: (
+    id: string,
+    student_ids: string[],
+    allow_reassignment = false,
+    expected_parent_ids?: Record<string, string | null>
+  ) =>
     apiFetch<ResponsePack<LinkedResponse>>(
       `/parents/${id}/link-students`,
       {
         method: "POST",
-        data: { student_ids },
+        data: { student_ids, allow_reassignment, expected_parent_ids },
       },
       true
     ),

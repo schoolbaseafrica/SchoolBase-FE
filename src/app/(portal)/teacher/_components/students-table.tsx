@@ -24,6 +24,8 @@ interface StudentsTableProps {
   subjectId: string
   termId: string
   academicSessionId: string
+  existingSubmissionId?: string
+  submissionStatus?: string
 }
 
 export function StudentsTable({
@@ -35,9 +37,12 @@ export function StudentsTable({
   subjectId,
   termId,
   academicSessionId,
+  existingSubmissionId,
+  submissionStatus,
 }: StudentsTableProps) {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [createdSubmissionId, setCreatedSubmissionId] = useState<string | undefined>()
   const [isLoadingData, setIsLoadingData] = useState(false)
 
   // Create a filter key that changes when filters change
@@ -161,6 +166,10 @@ export function StudentsTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditClick(student)}
+                          disabled={
+                            submissionStatus === "submitted" ||
+                            submissionStatus === "approved"
+                          }
                           className="h-8 w-8 p-0"
                         >
                           <Edit className="h-4 w-4" />
@@ -186,6 +195,8 @@ export function StudentsTable({
           subjectId={subjectId}
           termId={termId}
           academicSessionId={academicSessionId}
+          existingSubmissionId={existingSubmissionId ?? createdSubmissionId}
+          onSubmissionCreated={setCreatedSubmissionId}
           onSave={(data) => handleSaveGrade(selectedStudent.id, data)}
         />
       )}

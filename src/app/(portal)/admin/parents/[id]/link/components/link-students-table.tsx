@@ -30,6 +30,7 @@ interface SelectedStudent {
 interface LinkStudentsTableProps {
   students: User[]
   selectedStudents: SelectedStudent[]
+  currentParentId: string
   onStudentSelect: (student: User, selected: boolean) => void
   onRelationshipChange: (studentId: string, relationship: string) => void
   isLoading?: boolean
@@ -45,6 +46,7 @@ const relationshipOptions = [
 export default function LinkStudentsTable({
   students,
   selectedStudents,
+  currentParentId,
   onStudentSelect,
   onRelationshipChange,
   isLoading = false,
@@ -72,6 +74,7 @@ export default function LinkStudentsTable({
               <TableHead className="w-12">S/N</TableHead>
               <TableHead>Student</TableHead>
               <TableHead>Reg Number</TableHead>
+              <TableHead>Parent assignment</TableHead>
               <TableHead>Class</TableHead>
               <TableHead>Relationship</TableHead>
             </TableRow>
@@ -124,6 +127,7 @@ export default function LinkStudentsTable({
             <TableHead className="w-12">S/N</TableHead>
             <TableHead>Student</TableHead>
             <TableHead>Reg Number</TableHead>
+            <TableHead>Parent assignment</TableHead>
             {/* <TableHead>Class</TableHead> */}
             <TableHead>Relationship</TableHead>
           </TableRow>
@@ -134,6 +138,7 @@ export default function LinkStudentsTable({
               index={index}
               key={std.student.id}
               student={std.student}
+              currentParentId={currentParentId}
               isSelected={true}
               onSelect={onStudentSelect}
               hasDropdownOpen={openDropdowns.has(std.student.id)}
@@ -147,6 +152,7 @@ export default function LinkStudentsTable({
               key={student.id}
               index={index}
               student={student}
+              currentParentId={currentParentId}
               isSelected={false}
               onSelect={onStudentSelect}
             />
@@ -160,6 +166,7 @@ export default function LinkStudentsTable({
 interface StudentItemProps {
   index: number
   student: User
+  currentParentId: string
   isSelected: boolean
   onSelect: (student: User, selected: boolean) => void
   relationship?: string
@@ -171,6 +178,7 @@ interface StudentItemProps {
 const StudentItem = ({
   index,
   student,
+  currentParentId,
   isSelected,
   onSelect,
   relationship,
@@ -187,12 +195,21 @@ const StudentItem = ({
   return (
     <TableRow
       key={student.id}
-      className={isSelected ? "cursor-pointer bg-blue-50" : "cursor-pointer"}
-      onClick={() => onSelect(student, !isSelected)} // clicking row toggles selection
+      className={
+        student.parent_id === currentParentId
+          ? "bg-gray-50"
+          : isSelected
+            ? "cursor-pointer bg-blue-50"
+            : "cursor-pointer"
+      }
+      onClick={() => {
+        if (student.parent_id !== currentParentId) onSelect(student, !isSelected)
+      }}
     >
       <TableCell onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={isSelected}
+          disabled={student.parent_id === currentParentId}
           onCheckedChange={(checked) => onSelect(student, checked as boolean)}
         />
       </TableCell>
@@ -214,6 +231,19 @@ const StudentItem = ({
         </div>
       </TableCell>
       <TableCell>{student.registration_number}</TableCell>
+      <TableCell>
+        {student.parent_id ? (
+          <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900">
+            {student.parent_id === currentParentId
+              ? "Assigned to this parent"
+              : `Assigned${student.parent_name ? ` to ${student.parent_name}` : " to another parent"}`}
+          </span>
+        ) : (
+          <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-800">
+            Unassigned
+          </span>
+        )}
+      </TableCell>
       {/* <TableCell>{student.class}</TableCell> */}
       <TableCell onClick={(e) => e.stopPropagation()}>
         {isSelected ? (

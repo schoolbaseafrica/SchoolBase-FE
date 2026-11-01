@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { calculateGrade } from "@/lib/results"
-import { useSaveDraft, useUpdateGrade } from "../_hooks/use-results" // Import useUpdateGrade
+import { useSaveDraft, useUpdateGrade, useUpdateSubmission } from "../_hooks/use-results"
 import { toast } from "sonner"
 
 interface GradeFormDialogProps {
@@ -22,6 +22,7 @@ interface GradeFormDialogProps {
   termId: string
   academicSessionId: string
   existingSubmissionId?: string
+  onSubmissionCreated?: (id: string) => void
 }
 
 export function GradeFormDialog({
@@ -34,6 +35,8 @@ export function GradeFormDialog({
   subjectId,
   termId,
   academicSessionId,
+  existingSubmissionId,
+  onSubmissionCreated,
 }: GradeFormDialogProps) {
   const [formData, setFormData] = useState({
     ca_score: grade?.ca_score?.toString() || "",
@@ -48,6 +51,7 @@ export function GradeFormDialog({
 
   const saveDraftMutation = useSaveDraft()
   const updateGradeMutation = useUpdateGrade() // Add update mutation
+  const updateSubmissionMutation = useUpdateSubmission()
 
   const total = useMemo(() => {
     const ca = parseInt(formData.ca_score) || 0
@@ -124,8 +128,14 @@ export function GradeFormDialog({
             comment: formData.comment || null,
           },
         })
+      } else if (existingSubmissionId) {
+        await updateSubmissionMutation.mutateAsync({
+          id: existingSubmissionId,
+          data: { grades: submissionData.grades },
+        })
       } else {
-        await saveDraftMutation.mutateAsync(submissionData)
+        const created = await saveDraftMutation.mutateAsync(submissionData)
+        onSubmissionCreated?.(created.id)
       }
 
       // Also update local state
