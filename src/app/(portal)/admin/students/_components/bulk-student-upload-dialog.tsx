@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, X, Loader2 } from "lucide-react"
+import { Download, FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { StudentsAPI } from "@/lib/students"
@@ -171,13 +171,33 @@ export default function BulkStudentUploadDialog({
             (optional), Email, Phone, Registration Number, Date of Birth, Gender, Home
             Address (optional), Password, Class (optional), Arm (optional)
             <br />
-            <strong>Note:</strong> Registration Number, Middle Name, Home Address, Class,
-            and Arm are optional. If Class is provided, students will be assigned to that
-            class when it exists. Missing classes can be created or skipped.
+            <strong>Note:</strong> Email, Registration Number, Middle Name, Home Address,
+            Class, and Arm are optional. If Class is provided, students will be assigned
+            to that class when it exists. Missing classes can be created or skipped.
+            <br />
+            <strong>Date of Birth:</strong> Use YYYY-MM-DD, for example 2012-05-14.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1">
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href="/templates/student-bulk-upload-sample.csv"
+                download="student-bulk-upload-sample.csv"
+              >
+                <Download /> Download sample CSV
+              </a>
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Replace the example student, password, and class details before uploading.
+              Leave optional columns blank when they do not apply.
+            </p>
+            <p className="text-muted-foreground text-xs">
+              If editing in a spreadsheet, format Phone, Registration Number, and Date of
+              Birth as text so leading zeros and YYYY-MM-DD dates are preserved.
+            </p>
+          </div>
           {uploadIssues.length > 0 && (
             <div
               role="alert"
