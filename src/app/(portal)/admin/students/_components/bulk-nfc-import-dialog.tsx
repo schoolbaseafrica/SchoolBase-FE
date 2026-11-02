@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, FileText, X, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Download, Upload, FileText, X, AlertCircle, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { StudentsAPI } from "@/lib/students"
@@ -117,11 +117,27 @@ export default function BulkNfcImportDialog({
             <br />
             <strong>Note:</strong> A generated ID must be written to an NFC text tag
             before the card can be scanned. For existing cards, enter the value read by
-            the mobile app.
+            the mobile app. Student Name is for your reference; the registration number
+            identifies the student.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1">
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href="/templates/nfc-card-bulk-import-sample.csv"
+                download="nfc-card-bulk-import-sample.csv"
+              >
+                <Download /> Download sample CSV
+              </a>
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Replace both example registration numbers with real student numbers and
+              replace the example card ID with the value on that card. Use GENERATE to
+              create a new ID, then write it to the NFC tag before scanning.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="csv-file">CSV File</Label>
             <div className="flex items-center gap-2">
@@ -195,16 +211,6 @@ export default function BulkNfcImportDialog({
               </AlertDescription>
             </Alert>
           )}
-
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
-            <strong>CSV Format Example:</strong>
-            <pre className="mt-1 text-xs">
-              {`Registration Number,Student Name,NFC Card ID
-REG-2025-0014,John Doe,NFC-ABC123XYZ456
-REG-2025-0015,Jane Smith,GENERATE
-REG-2025-0016,Bob Johnson,`}
-            </pre>
-          </div>
         </div>
 
         <DialogFooter>

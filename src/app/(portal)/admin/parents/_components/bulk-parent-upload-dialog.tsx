@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, X, Loader2 } from "lucide-react"
+import { Download, FileText, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { ParentsAPI } from "@/lib/parents"
@@ -124,10 +124,27 @@ export default function BulkParentUploadDialog({
             <br />
             <strong>Note:</strong> Parent accounts receive a system ID. Custom Parent IDs
             are not supported by this import.
+            <br />
+            <strong>Date of Birth:</strong> Use YYYY-MM-DD, for example 1985-05-15.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1">
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href="/templates/parent-bulk-upload-sample.csv"
+                download="parent-bulk-upload-sample.csv"
+              >
+                <Download /> Download sample CSV
+              </a>
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Replace the example parent details before uploading. Leave optional fields
+              blank. Format Phone and Date of Birth as text in a spreadsheet to preserve
+              leading zeros and YYYY-MM-DD dates.
+            </p>
+          </div>
           {uploadIssues.length > 0 && (
             <div
               role="alert"

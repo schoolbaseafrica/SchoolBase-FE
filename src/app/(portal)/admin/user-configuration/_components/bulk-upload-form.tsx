@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { FileText, Trash2, Upload } from "lucide-react"
+import { Download, FileText, Trash2, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -130,6 +130,21 @@ export function BulkUploadForm() {
             </SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-1">
+        <Button variant="outline" size="sm" asChild>
+          <a
+            href="/templates/staff-invitation-bulk-upload-sample.csv"
+            download="staff-invitation-bulk-upload-sample.csv"
+          >
+            <Download /> Download sample CSV
+          </a>
+        </Button>
+        <p className="text-muted-foreground text-xs">
+          Use Full Name,Email in that order. Replace the example address before uploading;
+          choose Admin or Teacher above for every invite in the file.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">
