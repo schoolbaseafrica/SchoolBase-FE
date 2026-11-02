@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "check-types": "tsc --noEmit",
+    "test:promotion-classes": "node scripts/test-promotion-class-pages.mjs",
     "commitlint": "commitlint --edit",
     "prepare": "husky"
   },

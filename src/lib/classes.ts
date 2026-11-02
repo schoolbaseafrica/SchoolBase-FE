@@ -50,6 +50,12 @@ export interface GroupedClassResponse {
 }
 
 export const ClassesAPI = {
+  getPromotionStatus: (sourceSessionId: string, targetSessionId: string) =>
+    apiFetch<ResponsePack<PromotionClassStatus[]>>(
+      "/classes/promotion/status",
+      { params: { sourceSessionId, targetSessionId } },
+      true
+    ),
   getAll: (params?: {
     page?: number
     limit?: number
@@ -57,6 +63,51 @@ export const ClassesAPI = {
     includeAllSessions?: boolean
     session_id?: string
   }) => apiFetch<ResponsePack<GroupedClassResponse>>("/classes", { params }, true),
+
+  getAllForSession: async (sessionId: string): Promise<ClassItem[]> => {
+    const groups: ClassItem[] = []
+    let page = 1
+    let expectedTotal: number | null = null
+    while (true) {
+      const response = await ClassesAPI.getAll({
+        session_id: sessionId,
+        includeArchived: false,
+        page,
+        limit: 100,
+      })
+      const result = response.data
+      const pagination = result?.pagination
+      if (
+        !Array.isArray(result?.items) ||
+        !pagination ||
+        pagination.page !== page ||
+        !Number.isSafeInteger(pagination.total) ||
+        pagination.total < 0 ||
+        !Number.isSafeInteger(pagination.total_pages) ||
+        pagination.total_pages < 0 ||
+        (expectedTotal !== null && pagination.total !== expectedTotal) ||
+        result.items.some((group) => group.academicSession?.id !== sessionId)
+      ) {
+        throw new Error("Could not verify the complete class list for this session")
+      }
+      expectedTotal = pagination.total
+      groups.push(...result.items)
+      if (page >= pagination.total_pages) {
+        const classIds = groups.flatMap((group) => group.classes.map((cls) => cls.id))
+        if (
+          classIds.length !== expectedTotal ||
+          new Set(classIds).size !== classIds.length
+        ) {
+          throw new Error("Class list changed while it was loading")
+        }
+        return groups
+      }
+      if (result.items.length === 0) {
+        throw new Error("Class list ended before all pages were loaded")
+      }
+      page += 1
+    }
+  },
 
   create: (body: CreateClassData) =>
     apiFetch<ResponsePack<ClassItem>>("/classes", { method: "POST", data: body }, true),
@@ -242,6 +293,13 @@ export const ClassesAPI = {
         failed: number
       }[]
     }>("/classes/promotion/execute", { method: "POST", data: body }, true),
+}
+
+export type PromotionClassStatus = {
+  sourceClassId: string
+  total: number
+  alreadyInTarget: number
+  remaining: number
 }
 
 export type PromotionMapping = {
