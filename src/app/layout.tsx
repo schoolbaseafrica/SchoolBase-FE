@@ -66,13 +66,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  icons: {
-    icon: [
-      { url: defaultSchoolProfile.logo.favicon, type: "image/png" },
-      { url: defaultSchoolProfile.logo.mark, type: "image/svg+xml" },
-    ],
-    apple: [{ url: defaultSchoolProfile.logo.full, sizes: "180x180", type: "image/png" }],
-  },
   category: "education",
   formatDetection: {
     email: false,

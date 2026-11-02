@@ -47,6 +47,15 @@ function loadConfigForCurrentHost(): RuntimeConfig | null {
     const raw = window.localStorage.getItem(cacheKey())
     if (!raw) return null
     const parsed = JSON.parse(raw) as { config?: RuntimeConfig }
+    const school = parsed.config?.school
+    if (
+      typeof school?.name !== "string" ||
+      !school.name.trim() ||
+      typeof school.primaryColor !== "string" ||
+      !/^#[0-9a-f]{6}$/i.test(school.primaryColor)
+    ) {
+      return null
+    }
     return parsed.config ?? null
   } catch {
     return null
@@ -88,13 +97,29 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
       // The runtime endpoints belong to this container and hostname. Browser
       // build-time values are intentionally ignored because the same image is
       // shared by multiple schools.
+      const cachedConfig = loadConfigForCurrentHost()
+      const cachedProfile = buildSchoolProfileFromRuntimeConfig(
+        cachedConfig?.school ?? null
+      )
+      // Restore the last valid branding before waiting for a slow or unavailable
+      // backend. The cache key includes the hostname, so schools stay isolated.
+      if (cachedProfile) {
+        set({ school: cachedProfile, isConfigLoading: false })
+      }
+
       const apiConfig = await loadConfigFromAPI()
 
       if (apiConfig?.school) {
-        const cachedConfig = loadConfigForCurrentHost()
         const effectiveSchool = apiConfig.school.websiteLayout
           ? apiConfig.school
-          : { ...cachedConfig?.school, ...apiConfig.school }
+          : {
+              ...cachedConfig?.school,
+              ...Object.fromEntries(
+                Object.entries(apiConfig.school).filter(
+                  ([, value]) => value !== undefined && value !== null && value !== ""
+                )
+              ),
+            }
         const effectiveConfig = { ...apiConfig, school: effectiveSchool }
         const schoolProfile = buildSchoolProfileFromRuntimeConfig(effectiveSchool)
         if (schoolProfile) {
@@ -106,10 +131,6 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
 
       // A cached config is scoped to the exact hostname, preventing one
       // school's branding from appearing on another school's domain.
-      const cachedConfig = loadConfigForCurrentHost()
-      const cachedProfile = buildSchoolProfileFromRuntimeConfig(
-        cachedConfig?.school ?? null
-      )
       if (cachedProfile) {
         set({ school: cachedProfile, isConfigLoading: false })
         return
@@ -120,6 +141,13 @@ export const useSchoolStore = create<SchoolState>((set, get) => ({
         isConfigLoading: false,
       })
     } catch (error) {
+      const cachedProfile = buildSchoolProfileFromRuntimeConfig(
+        loadConfigForCurrentHost()?.school ?? null
+      )
+      if (cachedProfile) {
+        set({ school: cachedProfile, configError: null, isConfigLoading: false })
+        return
+      }
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load configuration"
       console.error("Error loading school config:", error)

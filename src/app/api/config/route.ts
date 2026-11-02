@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { readSchoolBranding } from "@/lib/server/school-branding-cache"
 
 /**
  * API route that serves school configuration
@@ -10,19 +11,30 @@ import { NextResponse } from "next/server"
  */
 export async function GET() {
   try {
+    const savedSchool = await readSchoolBranding()
     // Read from environment variables (set at container startup)
     // These can be SCHOOL_* or NEXT_PUBLIC_SCHOOL_* (both work server-side)
     const config = {
       school: {
-        name: process.env.SCHOOL_NAME || process.env.NEXT_PUBLIC_SCHOOL_NAME,
+        ...savedSchool,
+        name:
+          savedSchool?.name ||
+          process.env.SCHOOL_NAME ||
+          process.env.NEXT_PUBLIC_SCHOOL_NAME,
         shortName:
           process.env.SCHOOL_SHORT_NAME || process.env.NEXT_PUBLIC_SCHOOL_SHORT_NAME,
-        logoUrl: process.env.SCHOOL_LOGO_URL || process.env.NEXT_PUBLIC_SCHOOL_LOGO_URL,
+        logoUrl:
+          savedSchool?.logoUrl ||
+          process.env.SCHOOL_LOGO_URL ||
+          process.env.NEXT_PUBLIC_SCHOOL_LOGO_URL,
         logoMark:
           process.env.SCHOOL_LOGO_MARK || process.env.NEXT_PUBLIC_SCHOOL_LOGO_MARK,
         faviconUrl:
-          process.env.SCHOOL_FAVICON_URL || process.env.NEXT_PUBLIC_SCHOOL_FAVICON_URL,
+          savedSchool?.faviconUrl ||
+          process.env.SCHOOL_FAVICON_URL ||
+          process.env.NEXT_PUBLIC_SCHOOL_FAVICON_URL,
         primaryColor:
+          savedSchool?.primaryColor ||
           process.env.SCHOOL_PRIMARY_COLOR ||
           process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_COLOR ||
           "#c7363f",
@@ -30,10 +42,13 @@ export async function GET() {
           process.env.SCHOOL_PRIMARY_HOVER ||
           process.env.NEXT_PUBLIC_SCHOOL_PRIMARY_HOVER,
         secondaryColor:
+          savedSchool?.secondaryColor ||
           process.env.SCHOOL_SECONDARY_COLOR ||
           process.env.NEXT_PUBLIC_SCHOOL_SECONDARY_COLOR,
         accentColor:
-          process.env.SCHOOL_ACCENT_COLOR || process.env.NEXT_PUBLIC_SCHOOL_ACCENT_COLOR,
+          savedSchool?.accentColor ||
+          process.env.SCHOOL_ACCENT_COLOR ||
+          process.env.NEXT_PUBLIC_SCHOOL_ACCENT_COLOR,
         supportEmail:
           process.env.SCHOOL_SUPPORT_EMAIL ||
           process.env.NEXT_PUBLIC_SCHOOL_SUPPORT_EMAIL,

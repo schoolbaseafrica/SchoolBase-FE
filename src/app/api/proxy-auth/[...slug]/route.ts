@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { proxyAuthRequest } from "../../auth/_proxy"
 import { isBinaryProxyResponse } from "@/lib/proxy-media-type"
+import { saveSchoolBranding } from "@/lib/server/school-branding-cache"
 
 async function methodHandler(
   req: Request,
@@ -67,6 +68,19 @@ async function methodHandler(
   }
 
   const body = await backendRes.text() // read once safely
+
+  if (
+    req.method === "GET" &&
+    resolvedParams.slug.join("/") === "school" &&
+    backendRes.ok &&
+    body
+  ) {
+    try {
+      await saveSchoolBranding(JSON.parse(body))
+    } catch {
+      // A malformed school response must not poison the last valid snapshot.
+    }
+  }
 
   // Handle empty responses for other methods too
   if (!body && backendRes.status === 200) {

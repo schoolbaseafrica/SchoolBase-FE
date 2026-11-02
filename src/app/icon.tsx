@@ -1,5 +1,8 @@
 import { ImageResponse } from "next/og"
 import { defaultSchoolProfile } from "@/data/school-profile"
+import { readSchoolBranding } from "@/lib/server/school-branding-cache"
+
+export const dynamic = "force-dynamic"
 
 export const size = {
   width: 64,
@@ -8,10 +11,31 @@ export const size = {
 
 export const contentType = "image/png"
 
-export default function Icon() {
-  // For static generation, we need to use a simple colored icon
-  // ImageResponse doesn't support relative paths during build
-  const schoolName = defaultSchoolProfile.shortName || "School"
+export default async function Icon() {
+  const savedSchool = await readSchoolBranding()
+  const configuredIcon =
+    savedSchool?.faviconUrl ||
+    savedSchool?.logoUrl ||
+    process.env.SCHOOL_FAVICON_URL ||
+    process.env.SCHOOL_LOGO_URL
+  if (configuredIcon) {
+    try {
+      const url = new URL(configuredIcon)
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        return Response.redirect(url, 307)
+      }
+    } catch {
+      // An invalid URL must not break the favicon route.
+    }
+  }
+
+  const schoolName =
+    savedSchool?.name ||
+    process.env.SCHOOL_NAME ||
+    defaultSchoolProfile.shortName ||
+    "School"
+  const schoolColor =
+    savedSchool?.primaryColor || process.env.SCHOOL_PRIMARY_COLOR || "#DC2626"
 
   return new ImageResponse(
     (
@@ -31,7 +55,7 @@ export default function Icon() {
           style={{
             fontSize: 32,
             fontWeight: "bold",
-            color: "#000000",
+            color: schoolColor,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

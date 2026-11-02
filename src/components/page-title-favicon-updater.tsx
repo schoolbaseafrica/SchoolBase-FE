@@ -36,7 +36,7 @@ export function PageTitleFaviconUpdater() {
     if (existingDynamicFavicon) {
       try {
         existingDynamicFavicon.remove()
-      } catch (e) {
+      } catch {
         // Ignore errors if element was already removed
       }
     }
@@ -51,18 +51,6 @@ export function PageTitleFaviconUpdater() {
     const iconUrl = faviconUrl || logoUrl || "/assets/schoolbase-mark.png"
     favicon.href = iconUrl
 
-    // Add cache-busting query parameter for external logos to ensure they refresh
-    if (iconUrl.startsWith("http://") || iconUrl.startsWith("https://")) {
-      try {
-        const url = new URL(iconUrl)
-        url.searchParams.set("v", Math.floor(Date.now() / 60000).toString())
-        favicon.href = url.toString()
-      } catch (e) {
-        // If URL parsing fails, use original URL
-        favicon.href = iconUrl
-      }
-    }
-
     document.head.appendChild(favicon)
 
     // Also update Apple touch icon if logo is available
@@ -72,7 +60,7 @@ export function PageTitleFaviconUpdater() {
     if (existingDynamicAppleIcon) {
       try {
         existingDynamicAppleIcon.remove()
-      } catch (e) {
+      } catch {
         // Ignore errors if element was already removed
       }
     }
@@ -84,19 +72,7 @@ export function PageTitleFaviconUpdater() {
       appleIcon.type = "image/png"
       appleIcon.setAttribute("data-favicon-id", APPLE_ICON_ID)
 
-      let appleIconUrl = logoUrl
-      if (appleIconUrl.startsWith("http://") || appleIconUrl.startsWith("https://")) {
-        try {
-          const url = new URL(appleIconUrl)
-          url.searchParams.set("v", Math.floor(Date.now() / 60000).toString())
-          appleIconUrl = url.toString()
-        } catch (e) {
-          // If URL parsing fails, use original URL
-          appleIconUrl = logoUrl
-        }
-      }
-
-      appleIcon.href = appleIconUrl
+      appleIcon.href = logoUrl
       document.head.appendChild(appleIcon)
     }
   }, [schoolName, schoolShortName, faviconUrl, logoUrl, isConfigLoading])
