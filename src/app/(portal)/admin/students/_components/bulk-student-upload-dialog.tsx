@@ -194,8 +194,10 @@ export default function BulkStudentUploadDialog({
               Leave optional columns blank when they do not apply.
             </p>
             <p className="text-muted-foreground text-xs">
-              If editing in a spreadsheet, format Phone, Registration Number, and Date of
-              Birth as text so leading zeros and YYYY-MM-DD dates are preserved.
+              Keep phone and registration numbers exactly as entered, including leading
+              zeros. Enter dates as YYYY-MM-DD. CSV files have no cell formatting; if you
+              open this file in a spreadsheet, import those columns as text so it does not
+              change their values.
             </p>
           </div>
           {uploadIssues.length > 0 && (

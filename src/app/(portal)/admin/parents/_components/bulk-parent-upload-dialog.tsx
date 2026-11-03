@@ -141,8 +141,10 @@ export default function BulkParentUploadDialog({
             </Button>
             <p className="text-muted-foreground text-xs">
               Replace the example parent details before uploading. Leave optional fields
-              blank. Format Phone and Date of Birth as text in a spreadsheet to preserve
-              leading zeros and YYYY-MM-DD dates.
+              blank. Keep phone numbers exactly as entered, including leading zeros, and
+              enter dates as YYYY-MM-DD. CSV files have no cell formatting; if you open
+              this file in a spreadsheet, import those columns as text so it does not
+              change their values.
             </p>
           </div>
           {uploadIssues.length > 0 && (
