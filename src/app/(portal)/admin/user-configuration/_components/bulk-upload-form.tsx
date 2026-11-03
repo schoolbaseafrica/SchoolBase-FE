@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { Download, FileText, Trash2, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { parseCsv } from "@/lib/csv"
 import {
   Select,
   SelectContent,
@@ -38,47 +39,62 @@ export function BulkUploadForm() {
   const inputRef = useRef<HTMLInputElement>(null)
   const { mutate: uploadCsv, isPending } = useBulkInviteUser()
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = event.target.files?.[0]
     if (!uploadedFile) return
 
     setFile(uploadedFile)
     setErrors([])
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const lines = text.split("\n")
+    setParsedData([])
+    if (!uploadedFile.name.toLowerCase().endsWith(".csv")) {
+      setErrors(["Choose a .csv file. Example: staff-invitation-bulk-upload-sample.csv"])
+      return
+    }
+    try {
+      const rows = parseCsv(await uploadedFile.text())
       const data: ParsedUser[] = []
       const newErrors: string[] = []
-
-      // Simple parsing: assume header is row 0, data starts row 1
-      // Format: Name, Email
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (!line) continue
-        const [name, email] = line.split(",")
-
-        const trimmedName = name ? name.trim() : ""
-        const trimmedEmail = email ? email.trim() : ""
-
-        if (!trimmedName) {
-          newErrors.push(`Row ${i + 1}: Missing Fullname`)
-        }
-
+      const seenEmails = new Set<string>()
+      const headings = rows[0]?.map((value) =>
+        value
+          .trim()
+          .replace(/^\uFEFF/, "")
+          .toLowerCase()
+      )
+      if (
+        headings?.length !== 2 ||
+        (headings[0] !== "full name" && headings[0] !== "full_name") ||
+        headings[1] !== "email"
+      ) {
+        setErrors(["Expected headings: Full Name,Email. Download the sample CSV above."])
+        return
+      }
+      if (rows.length === 1)
+        newErrors.push("Add at least one invite. Example: Ada Okafor,ada@example.com")
+      for (const [index, row] of rows.slice(1).entries()) {
+        const trimmedName = row[0]?.trim() || ""
+        const trimmedEmail = row[1]?.trim() || ""
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-          newErrors.push(`Row ${i + 1}: Invalid email format`)
+        if (row.length !== 2 || !trimmedName || !emailRegex.test(trimmedEmail)) {
+          newErrors.push(
+            `Row ${index + 2}: Use Full Name,Email. Example: Ada Okafor,ada@example.com`
+          )
+          continue
         }
-
-        if (trimmedName && trimmedEmail && emailRegex.test(trimmedEmail)) {
-          data.push({ name: trimmedName, email: trimmedEmail })
+        if (seenEmails.has(trimmedEmail.toLowerCase())) {
+          newErrors.push(
+            `Row ${index + 2}: Email is duplicated in this CSV. Use each email once.`
+          )
+          continue
         }
+        seenEmails.add(trimmedEmail.toLowerCase())
+        data.push({ name: trimmedName, email: trimmedEmail })
       }
       setParsedData(data)
       setErrors(newErrors)
+    } catch (error) {
+      setErrors([error instanceof Error ? error.message : "Could not read CSV file"])
     }
-    reader.readAsText(uploadedFile)
   }
 
   const handleDelete = () => {

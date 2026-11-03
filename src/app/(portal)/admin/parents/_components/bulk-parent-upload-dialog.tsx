@@ -73,7 +73,7 @@ export default function BulkParentUploadDialog({
         toast.success(`Successfully uploaded ${result.successful} parents`)
       } else {
         toast.warning(
-          `Upload completed: ${result.successful} successful, ${result.failed} failed`
+          `Upload completed: ${result.successful} successful, ${result.failed} failed. Review the row issues below.`
         )
       }
 

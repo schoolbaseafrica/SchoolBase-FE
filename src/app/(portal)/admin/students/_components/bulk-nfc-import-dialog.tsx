@@ -43,6 +43,7 @@ export default function BulkNfcImportDialog({
       error?: string
     }>
   } | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +55,7 @@ export default function BulkNfcImportDialog({
       }
       setFile(selectedFile)
       setResult(null)
+      setValidationError(null)
     }
   }
 
@@ -67,6 +69,7 @@ export default function BulkNfcImportDialog({
     try {
       const response = await StudentsAPI.bulkImportNfcCards(file)
       setResult(response.data)
+      setValidationError(null)
 
       if (response.data.failed === 0) {
         toast.success(`Successfully assigned ${response.data.successful} NFC card IDs`)
@@ -80,16 +83,22 @@ export default function BulkNfcImportDialog({
       queryClient.invalidateQueries({ queryKey: ["students"] })
 
       onSuccess?.()
-      setTimeout(() => {
-        setOpen(false)
+      if (response.data.failed === 0) {
+        setTimeout(() => {
+          setOpen(false)
+          setFile(null)
+          setResult(null)
+          if (fileInputRef.current) fileInputRef.current.value = ""
+        }, 2000)
+      } else {
         setFile(null)
-        setResult(null)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ""
-        }
-      }, 2000)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to import NFC cards")
+      const message =
+        error instanceof Error ? error.message : "Failed to import NFC cards"
+      setValidationError(message)
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }
@@ -98,6 +107,7 @@ export default function BulkNfcImportDialog({
   const handleClose = () => {
     setFile(null)
     setResult(null)
+    setValidationError(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -176,6 +186,12 @@ export default function BulkNfcImportDialog({
             )}
           </div>
 
+          {validationError && (
+            <p role="alert" className="text-sm text-red-600">
+              {validationError}
+            </p>
+          )}
+
           {result && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
@@ -198,10 +214,16 @@ export default function BulkNfcImportDialog({
                       <strong>Failed assignments:</strong>
                       <ul className="mt-1 list-inside list-disc space-y-1">
                         {result.results
-                          .filter((r) => !r.success)
-                          .map((r, i) => (
-                            <li key={i} className="text-red-600">
-                              {r.student_identifier}: {r.error}
+                          .map((item, index) => ({ ...item, rowNumber: index + 2 }))
+                          .filter((item) => !item.success)
+                          .map((item) => (
+                            <li key={item.rowNumber} className="text-red-600">
+                              Row {item.rowNumber} ({item.student_identifier}):{" "}
+                              {item.error === "Student not found"
+                                ? "Student not found. Use an existing registration number; example: REG-2025-0014."
+                                : item.error === "Invalid card ID"
+                                  ? "Invalid NFC Card ID. Example: NFC-12345 or GENERATE."
+                                  : item.error}
                             </li>
                           ))}
                       </ul>

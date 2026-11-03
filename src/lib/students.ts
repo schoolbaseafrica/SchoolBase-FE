@@ -1,5 +1,6 @@
 import { SnakeUser as User } from "@/types/user"
 import { apiFetch } from "./api/client"
+import { parseCsv } from "./csv"
 
 export type CreateStudentData = Omit<
   User,
@@ -72,35 +73,6 @@ export interface StudentGrowthReport {
     new_students: number
     cumulative_students: number
   }[]
-}
-
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
-  let cell = ""
-  let quoted = false
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    if (char === '"') {
-      if (quoted && text[i + 1] === '"') {
-        cell += '"'
-        i++
-      } else quoted = !quoted
-    } else if (char === "," && !quoted) {
-      row.push(cell)
-      cell = ""
-    } else if ((char === "\n" || char === "\r") && !quoted) {
-      if (char === "\r" && text[i + 1] === "\n") i++
-      row.push(cell)
-      if (row.some((value) => value.trim())) rows.push(row)
-      row = []
-      cell = ""
-    } else cell += char
-  }
-  if (quoted) throw new Error("CSV contains an unclosed quote")
-  row.push(cell)
-  if (row.some((value) => value.trim())) rows.push(row)
-  return rows
 }
 
 export const StudentsAPI = {
@@ -260,8 +232,20 @@ export const StudentsAPI = {
         .toLowerCase()
         .replace(/^\uFEFF/, "")
     )
-    if (headers[0] !== "registration number" || headers[2] !== "nfc card id") {
+    if (
+      headers.length !== 3 ||
+      headers[0] !== "registration number" ||
+      headers[1] !== "student name" ||
+      headers[2] !== "nfc card id"
+    ) {
       throw new Error("Expected columns: Registration Number, Student Name, NFC Card ID")
+    }
+    for (const [index, row] of rows.slice(1).entries()) {
+      if (row.length !== 3 || !row[0]?.trim()) {
+        throw new Error(
+          `Row ${index + 2}: Registration Number is required with three columns. Example: REG-2025-0014,Ada Okafor,GENERATE`
+        )
+      }
     }
     return StudentsAPI.bulkAssignNfcCards(
       rows.slice(1).map((row) => ({
