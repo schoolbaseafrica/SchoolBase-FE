@@ -16,7 +16,7 @@ import BulkParentUploadDialog from "./_components/bulk-parent-upload-dialog"
 
 export default function ParentsPage() {
   const [showBulkParentUploadDialog, setShowBulkParentUploadDialog] = useState(false)
-  const { isLoading: isQueryLoading, isError, error, data: queryData } = useGetParents()
+  const { isLoading: isQueryLoading, isError, error } = useGetParents()
 
   const { parents, parentIds, filters } = useParentsStore(
     useShallow((state) => ({
@@ -60,35 +60,32 @@ export default function ParentsPage() {
 
   return (
     <>
-      <div className="mx-auto p-4 sm:p-6">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+      <UsersView
+        isLoading={isQueryLoading && parentIds.length === 0}
+        isError={isError}
+        error={error?.message}
+        users={paginatedParents}
+        userType="parents"
+        searchQuery={filters.search}
+        statusFilter={currentStatusFilter}
+        currentPage={filters.page}
+        totalPages={totalPages}
+        pageSize={filters.limit}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
+        onPageChange={handlePageChange}
+        headerActions={
           <Button
             onClick={() => setShowBulkParentUploadDialog(true)}
             variant="default"
             size="lg"
-            className="whitespace-nowrap"
+            className="w-full whitespace-nowrap sm:w-auto"
           >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Upload Parents (CSV)
           </Button>
-        </div>
-
-        <UsersView
-          isLoading={isQueryLoading && parentIds.length === 0}
-          isError={isError}
-          error={error?.message}
-          users={paginatedParents}
-          userType="parents"
-          searchQuery={filters.search}
-          statusFilter={currentStatusFilter}
-          currentPage={filters.page}
-          totalPages={totalPages}
-          pageSize={filters.limit}
-          onSearchChange={handleSearchChange}
-          onStatusFilterChange={handleStatusFilterChange}
-          onPageChange={handlePageChange}
-        />
-      </div>
+        }
+      />
 
       <BulkParentUploadDialog
         open={showBulkParentUploadDialog}

@@ -55,6 +55,7 @@ const actionLabels: Record<string, string> = {
   PUBLISH: "Publish",
   MARK: "Mark attendance",
   RECORD: "Record payment",
+  PROMOTE: "Promote students",
 }
 
 const entityLabels: Record<string, string> = {
@@ -62,6 +63,8 @@ const entityLabels: Record<string, string> = {
   user: "User",
   CBT_EXAM: "CBT exam",
   CLASSROOM_ATTENDANCE: "Classroom attendance",
+  CLASS: "Class",
+  STUDENT_PROMOTION: "Student promotion",
 }
 
 export const activityActionLabel = (action: string) =>
