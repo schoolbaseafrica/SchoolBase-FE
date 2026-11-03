@@ -4,7 +4,7 @@ import { UsersView } from "@/components/users/users-view"
 import { useGetStudents, useGetStudentsWithMeta } from "./_hooks/use-students"
 import { useStudentsStore, selectFilteredStudents } from "@/store/students-store"
 import { useShallow } from "zustand/react/shallow"
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { BulkActionsMenu } from "./_components/bulk-actions-menu"
 import { ClassFilter } from "./_components/class-filter"
 import { useAcademicPeriod } from "@/hooks/use-academic-period"
@@ -18,6 +18,14 @@ export default function StudentsPage() {
     }))
   )
   const setFilters = useStudentsStore((state) => state.setFilters)
+  const previousSessionId = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (previousSessionId.current && previousSessionId.current !== period.sessionId) {
+      setFilters({ classId: undefined, page: 1 })
+    }
+    previousSessionId.current = period.sessionId
+  }, [period.sessionId, setFilters])
 
   // Always use server-side filtering for consistent behavior and to include unassigned students
   // When classId is undefined, we want all students (including unassigned)
@@ -108,36 +116,35 @@ export default function StudentsPage() {
     filters.isActive === true ? "active" : filters.isActive === false ? "inactive" : "all"
 
   return (
-    <div className="mx-auto p-4 sm:p-6">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-        <BulkActionsMenu />
-      </div>
-      <AcademicPeriodSelector scope="admin-students" sessionOnly />
-
-      <div className="mb-4">
-        <ClassFilter
-          value={filters.classId}
-          sessionId={period.sessionId}
-          onValueChange={handleClassFilterChange}
-        />
-      </div>
-
-      <UsersView
-        isLoading={isLoading}
-        isError={isError}
-        error={error?.message}
-        users={paginatedStudents}
-        userType="students"
-        searchQuery={filters.search}
-        statusFilter={currentStatusFilter}
-        currentPage={filters.page}
-        totalPages={totalPages}
-        totalItems={serverData?.meta?.total ?? paginatedStudents.length}
-        pageSize={filters.limit}
-        onSearchChange={handleSearchChange}
-        onStatusFilterChange={handleStatusFilterChange}
-        onPageChange={handlePageChange}
-      />
-    </div>
+    <UsersView
+      isLoading={isLoading}
+      isError={isError}
+      error={error?.message}
+      users={paginatedStudents}
+      userType="students"
+      searchQuery={filters.search}
+      statusFilter={currentStatusFilter}
+      currentPage={filters.page}
+      totalPages={totalPages}
+      totalItems={serverData?.meta?.total ?? paginatedStudents.length}
+      pageSize={filters.limit}
+      onSearchChange={handleSearchChange}
+      onStatusFilterChange={handleStatusFilterChange}
+      onPageChange={handlePageChange}
+      headerActions={<BulkActionsMenu triggerClassName="w-full sm:w-auto" />}
+      contextFilters={
+        <>
+          <AcademicPeriodSelector scope="admin-students" sessionOnly compact />
+          <div className="grid gap-1">
+            <span className="text-muted-foreground text-xs">Class</span>
+            <ClassFilter
+              value={filters.classId}
+              sessionId={period.sessionId}
+              onValueChange={handleClassFilterChange}
+            />
+          </div>
+        </>
+      }
+    />
   )
 }

@@ -15,15 +15,23 @@ export function AcademicPeriodSelector({
   scope,
   sessionOnly = false,
   allowWholeSession = true,
+  compact = false,
 }: {
   scope: string
   sessionOnly?: boolean
   allowWholeSession?: boolean
+  compact?: boolean
 }) {
   const period = useAcademicPeriod(scope)
 
   return (
-    <div className="my-4 flex flex-wrap items-end gap-3 rounded-xl border bg-white p-3 shadow-sm">
+    <div
+      className={
+        compact
+          ? "flex flex-wrap items-end gap-3"
+          : "my-4 flex flex-wrap items-end gap-3 rounded-xl border bg-white p-3 shadow-sm"
+      }
+    >
       <div className="mr-1 flex h-10 items-center gap-2 text-sm font-semibold">
         <CalendarRange className="text-accent size-4" />
         Viewing
@@ -79,7 +87,7 @@ export function AcademicPeriodSelector({
       >
         <RotateCcw className="size-4" /> Current period
       </Button>
-      {sessionOnly && (
+      {sessionOnly && !compact && (
         <p className="text-muted-foreground w-full border-t pt-2 text-xs">
           Class structures are maintained per academic session.
         </p>

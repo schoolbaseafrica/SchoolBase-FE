@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,8 @@ interface UsersToolbarProps {
   statusFilter: string
   onStatusFilterChange: (status: string) => void
   onAddUser: () => void
+  headerActions?: ReactNode
+  contextFilters?: ReactNode
 }
 
 export function UsersToolbar({
@@ -29,6 +32,8 @@ export function UsersToolbar({
   statusFilter,
   onStatusFilterChange,
   onAddUser,
+  headerActions,
+  contextFilters,
 }: UsersToolbarProps) {
   const [open, setOpen] = useState(false)
 
@@ -82,15 +87,23 @@ export function UsersToolbar({
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
           <p className="text-muted-foreground mt-2 text-sm">{description}</p>
         </div>
-        <Button
-          onClick={onAddUser}
-          size="lg"
-          className="w-full whitespace-nowrap sm:w-auto"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {addButtonText}
-        </Button>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+          {headerActions}
+          <Button
+            onClick={onAddUser}
+            size="lg"
+            className="w-full whitespace-nowrap sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {addButtonText}
+          </Button>
+        </div>
       </div>
+      {contextFilters && (
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-white p-3 shadow-sm">
+          {contextFilters}
+        </div>
+      )}
       <div className="flex flex-row gap-3 rounded-[1.25rem] border border-[var(--portal-line)] bg-white p-3 shadow-[0_8px_28px_rgba(21,38,29,0.035)]">
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2" />

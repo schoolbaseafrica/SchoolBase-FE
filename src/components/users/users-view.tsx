@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { SnakeUser as User, UserType } from "@/types/user"
 import { UsersTable } from "./users-table"
 import { UsersGrid } from "./users-grid"
@@ -33,6 +34,8 @@ interface UsersViewProps {
   onAddUser?: () => void
   onToggleAdminAccess?: (user: User) => void
   ownerUserId?: string | null
+  headerActions?: ReactNode
+  contextFilters?: ReactNode
 }
 
 export function UsersView({
@@ -53,6 +56,8 @@ export function UsersView({
   onAddUser,
   onToggleAdminAccess,
   ownerUserId,
+  headerActions,
+  contextFilters,
 }: UsersViewProps) {
   const router = useRouter()
   const navigate = () => router.push(`/admin/${userType}/new`)
@@ -66,6 +71,8 @@ export function UsersView({
         statusFilter={statusFilter}
         onStatusFilterChange={onStatusFilterChange}
         onAddUser={onAddUser ?? navigate}
+        headerActions={headerActions}
+        contextFilters={contextFilters}
       />
 
       {isLoading ? (

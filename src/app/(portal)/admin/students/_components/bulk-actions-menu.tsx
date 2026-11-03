@@ -16,7 +16,11 @@ import BulkAssignClassDialog from "./bulk-assign-class-dialog"
 import BulkNfcImportDialog from "./bulk-nfc-import-dialog"
 import BulkStudentUploadDialog from "./bulk-student-upload-dialog"
 
-export function BulkActionsMenu() {
+export function BulkActionsMenu({
+  triggerClassName = "",
+}: {
+  triggerClassName?: string
+}) {
   const [showBulkAssignDialog, setShowBulkAssignDialog] = useState(false)
   const [showBulkNfcImportDialog, setShowBulkNfcImportDialog] = useState(false)
   const [showBulkStudentUploadDialog, setShowBulkStudentUploadDialog] = useState(false)
@@ -27,8 +31,8 @@ export function BulkActionsMenu() {
     try {
       await StudentsAPI.exportNfcCardsCsv()
       toast.success("NFC cards exported successfully")
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to export NFC cards")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to export NFC cards")
     } finally {
       setIsExporting(false)
     }
@@ -38,7 +42,11 @@ export function BulkActionsMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="default" size="lg" className="whitespace-nowrap">
+          <Button
+            variant="default"
+            size="lg"
+            className={`whitespace-nowrap ${triggerClassName}`}
+          >
             Bulk Actions
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
