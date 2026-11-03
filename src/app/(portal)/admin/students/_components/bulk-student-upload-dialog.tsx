@@ -195,9 +195,9 @@ export default function BulkStudentUploadDialog({
             </p>
             <p className="text-muted-foreground text-xs">
               Keep phone and registration numbers exactly as entered, including leading
-              zeros. Enter dates as YYYY-MM-DD. CSV files have no cell formatting; if you
-              open this file in a spreadsheet, import those columns as text so it does not
-              change their values.
+              zeros. Enter dates as YYYY-MM-DD. If you edit the sample in a spreadsheet,
+              check the saved CSV before uploading: the leading zeros and date format must
+              still be present.
             </p>
           </div>
           {uploadIssues.length > 0 && (
