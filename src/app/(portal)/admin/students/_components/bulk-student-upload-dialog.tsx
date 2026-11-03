@@ -193,12 +193,6 @@ export default function BulkStudentUploadDialog({
               Replace the example student, password, and class details before uploading.
               Leave optional columns blank when they do not apply.
             </p>
-            <p className="text-muted-foreground text-xs">
-              Keep phone and registration numbers exactly as entered, including leading
-              zeros. Enter dates as YYYY-MM-DD. If you edit the sample in a spreadsheet,
-              check the saved CSV before uploading: the leading zeros and date format must
-              still be present.
-            </p>
           </div>
           {uploadIssues.length > 0 && (
             <div

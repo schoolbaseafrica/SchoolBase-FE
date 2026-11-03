@@ -141,10 +141,7 @@ export default function BulkParentUploadDialog({
             </Button>
             <p className="text-muted-foreground text-xs">
               Replace the example parent details before uploading. Leave optional fields
-              blank. Keep phone numbers exactly as entered, including leading zeros, and
-              enter dates as YYYY-MM-DD. If you edit the sample in a spreadsheet, check
-              the saved CSV before uploading: the leading zeros and date format must still
-              be present.
+              blank.
             </p>
           </div>
           {uploadIssues.length > 0 && (
